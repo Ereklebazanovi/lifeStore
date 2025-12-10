@@ -3,7 +3,7 @@ import { Leaf, ShoppingCart, SlidersHorizontal, ChevronLeft, ChevronRight } from
 
 const ProductsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('default');
+ 
   const [currentPage, setCurrentPage] = useState(1);
 
   const products = [

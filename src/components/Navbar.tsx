@@ -59,16 +59,7 @@ const Navbar: React.FC = () => {
             >
               ჩვენს შესახებ
             </Link>
-            <Link
-              to="/contact"
-              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                isActivePath('/contact')
-                  ? 'bg-green-100 text-green-700 shadow-sm'
-                  : 'text-gray-600 hover:text-green-600 hover:bg-green-50'
-              }`}
-            >
-              კონტაქტი
-            </Link>
+         
             {user?.role === 'admin' && (
               <Link
                 to="/admin"

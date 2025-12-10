@@ -1,26 +1,36 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { Link } from "react-router-dom";
+import { ShoppingCart, ArrowRight } from "lucide-react";
 
 const CartPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">თქვენი კალათა</h1>
+    <div className="min-h-screen bg-stone-50">
+      <div className="max-w-4xl mx-auto px-6 lg:px-8 py-12 lg:py-16">
+        <h1 className="text-3xl lg:text-4xl text-stone-900 tracking-tight mb-12">
+          თქვენი კალათა
+        </h1>
 
         {/* Empty cart message */}
-        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <div className="text-gray-400 mb-4">
-            <svg className="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2-2m2 2v6a2 2 0 002 2h8a2 2 0 002-2v-6" />
-            </svg>
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-12 lg:p-16 text-center">
+          <div className="mb-8">
+            <div className="w-24 h-24 lg:w-32 lg:h-32 mx-auto bg-stone-100 rounded-full flex items-center justify-center">
+              <ShoppingCart className="w-12 h-12 lg:w-16 lg:h-16 text-stone-300" />
+            </div>
           </div>
-          <h3 className="text-xl font-semibold mb-2">კალათა ცარიელია</h3>
-          <p className="text-gray-600 mb-6">დაამატეთ პროდუქტები თქვენს კალათაში</p>
+          
+          <h3 className="text-2xl text-stone-900 tracking-tight mb-3">
+            კალათა ცარიელია
+          </h3>
+          <p className="text-stone-600 mb-8 max-w-md mx-auto">
+            დაამატეთ პროდუქტები თქვენს კალათაში და დაიწყეთ ეკო-მეგობრული შოპინგი
+          </p>
+          
           <Link
             to="/products"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
           >
-            პროდუქტების ნახვა
+            <span>პროდუქტების ნახვა</span>
+            <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
 

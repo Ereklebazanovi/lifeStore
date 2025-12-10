@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     } catch (error) {
       console.error('Error signing in with Google:', error);
       // Don't keep loading if user cancels sign-in
-      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+      if ((error as { code: string }).code !== 'auth/popup-closed-by-user' && (error as { code: string }).code !== 'auth/cancelled-popup-request') {
         set({ isLoading: false });
       } else {
         set({ isLoading: false });

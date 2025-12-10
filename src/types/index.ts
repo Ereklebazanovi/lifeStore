@@ -10,6 +10,7 @@ export interface Product {
   featured?: boolean;
   createdAt: Date;
   updatedAt: Date;
+  isActive?: boolean;
 }
 
 // Category Types

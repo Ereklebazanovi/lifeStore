@@ -8,7 +8,7 @@ import {
   updateDoc,
   deleteDoc,
   query,
-  where,
+  
   orderBy,
   onSnapshot
 } from 'firebase/firestore';

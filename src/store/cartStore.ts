@@ -1,7 +1,7 @@
 //cartStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CartState, CartItem, Product } from '../types';
+import type { CartState, Product } from '../types';
 
 interface CartActions {
   addItem: (product: Product, quantity?: number) => void;
