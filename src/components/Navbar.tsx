@@ -62,7 +62,7 @@ const Navbar: React.FC = () => {
                   : 'text-gray-600 hover:text-green-600 hover:bg-green-50'
               }`}
             >
-              კონტაქტი
+              კონტაქტიიიიიი
             </Link>
           </div>
 
