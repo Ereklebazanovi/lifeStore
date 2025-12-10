@@ -6,7 +6,7 @@ interface LoadingProps {
   size?: 'small' | 'medium' | 'large';
   text?: string;
 }
-
+////
 const Loading: React.FC<LoadingProps> = ({ size = 'medium', text = 'იტვირთება...' }) => {
   const sizeClasses = {
     small: 'w-6 h-6',
