@@ -68,6 +68,26 @@ export type OrderSource = 'website' | 'facebook' | 'manual';
 export interface User {
   id: string;
   email: string;
+  displayName?: string;
   role: 'admin' | 'customer';
   createdAt: Date;
+}
+
+// Store State Types
+export interface AuthState {
+  user: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+}
+
+export interface CartState {
+  items: CartItem[];
+  totalItems: number;
+  totalPrice: number;
+}
+
+export interface ProductState {
+  products: Product[];
+  isLoading: boolean;
+  categories: string[];
 }

@@ -1,3 +1,4 @@
+//src/App.tsx
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
@@ -9,6 +10,7 @@ import CartPage from './pages/CartPage';
 import LoadingScreen from './components/LoadingScreen';
 import ScrollToTop from './components/ScrollToTop';
 import PageTransition from './components/PageTransition';
+import { useAuthStore } from './store/authStore';
 
 const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
@@ -47,15 +49,19 @@ const AnimatedRoutes: React.FC = () => {
 
 function App() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const { initializeAuth } = useAuthStore();
 
   useEffect(() => {
+    // Initialize authentication
+    initializeAuth();
+
     // Simulate initial loading time
     const timer = setTimeout(() => {
       setIsInitialLoading(false);
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [initializeAuth]);
 
   if (isInitialLoading) {
     return <LoadingScreen />;

@@ -2,9 +2,14 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Badge } from 'antd';
 import { ShoppingCart, Menu } from 'lucide-react';
+import { useCartStore } from '../store/cartStore';
+import { useAuthStore } from '../store/authStore';
+import AuthButton from './auth/AuthButton';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
+  const { totalItems } = useCartStore();
+  const { user } = useAuthStore();
 
   const isActivePath = (path: string) => location.pathname === path;
 
@@ -62,15 +67,30 @@ const Navbar: React.FC = () => {
                   : 'text-gray-600 hover:text-green-600 hover:bg-green-50'
               }`}
             >
-              კონტაქტიიიიიი
+              კონტაქტი
             </Link>
+            {user?.role === 'admin' && (
+              <Link
+                to="/admin"
+                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  isActivePath('/admin')
+                    ? 'bg-orange-100 text-orange-700 shadow-sm'
+                    : 'text-orange-600 hover:text-orange-700 hover:bg-orange-50'
+                }`}
+              >
+                Admin
+              </Link>
+            )}
           </div>
 
           {/* Right side */}
           <div className="flex items-center space-x-4">
+            {/* Auth Button */}
+            <AuthButton />
+
             {/* Cart */}
             <Link to="/cart">
-              <Badge count={0} size="small" color="green">
+              <Badge count={totalItems} size="small" color="green">
                 <div className="p-2 hover:bg-green-50 rounded-lg transition-colors">
                   <ShoppingCart className="h-5 w-5 text-gray-600 hover:text-green-600" />
                 </div>
