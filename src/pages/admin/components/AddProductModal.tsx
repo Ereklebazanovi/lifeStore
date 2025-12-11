@@ -1,3 +1,4 @@
+// src/pages/admin/components/AddProductModal.tsx
 import React, { useState } from 'react';
 import { X, Package, Upload, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
 import { useProductStore } from '../../../store/productStore';

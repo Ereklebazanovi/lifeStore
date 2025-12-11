@@ -1,3 +1,4 @@
+// src/pages/admin/AdminPage.tsx
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useProductStore } from '../../store/productStore';

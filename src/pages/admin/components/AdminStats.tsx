@@ -1,3 +1,4 @@
+// src/pages/admin/components/AdminStats.tsx
 import React from 'react';
 import { Package, TrendingUp, AlertTriangle, CheckCircle, Zap, Eye, DollarSign } from 'lucide-react';
 import type { Product } from '../../../types';

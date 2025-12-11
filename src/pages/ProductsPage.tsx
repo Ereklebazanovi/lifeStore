@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom'; // <--- დაემატა Link
 import { Leaf, ShoppingCart, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useProductStore } from '../store/productStore';
 import { useCartStore } from '../store/cartStore';
@@ -15,23 +16,23 @@ const ProductsPage: React.FC = () => {
   }, [fetchProducts]);
 
   const handleAddToCart = (product: any) => {
-    addItem(product);
-    showToast(`${product.name} კალათაში დაემატა!`, 'success');
+    // Stock-ის შემოწმება
+    if (product.stock > 0) {
+      addItem(product);
+      showToast(`${product.name} კალათაში დაემატა!`, 'success');
+    }
   };
 
-  // Filter products based on selected category
   const filteredProducts = selectedCategory === 'all'
     ? products
     : products.filter(product => product.category === selectedCategory);
 
-  // Calculate pagination
   const productsPerPage = 8;
   const startIndex = (currentPage - 1) * productsPerPage;
   const endIndex = startIndex + productsPerPage;
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
-  // Get unique categories from products
   const categories = ['all', ...Array.from(new Set(products.map(p => p.category)))];
 
   return (
@@ -62,8 +63,6 @@ const ProductsPage: React.FC = () => {
               ))}
             </select>
           </div>
-
-        
         </div>
 
         {/* Products Grid */}
@@ -88,50 +87,72 @@ const ProductsPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12 !mt-10">
-            {currentProducts.map((product) => (
-              <div
-                key={product.id}
-                className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
-              >
-                {/* Product Image */}
-                <div className="aspect-square bg-gradient-to-br from-stone-100 to-emerald-50 overflow-hidden">
-                  {product.images && product.images.length > 0 ? (
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Leaf className="w-16 h-16 lg:w-20 lg:h-20 text-emerald-300 group-hover:scale-110 transition-transform duration-300" />
+            {currentProducts.map((product) => {
+              const isOutOfStock = product.stock === 0;
+
+              return (
+                <div
+                    key={product.id}
+                    className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-xl hover:-translate-y-2 transition-all duration-300 relative"
+                >
+                    {/* Out of Stock Overlay */}
+                    {isOutOfStock && (
+                        <div className="absolute top-3 right-3 z-10 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg pointer-events-none">
+                          მარაგში არ არის
+                        </div>
+                    )}
+
+                    {/* Product Image LINK */}
+                    <Link to={`/product/${product.id}`} className="block aspect-square bg-gradient-to-br from-stone-100 to-emerald-50 overflow-hidden">
+                        <div className={isOutOfStock ? "opacity-60 grayscale transition-all w-full h-full" : "w-full h-full"}>
+                            {product.images && product.images.length > 0 ? (
+                                <img
+                                src={product.images[0]}
+                                alt={product.name}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                <Leaf className="w-16 h-16 lg:w-20 lg:h-20 text-emerald-300 group-hover:scale-110 transition-transform duration-300" />
+                                </div>
+                            )}
+                        </div>
+                    </Link>
+
+                    {/* Product Info */}
+                    <div className="p-4 lg:p-5 space-y-3">
+                    <Link to={`/product/${product.id}`}>
+                        <h3 className="text-stone-900 tracking-tight line-clamp-1 hover:text-emerald-600 transition-colors">
+                            {product.name}
+                        </h3>
+                    </Link>
+                    <p className="text-sm text-stone-600 line-clamp-2">
+                        {product.description || "ხელით დამზადებული, ეკო-მეგობრული მასალისგან"}
+                    </p>
+
+                    <div className="flex items-center justify-between pt-2">
+                        <span className="text-xl text-emerald-700 tracking-tight">
+                        ₾{product.price.toFixed(2)}
+                        </span>
+                        
+                        {/* Add to Cart Button (Not a Link) */}
+                        <button
+                        onClick={() => handleAddToCart(product)}
+                        disabled={isOutOfStock}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-200 
+                            ${isOutOfStock 
+                                ? "bg-gray-200 text-gray-400 cursor-not-allowed" 
+                                : "bg-stone-900 hover:bg-emerald-600 text-white group-hover:scale-110"
+                            }`}
+                        aria-label="Add to cart"
+                        >
+                        <ShoppingCart className="w-5 h-5" />
+                        </button>
                     </div>
-                  )}
+                    </div>
                 </div>
-
-                {/* Product Info */}
-                <div className="p-4 lg:p-5 space-y-3">
-                  <h3 className="text-stone-900 tracking-tight line-clamp-1">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm text-stone-600 line-clamp-2">
-                    {product.description || "ხელით დამზადებული, ეკო-მეგობრული მასალისგან"}
-                  </p>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-xl text-emerald-700 tracking-tight">
-                      ₾{product.price.toFixed(2)}
-                  </span>
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      className="w-10 h-10 bg-stone-900 hover:bg-emerald-600 text-white rounded-xl flex items-center justify-center transition-colors duration-200 group-hover:scale-110"
-                      aria-label="Add to cart"
-                    >
-                      <ShoppingCart className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -142,7 +163,6 @@ const ProductsPage: React.FC = () => {
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
               className="w-10 h-10 border border-stone-300 bg-white rounded-xl hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
-              aria-label="Previous page"
             >
               <ChevronLeft className="w-5 h-5 text-stone-600" />
             </button>
@@ -165,7 +185,6 @@ const ProductsPage: React.FC = () => {
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
               className="w-10 h-10 border border-stone-300 bg-white rounded-xl hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
-              aria-label="Next page"
             >
               <ChevronRight className="w-5 h-5 text-stone-600" />
             </button>

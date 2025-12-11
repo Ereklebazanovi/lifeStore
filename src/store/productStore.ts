@@ -1,14 +1,15 @@
-//productStore.ts
+// src/store/productStore.ts
+
 import { create } from 'zustand';
 import {
   collection,
   addDoc,
   getDocs,
+  getDoc, // <--- ახალი იმპორტი
   doc,
   updateDoc,
   deleteDoc,
   query,
-  
   orderBy,
   onSnapshot
 } from 'firebase/firestore';
@@ -21,6 +22,7 @@ interface ProductActions {
   updateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   toggleProductStatus: (id: string) => Promise<void>;
+  getProductById: (id: string) => Promise<Product | null>; // <--- ახალი ფუნქციის ტიპი
   subscribeToProducts: () => () => void;
   setLoading: (loading: boolean) => void;
 }
@@ -59,6 +61,45 @@ export const useProductStore = create<ProductState & ProductActions>((set, get) 
       set({ isLoading: false });
     }
   },
+
+  // --- ახალი ფუნქცია: კონკრეტული პროდუქტის წამოღება ---
+  getProductById: async (id: string) => {
+    const state = get();
+    
+    // 1. ჯერ ვეძებთ უკვე ჩატვირთულ პროდუქტებში (Performance Optimization)
+    const existingProduct = state.products.find((p) => p.id === id);
+    if (existingProduct) {
+      return existingProduct;
+    }
+
+    // 2. თუ არ გვაქვს, მოგვაქვს Firebase-დან (Direct Link Access)
+    try {
+      set({ isLoading: true });
+      const productRef = doc(db, 'products', id);
+      const productSnap = await getDoc(productRef);
+
+      if (productSnap.exists()) {
+        const data = productSnap.data();
+        const productData = {
+          id: productSnap.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+        } as Product;
+        
+        set({ isLoading: false });
+        return productData;
+      } else {
+        set({ isLoading: false });
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching product by ID:', error);
+      set({ isLoading: false });
+      return null;
+    }
+  },
+  // -----------------------------------------------------
 
   addProduct: async (productData) => {
     try {

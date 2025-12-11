@@ -1,21 +1,26 @@
 // src/App.tsx
 
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import HomePage from './pages/HomePage';
-import ProductsPage from './pages/ProductsPage';
-import CartPage from './pages/CartPage';
-import AdminPage from './pages/admin/AdminPage';
-import LoadingScreen from './components/LoadingScreen';
-import ScrollToTop from './components/ScrollToTop';
-import PageTransition from './components/PageTransition';
-import { useAuthStore } from './store/authStore';
-import { useCartStore } from './store/cartStore';
-import { ToastContainer } from './components/ui/Toast';
-
+import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import HomePage from "./pages/HomePage";
+import ProductsPage from "./pages/ProductsPage";
+import CartPage from "./pages/CartPage";
+import AdminPage from "./pages/admin/AdminPage";
+import LoadingScreen from "./components/LoadingScreen";
+import ScrollToTop from "./components/ScrollToTop";
+import PageTransition from "./components/PageTransition";
+import { useAuthStore } from "./store/authStore";
+import { useCartStore } from "./store/cartStore";
+import { ToastContainer } from "./components/ui/Toast";
+import ProductDetailsPage from "./pages/ProductDetailsPage";
 const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
 
@@ -51,6 +56,14 @@ const AnimatedRoutes: React.FC = () => {
           element={
             <PageTransition>
               <AdminPage />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/product/:id"
+          element={
+            <PageTransition>
+              <ProductDetailsPage />
             </PageTransition>
           }
         />

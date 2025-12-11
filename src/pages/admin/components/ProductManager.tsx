@@ -1,3 +1,4 @@
+// src/pages/admin/components/ProductManager.tsx
 import React, { useState } from 'react';
 import { useProductStore } from '../../../store/productStore';
 import { Plus, Edit, Trash2, ToggleLeft, ToggleRight, Image as ImageIcon, AlertTriangle } from 'lucide-react';

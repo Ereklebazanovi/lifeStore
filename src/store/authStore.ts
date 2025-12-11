@@ -11,6 +11,8 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import type { AuthState, User } from '../types';
 import { useCartStore } from './cartStore';
+import { showToast } from '../components/ui/Toast';
+
 
 interface AuthActions {
   signInWithGoogle: () => Promise<void>;
