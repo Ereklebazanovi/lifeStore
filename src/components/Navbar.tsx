@@ -1,3 +1,5 @@
+// src/components/Navbar.tsx
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Badge } from 'antd';
@@ -8,7 +10,7 @@ import AuthButton from './auth/AuthButton';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
-  const { totalItems } = useCartStore();
+  const { totalItems, isLoading } = useCartStore();
   const { user } = useAuthStore();
 
   const isActivePath = (path: string) => location.pathname === path;

@@ -1,27 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Leaf, ShoppingCart, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useProductStore } from '../store/productStore';
+import { useCartStore } from '../store/cartStore';
+import { showToast } from '../components/ui/Toast';
 
 const ProductsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
- 
   const [currentPage, setCurrentPage] = useState(1);
+  const { products, fetchProducts, isLoading } = useProductStore();
+  const { addItem } = useCartStore();
 
-  const products = [
-    { id: 1, name: 'ბუნებრივი ნივთი #1', price: 45.99, category: 'category1' },
-    { id: 2, name: 'ბუნებრივი ნივთი #2', price: 32.50, category: 'category2' },
-    { id: 3, name: 'ბუნებრივი ნივთი #3', price: 78.00, category: 'category1' },
-    { id: 4, name: 'ბუნებრივი ნივთი #4', price: 55.75, category: 'category3' },
-    { id: 5, name: 'ბუნებრივი ნივთი #5', price: 89.99, category: 'category2' },
-    { id: 6, name: 'ბუნებრივი ნივთი #6', price: 42.00, category: 'category1' },
-    { id: 7, name: 'ბუნებრივი ნივთი #7', price: 67.50, category: 'category3' },
-    { id: 8, name: 'ბუნებრივი ნივთი #8', price: 53.25, category: 'category2' },
-    { id: 9, name: 'ბუნებრივი ნივთი #9', price: 95.00, category: 'category1' },
-    { id: 10, name: 'ბუნებრივი ნივთი #10', price: 38.99, category: 'category3' },
-    { id: 11, name: 'ბუნებრივი ნივთი #11', price: 71.50, category: 'category2' },
-    { id: 12, name: 'ბუნებრივი ნივთი #12', price: 44.75, category: 'category1' },
-  ];
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
-  const totalPages = 3;
+  const handleAddToCart = (product: any) => {
+    addItem(product);
+    showToast(`${product.name} კალათაში დაემატა!`, 'success');
+  };
+
+  // Filter products based on selected category
+  const filteredProducts = selectedCategory === 'all'
+    ? products
+    : products.filter(product => product.category === selectedCategory);
+
+  // Calculate pagination
+  const productsPerPage = 8;
+  const startIndex = (currentPage - 1) * productsPerPage;
+  const endIndex = startIndex + productsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+
+  // Get unique categories from products
+  const categories = ['all', ...Array.from(new Set(products.map(p => p.category)))];
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -40,15 +51,15 @@ const ProductsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-4 mb-10">
           <div className="flex items-center gap-3 flex-1">
             <SlidersHorizontal className="h-5 w-5 text-stone-500" />
-            <select 
+            <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="flex-1 sm:flex-none border border-stone-300 bg-white rounded-xl px-4 py-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all"
             >
               <option value="all">ყველა კატეგორია</option>
-              <option value="category1">ბუნებრივი მასალები</option>
-              <option value="category2">ხელით დამზადებული</option>
-              <option value="category3">ორგანული პროდუქტები</option>
+              {categories.filter(cat => cat !== 'all').map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
             </select>
           </div>
 
@@ -56,41 +67,73 @@ const ProductsPage: React.FC = () => {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12 !mt-10">
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
-            >
-              {/* Product Image Placeholder */}
-              <div className="aspect-square bg-gradient-to-br from-stone-100 to-emerald-50 flex items-center justify-center">
-                <Leaf className="w-16 h-16 lg:w-20 lg:h-20 text-emerald-300 group-hover:scale-110 transition-transform duration-300" />
-              </div>
-
-              {/* Product Info */}
-              <div className="p-4 lg:p-5 space-y-3">
-                <h3 className="text-stone-900 tracking-tight line-clamp-1">
-                  {product.name}
-                </h3>
-                <p className="text-sm text-stone-600 line-clamp-2">
-                  ხელით დამზადებული, ეკო-მეგობრული მასალისგან
-                </p>
-
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-xl text-emerald-700 tracking-tight">
-                    ₾{product.price.toFixed(2)}
-                  </span>
-                  <button
-                    className="w-10 h-10 bg-stone-900 hover:bg-emerald-600 text-white rounded-xl flex items-center justify-center transition-colors duration-200 group-hover:scale-110"
-                    aria-label="Add to cart"
-                  >
-                    <ShoppingCart className="w-5 h-5" />
-                  </button>
+        {isLoading ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12 !mt-10">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-stone-200 overflow-hidden animate-pulse">
+                <div className="aspect-square bg-gray-200"></div>
+                <div className="p-4 lg:p-5 space-y-3">
+                  <div className="h-5 bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-6 bg-gray-200 rounded w-1/2"></div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-12">
+            <Leaf className="w-20 h-20 text-emerald-300 mx-auto mb-4" />
+            <h3 className="text-xl text-stone-900 mb-2">პროდუქტები ვერ მოიძებნა</h3>
+            <p className="text-stone-600">შეცვალეთ კატეგორიის ფილტრი ან დაელოდეთ ახალ პროდუქტებს</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12 !mt-10">
+            {currentProducts.map((product) => (
+              <div
+                key={product.id}
+                className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
+              >
+                {/* Product Image */}
+                <div className="aspect-square bg-gradient-to-br from-stone-100 to-emerald-50 overflow-hidden">
+                  {product.images && product.images.length > 0 ? (
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Leaf className="w-16 h-16 lg:w-20 lg:h-20 text-emerald-300 group-hover:scale-110 transition-transform duration-300" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Product Info */}
+                <div className="p-4 lg:p-5 space-y-3">
+                  <h3 className="text-stone-900 tracking-tight line-clamp-1">
+                    {product.name}
+                  </h3>
+                  <p className="text-sm text-stone-600 line-clamp-2">
+                    {product.description || "ხელით დამზადებული, ეკო-მეგობრული მასალისგან"}
+                  </p>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-xl text-emerald-700 tracking-tight">
+                      ₾{product.price.toFixed(2)}
+                  </span>
+                    <button
+                      onClick={() => handleAddToCart(product)}
+                      className="w-10 h-10 bg-stone-900 hover:bg-emerald-600 text-white rounded-xl flex items-center justify-center transition-colors duration-200 group-hover:scale-110"
+                      aria-label="Add to cart"
+                    >
+                      <ShoppingCart className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Pagination */}
         <div className="flex justify-center">

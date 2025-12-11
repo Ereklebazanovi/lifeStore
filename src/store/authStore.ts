@@ -10,6 +10,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import type { AuthState, User } from '../types';
+import { useCartStore } from './cartStore';
 
 interface AuthActions {
   signInWithGoogle: () => Promise<void>;

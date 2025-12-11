@@ -1,4 +1,5 @@
-//src/App.tsx
+// src/App.tsx
+
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
@@ -7,10 +8,13 @@ import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import CartPage from './pages/CartPage';
+import AdminPage from './pages/admin/AdminPage';
 import LoadingScreen from './components/LoadingScreen';
 import ScrollToTop from './components/ScrollToTop';
 import PageTransition from './components/PageTransition';
 import { useAuthStore } from './store/authStore';
+import { useCartStore } from './store/cartStore';
+import { ToastContainer } from './components/ui/Toast';
 
 const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
@@ -42,6 +46,14 @@ const AnimatedRoutes: React.FC = () => {
             </PageTransition>
           }
         />
+        <Route
+          path="/admin"
+          element={
+            <PageTransition>
+              <AdminPage />
+            </PageTransition>
+          }
+        />
       </Routes>
     </AnimatePresence>
   );
@@ -49,7 +61,8 @@ const AnimatedRoutes: React.FC = () => {
 
 function App() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const { initializeAuth } = useAuthStore();
+  const { initializeAuth, user, isLoading } = useAuthStore();
+  const { loadUserCart } = useCartStore();
 
   useEffect(() => {
     // Initialize authentication
@@ -62,6 +75,17 @@ function App() {
 
     return () => clearTimeout(timer);
   }, [initializeAuth]);
+
+  // Load user-specific cart when auth state changes
+  useEffect(() => {
+    const loadCart = async () => {
+      if (!isLoading) {
+        // Load cart based on user state
+        await loadUserCart(user?.id || null);
+      }
+    };
+    loadCart();
+  }, [user?.id, isLoading, loadUserCart]);
 
   if (isInitialLoading) {
     return <LoadingScreen />;
@@ -79,6 +103,9 @@ function App() {
 
         <Footer />
       </div>
+
+      {/* Toast Notifications */}
+      <ToastContainer />
     </Router>
   );
 }
