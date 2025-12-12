@@ -1,4 +1,3 @@
-//AuthStore.ts
 import { create } from 'zustand';
 import {
   signInWithPopup,
@@ -10,9 +9,6 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import type { AuthState, User } from '../types';
-import { useCartStore } from './cartStore';
-import { showToast } from '../components/ui/Toast';
-
 
 interface AuthActions {
   signInWithGoogle: () => Promise<void>;
@@ -30,27 +26,44 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   setLoading: (loading: boolean) => set({ isLoading: loading }),
 
   signInWithGoogle: async () => {
+    // 1. ვიწყებთ ლოადინგს
+    set({ isLoading: true });
+
+    // Create a timeout to auto-stop loading after 3 seconds if no response
+    const timeoutId = setTimeout(() => {
+      console.log('Sign-in timeout - stopping loading state');
+      set({ isLoading: false });
+    }, 3000);
+
     try {
-      set({ isLoading: true });
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
+
+      // Clear timeout since we got a successful result
+      clearTimeout(timeoutId);
 
       if (result.user) {
         await get().checkUserRole(result.user.uid);
       }
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
-      // Don't keep loading if user cancels sign-in
-      if ((error as { code: string }).code !== 'auth/popup-closed-by-user' && (error as { code: string }).code !== 'auth/cancelled-popup-request') {
-        set({ isLoading: false });
+    } catch (error: any) {
+      // Clear timeout on any error
+      clearTimeout(timeoutId);
+
+      // თუ მომხმარებელმა ფანჯარა დახურა, ეს არ არის კრიტიკული ერორი
+      if (error.code === 'auth/popup-closed-by-user') {
+        console.log('მომხმარებელმა გათიშა შესვლის ფანჯარა');
       } else {
-        set({ isLoading: false });
+        console.error('Error signing in with Google:', error);
       }
+
+      // Immediately stop loading on error
+      set({ isLoading: false });
     }
   },
 
   signOut: async () => {
     try {
+      set({ isLoading: true });
       await firebaseSignOut(auth);
       set({
         user: null,
@@ -59,6 +72,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       });
     } catch (error) {
       console.error('Error signing out:', error);
+      set({ isLoading: false });
     }
   },
 
@@ -76,12 +90,11 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         });
         return userData;
       } else {
-        // Create new user document for first-time users
         const newUser: User = {
           id: uid,
           email: auth.currentUser?.email || '',
           displayName: auth.currentUser?.displayName || '',
-          role: 'customer', // Default role
+          role: 'customer',
           createdAt: new Date()
         };
 

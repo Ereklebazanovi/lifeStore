@@ -1,4 +1,3 @@
-// src/pages/admin/components/EditProductModal.tsx
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useProductStore } from '../../../store/productStore';
@@ -157,7 +156,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
             <ImageUpload
               images={formData.images}
               onChange={(images) => setFormData(prev => ({ ...prev, images }))}
-              maxImages={5}
+              maxImages={4} // <--- აქაც შევცვალეთ 4-ზე
             />
           </div>
 

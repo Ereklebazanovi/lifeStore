@@ -11,7 +11,7 @@ interface ImageUploadProps {
 const ImageUpload: React.FC<ImageUploadProps> = ({
   images,
   onChange,
-  maxImages = 5
+  maxImages = 4 // <--- შეიცვალა 4-ზე (default)
 }) => {
   const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
   const [urlInput, setUrlInput] = useState('');
@@ -56,7 +56,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
   const handleUrlAdd = () => {
     if (urlInput.trim() && images.length < maxImages) {
-      // Basic URL validation
       try {
         new URL(urlInput);
         onChange([...images, urlInput.trim()]);
@@ -108,10 +107,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       {/* Image Preview Grid */}
       {images.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4"> {/* შევცვალე Grid layout 4-ზე */}
           {images.map((image, index) => (
             <div key={index} className="relative group">
-              <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+              <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                 <img
                   src={image}
                   alt={`Product ${index + 1}`}
@@ -124,11 +123,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               <button
                 type="button"
                 onClick={() => removeImage(index)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
               >
                 <X className="w-3 h-3" />
               </button>
-              <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+              <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
                 {index + 1}
               </div>
             </div>

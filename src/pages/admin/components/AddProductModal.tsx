@@ -251,13 +251,13 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
 
             <div className="bg-gray-50 rounded-xl p-4">
               <p className="text-sm text-gray-600 mb-4">
-                ატვირთეთ პროდუქტის სურათები (მაქსიმუმ 5). მხარდაჭერილია: JPG, PNG, WebP
+                ატვირთეთ პროდუქტის სურათები (მაქსიმუმ 4). მხარდაჭერილია: JPG, PNG, WebP
               </p>
 
               <ImageUpload
                 images={formData.images}
                 onChange={(images) => setFormData({ ...formData, images })}
-                maxImages={5}
+                maxImages={4}
               />
             </div>
           </div>

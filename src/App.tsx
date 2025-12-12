@@ -14,13 +14,14 @@ import HomePage from "./pages/HomePage";
 import ProductsPage from "./pages/ProductsPage";
 import CartPage from "./pages/CartPage";
 import AdminPage from "./pages/admin/AdminPage";
+import ProductDetailsPage from "./pages/ProductDetailsPage"; // დარწმუნდი რომ იმპორტირებულია
 import LoadingScreen from "./components/LoadingScreen";
 import ScrollToTop from "./components/ScrollToTop";
 import PageTransition from "./components/PageTransition";
 import { useAuthStore } from "./store/authStore";
 import { useCartStore } from "./store/cartStore";
 import { ToastContainer } from "./components/ui/Toast";
-import ProductDetailsPage from "./pages/ProductDetailsPage";
+
 const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
 
@@ -44,6 +45,14 @@ const AnimatedRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/product/:id"
+          element={
+            <PageTransition>
+              <ProductDetailsPage />
+            </PageTransition>
+          }
+        />
+        <Route
           path="/cart"
           element={
             <PageTransition>
@@ -59,48 +68,44 @@ const AnimatedRoutes: React.FC = () => {
             </PageTransition>
           }
         />
-        <Route
-          path="/product/:id"
-          element={
-            <PageTransition>
-              <ProductDetailsPage />
-            </PageTransition>
-          }
-        />
       </Routes>
     </AnimatePresence>
   );
 };
 
 function App() {
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const { initializeAuth, user, isLoading } = useAuthStore();
+  // ვიზუალური "სპლეშ სქრინის" სტეიტი
+  const [isSplashLoading, setIsSplashLoading] = useState(true);
+  
+  // Auth სტორის მონაცემები (isLoading-ს გადავარქვით სახელი კონფლიქტის თავიდან ასაცილებლად)
+  const { initializeAuth, user, isLoading: isAuthLoading } = useAuthStore();
   const { loadUserCart } = useCartStore();
 
+  // 1. აპლიკაციის ინიციალიზაცია (Auth & Splash Timer)
   useEffect(() => {
-    // Initialize authentication
     initializeAuth();
 
-    // Simulate initial loading time
+    // ეს მხოლოდ ვიზუალური ეფექტისთვისაა (2.5 წამი აჩვენებს ლოგოს)
     const timer = setTimeout(() => {
-      setIsInitialLoading(false);
+      setIsSplashLoading(false);
     }, 2500);
 
     return () => clearTimeout(timer);
   }, [initializeAuth]);
 
-  // Load user-specific cart when auth state changes
+  // 2. კალათის ჩატვირთვა (მხოლოდ მას შემდეგ, რაც Auth გაირკვევა)
   useEffect(() => {
     const loadCart = async () => {
-      if (!isLoading) {
-        // Load cart based on user state
+      // სანამ ავტორიზაცია იტვირთება, კალათას ხელს არ ვახლებთ
+      if (!isAuthLoading) {
         await loadUserCart(user?.id || null);
       }
     };
     loadCart();
-  }, [user?.id, isLoading, loadUserCart]);
+  }, [user?.id, isAuthLoading, loadUserCart]);
 
-  if (isInitialLoading) {
+  // სანამ ტაიმერი არ გასულა, ვაჩვენებთ LoadingScreen-ს
+  if (isSplashLoading) {
     return <LoadingScreen />;
   }
 

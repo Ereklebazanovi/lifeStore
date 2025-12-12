@@ -40,7 +40,7 @@ const ProductsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12 lg:py-16">
         {/* Header Section */}
         <div className="mb-12">
-          <h1 className="text-3xl lg:text-4xl text-stone-900 tracking-tight mb-3">
+          <h1 className="text-3xl lg:text-4xl text-stone-900 tracking-tight mb-3 !mt-4">
             ყველა პროდუქტი
           </h1>
           <p className="text-stone-600">

@@ -1,143 +1,111 @@
-import React, { useState } from 'react';
-import { ChevronDown, User, LogOut, Shield } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ChevronDown, LogOut, Shield, User, LogIn, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 const AuthButton: React.FC = () => {
   const { user, isLoading, signInWithGoogle, signOut } = useAuthStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isSigningIn, setIsSigningIn] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSignIn = async () => {
-    try {
-      setIsSigningIn(true);
-      await signInWithGoogle();
-    } catch (error) {
-      console.error('Sign in error:', error);
-    } finally {
-      setIsSigningIn(false);
-    }
+    if (isLoading) return; // თუ უკვე იტვირთება, აღარ დააჭერინოს
+    await signInWithGoogle();
   };
 
   const handleSignOut = async () => {
-    try {
-      setIsSigningOut(true);
-      setIsDropdownOpen(false);
-      await signOut();
-    } catch (error) {
-      console.error('Sign out error:', error);
-    } finally {
-      setIsSigningOut(false);
-    }
+    if (isLoading) return;
+    setIsDropdownOpen(false);
+    await signOut();
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center space-x-2 px-3 py-2">
-        <div className="w-4 h-4 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin"></div>
-        <span className="text-sm text-gray-600 hidden sm:block">Loading...</span>
-      </div>
-    );
-  }
+  // ამოვიღეთ ის კოდი, რომელიც ღილაკს აქრობდა (if isLoading return...)
 
+  // --- LOGGED IN STATE ---
   if (user) {
     return (
-      <div className="relative">
+      <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          disabled={isSigningOut}
-          className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-sm disabled:opacity-50"
+          disabled={isLoading}
+          className="flex items-center gap-2 pl-1 pr-3 py-1 bg-white border border-stone-200 rounded-full hover:shadow-md hover:border-emerald-200 transition-all duration-200 group disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          <div className="flex items-center space-x-2">
-            <div className="w-7 h-7 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
-            </div>
-            <div className="hidden sm:block text-left">
-              <div className="text-sm font-medium text-gray-900">
-                {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
-              </div>
-              {user.role === 'admin' && (
-                <div className="text-xs text-green-600 flex items-center">
-                  <Shield className="w-3 h-3 mr-1" />
-                  Admin
-                </div>
-              )}
-            </div>
-          </div>
-          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          {/* აქაც, თუ იტვირთება, ფოტოს მაგივრად ლოადერს ვაჩვენებთ, მაგრამ ღილაკი რჩება */}
+          {isLoading ? (
+             <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center">
+                <Loader2 className="w-4 h-4 animate-spin text-stone-500" />
+             </div>
+          ) : (
+             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-sm overflow-hidden">
+                <span className="text-sm font-bold">{user.displayName?.[0]?.toUpperCase() || <User className="w-4 h-4" />}</span>
+             </div>
+          )}
+          
+          <span className="text-sm font-medium text-stone-700 max-w-[100px] truncate hidden xl:block group-hover:text-stone-900">
+            {user.displayName?.split(' ')[0] || 'Profile'}
+          </span>
+          <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
         </button>
 
-        {isDropdownOpen && (
-          <>
-            <div
-              className="fixed inset-0 z-10"
-              onClick={() => setIsDropdownOpen(false)}
-            />
-            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-100 z-20">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <div className="font-medium text-gray-900">{user.displayName || user.email}</div>
-                <div className="text-sm text-gray-500">{user.email}</div>
-                {user.role === 'admin' && (
-                  <div className="mt-1 inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                    <Shield className="w-3 h-3 mr-1" />
-                    Administrator
-                  </div>
-                )}
+        {/* Dropdown Menu */}
+        <div 
+            className={`absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-xl border border-stone-100 transform transition-all duration-200 origin-top-right z-50 ${
+                isDropdownOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
+            }`}
+        >
+          <div className="p-4 border-b border-stone-100">
+            <p className="text-sm font-bold text-stone-900 truncate">{user.displayName || 'User'}</p>
+            <p className="text-xs text-stone-500 truncate mt-0.5">{user.email}</p>
+            
+            {user.role === 'admin' && (
+              <div className="mt-3 flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg text-xs font-semibold w-fit">
+                <Shield className="w-3 h-3" />
+                ადმინისტრატორი
               </div>
-              <div className="py-2">
-                <button
-                  onClick={handleSignOut}
-                  disabled={isSigningOut}
-                  className="flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left transition-colors duration-200 disabled:opacity-50"
-                >
-                  {isSigningOut ? (
-                    <div className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin"></div>
-                  ) : (
-                    <LogOut className="w-4 h-4" />
-                  )}
-                  <span>{isSigningOut ? 'Signing out...' : 'Sign Out'}</span>
-                </button>
-              </div>
-            </div>
-          </>
-        )}
+            )}
+          </div>
+
+          <div className="p-2">
+            <button
+              onClick={handleSignOut}
+              disabled={isLoading}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors disabled:opacity-50"
+            >
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+              გასვლა
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // --- LOGGED OUT STATE ---
   return (
     <button
       onClick={handleSignIn}
-      disabled={isLoading || isSigningIn}
-      className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+      disabled={isLoading}
+      className="flex items-center gap-2 px-5 py-2.5 bg-stone-900 text-white text-sm font-bold rounded-xl hover:bg-emerald-600 transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed disabled:bg-stone-700"
     >
-      {!isSigningIn && (
-        <svg className="w-4 h-4" viewBox="0 0 24 24">
-          <path
-            fill="#4285F4"
-            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-          />
-          <path
-            fill="#34A853"
-            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-          />
-          <path
-            fill="#FBBC05"
-            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-          />
-          <path
-            fill="#EA4335"
-            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-          />
-        </svg>
-      )}
-      {isSigningIn ? (
+      {isLoading ? (
         <>
-          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-          <span className="text-sm font-medium text-gray-700">Signing in...</span>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>იტვირთება...</span>
         </>
       ) : (
-        <span className="text-sm font-medium text-gray-700">Sign in</span>
+        <>
+            <LogIn className="w-4 h-4" />
+            <span>შესვლა</span>
+        </>
       )}
     </button>
   );

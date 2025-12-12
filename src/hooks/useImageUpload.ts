@@ -1,3 +1,4 @@
+// src/hooks/useImageUpload.ts
 import { useState } from 'react';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from '../services/firebase';
