@@ -12,6 +12,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import ProductsPage from "./pages/ProductsPage";
+import AboutPage from "./pages/AboutPage";
 import CartPage from "./pages/CartPage";
 import AdminPage from "./pages/admin/AdminPage";
 import ProductDetailsPage from "./pages/ProductDetailsPage"; // დარწმუნდი რომ იმპორტირებულია
@@ -41,6 +42,14 @@ const AnimatedRoutes: React.FC = () => {
           element={
             <PageTransition>
               <ProductsPage />
+            </PageTransition>
+          }
+        />
+       <Route
+          path="/about"
+          element={
+            <PageTransition>
+              <AboutPage />
             </PageTransition>
           }
         />
