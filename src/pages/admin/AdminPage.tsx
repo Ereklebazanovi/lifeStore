@@ -4,15 +4,17 @@ import { useAuthStore } from '../../store/authStore';
 import { useProductStore } from '../../store/productStore';
 import { Navigate } from 'react-router-dom';
 import ProductManager from './components/ProductManager';
+import OrdersManager from './components/OrdersManager';
 import AdminStats from './components/AdminStats';
 import LoadingSpinner from './components/LoadingSpinner';
 import AddProductModal from './components/AddProductModal';
-import { Package, Shield, Settings, BarChart3 } from 'lucide-react';
+import { Package, Shield, Settings, BarChart3, ShoppingBag } from 'lucide-react';
 
 const AdminPage: React.FC = () => {
   const { user, isLoading } = useAuthStore();
   const { products, fetchProducts } = useProductStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
 
 
   useEffect(() => {
@@ -35,37 +37,7 @@ const AdminPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       {/* Admin Header Bar */}
-      <div className="bg-gradient-to-r from-green-600 to-green-700 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="bg-white/20 p-3 rounded-full">
-                <Shield className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
-                <p className="text-green-100">
-                  {greeting}, {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}!
-                </p>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
-                <div className="flex items-center space-x-2 text-white">
-                  <BarChart3 className="w-5 h-5" />
-                  <span className="font-medium">ანალიტიკა</span>
-                </div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
-                <div className="flex items-center space-x-2 text-white">
-                  <Settings className="w-5 h-5" />
-                  <span className="font-medium">პარამეტრები</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Quick Actions */}
@@ -95,23 +67,51 @@ const AdminPage: React.FC = () => {
         {/* Stats Overview */}
         <AdminStats products={products} />
 
-        {/* Main Content */}
+        {/* Main Content with Tabs */}
         <div className="mt-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Tab Navigation */}
             <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-green-100 p-2 rounded-lg">
-                    <Package className="w-5 h-5 text-green-600" />
+              <div className="flex items-center space-x-8">
+                <button
+                  onClick={() => setActiveTab('products')}
+                  className={`flex items-center space-x-3 pb-2 border-b-2 transition-all ${
+                    activeTab === 'products'
+                      ? 'border-green-600 text-green-700'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg ${activeTab === 'products' ? 'bg-green-100' : 'bg-gray-100'}`}>
+                    <Package className={`w-5 h-5 ${activeTab === 'products' ? 'text-green-600' : 'text-gray-500'}`} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">პროდუქტების მართვა</h2>
-                    <p className="text-sm text-gray-600">მართეთ თქვენი მაღაზიის ასორტიმენტი</p>
+                    <h2 className="text-xl font-semibold">პროდუქტები</h2>
+                    <p className="text-sm">მაღაზიის ასორტიმენტი</p>
                   </div>
-                </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('orders')}
+                  className={`flex items-center space-x-3 pb-2 border-b-2 transition-all ${
+                    activeTab === 'orders'
+                      ? 'border-green-600 text-green-700'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg ${activeTab === 'orders' ? 'bg-green-100' : 'bg-gray-100'}`}>
+                    <ShoppingBag className={`w-5 h-5 ${activeTab === 'orders' ? 'text-green-600' : 'text-gray-500'}`} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold">შეკვეთები</h2>
+                    <p className="text-sm">მომხმარებელთა შეკვეთები</p>
+                  </div>
+                </button>
               </div>
             </div>
-            <ProductManager />
+
+            {/* Tab Content */}
+            {activeTab === 'products' && <ProductManager />}
+            {activeTab === 'orders' && <OrdersManager />}
           </div>
         </div>
       </div>

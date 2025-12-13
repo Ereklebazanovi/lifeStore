@@ -15,7 +15,9 @@ import ProductsPage from "./pages/ProductsPage";
 import AboutPage from "./pages/AboutPage";
 import CartPage from "./pages/CartPage";
 import AdminPage from "./pages/admin/AdminPage";
-import ProductDetailsPage from "./pages/ProductDetailsPage"; // დარწმუნდი რომ იმპორტირებულია
+import ProductDetailsPage from "./pages/ProductDetailsPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import OrderSuccessPage from "./pages/OrderSuccessPage";
 import LoadingScreen from "./components/LoadingScreen";
 import ScrollToTop from "./components/ScrollToTop";
 import PageTransition from "./components/PageTransition";
@@ -66,6 +68,22 @@ const AnimatedRoutes: React.FC = () => {
           element={
             <PageTransition>
               <CartPage />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <PageTransition>
+              <CheckoutPage />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/order-success/:orderId"
+          element={
+            <PageTransition>
+              <OrderSuccessPage />
             </PageTransition>
           }
         />

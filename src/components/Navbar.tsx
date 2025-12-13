@@ -121,73 +121,70 @@ const Navbar: React.FC = () => {
         />
 
         {/* Menu Content (Drawer) */}
-        <div className={`absolute top-0 right-0 w-[85%] max-w-sm h-full bg-white shadow-2xl transition-transform duration-300 ease-out transform ${
+        <div className={`absolute top-0 right-0 w-[80%] max-w-xs h-full bg-white shadow-2xl transition-transform duration-300 ease-out transform ${
             isMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}>
-            
+
             {/* Drawer Header */}
-            <div className="flex justify-between items-center px-6 h-24 border-b border-stone-100 bg-stone-50/50">
-                <span className="text-2xl font-bold text-stone-900 tracking-tight">LifeStore</span>
-                <button 
+            <div className="flex justify-between items-center px-4 h-16 border-b border-stone-100 bg-stone-50/50">
+                <span className="text-lg font-bold text-stone-900 tracking-tight">LifeStore</span>
+                <button
                     onClick={() => setIsMenuOpen(false)}
-                    className="p-2 bg-white rounded-full shadow-sm text-stone-500 hover:text-red-500 transition-colors"
+                    className="p-1.5 bg-white rounded-full shadow-sm text-stone-500 hover:text-red-500 transition-colors"
                 >
-                    <X className="h-6 w-6" />
+                    <X className="h-5 w-5" />
                 </button>
             </div>
 
-            <div className="flex flex-col h-full pt-8 px-6 pb-8 overflow-y-auto">
-                
+            <div className="flex flex-col h-full pt-6 px-6 pb-6 overflow-y-auto">
+
                 {/* Mobile Links */}
-                <div className="space-y-3 mb-8">
+                <div className="space-y-2 mb-6">
                     <MobileNavLink to="/" isActive={isActivePath('/')} onClick={() => setIsMenuOpen(false)}>მთავარი</MobileNavLink>
                     <MobileNavLink to="/products" isActive={isActivePath('/products')} onClick={() => setIsMenuOpen(false)}>პროდუქტები</MobileNavLink>
                     <MobileNavLink to="/about" isActive={isActivePath('/about')} onClick={() => setIsMenuOpen(false)}>ჩვენს შესახებ</MobileNavLink>
-                    
+
                     {user?.role === 'admin' && (
                         <Link
                             to="/admin"
                             onClick={() => setIsMenuOpen(false)}
-                            className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-orange-50 text-orange-800 font-bold border border-orange-100 mt-4"
+                            className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-orange-50 text-orange-800 font-semibold border border-orange-100 mt-2"
                         >
-                            <ShieldCheck className="w-6 h-6" />
+                            <ShieldCheck className="w-4 h-4" />
                             ადმინ პანელი
                         </Link>
                     )}
                 </div>
 
                 {/* Mobile Auth Section (At the bottom) */}
-                <div className="mt-auto">
+                <div className="mt-12 pt-4 border-t border-stone-200">
                     {user ? (
-                        <div className="bg-stone-50 p-5 rounded-3xl border border-stone-200 shadow-sm">
-                            <div className="flex items-center gap-4 mb-5">
-                                <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-md">
-                                    {user.displayName?.[0]?.toUpperCase() || <User className="w-6 h-6" />}
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3 px-3 py-2 bg-emerald-50 rounded-xl border border-emerald-100">
+                                <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                    {user.displayName?.[0]?.toUpperCase() || <User className="w-4 h-4" />}
                                 </div>
-                                <div className="overflow-hidden">
-                                    <p className="font-bold text-stone-900 text-lg truncate">{user.displayName || 'მომხმარებელი'}</p>
-                                    <p className="text-sm text-stone-500 truncate">{user.email}</p>
+                                <div className="overflow-hidden flex-1">
+                                    <p className="font-semibold text-emerald-800 text-sm truncate">{user.displayName || 'მომხმარებელი'}</p>
+                                    <p className="text-xs text-emerald-600 truncate">{user.email}</p>
                                 </div>
                             </div>
-                            <button 
+                            <button
                                 onClick={handleMobileSignOut}
-                                className="w-full flex items-center justify-center gap-2 py-3.5 bg-white border border-stone-200 text-red-600 font-bold rounded-2xl hover:bg-red-50 transition-colors shadow-sm"
+                                className="w-full flex items-center justify-center gap-2 py-2.5 bg-stone-50 border border-stone-200 text-stone-700 font-semibold rounded-xl hover:bg-stone-100 transition-colors"
                             >
-                                <LogOut className="w-5 h-5" />
+                                <LogOut className="w-4 h-4" />
                                 გასვლა
                             </button>
                         </div>
                     ) : (
-                        <div className="space-y-4">
-                            <p className="text-center text-stone-500 text-sm">სრული წვდომისთვის გაიარეთ ავტორიზაცია</p>
-                            <button 
-                                onClick={handleMobileSignIn}
-                                className="w-full flex items-center justify-center gap-3 py-4 bg-stone-900 text-white font-bold rounded-2xl text-lg shadow-lg active:scale-95 transition-transform"
-                            >
-                                <LogIn className="w-6 h-6" />
-                                შესვლა / რეგისტრაცია
-                            </button>
-                        </div>
+                        <button
+                            onClick={handleMobileSignIn}
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors shadow-sm"
+                        >
+                            <LogIn className="w-5 h-5" />
+                            შესვლა
+                        </button>
                     )}
                 </div>
             </div>
@@ -215,9 +212,9 @@ const MobileNavLink = ({ to, isActive, children, onClick }: { to: string, isActi
     <Link
         to={to}
         onClick={onClick}
-        className={`block px-5 py-4 rounded-2xl text-xl font-bold transition-all ${
-            isActive 
-            ? 'bg-emerald-50 text-emerald-800 border border-emerald-100 shadow-sm' 
+        className={`block px-4 py-3 rounded-xl font-semibold transition-all ${
+            isActive
+            ? 'bg-emerald-50 text-emerald-800 border border-emerald-100 shadow-sm'
             : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900 border border-transparent'
         }`}
     >

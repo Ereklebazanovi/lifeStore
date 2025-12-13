@@ -129,7 +129,7 @@ const ProductManager: React.FC = () => {
                         <div className="ml-4">
                           <div className="text-sm font-semibold text-gray-900">{product.name}</div>
                           <div className="text-xs text-gray-500 mt-1 max-w-xs truncate">
-                            {product.description.substring(0, 60)}...
+                            {product.description ? product.description.substring(0, 60) + '...' : 'აღწერა არ არის მითითებული'}
                           </div>
                         </div>
                       </div>

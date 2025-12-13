@@ -1,29 +1,29 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Leaf, Mail, Phone, MapPin, Facebook, Instagram } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Leaf, Mail, Phone, MapPin, Facebook, Instagram } from "lucide-react";
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   const navigationLinks = [
-    { to: '/', label: 'მთავარი' },
-    { to: '/products', label: 'პროდუქტები' },
-    { to: '/about', label: 'ჩვენს შესახებ' },
-    { to: '/contact', label: 'კონტაქტი' }
+    { to: "/", label: "მთავარი" },
+    { to: "/products", label: "პროდუქტები" },
+    { to: "/about", label: "ჩვენს შესახებ" },
+    { to: "/contact", label: "კონტაქტი" },
   ];
 
   const socialLinks = [
     {
       icon: Facebook,
-      href: 'https://www.facebook.com/lifestore.ge',
-      label: 'Facebook'
+      href: "https://www.facebook.com/lifestore.ge",
+      label: "Facebook",
     },
     {
       icon: Instagram,
-      href: 'https://www.instagram.com/lifestore.ge',
-      label: 'Instagram'
-    }
+      href: "https://www.instagram.com/lifestore.ge",
+      label: "Instagram",
+    },
   ];
 
   return (
@@ -31,7 +31,6 @@ const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-4">
-
             {/* Brand Section */}
             <motion.div
               className="space-y-4"
@@ -49,7 +48,8 @@ const Footer: React.FC = () => {
                 </span>
               </div>
               <p className="text-stone-600 leading-relaxed max-w-sm">
-                ეკო-მეგობრული ნივთები შენი სახლისთვის. ბუნებრივი მასალები და მდგრადი ცხოვრება.
+                ეკო-მეგობრული ნივთები შენი სახლისთვის. ბუნებრივი მასალები და
+                მდგრადი ცხოვრება.
               </p>
             </motion.div>
 
@@ -92,19 +92,24 @@ const Footer: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <Mail className="w-4 h-4 text-emerald-600" />
-                  <span className="text-stone-600 font-medium">info@lifestore.ge</span>
+                  <span className="text-stone-600 font-medium">
+                    info@lifestore.ge
+                  </span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Phone className="w-4 h-4 text-emerald-600" />
-                  <span className="text-stone-600 font-medium">+995 555 123 456</span>
+                  <span className="text-stone-600 font-medium">
+                    +995 511 72 72 57
+                  </span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <MapPin className="w-4 h-4 text-emerald-600" />
-                  <span className="text-stone-600 font-medium">თბილისი, საქართველო</span>
+                  <span className="text-stone-600 font-medium">
+                    თბილისი, საქართველო
+                  </span>
                 </div>
               </div>
             </motion.div>
-
           </div>
         </div>
 

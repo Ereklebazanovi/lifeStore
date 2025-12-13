@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   ShoppingCart,
   ArrowLeft,
@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Leaf,
   AlertCircle,
+  Share2,
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
@@ -45,9 +46,7 @@ const ProductDetailsPage: React.FC = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-
     addItem(product, quantity);
-
     if (product.stock > 0) {
       showToast(`${quantity} x ${product.name} კალათაში დაემატა!`, "success");
     }
@@ -63,88 +62,99 @@ const ProductDetailsPage: React.FC = () => {
 
   if (isFetching || isLoading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
-        <AlertCircle className="w-16 h-16 text-stone-400 mb-4" />
-        <h2 className="text-2xl font-bold text-stone-800 mb-2">
+      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4 text-center">
+        <AlertCircle className="w-16 h-16 text-stone-300 mb-4" />
+        <h2 className="text-xl font-bold text-stone-800 mb-2">
           პროდუქტი ვერ მოიძებნა
         </h2>
-        <Link
-          to="/products"
-          className="text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-2"
+        <button
+          onClick={() => navigate("/products")}
+          className="text-emerald-600 font-medium"
         >
-          <ArrowLeft className="w-4 h-4" />
-          დაბრუნება პროდუქტებში
-        </Link>
+          პროდუქტებში დაბრუნება
+        </button>
       </div>
     );
   }
 
   const isOutOfStock = product.stock === 0;
-  // დინამიური ფასის კალკულაცია
   const totalPrice = product.price * quantity;
 
   return (
-    <div className="min-h-screen bg-stone-50 py-8 lg:py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumb / Back Button */}
+    <div className="min-h-screen bg-white md:bg-stone-50 pb-28 md:pb-12 md:pt-8">
+      {/* --- MOBILE HEADER (Sticky Top) --- */}
+      <div className="md:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-100 px-4 h-14 flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center text-stone-600 hover:text-emerald-600 transition-colors mb-8 group"
+          className="p-2 -ml-2 text-stone-700"
         >
-          <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <span className="font-bold text-stone-900 truncate max-w-[200px]">
+          {product.name}
+        </span>
+        <button className="p-2 -mr-2 text-stone-700">
+          <Share2 className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="max-w-7xl mx-auto md:px-6 lg:px-8">
+        {/* DESKTOP BACK BUTTON */}
+        <button
+          onClick={() => navigate(-1)}
+          className="hidden md:flex items-center text-stone-500 hover:text-stone-900 transition-colors mb-6 group text-sm font-medium"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
           უკან დაბრუნება
         </button>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
-          <div className="grid lg:grid-cols-2 gap-0">
-            {/* LEFT SIDE: Images Gallery */}
-            <div className="p-6 lg:p-10 bg-white">
-              {/* Main Image */}
-              <div className="aspect-square rounded-2xl overflow-hidden bg-stone-50 mb-4 border border-stone-100 relative">
+        {/* --- MAIN CARD --- */}
+        <div className="bg-white md:rounded-3xl md:shadow-sm md:border border-stone-200 overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+            {/* --- LEFT: IMAGE GALLERY --- */}
+            <div className="bg-white md:border-r border-stone-100 relative">
+              {/* Main Image Wrapper */}
+              <div className="relative w-full aspect-square md:aspect-auto md:h-[500px] flex items-center justify-center bg-stone-50/50">
                 {isOutOfStock && (
-                  <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center">
-                    <span className="bg-red-500 text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg">
-                      მარაგში არ არის
-                    </span>
+                  <div className="absolute top-4 left-4 z-10 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+                    მარაგში არ არის
                   </div>
                 )}
                 {product.images && product.images.length > 0 ? (
                   <img
                     src={selectedImage}
                     alt={product.name}
-                    className="w-full h-full object-contain mix-blend-multiply p-8" // Added p-8 for breathing room
+                    className="w-full h-full object-contain p-6 md:p-12 transition-transform duration-300 hover:scale-105"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Leaf className="w-20 h-20 text-emerald-200" />
-                  </div>
+                  <Leaf className="w-16 h-16 text-emerald-200" />
                 )}
               </div>
 
-              {/* Thumbnails */}
+              {/* Thumbnails (Scrollable on Mobile) */}
               {product.images && product.images.length > 1 && (
-                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                <div className="flex gap-3 overflow-x-auto p-4 md:px-8 md:pb-8 scrollbar-hide border-b md:border-b-0 border-stone-100">
                   {product.images.map((img, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImage(img)}
-                      className={`flex-shrink-0 w-20 h-20 rounded-xl border-2 overflow-hidden transition-all ${
+                      className={`relative flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-xl border-2 overflow-hidden transition-all ${
                         selectedImage === img
-                          ? "border-emerald-500 ring-2 ring-emerald-100 opacity-100"
-                          : "border-stone-200 hover:border-emerald-300 opacity-60 hover:opacity-100"
+                          ? "border-emerald-500 ring-2 ring-emerald-100"
+                          : "border-stone-100 opacity-70 hover:opacity-100"
                       }`}
                     >
                       <img
                         src={img}
-                        alt={`View ${index + 1}`}
+                        alt=""
                         className="w-full h-full object-cover"
                       />
                     </button>
@@ -153,120 +163,182 @@ const ProductDetailsPage: React.FC = () => {
               )}
             </div>
 
-            {/* RIGHT SIDE: Product Info - IMPROVED LAYOUT */}
-            <div className="p-6 lg:p-10 bg-stone-50/30 flex flex-col h-full border-t lg:border-t-0 lg:border-l border-stone-200">
+            {/* --- RIGHT: INFO SECTION --- */}
+            <div className="p-5 md:p-8 lg:p-12 flex flex-col h-full">
               <div className="mb-auto">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wide rounded-full">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider rounded-lg">
                     {product.category}
                   </span>
                   {product.stock > 0 && product.stock < 5 && (
-                    <span className="text-xs font-medium text-orange-600 flex items-center gap-1 animate-pulse">
-                      <AlertCircle className="w-3 h-3" />
-                      ბოლო {product.stock} ერთეული
+                    <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100">
+                      დარჩენილია: {product.stock}
                     </span>
                   )}
                 </div>
 
-                <h1 className="text-3xl lg:text-4xl font-bold text-stone-900 mb-6 leading-tight">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-stone-900 mb-4 leading-tight">
                   {product.name}
                 </h1>
 
-                {/* Price Section - BIGGER & DYNAMIC */}
-                <div className="flex flex-col mb-8 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-                  <span className="text-sm text-stone-500 font-medium mb-1">
-                    ჯამური ღირებულება
-                  </span>
+                {/* Desktop Price View */}
+                <div className="hidden md:block mb-6">
                   <div className="flex items-baseline gap-3">
                     <span className="text-4xl font-bold text-emerald-700">
-                      ₾{totalPrice.toFixed(2)}
+                      ₾{product.price}
                     </span>
                     {quantity > 1 && (
-                      <span className="text-stone-400 text-sm font-medium">
-                        (₾{product.price} / ცალი)
+                      <span className="text-stone-400 font-medium">
+                        x {quantity} ცალი
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="prose prose-stone max-w-none mb-10">
-                  <p className="text-stone-600 leading-relaxed text-lg">
-                    {product.description}
-                  </p>
+                {/* Mobile Price View */}
+                <div className="md:hidden mb-6 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-stone-500">ერთეულის ფასი</p>
+                    <span className="text-2xl font-bold text-emerald-700">
+                      ₾{product.price}
+                    </span>
+                  </div>
+                  {!isOutOfStock && (
+                    <div className="flex items-center bg-stone-100 rounded-xl p-1">
+                      <button
+                        onClick={() => handleQuantityChange(-1)}
+                        disabled={quantity <= 1}
+                        className="w-10 h-10 flex items-center justify-center text-stone-600 disabled:opacity-30"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="w-8 text-center font-bold text-stone-900">
+                        {quantity}
+                      </span>
+                      <button
+                        onClick={() => handleQuantityChange(1)}
+                        disabled={quantity >= product.stock}
+                        className="w-10 h-10 flex items-center justify-center text-stone-600 disabled:opacity-30"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {/* Features List */}
-                <div className="space-y-4 mb-10">
-                  <div className="flex items-center gap-3 text-stone-700 font-medium">
-                    <div className="p-2 bg-white rounded-full shadow-sm text-emerald-600">
-                      <Leaf className="w-5 h-5" />
+                <div className="prose prose-stone prose-sm md:prose-base max-w-none mb-8 text-stone-600 leading-relaxed">
+                  <p>{product.description}</p>
+                </div>
+
+                {/* Features Grid - FIXED BOXES */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+                  {/* Box 1 */}
+                  <div className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl border border-stone-100 h-full">
+                    <div className="p-2 bg-white rounded-full text-emerald-600 shadow-sm flex-shrink-0">
+                      <Leaf className="w-4 h-4" />
                     </div>
-                    <span>100% ეკოლოგიურად სუფთა</span>
+                    <span className="text-xs md:text-sm font-bold text-stone-700">
+                      100% ეკო
+                    </span>
                   </div>
-                  <div className="flex items-center gap-3 text-stone-700 font-medium">
-                    <div className="p-2 bg-white rounded-full shadow-sm text-emerald-600">
-                      <Truck className="w-5 h-5" />
+
+                  {/* Box 2 - Fixed for long text */}
+                  <div className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl border border-stone-100 h-full">
+                    <div className="p-2 bg-white rounded-full text-emerald-600 shadow-sm flex-shrink-0">
+                      <Truck className="w-4 h-4" />
                     </div>
-                    <span>მიწოდება მთელ საქართველოში</span>
+                    <div className="flex flex-col">
+                      <span className="text-xs md:text-sm font-bold text-stone-700 leading-tight">
+                        უფასო მიტანა თბილისში
+                      </span>
+                      <span className="text-[10px] md:text-xs text-stone-500 mt-0.5">
+                        რეგიონებში (7₾)
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-stone-700 font-medium">
-                    <div className="p-2 bg-white rounded-full shadow-sm text-emerald-600">
-                      <ShieldCheck className="w-5 h-5" />
+
+                  {/* Box 3 */}
+                  <div className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl border border-stone-100 h-full">
+                    <div className="p-2 bg-white rounded-full text-emerald-600 shadow-sm flex-shrink-0">
+                      <ShieldCheck className="w-4 h-4" />
                     </div>
-                    <span>ხარისხის გარანტია</span>
+                    <span className="text-xs md:text-sm font-bold text-stone-700">
+                      ხარისხის გარანტია
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Action Area - IMPROVED UI */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 mt-6 lg:mt-0">
-                {isOutOfStock ? (
-                  <div className="text-center py-2">
-                    <p className="text-red-500 font-bold text-lg">
-                      პროდუქტი დროებით ამოწურულია
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-4 !mt-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-stone-900 font-semibold">
-                        რაოდენობა:
-                      </span>
-                      {/* Quantity Selector - Bigger & Better */}
-                      <div className="flex items-center border-2 border-stone-200 rounded-xl">
-                        <button
-                          onClick={() => handleQuantityChange(-1)}
-                          disabled={quantity <= 1}
-                          className="w-12 h-10 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-50 rounded-l-lg disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                        >
-                          <Minus className="w-5 h-5" />
-                        </button>
-                        <span className="w-12 text-center font-bold text-xl text-stone-900 border-x border-stone-200 py-1 bg-stone-50">
-                          {quantity}
-                        </span>
-                        <button
-                          onClick={() => handleQuantityChange(1)}
-                          disabled={quantity >= product.stock}
-                          className="w-12 h-10 flex items-center justify-center text-stone-500 hover:text-stone-900 hover:bg-stone-50 rounded-r-lg disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                        >
-                          <Plus className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Add to Cart Button - Wide & Bold */}
+              {/* --- DESKTOP ACTION AREA --- */}
+              <div className="hidden md:flex items-center gap-4 pt-6 border-t border-stone-100 mt-auto">
+                {!isOutOfStock && (
+                  <div className="flex items-center bg-stone-50 border border-stone-200 rounded-xl h-14 px-2">
                     <button
-                      onClick={handleAddToCart}
-                      className="w-full bg-stone-900 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 active:translate-y-0 text-lg"
+                      onClick={() => handleQuantityChange(-1)}
+                      disabled={quantity <= 1}
+                      className="w-12 h-full flex items-center justify-center hover:bg-white rounded-lg transition-colors disabled:opacity-30"
                     >
-                      <ShoppingCart className="w-6 h-6" />
-                      <span>კალათაში დამატება</span>
+                      <Minus className="w-5 h-5 text-stone-600" />
+                    </button>
+                    <span className="w-12 text-center font-bold text-xl text-stone-900">
+                      {quantity}
+                    </span>
+                    <button
+                      onClick={() => handleQuantityChange(1)}
+                      disabled={quantity >= product.stock}
+                      className="w-12 h-full flex items-center justify-center hover:bg-white rounded-lg transition-colors disabled:opacity-30"
+                    >
+                      <Plus className="w-5 h-5 text-stone-600" />
                     </button>
                   </div>
                 )}
+
+                <button
+                  onClick={handleAddToCart}
+                  disabled={isOutOfStock}
+                  className="flex-1 bg-stone-900 hover:bg-emerald-600 text-white font-bold h-14 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:bg-stone-300 disabled:cursor-not-allowed disabled:shadow-none"
+                >
+                  {isOutOfStock ? (
+                    <span>მარაგი ამოწურულია</span>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-5 h-5" />
+                      <span>დამატება — ₾{totalPrice.toFixed(2)}</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* --- MOBILE STICKY BOTTOM BAR --- */}
+      <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-stone-200 p-4 safe-area-bottom z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="flex gap-4">
+          <div className="flex flex-col justify-center">
+            <span className="text-xs text-stone-500 font-medium">
+              ჯამური ფასი
+            </span>
+            <span className="text-xl font-bold text-emerald-700">
+              ₾{totalPrice.toFixed(2)}
+            </span>
+          </div>
+
+          <button
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            className="flex-1 bg-stone-900 active:bg-emerald-700 text-white font-bold h-12 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:bg-stone-300"
+          >
+            {isOutOfStock ? (
+              <span className="text-sm">ამოწურულია</span>
+            ) : (
+              <>
+                <ShoppingCart className="w-5 h-5" />
+                <span>დამატება</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>

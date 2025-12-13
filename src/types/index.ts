@@ -32,39 +32,74 @@ export interface CartItem {
 // Order Types
 export interface Order {
   id: string;
-  userId?: string;
-  customerInfo: CustomerInfo;
+  userId: string | null; // null = guest user
+  orderNumber: string; // LS-240001 format
+
+  // Product Info
   items: OrderItem[];
-  total: number;
-  status: OrderStatus;
-  paymentStatus: PaymentStatus;
-  source: OrderSource;
+  subtotal: number;
+  shippingCost: number;
+  totalAmount: number;
+
+  // Customer Info
+  customerInfo: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email: string;
+    isGuest: boolean;
+  };
+
+  // Delivery Info
+  deliveryInfo: {
+    city: string;
+    address: string;
+    comment?: string;
+  };
+
+  // Payment & Status
+  paymentMethod: 'cash' | 'tbc_bank' | 'visa' | 'mastercard';
+  paymentStatus: 'pending' | 'paid' | 'failed';
+  orderStatus: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+
+  // Metadata
   createdAt: Date;
   updatedAt: Date;
+  deliveredAt?: Date;
+
+  // Admin notes
+  adminNotes?: string;
+  trackingNumber?: string;
 }
 
 export interface OrderItem {
   productId: string;
-  productName: string;
+  product: Product; // მთელი product object
   quantity: number;
-  price: number;
-  total: number;
+  price: number; // unit price at time of order
+  total: number; // quantity * price
 }
 
-export interface CustomerInfo {
-  name: string;
-  email: string;
-  phone: string;
-  address: {
-    street: string;
-    city: string;
-    postalCode: string;
+// For creating new orders
+export interface CreateOrderRequest {
+  userId: string | null;
+  items: CartItem[];
+  customerInfo: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email: string;
   };
+  deliveryInfo: {
+    city: string;
+    address: string;
+    comment?: string;
+  };
+  paymentMethod: 'cash' | 'tbc_bank';
 }
 
-export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
-export type OrderSource = 'website' | 'facebook' | 'manual';
 
 // User Types (for admin)
 export interface User {
@@ -92,4 +127,17 @@ export interface ProductState {
   products: Product[];
   isLoading: boolean;
   categories: string[];
+}
+
+
+// Checkout Form Types
+export interface DeliveryInfo {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  city: string;
+  address: string;
+  comment?: string;
+  paymentMethod: 'cash' | 'card';
 }
