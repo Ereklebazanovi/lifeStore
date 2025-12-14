@@ -7,7 +7,9 @@ export const ADMIN_CONFIG = {
 
   // ბიზნეს ინფორმაცია
   BUSINESS_NAME: "LifeStore",
-  BUSINESS_PHONE: "+995 555 123 456", // 👈 შეცვალე ნამდვილი ნომრით
+  //511 72 72 57
+
+  BUSINESS_PHONE: "+995 511 72 72 57", // 👈 შეცვალე  ნამდვილი ნომრით
   BUSINESS_EMAIL: "info@lifestore.ge", // 👈 შეცვალე ნამდვილი ბიზნეს მეილით
 };
 

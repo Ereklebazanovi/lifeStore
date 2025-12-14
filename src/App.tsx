@@ -22,6 +22,9 @@ import OrderHistoryPage from "./pages/OrderHistoryPage";
 import LoadingScreen from "./components/LoadingScreen";
 import ScrollToTop from "./components/ScrollToTop";
 import PageTransition from "./components/PageTransition";
+import RefundPolicy from "./pages/RefundPolicy";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { useAuthStore } from "./store/authStore";
 import { useCartStore } from "./store/cartStore";
 import { ToastContainer } from "./components/ui/Toast";
@@ -61,6 +64,30 @@ const AnimatedRoutes: React.FC = () => {
           element={
             <PageTransition>
               <ProductDetailsPage />
+            </PageTransition>
+          }
+        />
+         <Route
+          path="/refund-policy"
+          element={
+            <PageTransition>
+              <RefundPolicy />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/terms"
+          element={
+            <PageTransition>
+              <TermsAndConditions />
+            </PageTransition>
+          }
+        />
+         <Route
+          path="/privacy-policy"
+          element={
+            <PageTransition>
+              <PrivacyPolicy />
             </PageTransition>
           }
         />

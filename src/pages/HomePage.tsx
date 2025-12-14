@@ -10,7 +10,7 @@ import {
   CheckCircle,
   Facebook,
   Instagram,
-  Utensils
+  Utensils,
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
@@ -21,18 +21,18 @@ const HERO_IMAGES = [
   {
     url: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=2070&auto=format&fit=crop",
     title: "LifeStore - ჰარმონია დეტალებში",
-    subtitle: "შექმენი ჯანსაღი და ესთეტიური გარემო შენს სამზარეულოში"
+    subtitle: "შექმენი ჯანსაღი და ესთეტიური გარემო შენს სამზარეულოში",
   },
   {
     url: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=2070&auto=format&fit=crop",
     title: "ჯანმრთელობისთვის უვნებელი",
-    subtitle: "უმაღლესი ხარისხის, ეკო-მეგობრული მასალები შენი ოჯახისთვის"
+    subtitle: "უმაღლესი ხარისხის, ეკო-მეგობრული მასალები შენი ოჯახისთვის",
   },
   {
     url: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?q=80&w=2032&auto=format&fit=crop",
     title: "თანამედროვე დიზაინი",
-    subtitle: "დახვეწილი აქსესუარები, რომლებიც ალამაზებენ ყოველდღიურობას"
-  }
+    subtitle: "დახვეწილი აქსესუარები, რომლებიც ალამაზებენ ყოველდღიურობას",
+  },
 ];
 
 const HomePage: React.FC = () => {
@@ -54,13 +54,12 @@ const HomePage: React.FC = () => {
   const handleAddToCart = (product: any) => {
     if (product.stock > 0) {
       addItem(product);
-      showToast(`${product.name} კალათაში დაემატა!`, 'success');
+      showToast(`${product.name} კალათაში დაემატა!`, "success");
     }
   };
 
   return (
     <div className="min-h-screen bg-stone-50 overflow-x-hidden">
-      
       {/* --- HERO SLIDER --- */}
       <section className="relative h-[400px] lg:h-[520px] w-full overflow-hidden">
         {HERO_IMAGES.map((slide, index) => (
@@ -107,8 +106,8 @@ const HomePage: React.FC = () => {
               key={index}
               onClick={() => setCurrentSlide(index)}
               className={`h-1.5 rounded-full transition-all duration-500 ${
-                index === currentSlide 
-                  ? "bg-white w-8" 
+                index === currentSlide
+                  ? "bg-white w-8"
                   : "bg-white/40 w-2 hover:bg-white/60"
               }`}
             />
@@ -120,13 +119,14 @@ const HomePage: React.FC = () => {
       <section className="py-10 bg-white border-b border-stone-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
-            
             <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
               <div className="p-3.5 bg-emerald-50 text-emerald-700 rounded-2xl">
                 <Leaf className="w-6 h-6" />
               </div>
               <div className="text-center md:text-left">
-                <h3 className="font-bold text-stone-900 mb-1">ეკო & უსაფრთხო</h3>
+                <h3 className="font-bold text-stone-900 mb-1">
+                  ეკო & უსაფრთხო
+                </h3>
                 <p className="text-sm text-stone-500 leading-relaxed">
                   ჯანმრთელობისთვის უვნებელი, ეკოლოგიურად სუფთა მასალები.
                 </p>
@@ -138,7 +138,9 @@ const HomePage: React.FC = () => {
                 <Utensils className="w-6 h-6" />
               </div>
               <div className="text-center md:text-left">
-                <h3 className="font-bold text-stone-900 mb-1">პრემიუმ ხარისხი</h3>
+                <h3 className="font-bold text-stone-900 mb-1">
+                  პრემიუმ ხარისხი
+                </h3>
                 <p className="text-sm text-stone-500 leading-relaxed">
                   თანამედროვე დიზაინს მორგებული სამზარეულოს და სახლის ნივთები.
                 </p>
@@ -150,13 +152,14 @@ const HomePage: React.FC = () => {
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div className="text-center md:text-left">
-                <h3 className="font-bold text-stone-900 mb-1">პირდაპირი იმპორტი</h3>
+                <h3 className="font-bold text-stone-900 mb-1">
+                  პირდაპირი იმპორტი
+                </h3>
                 <p className="text-sm text-stone-500 leading-relaxed">
                   ჩვენ თვითონ ვახდენთ იმპორტს, რაც საუკეთესო ფასს განაპირობებს.
                 </p>
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -173,42 +176,53 @@ const HomePage: React.FC = () => {
                 პოპულარული ნივთები
               </h2>
             </div>
-            <Link to="/products" className="text-stone-500 hover:text-emerald-600 font-medium flex items-center gap-2 group transition-colors">
-              სრული კატალოგი <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <Link
+              to="/products"
+              className="text-stone-500 hover:text-emerald-600 font-medium flex items-center gap-2 group transition-colors"
+            >
+              სრული კატალოგი{" "}
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
           {isLoading ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl h-80 animate-pulse border border-stone-100">
-                   <div className="h-48 bg-stone-200 w-full"></div>
-                   <div className="p-4 space-y-2">
-                      <div className="h-4 bg-stone-200 w-3/4 rounded"></div>
-                      <div className="h-4 bg-stone-200 w-1/2 rounded"></div>
-                   </div>
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl h-80 animate-pulse border border-stone-100"
+                >
+                  <div className="h-48 bg-stone-200 w-full"></div>
+                  <div className="p-4 space-y-2">
+                    <div className="h-4 bg-stone-200 w-3/4 rounded"></div>
+                    <div className="h-4 bg-stone-200 w-1/2 rounded"></div>
+                  </div>
                 </div>
               ))}
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-24 bg-white rounded-3xl border border-stone-100">
               <Leaf className="w-16 h-16 text-emerald-200 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-stone-900 mb-2">კოლექცია მალე განახლდება</h3>
+              <h3 className="text-xl font-bold text-stone-900 mb-2">
+                კოლექცია მალე განახლდება
+              </h3>
               <p className="text-stone-500">პროდუქტები ემატება...</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 lg:gap-8">
               {products.slice(0, 8).map((product) => {
                 const isOutOfStock = product.stock === 0;
-                
+
                 return (
                   <div
                     key={product.id}
                     className="group bg-white rounded-2xl border border-stone-100 hover:border-emerald-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col"
                   >
                     {/* Image Area */}
-                    <Link to={`/product/${product.id}`} className="relative aspect-[4/5] overflow-hidden bg-stone-50">
-                      
+                    <Link
+                      to={`/product/${product.id}`}
+                      className="relative aspect-[4/5] overflow-hidden bg-stone-50"
+                    >
                       {/* Badges */}
                       {isOutOfStock ? (
                         <div className="absolute top-3 left-3 z-10 bg-stone-900/90 backdrop-blur text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">
@@ -224,7 +238,9 @@ const HomePage: React.FC = () => {
                         <img
                           src={product.images[0]}
                           alt={product.name}
-                          className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${isOutOfStock ? 'grayscale opacity-70' : ''}`}
+                          className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${
+                            isOutOfStock ? "grayscale opacity-70" : ""
+                          }`}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-stone-300">
@@ -249,21 +265,23 @@ const HomePage: React.FC = () => {
 
                     {/* Content */}
                     <div className="p-4 flex flex-col flex-grow">
-                      <div className="mb-1 text-xs text-stone-500 line-clamp-1">{product.category}</div>
+                      <div className="mb-1 text-xs text-stone-500 line-clamp-1">
+                        {product.category}
+                      </div>
                       <Link to={`/product/${product.id}`}>
                         <h3 className="font-bold text-stone-900 text-sm lg:text-base line-clamp-2 leading-snug hover:text-emerald-700 transition-colors mb-2">
                           {product.name}
                         </h3>
                       </Link>
-                      
+
                       <div className="mt-auto flex items-center justify-between">
                         <span className="text-lg font-bold text-emerald-700">
                           ₾{product.price}
                         </span>
                         <div className="flex text-yellow-400 gap-0.5">
-                           {[...Array(5)].map((_, i) => (
-                             <Star key={i} className="w-3 h-3 fill-current" />
-                           ))}
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className="w-3 h-3 fill-current" />
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -284,20 +302,21 @@ const HomePage: React.FC = () => {
             LifeStore - შენი სახლისთვის
           </h2>
           <p className="text-stone-400 mb-8 max-w-lg mx-auto">
-            გამოგვყვევით სოციალურ ქსელებში, ნახეთ ახალი კოლექციები და მიიღეთ რჩევები სახლის მოწყობაზე.
+            გამოგვყვევით სოციალურ ქსელებში, ნახეთ ახალი კოლექციები და მიიღეთ
+            რჩევები სახლის მოწყობაზე.
           </p>
           <div className="flex justify-center gap-5">
-            <a 
-              href="https://www.facebook.com/lifestore.ge" 
-              target="_blank" 
+            <a
+              href="https://www.facebook.com/lifestore.ge"
+              target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-5 py-3 bg-blue-600 rounded-full hover:bg-blue-700 transition-all font-medium"
             >
               <Facebook className="w-5 h-5" /> Facebook
             </a>
-            <a 
-              href="https://www.instagram.com/lifestore.ge" 
-              target="_blank" 
+            <a
+              href="https://www.instagram.com/lifestore.ge"
+              target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full hover:opacity-90 transition-all font-medium"
             >
@@ -306,7 +325,6 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
-
     </div>
   );
 };
