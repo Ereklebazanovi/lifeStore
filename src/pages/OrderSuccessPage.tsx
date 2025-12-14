@@ -1,5 +1,6 @@
+//orderSuccessPage.tsx
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Package, MapPin, ArrowLeft, Copy, Check, Download, Phone, Mail } from 'lucide-react';
 import { OrderService } from '../services/orderService';
 import { showToast } from '../components/ui/Toast';
@@ -8,6 +9,7 @@ import type { Order } from '../types';
 const OrderSuccessPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -38,6 +40,20 @@ const OrderSuccessPage: React.FC = () => {
 
     fetchOrder();
   }, [orderId, navigate]);
+
+  // 🎯 Auto-print logic - როცა action=print არის URL-ში
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'print' && order && !isLoading) {
+      // 1 წამის გაყოვნება page-ის სრულად ჩასატვირთად
+      const timer = setTimeout(() => {
+        handlePrint();
+        showToast('PDF ჩამოტვირთვა იწყება...', 'info');
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [order, isLoading, searchParams]);
 
   const copyOrderNumber = () => {
     if (order?.orderNumber) {

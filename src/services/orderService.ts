@@ -1,3 +1,4 @@
+//orderService.ts 
 import {
   collection,
   doc,
@@ -12,6 +13,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { ADMIN_CONFIG, SITE_CONFIG } from "../config/constants";
 import type { Order, CreateOrderRequest, CartItem, OrderItem } from "../types";
 
 export class OrderService {
@@ -75,9 +77,15 @@ export class OrderService {
               <p>ჩვენი მენეჯერი მალე დაგიკავშირდებათ ან მოგივათ შეტყობინება სტატუსის ცვლილების შესახებ.</p>
               
               <div style="margin-top: 30px; text-align: center;">
-                <a href="https://lifestore.ge/order-success/${order.id}" 
+                <a href="${SITE_CONFIG.BASE_URL}/order-success/${order.id}?action=print"
                    style="background-color: #059669; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-                   შეკვეთის დეტალები
+                   📄 ინვოისის ჩამოტვირთვა (PDF)
+                </a>
+              </div>
+              <div style="margin-top: 15px; text-align: center;">
+                <a href="${SITE_CONFIG.BASE_URL}/order-success/${order.id}"
+                   style="color: #059669; text-decoration: none; font-size: 14px;">
+                   ან შეკვეთის დეტალების ნახვა
                 </a>
               </div>
             </div>
@@ -86,8 +94,7 @@ export class OrderService {
       });
 
       // 2. მეილი ადმინს (Notification)
-      // აქ მითითებულია ის მეილი, რომელიც შენ დააყენე
-      const adminEmail = "bazanovierekle4@gmail.com"; 
+      const adminEmail = ADMIN_CONFIG.EMAIL; 
 
       await addDoc(collection(db, "mail"), {
         to: [adminEmail],
@@ -106,7 +113,7 @@ export class OrderService {
               </ul>
               <hr style="border: 1px solid #eee; margin: 20px 0;"/>
               <p>
-                <a href="https://lifestore.ge/admin" style="color: #2563eb; font-weight: bold; font-size: 16px;">
+                <a href="${SITE_CONFIG.BASE_URL}/admin" style="color: #2563eb; font-weight: bold; font-size: 16px;">
                   გადადი ადმინ პანელში
                 </a>
               </p>
