@@ -17,25 +17,14 @@ export class OrderService {
   private static readonly COLLECTION_NAME = "orders";
 
   /**
-   * Generate unique order number in format LS-YYYY###
+   * Generate unique order number in format LS-YYYY-TIMESTAMP
+   * Uses timestamp to ensure uniqueness without needing to read existing orders
    */
-  private static async generateOrderNumber(): Promise<string> {
-    const currentYear = new Date().getFullYear();
-
-    // Get count of orders for current year
-    const ordersRef = collection(db, this.COLLECTION_NAME);
-    const yearQuery = query(
-      ordersRef,
-      where("orderNumber", ">=", `LS-${currentYear}000`),
-      where("orderNumber", "<=", `LS-${currentYear}999`)
-    );
-
-    const snapshot = await getDocs(yearQuery);
-    const orderCount = snapshot.size;
-
-    // Generate next number
-    const nextNumber = String(orderCount + 1).padStart(3, "0");
-    return `LS-${currentYear}${nextNumber}`;
+  private static generateOrderNumber(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const timestamp = now.getTime().toString().slice(-6); // Last 6 digits of timestamp
+    return `LS-${year}-${timestamp}`;
   }
 
   /**
@@ -66,7 +55,7 @@ export class OrderService {
   static async createOrder(orderData: CreateOrderRequest): Promise<Order> {
     try {
       // Generate unique order number
-      const orderNumber = await this.generateOrderNumber();
+      const orderNumber = this.generateOrderNumber();
 
       // Convert cart items to order items
       const orderItems = this.convertCartItemsToOrderItems(orderData.items);
@@ -84,7 +73,7 @@ export class OrderService {
       // Build order object
       const order: Order = {
         id: orderRef.id,
-        userId: orderData.userId,
+        userId: orderData.userId || null,
         orderNumber,
 
         // Product info
@@ -96,7 +85,7 @@ export class OrderService {
         // Customer info
         customerInfo: {
           ...orderData.customerInfo,
-          isGuest: !orderData.userId,
+          isGuest: orderData.userId === null || orderData.userId === undefined,
         },
 
         // Delivery info
@@ -112,14 +101,31 @@ export class OrderService {
         updatedAt: new Date(),
       };
 
-      // Save to Firestore
-      await setDoc(orderRef, {
+      // Prepare payload for Firestore
+      const firestorePayload = {
         ...order,
         createdAt: Timestamp.fromDate(order.createdAt),
         updatedAt: Timestamp.fromDate(order.updatedAt),
+      };
+
+      console.log("🔍 About to save to Firestore:", {
+        userId: firestorePayload.userId,
+        customerInfo: firestorePayload.customerInfo,
+        orderStatus: firestorePayload.orderStatus,
+        totalAmount: firestorePayload.totalAmount,
+        items: firestorePayload.items?.length || 0
       });
 
+      // Save to Firestore
+      await setDoc(orderRef, firestorePayload);
+
       console.log("✅ Order created successfully:", orderNumber);
+      console.log("🔍 Order data sent to Firestore:", {
+        userId: order.userId,
+        customerInfo: order.customerInfo,
+        orderStatus: order.orderStatus,
+        items: order.items.length
+      });
       return order;
     } catch (error) {
       console.error("❌ Error creating order:", error);
@@ -158,10 +164,7 @@ export class OrderService {
     try {
       const ordersRef = collection(db, this.COLLECTION_NAME);
       // Temporarily remove ordering to avoid index requirement
-      const userQuery = query(
-        ordersRef,
-        where("userId", "==", userId)
-      );
+      const userQuery = query(ordersRef, where("userId", "==", userId));
 
       const snapshot = await getDocs(userQuery);
       const orders = snapshot.docs.map((doc) => {
@@ -175,8 +178,9 @@ export class OrderService {
       });
 
       // Sort on client side instead
-      return orders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
+      return orders.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      );
     } catch (error) {
       console.error("❌ Error getting user orders:", error);
       throw new Error("შეკვეთების მოძიება ვერ მოხერხდა");

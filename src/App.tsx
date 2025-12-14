@@ -134,6 +134,8 @@ function App() {
     const loadCart = async () => {
       // სანამ ავტორიზაცია იტვირთება, კალათას ხელს არ ვახლებთ
       if (!isAuthLoading) {
+        // მხოლოდ authenticated users-ისთვის ვტვირთავთ cart-ს Firestore-დან
+        // guest users-ისთვის loadUserCart(null) ტვირთავს localStorage-დან
         await loadUserCart(user?.id || null);
       }
     };
