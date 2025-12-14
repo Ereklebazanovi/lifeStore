@@ -157,14 +157,14 @@ export class OrderService {
   static async getUserOrders(userId: string): Promise<Order[]> {
     try {
       const ordersRef = collection(db, this.COLLECTION_NAME);
+      // Temporarily remove ordering to avoid index requirement
       const userQuery = query(
         ordersRef,
-        where("userId", "==", userId),
-        orderBy("createdAt", "desc")
+        where("userId", "==", userId)
       );
 
       const snapshot = await getDocs(userQuery);
-      return snapshot.docs.map((doc) => {
+      const orders = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           ...data,
@@ -173,6 +173,10 @@ export class OrderService {
           deliveredAt: data.deliveredAt?.toDate(),
         } as Order;
       });
+
+      // Sort on client side instead
+      return orders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
     } catch (error) {
       console.error("❌ Error getting user orders:", error);
       throw new Error("შეკვეთების მოძიება ვერ მოხერხდა");

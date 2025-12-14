@@ -60,7 +60,7 @@ export interface Order {
   // Payment & Status
   paymentMethod: 'cash' | 'tbc_bank' | 'visa' | 'mastercard';
   paymentStatus: 'pending' | 'paid' | 'failed';
-  orderStatus: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  orderStatus: 'pending' | 'confirmed' | 'delivered' | 'cancelled';
 
   // Metadata
   createdAt: Date;
@@ -98,7 +98,7 @@ export interface CreateOrderRequest {
   paymentMethod: 'cash' | 'tbc_bank';
 }
 
-export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'confirmed' | 'delivered' | 'cancelled';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 // User Types (for admin)

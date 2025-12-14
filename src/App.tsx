@@ -18,6 +18,7 @@ import AdminPage from "./pages/admin/AdminPage";
 import ProductDetailsPage from "./pages/ProductDetailsPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
+import OrderHistoryPage from "./pages/OrderHistoryPage";
 import LoadingScreen from "./components/LoadingScreen";
 import ScrollToTop from "./components/ScrollToTop";
 import PageTransition from "./components/PageTransition";
@@ -84,6 +85,14 @@ const AnimatedRoutes: React.FC = () => {
           element={
             <PageTransition>
               <OrderSuccessPage />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/order-history"
+          element={
+            <PageTransition>
+              <OrderHistoryPage />
             </PageTransition>
           }
         />

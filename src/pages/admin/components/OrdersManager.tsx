@@ -82,7 +82,6 @@ const OrdersManager: React.FC = () => {
     switch (status) {
       case 'pending': return <Clock className="w-4 h-4" />;
       case 'confirmed': return <CheckCircle className="w-4 h-4" />;
-      case 'shipped': return <Truck className="w-4 h-4" />;
       case 'delivered': return <CheckCircle className="w-4 h-4" />;
       case 'cancelled': return <AlertCircle className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
@@ -93,7 +92,6 @@ const OrdersManager: React.FC = () => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'confirmed': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'shipped': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'delivered': return 'bg-green-100 text-green-800 border-green-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -104,7 +102,6 @@ const OrdersManager: React.FC = () => {
     switch (status) {
       case 'pending': return 'მუშავდება';
       case 'confirmed': return 'დადასტურებული';
-      case 'shipped': return 'გზაშია';
       case 'delivered': return 'მიტანილი';
       case 'cancelled': return 'გაუქმებული';
       default: return status;
@@ -158,7 +155,6 @@ const OrdersManager: React.FC = () => {
             <option value="all">ყველა სტატუსი</option>
             <option value="pending">მუშავდება</option>
             <option value="confirmed">დადასტურებული</option>
-            <option value="shipped">გზაშია</option>
             <option value="delivered">მიტანილი</option>
             <option value="cancelled">გაუქმებული</option>
           </select>
@@ -346,7 +342,7 @@ const OrderDetails: React.FC<{
       <div>
         <h4 className="font-semibold text-stone-900 mb-3">სტატუსის მართვა</h4>
         <div className="grid grid-cols-2 gap-2">
-          {(['pending', 'confirmed', 'shipped', 'delivered'] as const).map((status) => (
+          {(['pending', 'confirmed', 'delivered'] as const).map((status) => (
             <button
               key={status}
               onClick={() => onStatusChange(order.id, status)}
@@ -359,7 +355,6 @@ const OrderDetails: React.FC<{
             >
               {status === 'pending' && 'მუშავდება'}
               {status === 'confirmed' && 'დადასტურება'}
-              {status === 'shipped' && 'გზავნა'}
               {status === 'delivered' && 'მიტანა'}
             </button>
           ))}

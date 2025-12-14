@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Badge } from 'antd';
-import { ShoppingCart, Menu, X, ShieldCheck, User, LogOut, LogIn } from 'lucide-react';
+import { ShoppingCart, Menu, X, ShieldCheck, User, LogOut, LogIn, History } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
 import AuthButton from './auth/AuthButton';
@@ -63,7 +63,21 @@ const Navbar: React.FC = () => {
               <NavLink to="/" isActive={isActivePath('/')}>მთავარი</NavLink>
               <NavLink to="/products" isActive={isActivePath('/products')}>პროდუქტები</NavLink>
               <NavLink to="/about" isActive={isActivePath('/about')}>ჩვენს შესახებ</NavLink>
-              
+
+              {user && (
+                <Link
+                  to="/order-history"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all duration-200 ${
+                    isActivePath('/order-history')
+                      ? 'bg-emerald-100 text-emerald-700 shadow-sm'
+                      : 'text-stone-600 hover:text-emerald-600 hover:bg-emerald-50'
+                  }`}
+                >
+                  <History className="w-4 h-4" />
+                  ჩემი შეკვეთები
+                </Link>
+              )}
+
               {user?.role === 'admin' && (
                 <Link
                   to="/admin"
@@ -143,6 +157,17 @@ const Navbar: React.FC = () => {
                     <MobileNavLink to="/" isActive={isActivePath('/')} onClick={() => setIsMenuOpen(false)}>მთავარი</MobileNavLink>
                     <MobileNavLink to="/products" isActive={isActivePath('/products')} onClick={() => setIsMenuOpen(false)}>პროდუქტები</MobileNavLink>
                     <MobileNavLink to="/about" isActive={isActivePath('/about')} onClick={() => setIsMenuOpen(false)}>ჩვენს შესახებ</MobileNavLink>
+
+                    {user && (
+                        <Link
+                            to="/order-history"
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-50 text-emerald-800 font-semibold border border-emerald-100 mt-2"
+                        >
+                            <History className="w-4 h-4" />
+                            ჩემი შეკვეთები
+                        </Link>
+                    )}
 
                     {user?.role === 'admin' && (
                         <Link
