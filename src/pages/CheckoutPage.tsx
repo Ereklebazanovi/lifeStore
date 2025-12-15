@@ -1,5 +1,6 @@
+// CheckoutPage.tsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // ✅ Link დავამატეთ
 import { useCartStore } from "../store/cartStore";
 import { useAuthStore } from "../store/authStore";
 import { showToast } from "../components/ui/Toast";
@@ -13,6 +14,7 @@ import {
   Banknote,
   ArrowRight,
   Package,
+  ShieldCheck // ✅ ესეც სილამაზისთვის
 } from "lucide-react";
 import type { DeliveryInfo, CreateOrderRequest } from "../types";
 
@@ -21,7 +23,6 @@ const CheckoutPage: React.FC = () => {
   const { items, getCartTotal, clearCart } = useCartStore();
   const { user } = useAuthStore();
 
-  // 1. პროდუქტების ჯამი
   const subtotal = getCartTotal();
 
   const [formData, setFormData] = useState<DeliveryInfo>({
@@ -29,19 +30,18 @@ const CheckoutPage: React.FC = () => {
     lastName: "",
     phone: "",
     email: "",
-    city: "თბილისი", // Default
+    city: "თბილისი",
     address: "",
     comment: "",
     paymentMethod: "cash",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // ✅ 1. ახალი State თანხმობისთვის
+  const [isAgreed, setIsAgreed] = useState(false);
 
-  // 2. დინამიური მიტანის ფასი
-  // თუ თბილისია - 0, სხვა შემთხვევაში - 7
   const shippingCost = formData.city === "თბილისი" ? 0 : 7;
-
-  // 3. საბოლოო ჯამი (პროდუქტები + გზა)
   const grandTotal = subtotal + shippingCost;
 
   useEffect(() => {
@@ -57,13 +57,10 @@ const CheckoutPage: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
-    // Only redirect to cart if not currently submitting an order
-    // Add small delay to prevent race condition with navigation
     if (items.length === 0 && !isSubmitting) {
       const timeoutId = setTimeout(() => {
         navigate("/cart");
-      }, 100); // 100ms delay
-
+      }, 100);
       return () => clearTimeout(timeoutId);
     }
   }, [items, navigate, isSubmitting]);
@@ -84,6 +81,18 @@ const CheckoutPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // ✅ 2. ვალიდაცია: დაეთანხმა თუ არა?
+    if (!isAgreed) {
+      showToast("გთხოვთ, დაეთანხმოთ წესებსა და პირობებს", "error");
+      // ვაწითლებთ checkbox-ის არეს რომ ყურადღება მიიქციოს (ოპციონალური UX)
+      const checkboxArea = document.getElementById("terms-container");
+      if (checkboxArea) {
+        checkboxArea.classList.add("ring-2", "ring-red-500");
+        setTimeout(() => checkboxArea.classList.remove("ring-2", "ring-red-500"), 2000);
+      }
+      return;
+    }
+
     if (!formData.phone || formData.phone.length !== 9 || !formData.phone.startsWith('5')) {
       showToast("გთხოვთ ჩაწეროთ სწორი ქართული მობილურის ნომერი", "error");
       return;
@@ -96,7 +105,6 @@ const CheckoutPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Prepare order data for OrderService
       const orderRequest: CreateOrderRequest = {
         userId: user?.id || null,
         items,
@@ -114,27 +122,15 @@ const CheckoutPage: React.FC = () => {
         paymentMethod: formData.paymentMethod as 'cash' | 'tbc_bank',
       };
 
-      console.log("შეკვეთა იგზავნება:", orderRequest);
-
-      // Create order using OrderService
       const createdOrder = await OrderService.createOrder(orderRequest);
 
-      console.log("🎯 Created order:", createdOrder);
-      console.log("🎯 Order ID:", createdOrder.id);
-      console.log("🎯 Navigating to:", `/order-success/${createdOrder.id}`);
-
-      // Try both navigation methods for debugging
-      console.log("🔍 Testing navigation...");
-
-      // Method 1: React Router navigate
       navigate(`/order-success/${createdOrder.id}`);
-
-      // Method 2: Force navigation with window.location (fallback)
+      
+      // Fallback
       setTimeout(() => {
         window.location.href = `/order-success/${createdOrder.id}`;
       }, 500);
 
-      // Then clear cart and show success
       clearCart();
       showToast(`შეკვეთა წარმატებით გაფორმდა! ნომერი: ${createdOrder.orderNumber}`, "success");
 
@@ -147,7 +143,7 @@ const CheckoutPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 py-8 lg:py-12">
+    <div className="min-h-screen bg-stone-50 py-20 lg:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold text-stone-900 mb-8 text-center lg:text-left">
           შეკვეთის გაფორმება
@@ -167,7 +163,7 @@ const CheckoutPage: React.FC = () => {
                 onSubmit={handleSubmit}
                 className="space-y-6"
               >
-                {/* ... Name & Contact Rows (იგივე რჩება) ... */}
+                {/* ... Name & Contact Rows (იგივე) ... */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-stone-700 mb-1">
@@ -230,7 +226,7 @@ const CheckoutPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* City Selection - Trigger for Shipping Cost */}
+                {/* City Selection */}
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-1">
                     ქალაქი / რაიონი *
@@ -365,7 +361,6 @@ const CheckoutPage: React.FC = () => {
                   <span>₾{subtotal.toFixed(2)}</span>
                 </div>
 
-                {/* DYNAMIC SHIPPING COST */}
                 <div className="flex justify-between items-center text-stone-600">
                   <span>მიწოდება ({formData.city})</span>
                   {shippingCost === 0 ? (
@@ -387,25 +382,57 @@ const CheckoutPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* ✅ 3. TERMS & CONDITIONS CHECKBOX */}
+              {/* ✅ Terms & Conditions - გასუფთავებული ვერსია */}
+              <div 
+                id="terms-container"
+                className="flex items-start gap-3 mb-6 p-4 bg-stone-50 rounded-xl border border-stone-100 transition-all hover:border-emerald-100"
+              >
+                <input
+                  type="checkbox"
+                  id="terms-checkbox"
+                  checked={isAgreed}
+                  onChange={(e) => setIsAgreed(e.target.checked)}
+                  className="mt-1 w-5 h-5 text-emerald-600 rounded border-stone-300 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+                />
+                <label 
+                  htmlFor="terms-checkbox" 
+                  className="text-sm text-stone-600 cursor-pointer select-none leading-relaxed"
+                >
+                  ვეთანხმები{' '}
+                  <Link to="/terms" target="_blank" className="text-stone-900 font-bold hover:text-emerald-600 underline decoration-stone-300 hover:decoration-emerald-500 underline-offset-4 transition-all">
+                    მომსახურების პირობებს*
+                  </Link>
+                </label>
+              </div>
+
               <button
                 type="submit"
                 form="checkout-form"
-                disabled={isSubmitting}
-                className="w-full bg-stone-900 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                // ✅ 4. ღილაკი ითიშება თუ არ დაეთანხმა
+                disabled={isSubmitting || !isAgreed}
+                className={`w-full font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-lg active:scale-95
+                  ${isSubmitting || !isAgreed 
+                    ? "bg-stone-300 text-stone-500 cursor-not-allowed shadow-none" 
+                    : "bg-stone-900 hover:bg-emerald-600 text-white hover:shadow-xl"
+                  }`}
               >
                 {isSubmitting ? (
                   <span>მუშავდება...</span>
                 ) : (
                   <>
+                    <ShieldCheck className="w-5 h-5" />
                     <span>შეკვეთის დადასტურება</span>
                     <ArrowRight className="w-5 h-5" />
                   </>
                 )}
               </button>
 
-              <p className="text-xs text-stone-400 text-center mt-4">
-                ღილაკზე დაჭერით თქვენ ეთანხმებით მომსახურების პირობებს
-              </p>
+              {!isAgreed && (
+                <p className="text-xs text-red-400 text-center mt-3 font-medium animate-pulse">
+                  * შეკვეთის გასაფორმებლად სავალდებულოა წესებზე თანხმობა
+                </p>
+              )}
             </div>
           </div>
         </div>

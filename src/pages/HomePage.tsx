@@ -79,7 +79,7 @@ const HomePage: React.FC = () => {
           </div>
         ))}
 
-        <div className="absolute inset-0 flex items-center justify-center text-center">
+        <div className="absolute inset-0 flex items-center justify-center text-center mt-6">
           <div className="max-w-4xl px-4 animate-fade-in-up">
             <span className="inline-block px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs lg:text-sm font-medium tracking-widest uppercase mb-4">
               Premium Home & Kitchen

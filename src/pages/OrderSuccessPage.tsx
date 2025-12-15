@@ -128,7 +128,7 @@ const OrderSuccessPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 py-8 lg:py-12 print:bg-white print:py-0">
+    <div className="min-h-screen bg-stone-50 py-20 lg:py-20 print:bg-white print:py-0">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* --- Success Header (ცენტრალური ნაწილი) --- */}
         <div className="text-center mb-10 print:hidden">
