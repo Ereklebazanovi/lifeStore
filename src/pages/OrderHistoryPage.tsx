@@ -106,7 +106,7 @@ const OrderHistoryPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 py-8 lg:py-12">
+    <div className="min-h-screen bg-stone-50 py-20 lg:py-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
