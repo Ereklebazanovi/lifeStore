@@ -1,4 +1,3 @@
-import React from "react";
 import {
   ShieldCheck,
   RefreshCw,
@@ -86,7 +85,7 @@ const RefundPolicy = () => {
               </div>
             </section>
 
-            {/* Section 2: Exceptions */}
+            {/* Section 2: Exceptions (Updated with Domino logic) */}
             <section className="bg-stone-50 rounded-2xl p-6 border border-stone-100">
               <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                 <AlertCircle className="w-5 h-5 text-amber-500" />
@@ -111,6 +110,19 @@ const RefundPolicy = () => {
                   <span className="text-red-500 font-bold">•</span>
                   ნივთი განეკუთვნება ჰიგიენურ ან მალფუჭებად კატეგორიას (გარდა
                   ქარხნული წუნისა).
+                </li>
+                {/* 👇 ახალი პუნქტები Domino-ს მსგავსად */}
+                <li className="flex gap-2">
+                  <span className="text-red-500 font-bold">•</span>
+                  დეკორატიული და საახალწლო ნივთები (თუ გამოყენების კვალი ემჩნევა).
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-red-500 font-bold">•</span>
+                  ჭურჭელი და სამზარეულოს ატრიბუტიკა (თუ გამოყენებულია).
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-red-500 font-bold">•</span>
+                  ინდივიდუალური შეკვეთით დამზადებული პროდუქცია.
                 </li>
               </ul>
             </section>
@@ -140,6 +152,9 @@ const RefundPolicy = () => {
                   <span className="text-stone-900 font-medium">
                     ანაზღაურდება მომხმარებლის მიერ*
                   </span>
+                  <p className="text-xs text-stone-400 mt-2 italic">
+                    * პროდუქციის დაბრუნების შემთხვევაში პირვანდელი ტრანსპორტირების თანხა უკან არ ბრუნდება.
+                  </p>
                 </div>
               </div>
             </section>

@@ -1,4 +1,4 @@
-import React from 'react';
+//PrivacyPolicy.tsx
 import { Lock, Eye, Server, Share2, ShieldCheck, Mail, Phone, Database } from 'lucide-react';
 import { SITE_CONFIG, ADMIN_CONFIG } from '../config/constants';
 
