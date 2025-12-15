@@ -114,15 +114,17 @@ const RefundPolicy = () => {
                 {/* 👇 ახალი პუნქტები Domino-ს მსგავსად */}
                 <li className="flex gap-2">
                   <span className="text-red-500 font-bold">•</span>
+                  <span className="leading-tight">
+                    <strong>საკვებთან შეხებაში მყოფი ნივთები</strong> (ლანჩბოქსი, თერმოსი, ჭურჭელი, სამარილე), თუ მათ ეტყობათ გამოყენების კვალი (სუნი, ნადები, გარეცხვის კვალი).
+                  </span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-red-500 font-bold">•</span>
                   დეკორატიული და საახალწლო ნივთები (თუ გამოყენების კვალი ემჩნევა).
                 </li>
                 <li className="flex gap-2">
                   <span className="text-red-500 font-bold">•</span>
-                  ჭურჭელი და სამზარეულოს ატრიბუტიკა (თუ გამოყენებულია).
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-red-500 font-bold">•</span>
-                  ინდივიდუალური შეკვეთით დამზადებული პროდუქცია.
+                  ინდივიდუალური შეკვეთით დამზადებული ან გადაჭრილი პროდუქცია.
                 </li>
               </ul>
             </section>
