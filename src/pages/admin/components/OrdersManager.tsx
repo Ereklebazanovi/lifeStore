@@ -448,7 +448,7 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">ინვოისი</h2>
           <p className="text-gray-600">ნომერი: {order.orderNumber}</p>
           <p className="text-gray-600">თარიღი: {order.createdAt.toLocaleDateString('ka-GE')}</p>
-          <p className="text-gray-600">სტატუსი: {getStatusText(order.orderStatus)}</p>
+          <p className="text-gray-600">სტატუსი: {getInvoiceStatusText(order.orderStatus)}</p>
         </div>
       </div>
 
@@ -598,8 +598,8 @@ const BulkReportPrintView: React.FC<{
   );
 };
 
-// Helper function for status text
-const getStatusText = (status: Order['orderStatus']) => {
+// Helper function for status text (used in print components)
+const getInvoiceStatusText = (status: Order['orderStatus']) => {
   switch (status) {
     case 'pending': return 'მუშავდება';
     case 'confirmed': return 'დადასტურებული';
