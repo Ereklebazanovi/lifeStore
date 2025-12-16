@@ -360,7 +360,11 @@ const OrdersManager: React.FC = () => {
           {/* Order Details */}
           <div className="bg-white border border-stone-200 rounded-xl p-6 sticky top-6">
             {selectedOrder ? (
-              <OrderDetails order={selectedOrder} onStatusChange={handleStatusChange} />
+              <OrderDetails
+                order={selectedOrder}
+                onStatusChange={handleStatusChange}
+                onPrintInvoice={generateInvoicePDF}
+              />
             ) : (
               <div className="text-center py-12">
                 <Package className="w-16 h-16 text-stone-300 mx-auto mb-4" />
@@ -611,21 +615,15 @@ const getInvoiceStatusText = (status: Order['orderStatus']) => {
 const OrderDetails: React.FC<{
   order: Order;
   onStatusChange: (orderId: string, newStatus: Order['orderStatus']) => void;
-}> = ({ order, onStatusChange }) => {
-  const generateInvoicePDF = (order: Order) => {
-    // Set this order for print modal and trigger print
-    setSelectedOrder(order);
-    setTimeout(() => {
-      window.print();
-    }, 100);
-  };
+  onPrintInvoice: (order: Order) => void;
+}> = ({ order, onStatusChange, onPrintInvoice }) => {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-stone-900">{order.orderNumber}</h3>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => generateInvoicePDF(order)}
+            onClick={() => onPrintInvoice(order)}
             className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
           >
             <FileText className="w-4 h-4" />
