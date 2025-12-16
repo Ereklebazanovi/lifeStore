@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Phone } from 'lucide-react';
+//path: src/components/ui/PhoneInput.tsx
+import React, { useState, useEffect } from "react";
+import { Phone } from "lucide-react";
 
 interface PhoneInputProps {
   value: string;
@@ -13,10 +14,10 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   value,
   onChange,
   required = false,
-  className = '',
-  placeholder = ''
+  className = "",
+  placeholder = "",
 }) => {
-  const [displayValue, setDisplayValue] = useState('');
+  const [displayValue, setDisplayValue] = useState("");
   const [isValid, setIsValid] = useState(true);
 
   // Georgian mobile number patterns
@@ -28,21 +29,21 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   // Format phone number for display
   const formatPhoneNumber = (input: string): string => {
     // Remove all non-digits except +
-    let cleaned = input.replace(/[^\d+]/g, '');
+    let cleaned = input.replace(/[^\d+]/g, "");
 
     // Handle country code scenarios
-    if (cleaned.startsWith('+995')) {
+    if (cleaned.startsWith("+995")) {
       cleaned = cleaned.substring(4); // Remove +995
-    } else if (cleaned.startsWith('995')) {
+    } else if (cleaned.startsWith("995")) {
       cleaned = cleaned.substring(3); // Remove 995
-    } else if (cleaned.startsWith('+')) {
+    } else if (cleaned.startsWith("+")) {
       cleaned = cleaned.substring(1); // Remove + if not followed by 995
     }
 
     // Ensure it starts with 5 (Georgian mobile prefix)
-    if (cleaned.length > 0 && !cleaned.startsWith('5')) {
+    if (cleaned.length > 0 && !cleaned.startsWith("5")) {
       if (cleaned.length === 8 && /^[0-9]/.test(cleaned)) {
-        cleaned = '5' + cleaned; // Add 5 prefix if missing
+        cleaned = "5" + cleaned; // Add 5 prefix if missing
       }
     }
 
@@ -59,13 +60,13 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
         formatted += cleaned.substring(1, 3); // Next 2 digits
       }
       if (cleaned.length > 3) {
-        formatted += ' ' + cleaned.substring(3, 5); // Space + next 2 digits
+        formatted += " " + cleaned.substring(3, 5); // Space + next 2 digits
       }
       if (cleaned.length > 5) {
-        formatted += ' ' + cleaned.substring(5, 7); // Space + next 2 digits
+        formatted += " " + cleaned.substring(5, 7); // Space + next 2 digits
       }
       if (cleaned.length > 7) {
-        formatted += ' ' + cleaned.substring(7, 9); // Space + last 2 digits
+        formatted += " " + cleaned.substring(7, 9); // Space + last 2 digits
       }
 
       return formatted;
@@ -79,23 +80,25 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
     if (!phoneNumber) return true; // Empty is valid (unless required)
 
     // Clean the number for validation
-    const cleaned = phoneNumber.replace(/\s/g, '');
+    const cleaned = phoneNumber.replace(/\s/g, "");
 
     // Check if it matches Georgian mobile patterns
-    return patterns.some(pattern => pattern.test(cleaned)) ||
-           /^5\d{8}$/.test(cleaned); // Basic 5XXXXXXXX format
+    return (
+      patterns.some((pattern) => pattern.test(cleaned)) ||
+      /^5\d{8}$/.test(cleaned)
+    ); // Basic 5XXXXXXXX format
   };
 
   // Get clean phone number (remove formatting)
   const getCleanPhoneNumber = (formatted: string): string => {
-    const cleaned = formatted.replace(/\s/g, '');
+    const cleaned = formatted.replace(/\s/g, "");
 
     // Ensure it starts with 5 and is 9 digits
-    if (cleaned.length === 9 && cleaned.startsWith('5')) {
+    if (cleaned.length === 9 && cleaned.startsWith("5")) {
       return cleaned;
     }
 
-    return formatted.replace(/\s/g, ''); // Return as-is if not standard format
+    return formatted.replace(/\s/g, ""); // Return as-is if not standard format
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,14 +123,14 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   // Get placeholder text
   const getPlaceholder = (): string => {
     if (placeholder) return placeholder;
-    return '555 12 34 567';
+    return "555 12 34 567";
   };
 
   // Get border color based on validation
   const getBorderColor = (): string => {
-    if (!displayValue) return 'border-stone-300 focus:border-emerald-500';
-    if (isValid) return 'border-emerald-300 focus:border-emerald-500';
-    return 'border-red-300 focus:border-red-500';
+    if (!displayValue) return "border-stone-300 focus:border-emerald-500";
+    if (isValid) return "border-emerald-300 focus:border-emerald-500";
+    return "border-red-300 focus:border-red-500";
   };
 
   return (

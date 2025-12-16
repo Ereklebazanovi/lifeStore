@@ -1,4 +1,15 @@
 // src/types/index.ts
+
+// 1. ✅ ახალი ტიპი წყაროებისთვის
+export type OrderSource = 
+  | 'website' 
+  | 'instagram' 
+  | 'facebook' 
+  | 'tiktok' 
+  | 'phone' 
+  | 'personal' 
+  | 'other';
+
 // Product Types
 export interface Product {
   id: string;
@@ -34,6 +45,9 @@ export interface Order {
   id: string;
   userId: string | null; // null = guest user
   orderNumber: string; // LS-240001 format
+  
+  // ✅ ახალი ველი: საიდან მოვიდა შეკვეთა
+  source?: OrderSource; 
 
   // Product Info
   items: OrderItem[];
@@ -46,7 +60,7 @@ export interface Order {
     firstName: string;
     lastName: string;
     phone: string;
-    email: string;
+    email: string; // manual შეკვეთისას შეიძლება ცარიელი იყოს ან fake
     isGuest: boolean;
   };
 
@@ -58,7 +72,8 @@ export interface Order {
   };
 
   // Payment & Status
-  paymentMethod: 'cash' | 'tbc_bank' | 'visa' | 'mastercard';
+  // ✅ გავაფართოვეთ მეთოდები
+  paymentMethod: 'cash' | 'tbc_bank' | 'visa' | 'mastercard' | 'bank_transfer' | 'other';
   paymentStatus: 'pending' | 'paid' | 'failed';
   orderStatus: 'pending' | 'confirmed' | 'delivered' | 'cancelled';
 
@@ -74,13 +89,20 @@ export interface Order {
 
 export interface OrderItem {
   productId: string;
-  product: Product; // მთელი product object
+  product: Product; // აქ შევინარჩუნეთ სრული პროდუქტი თავსებადობისთვის
   quantity: number;
-  price: number; // unit price at time of order
-  total: number; // quantity * price
+  price: number;
+  total: number;
 }
 
-// For creating new orders
+// ✅ ახალი ტიპი: მხოლოდ მენეჯერის ფორმისთვის (ხელით შეყვანილი ნივთი)
+export interface ManualOrderItem {
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+// For creating new orders (საიტიდან)
 export interface CreateOrderRequest {
   userId: string | null;
   items: CartItem[];
@@ -96,6 +118,26 @@ export interface CreateOrderRequest {
     comment?: string;
   };
   paymentMethod: 'cash' | 'tbc_bank';
+}
+
+// ✅ ახალი ტიპი: მენეჯერის მიერ შეკვეთის შექმნა
+export interface CreateManualOrderRequest {
+  items: ManualOrderItem[]; // აქ უკვე გამარტივებული ნივთებია
+  source: OrderSource;
+  customerInfo: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email?: string; // მეილი არასავალდებულოა ხელით შეყვანისას
+  };
+  deliveryInfo: {
+    city: string;
+    address: string;
+    comment?: string;
+  };
+  shippingCost: number; // მენეჯერს შეუძლია ხელით მიუთითოს
+  status: 'pending' | 'confirmed' | 'delivered'; // მენეჯერი ირჩევს სტატუსს
+  paymentMethod: Order['paymentMethod'];
 }
 
 export type OrderStatus = 'pending' | 'confirmed' | 'delivered' | 'cancelled';
@@ -128,7 +170,6 @@ export interface ProductState {
   isLoading: boolean;
   categories: string[];
 }
-
 
 // Checkout Form Types
 export interface DeliveryInfo {

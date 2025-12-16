@@ -1,9 +1,10 @@
-//OrdersManager.tsx
+// src/pages/admin/components/OrdersManager.tsx
 import React, { useState, useEffect } from "react";
 import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
-// Removed jsPDF import - using browser's print instead
+// ✅ ახალი მოდალის იმპორტი
+import CreateManualOrderModal from "./CreateManualOrderModal";
 import {
   Package,
   Eye,
@@ -19,6 +20,7 @@ import {
   Download,
   FileText,
   Trash2,
+  Plus, // ✅ Plus აიკონი დამატებულია
 } from "lucide-react";
 
 const OrdersManager: React.FC = () => {
@@ -26,13 +28,14 @@ const OrdersManager: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | Order["orderStatus"]
-  >("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | Order["orderStatus"]>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
   const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
+  
+  // ✅ ახალი state მოდალისთვის
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -59,7 +62,6 @@ const OrdersManager: React.FC = () => {
       await OrderService.updateOrderStatus(orderId, newStatus);
       showToast("სტატუსი წარმატებით განახლდა", "success");
 
-      // Update local state
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order.id === orderId
@@ -68,7 +70,6 @@ const OrdersManager: React.FC = () => {
         )
       );
 
-      // Update selected order if it's the same
       if (selectedOrder?.id === orderId) {
         setSelectedOrder((prev) =>
           prev
@@ -82,20 +83,15 @@ const OrdersManager: React.FC = () => {
     }
   };
 
-  // Delete order function
   const handleDeleteOrder = async (orderId: string) => {
     try {
-      // Note: This assumes OrderService.deleteOrder exists
-      // You may need to implement this method in your OrderService
       await OrderService.deleteOrder(orderId);
       showToast("შეკვეთა წარმატებით წაიშალა", "success");
 
-      // Remove from local state
       setOrders((prevOrders) =>
         prevOrders.filter((order) => order.id !== orderId)
       );
 
-      // Clear selected order if it was deleted
       if (selectedOrder?.id === orderId) {
         setSelectedOrder(null);
       }
@@ -107,42 +103,35 @@ const OrdersManager: React.FC = () => {
     }
   };
 
-  // PDF Generation using browser's print functionality (supports Georgian)
+  // PDF Generation using browser's print functionality
   const generateInvoicePDF = (order: Order) => {
     setSelectedOrder(order);
-    // Use setTimeout to ensure state update
     setTimeout(() => {
       window.print();
     }, 100);
   };
 
   const generateBulkReportPDF = () => {
-    // Create a temporary print view for bulk report
     setShowBulkPrintModal(true);
     setTimeout(() => {
       window.print();
     }, 100);
   };
 
-  // Filter orders based on search term, status, and date range
+  // Filter orders
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerInfo.firstName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      order.customerInfo.lastName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
+      order.customerInfo.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customerInfo.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customerInfo.phone.includes(searchTerm);
 
     const matchesStatus =
       statusFilter === "all" || order.orderStatus === statusFilter;
 
-    // Date filtering
     const orderDate = new Date(order.createdAt);
     const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo + "T23:59:59") : null; // Include the whole day
+    const toDate = dateTo ? new Date(dateTo + "T23:59:59") : null;
 
     const matchesDateRange =
       (!fromDate || orderDate >= fromDate) && (!toDate || orderDate <= toDate);
@@ -152,46 +141,31 @@ const OrdersManager: React.FC = () => {
 
   const getStatusIcon = (status: Order["orderStatus"]) => {
     switch (status) {
-      case "pending":
-        return <Clock className="w-4 h-4" />;
-      case "confirmed":
-        return <CheckCircle className="w-4 h-4" />;
-      case "delivered":
-        return <CheckCircle className="w-4 h-4" />;
-      case "cancelled":
-        return <AlertCircle className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
+      case "pending": return <Clock className="w-4 h-4" />;
+      case "confirmed": return <CheckCircle className="w-4 h-4" />;
+      case "delivered": return <CheckCircle className="w-4 h-4" />;
+      case "cancelled": return <AlertCircle className="w-4 h-4" />;
+      default: return <Clock className="w-4 h-4" />;
     }
   };
 
   const getStatusColor = (status: Order["orderStatus"]) => {
     switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "confirmed":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "delivered":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "cancelled":
-        return "bg-red-100 text-red-800 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+      case "pending": return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "confirmed": return "bg-blue-100 text-blue-800 border-blue-200";
+      case "delivered": return "bg-green-100 text-green-800 border-green-200";
+      case "cancelled": return "bg-red-100 text-red-800 border-red-200";
+      default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   const getStatusText = (status: Order["orderStatus"]) => {
     switch (status) {
-      case "pending":
-        return "მუშავდება";
-      case "confirmed":
-        return "დადასტურებული";
-      case "delivered":
-        return "მიტანილი";
-      case "cancelled":
-        return "გაუქმებული";
-      default:
-        return status;
+      case "pending": return "მუშავდება";
+      case "confirmed": return "დადასტურებული";
+      case "delivered": return "მიტანილი";
+      case "cancelled": return "გაუქმებული";
+      default: return status;
     }
   };
 
@@ -211,17 +185,28 @@ const OrdersManager: React.FC = () => {
         <h2 className="text-2xl font-bold text-stone-900">
           შეკვეთები ({orders.length})
         </h2>
-        <button
-          onClick={fetchOrders}
-          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-        >
-          განახლება
-        </button>
+        
+        {/* ✅ ღილაკების ჯგუფი (დაემატა "დამატება") */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+           ხელით დამატება
+          </button>
+          
+          <button
+            onClick={fetchOrders}
+            className="px-4 py-2 bg-white border border-stone-200 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors"
+          >
+            განახლება
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
           <input
@@ -232,8 +217,6 @@ const OrdersManager: React.FC = () => {
             className="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
           />
         </div>
-
-        {/* Status Filter */}
         <div className="relative">
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
           <select
@@ -250,8 +233,6 @@ const OrdersManager: React.FC = () => {
             <option value="cancelled">გაუქმებული</option>
           </select>
         </div>
-
-        {/* Date From */}
         <div className="relative">
           <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
           <input
@@ -262,8 +243,6 @@ const OrdersManager: React.FC = () => {
             placeholder="თარიღიდან"
           />
         </div>
-
-        {/* Date To */}
         <div className="relative">
           <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
           <input
@@ -317,7 +296,6 @@ const OrdersManager: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Orders List */}
           <div className="space-y-4">
             {filteredOrders.map((order) => (
               <div
@@ -341,6 +319,13 @@ const OrdersManager: React.FC = () => {
                         minute: "2-digit",
                       })}
                     </p>
+                    
+                    {/* ✅ Source Tag - აქ გამოჩნდება საიდანაა შეკვეთა */}
+                    {order.source && order.source !== 'website' && (
+                        <span className="text-xs font-bold text-purple-600 mt-1 block uppercase">
+                            {order.source}
+                        </span>
+                    )}
                   </div>
                   <span
                     className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
@@ -404,8 +389,7 @@ const OrdersManager: React.FC = () => {
             ))}
           </div>
 
-          {/* Order Details */}
-          <div className="bg-white border border-stone-200 rounded-xl p-6 sticky top-6">
+          <div className="bg-white border border-stone-200 rounded-xl p-6 sticky top-6 h-fit">
             {selectedOrder ? (
               <OrderDetails
                 order={selectedOrder}
@@ -428,28 +412,15 @@ const OrdersManager: React.FC = () => {
       )}
 
       {/* Invoice Print Modal */}
-     {/* Invoice Print Modal */}
       {selectedOrder && (
-        <div className="print-content"> {/* 👈 აქ წაიშალა ზედმეტი კლასები */}
+        <div className="print-content">
           <InvoicePrintView order={selectedOrder} />
         </div>
       )}
 
       {/* Bulk Report Print Modal */}
       {showBulkPrintModal && (
-        <div className="print-content"> {/* 👈 აქაც წაიშალა */}
-          <BulkReportPrintView
-            orders={filteredOrders}
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            statusFilter={statusFilter}
-            getStatusText={getStatusText}
-          />
-        </div>
-      )}
-      {/* Bulk Report Print Modal */}
-      {showBulkPrintModal && (
-        <div className="hidden print:block print:fixed print:inset-0 print:bg-white print:z-50">
+        <div className="print-content">
           <BulkReportPrintView
             orders={filteredOrders}
             dateFrom={dateFrom}
@@ -490,7 +461,14 @@ const OrdersManager: React.FC = () => {
         </div>
       )}
 
-      {/* Print cleanup - remove modals after print */}
+      {/* ✅ 5. ახალი მოდალი - Create Manual Order */}
+      <CreateManualOrderModal 
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onOrderCreated={fetchOrders} // რომ სიამ განახლება გააკეთოს შექმნის შემდეგ
+      />
+
+      {/* Print cleanup */}
       <div className="print:hidden">
         {showBulkPrintModal &&
           setTimeout(() => setShowBulkPrintModal(false), 2000) &&
@@ -500,11 +478,12 @@ const OrdersManager: React.FC = () => {
   );
 };
 
+// --- Sub-components (InvoicePrintView, BulkReportPrintView, OrderDetails, getInvoiceStatusText) ---
+
 // Invoice Print Component
 const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
   return (
     <div className="p-8 max-w-4xl mx-auto bg-white">
-      {/* Header */}
       <div className="flex justify-between items-start mb-8 pb-6 border-b-2 border-gray-900">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">LifeStore</h1>
@@ -524,7 +503,6 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
         </div>
       </div>
 
-      {/* Customer Info */}
       <div className="mb-8">
         <h3 className="text-lg font-bold text-gray-900 mb-4">მყიდველი:</h3>
         <div className="bg-gray-50 p-4 rounded">
@@ -535,9 +513,11 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
           <p>
             <strong>ტელეფონი:</strong> {order.customerInfo.phone}
           </p>
-          <p>
-            <strong>Email:</strong> {order.customerInfo.email}
-          </p>
+          {order.customerInfo.email && (
+            <p>
+                <strong>Email:</strong> {order.customerInfo.email}
+            </p>
+          )}
           <p>
             <strong>მისამართი:</strong> {order.deliveryInfo.city},{" "}
             {order.deliveryInfo.address}
@@ -545,7 +525,6 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
         </div>
       </div>
 
-      {/* Products Table */}
       <div className="mb-8">
         <table className="w-full border-collapse">
           <thead>
@@ -583,7 +562,6 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
         </table>
       </div>
 
-      {/* Totals */}
       <div className="flex justify-end mb-8">
         <div className="w-64">
           <div className="flex justify-between py-2 border-b">
@@ -605,7 +583,6 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="text-center text-gray-500 text-sm pt-8 border-t">
         <p>მადლობთ შეკვეთისთვის!</p>
         <p>დოკუმენტი გენერირებულია: {new Date().toLocaleString("ka-GE")}</p>
@@ -629,7 +606,6 @@ const BulkReportPrintView: React.FC<{
 
   return (
     <div className="p-8 max-w-6xl mx-auto bg-white">
-      {/* Header */}
       <div className="text-center mb-8 pb-6 border-b-2 border-gray-900">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">LifeStore</h1>
         <h2 className="text-xl font-bold text-gray-700">
@@ -651,7 +627,6 @@ const BulkReportPrintView: React.FC<{
         </div>
       </div>
 
-      {/* Orders Table */}
       <div className="mb-8">
         <table className="w-full border-collapse text-sm">
           <thead>
@@ -695,7 +670,6 @@ const BulkReportPrintView: React.FC<{
         </table>
       </div>
 
-      {/* Summary */}
       <div className="flex justify-end">
         <div className="w-64 bg-gray-50 p-4 rounded">
           <div className="flex justify-between py-2 border-b">
@@ -712,19 +686,14 @@ const BulkReportPrintView: React.FC<{
   );
 };
 
-// Helper function for status text (used in print components)
+// Helper function for status text
 const getInvoiceStatusText = (status: Order["orderStatus"]) => {
   switch (status) {
-    case "pending":
-      return "მუშავდება";
-    case "confirmed":
-      return "დადასტურებული";
-    case "delivered":
-      return "მიტანილი";
-    case "cancelled":
-      return "გაუქმებული";
-    default:
-      return status;
+    case "pending": return "მუშავდება";
+    case "confirmed": return "დადასტურებული";
+    case "delivered": return "მიტანილი";
+    case "cancelled": return "გაუქმებული";
+    default: return status;
   }
 };
 
@@ -754,7 +723,6 @@ const OrderDetails: React.FC<{
         </div>
       </div>
 
-      {/* Customer Info */}
       <div className="mb-6">
         <h4 className="font-semibold text-stone-900 mb-3 flex items-center gap-2">
           <User className="w-4 h-4" />
@@ -778,7 +746,6 @@ const OrderDetails: React.FC<{
         </div>
       </div>
 
-      {/* Delivery Info */}
       <div className="mb-6">
         <h4 className="font-semibold text-stone-900 mb-3 flex items-center gap-2">
           <MapPin className="w-4 h-4" />
@@ -799,7 +766,6 @@ const OrderDetails: React.FC<{
         </div>
       </div>
 
-      {/* Items */}
       <div className="mb-6">
         <h4 className="font-semibold text-stone-900 mb-3 flex items-center gap-2">
           <Package className="w-4 h-4" />
@@ -836,7 +802,6 @@ const OrderDetails: React.FC<{
         </div>
       </div>
 
-      {/* Totals */}
       <div className="mb-6 p-4 bg-stone-50 rounded-lg">
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
@@ -860,7 +825,6 @@ const OrderDetails: React.FC<{
         </div>
       </div>
 
-      {/* Status Management */}
       <div>
         <h4 className="font-semibold text-stone-900 mb-3">სტატუსის მართვა</h4>
         <div className="grid grid-cols-2 gap-2">
