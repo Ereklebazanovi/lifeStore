@@ -422,12 +422,10 @@ const OrdersManager: React.FC = () => {
         </div>
       )}
 
-      {/* Print cleanup */}
-      {showBulkPrintModal && (
-        <div className="print:hidden">
-          {setTimeout(() => setShowBulkPrintModal(false), 1000) && null}
-        </div>
-      )}
+      {/* Print cleanup - remove modals after print */}
+      <div className="print:hidden">
+        {showBulkPrintModal && setTimeout(() => setShowBulkPrintModal(false), 2000) && null}
+      </div>
     </div>
   );
 };

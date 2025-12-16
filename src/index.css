@@ -1,8 +1,10 @@
-/* Import Georgian font first */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap');
-
-/* Import Tailwind CSS */
+/* Import Tailwind CSS first */
 @import "tailwindcss";
+
+/* Set global Georgian font */
+body {
+  font-family: 'Noto Sans Georgian', Arial, sans-serif;
+}
 
 /* Print Styles */
 @media print {
