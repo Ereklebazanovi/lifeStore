@@ -1,321 +1,3 @@
-// //orderService.ts 
-// import {
-//   collection,
-//   doc,
-//   setDoc,
-//   addDoc,
-//   getDocs,
-//   query,
-//   orderBy,
-//   where,
-//   updateDoc,
-//   getDoc,
-//   deleteDoc,
-//   Timestamp,
-// } from "firebase/firestore";
-// import { db } from "./firebase";
-// import { ADMIN_CONFIG, SITE_CONFIG } from "../config/constants";
-// import type { Order, CreateOrderRequest, CartItem, OrderItem } from "../types";
-
-// export class OrderService {
-//   private static readonly COLLECTION_NAME = "orders";
-
-//   /**
-//    * Generate unique order number
-//    */
-//   private static generateOrderNumber(): string {
-//     const now = new Date();
-//     const year = now.getFullYear();
-//     const timestamp = now.getTime().toString().slice(-6);
-//     return `LS-${year}-${timestamp}`;
-//   }
-
-//   /**
-//    * Convert CartItem[] to OrderItem[]
-//    */
-//   private static convertCartItemsToOrderItems(
-//     cartItems: CartItem[]
-//   ): OrderItem[] {
-//     return cartItems.map((item) => ({
-//       productId: item.productId,
-//       product: item.product,
-//       quantity: item.quantity,
-//       price: item.product.price,
-//       total: item.quantity * item.product.price,
-//     }));
-//   }
-
-//   /**
-//    * Calculate shipping cost
-//    */
-//   private static calculateShippingCost(city: string): number {
-//     return city === "თბილისი" ? 0 : 7;
-//   }
-
-//   /**
-//    * ✅ SEND EMAIL NOTIFICATION (ახალი ფუნქცია)
-//    * აგზავნის მეილს კლიენტთან და ადმინთან
-//    */
-//   private static async sendEmailNotification(order: Order): Promise<void> {
-//     try {
-//       // 1. მეილი კლიენტს (Customer Confirmation)
-//       await addDoc(collection(db, "mail"), {
-//         to: [order.customerInfo.email],
-//         message: {
-//           subject: `LifeStore - შეკვეთა მიღებულია! #${order.orderNumber}`,
-//           html: `
-//             <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
-//               <h1 style="color: #059669; border-bottom: 2px solid #059669; padding-bottom: 10px;">მადლობა შეკვეთისთვის!</h1>
-//               <p>გამარჯობა <strong>${order.customerInfo.firstName}</strong>,</p>
-//               <p>თქვენი შეკვეთა წარმატებით გაფორმდა და მუშავდება.</p>
-              
-//               <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-//                 <p style="margin: 5px 0;"><strong>შეკვეთის ნომერი:</strong> ${order.orderNumber}</p>
-//                 <p style="margin: 5px 0;"><strong>თარიღი:</strong> ${new Date().toLocaleDateString('ka-GE')}</p>
-//                 <p style="margin: 5px 0; font-size: 18px;"><strong>ჯამური თანხა:</strong> ₾${order.totalAmount.toFixed(2)}</p>
-//               </div>
-
-//               <p>ჩვენი მენეჯერი მალე დაგიკავშირდებათ ან მოგივათ შეტყობინება სტატუსის ცვლილების შესახებ.</p>
-              
-//               <div style="margin-top: 30px; text-align: center;">
-//                 <a href="${SITE_CONFIG.BASE_URL}/order-success/${order.id}?action=print"
-//                    style="background-color: #059669; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-//                    📄 ინვოისის ჩამოტვირთვა (PDF)
-//                 </a>
-//               </div>
-//               <div style="margin-top: 15px; text-align: center;">
-//                 <a href="${SITE_CONFIG.BASE_URL}/order-success/${order.id}"
-//                    style="color: #059669; text-decoration: none; font-size: 14px;">
-//                    ან შეკვეთის დეტალების ნახვა
-//                 </a>
-//               </div>
-//             </div>
-//           `,
-//         },
-//       });
-
-//       // 2. მეილი ადმინს (Notification)
-//       const adminEmail = ADMIN_CONFIG.EMAIL; 
-
-//       await addDoc(collection(db, "mail"), {
-//         to: [adminEmail],
-//         message: {
-//           subject: `🔔 ახალი შეკვეთა: ${order.orderNumber} (₾${order.totalAmount})`,
-//           html: `
-//             <div style="font-family: Arial, sans-serif;">
-//               <h2 style="color: #2563eb;">ახალი შეკვეთა საიტიდან!</h2>
-//               <ul style="line-height: 1.6; font-size: 16px;">
-//                 <li><strong>კლიენტი:</strong> ${order.customerInfo.firstName} ${order.customerInfo.lastName}</li>
-//                 <li><strong>ტელეფონი:</strong> <a href="tel:${order.customerInfo.phone}">${order.customerInfo.phone}</a></li>
-//                 <li><strong>ქალაქი:</strong> ${order.deliveryInfo.city}</li>
-//                 <li><strong>მისამართი:</strong> ${order.deliveryInfo.address}</li>
-//                 <li><strong>გადახდა:</strong> ${order.paymentMethod}</li>
-//                 <li style="margin-top: 10px;"><strong>თანხა:</strong> <span style="color: #059669; font-weight: bold;">₾${order.totalAmount.toFixed(2)}</span></li>
-//               </ul>
-//               <hr style="border: 1px solid #eee; margin: 20px 0;"/>
-//               <p>
-//                 <a href="${SITE_CONFIG.BASE_URL}/admin" style="color: #2563eb; font-weight: bold; font-size: 16px;">
-//                   გადადი ადმინ პანელში
-//                 </a>
-//               </p>
-//             </div>
-//           `,
-//         },
-//       });
-
-//       console.log("📧 Email notifications queued successfully");
-//     } catch (error) {
-//       console.error("❌ Failed to queue email notifications:", error);
-//       // არ ვისვრით ერორს (throw), რადგან შეკვეთა უკვე შექმნილია და კლიენტი არ უნდა შევაფერხოთ
-//     }
-//   }
-
-//   /**
-//    * Create new order
-//    */
-//   static async createOrder(orderData: CreateOrderRequest): Promise<Order> {
-//     try {
-//       const orderNumber = this.generateOrderNumber();
-//       const orderItems = this.convertCartItemsToOrderItems(orderData.items);
-
-//       const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
-//       const shippingCost = this.calculateShippingCost(
-//         orderData.deliveryInfo.city
-//       );
-//       const totalAmount = subtotal + shippingCost;
-
-//       const orderRef = doc(collection(db, this.COLLECTION_NAME));
-
-//       const order: Order = {
-//         id: orderRef.id,
-//         userId: orderData.userId || null,
-//         orderNumber,
-//         items: orderItems,
-//         subtotal,
-//         shippingCost,
-//         totalAmount,
-//         customerInfo: {
-//           ...orderData.customerInfo,
-//           isGuest: orderData.userId === null || orderData.userId === undefined,
-//         },
-//         deliveryInfo: orderData.deliveryInfo,
-//         paymentMethod: orderData.paymentMethod,
-//         paymentStatus: "pending",
-//         orderStatus: "pending",
-//         createdAt: new Date(),
-//         updatedAt: new Date(),
-//       };
-
-//       const firestorePayload = {
-//         ...order,
-//         createdAt: Timestamp.fromDate(order.createdAt),
-//         updatedAt: Timestamp.fromDate(order.updatedAt),
-//       };
-
-//       // Save to Firestore
-//       await setDoc(orderRef, firestorePayload);
-
-//       console.log("✅ Order created successfully:", orderNumber);
-
-//       // ✅ გამოვიძახოთ მეილის გაგზავნა (Async, არ ველოდებით)
-//       this.sendEmailNotification(order);
-
-//       return order;
-//     } catch (error) {
-//       console.error("❌ Error creating order:", error);
-//       throw new Error("შეკვეთის შექმნა ვერ მოხერხდა");
-//     }
-//   }
-
-//   // --- დანარჩენი მეთოდები უცვლელია ---
-
-//   static async getOrderById(orderId: string): Promise<Order | null> {
-//     try {
-//       const orderDoc = await getDoc(doc(db, this.COLLECTION_NAME, orderId));
-//       if (!orderDoc.exists()) return null;
-//       const data = orderDoc.data();
-//       return {
-//         ...data,
-//         createdAt: data.createdAt.toDate(),
-//         updatedAt: data.updatedAt.toDate(),
-//         deliveredAt: data.deliveredAt?.toDate(),
-//       } as Order;
-//     } catch (error) {
-//       console.error("❌ Error getting order:", error);
-//       throw new Error("შეკვეთის მოძიება ვერ მოხერხდა");
-//     }
-//   }
-
-//   static async getUserOrders(userId: string): Promise<Order[]> {
-//     try {
-//       const ordersRef = collection(db, this.COLLECTION_NAME);
-//       const userQuery = query(ordersRef, where("userId", "==", userId));
-//       const snapshot = await getDocs(userQuery);
-//       const orders = snapshot.docs.map((doc) => {
-//         const data = doc.data();
-//         return {
-//           ...data,
-//           createdAt: data.createdAt.toDate(),
-//           updatedAt: data.updatedAt.toDate(),
-//           deliveredAt: data.deliveredAt?.toDate(),
-//         } as Order;
-//       });
-//       return orders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-//     } catch (error) {
-//       console.error("❌ Error getting user orders:", error);
-//       throw new Error("შეკვეთების მოძიება ვერ მოხერხდა");
-//     }
-//   }
-
-//   static async getAllOrders(): Promise<Order[]> {
-//     try {
-//       const ordersRef = collection(db, this.COLLECTION_NAME);
-//       const allQuery = query(ordersRef, orderBy("createdAt", "desc"));
-//       const snapshot = await getDocs(allQuery);
-//       return snapshot.docs.map((doc) => {
-//         const data = doc.data();
-//         return {
-//           ...data,
-//           createdAt: data.createdAt.toDate(),
-//           updatedAt: data.updatedAt.toDate(),
-//           deliveredAt: data.deliveredAt?.toDate(),
-//         } as Order;
-//       });
-//     } catch (error) {
-//       console.error("❌ Error getting all orders:", error);
-//       throw new Error("შეკვეთების მოძიება ვერ მოხერხდა");
-//     }
-//   }
-
-//   static async updateOrderStatus(
-//     orderId: string,
-//     status: Order["orderStatus"]
-//   ): Promise<void> {
-//     try {
-//       const orderRef = doc(db, this.COLLECTION_NAME, orderId);
-//       const updates: any = {
-//         orderStatus: status,
-//         updatedAt: Timestamp.now(),
-//       };
-//       if (status === "delivered") {
-//         updates.deliveredAt = Timestamp.now();
-//       }
-//       await updateDoc(orderRef, updates);
-//       console.log("✅ Order status updated:", orderId, status);
-//     } catch (error) {
-//       console.error("❌ Error updating order status:", error);
-//       throw new Error("სტატუსის განახლება ვერ მოხერხდა");
-//     }
-//   }
-
-//   static async addAdminNotes(orderId: string, notes: string): Promise<void> {
-//     try {
-//       const orderRef = doc(db, this.COLLECTION_NAME, orderId);
-//       await updateDoc(orderRef, {
-//         adminNotes: notes,
-//         updatedAt: Timestamp.now(),
-//       });
-//       console.log("✅ Admin notes added to order:", orderId);
-//     } catch (error) {
-//       console.error("❌ Error adding admin notes:", error);
-//       throw new Error("კომენტარის დამატება ვერ მოხერხდა");
-//     }
-//   }
-
-//   static async addTrackingNumber(
-//     orderId: string,
-//     trackingNumber: string
-//   ): Promise<void> {
-//     try {
-//       const orderRef = doc(db, this.COLLECTION_NAME, orderId);
-//       await updateDoc(orderRef, {
-//         trackingNumber,
-//         updatedAt: Timestamp.now(),
-//       });
-//       console.log("✅ Tracking number added to order:", orderId, trackingNumber);
-//     } catch (error) {
-//       console.error("❌ Error adding tracking number:", error);
-//       throw new Error("ტრეკინგ კოდის დამატება ვერ მოხერხდა");
-//     }
-//   }
-
-//   /**
-//    * Delete order
-//    */
-//   static async deleteOrder(orderId: string): Promise<void> {
-//     try {
-//       const orderRef = doc(db, this.COLLECTION_NAME, orderId);
-//       await deleteDoc(orderRef);
-//       console.log("✅ Order deleted successfully:", orderId);
-//     } catch (error) {
-//       console.error("❌ Error deleting order:", error);
-//       throw new Error("შეკვეთის წაშლა ვერ მოხერხდა");
-//     }
-//   }
-// }
-
-///manual order
-
 // src/services/orderService.ts
 import {
   collection,
@@ -330,6 +12,8 @@ import {
   getDoc,
   deleteDoc,
   Timestamp,
+  runTransaction,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { ADMIN_CONFIG, SITE_CONFIG } from "../config/constants";
@@ -378,11 +62,11 @@ export class OrderService {
     items: ManualOrderItem[]
   ): OrderItem[] {
     return items.map((item) => ({
-      productId: `manual_${Date.now()}_${Math.random()
-        .toString(36)
-        .substr(2, 9)}`, // უნიკალური ID
+      productId:
+        item.productId ||
+        `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // ✅ იყენებს product ID-ს თუ არის, სხვაგვარად ქმნის manual ID-ს
       product: {
-        id: "manual_entry",
+        id: item.productId || "manual_entry",
         name: item.name,
         description: "Added manually by admin",
         price: item.price,
@@ -404,6 +88,71 @@ export class OrderService {
    */
   private static calculateShippingCost(city: string): number {
     return city === "თბილისი" ? 0 : 7;
+  }
+
+  /**
+   * ✅ Update Product Inventory (Race Condition Safe)
+   * გამოიყენება როგორც website orders-ისთვის, ასევე manual orders-ისთვის
+   */
+  private static async updateProductInventory(
+    items: { productId: string; quantity: number }[]
+  ): Promise<void> {
+    // ვაგზავნით batch transaction-ს მხოლოდ ნამდვილი productId-ებისთვის
+    const realProducts = items.filter(
+      (item) =>
+        item.productId &&
+        !item.productId.startsWith("manual_") &&
+        item.productId !== "manual_entry"
+    );
+
+    if (realProducts.length === 0) {
+      console.log("📦 No real products to update inventory for");
+      return;
+    }
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        // 1. წავიკითხოთ ყველა პროდუქტის მიმდინარე მონაცემი
+        const productRefs = realProducts.map((item) =>
+          doc(db, "products", item.productId)
+        );
+
+        const productDocs = await Promise.all(
+          productRefs.map((ref) => transaction.get(ref))
+        );
+
+        // 2. შევამოწმოთ stock availability და განვაახლოთ
+        for (let i = 0; i < productDocs.length; i++) {
+          const productDoc = productDocs[i];
+          const item = realProducts[i];
+
+          if (!productDoc.exists()) {
+            throw new Error(`პროდუქტი ვერ მოიძებნა: ${item.productId}`);
+          }
+
+          const productData = productDoc.data();
+          const currentStock = productData.stock || 0;
+          const newStock = currentStock - item.quantity;
+
+          if (newStock < 0) {
+            throw new Error(
+              `არასაკმარისი რაოდენობა: "${productData.name}" (მოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${currentStock})`
+            );
+          }
+
+          // განვაახლოთ stock transaction-ში
+          transaction.update(productRefs[i], {
+            stock: newStock,
+            updatedAt: Timestamp.now(),
+          });
+        }
+
+        console.log("📦 Product inventory updated successfully in transaction");
+      });
+    } catch (error) {
+      console.error("❌ Error updating product inventory:", error);
+      throw error; // re-throw to prevent order creation
+    }
   }
 
   /**
@@ -481,13 +230,66 @@ export class OrderService {
   }
 
   /**
-   * Create new order (FROM WEBSITE)
+   * ✅ Rollback Product Inventory (Emergency Recovery)
+   * გამოიყენება თუ order creation-ის შემდეგ რაიმე შეცდომა მოხდება
+   */
+  private static async rollbackProductInventory(
+    items: { productId: string; quantity: number }[]
+  ): Promise<void> {
+    const realProducts = items.filter(
+      (item) =>
+        item.productId &&
+        !item.productId.startsWith("manual_") &&
+        item.productId !== "manual_entry"
+    );
+
+    if (realProducts.length === 0) {
+      return;
+    }
+
+    try {
+      const batch = writeBatch(db);
+
+      for (const item of realProducts) {
+        const productRef = doc(db, "products", item.productId);
+
+        // დავაბრუნოთ უკან stock (დავამატოთ რაოდენობა)
+        const productDoc = await getDoc(productRef);
+        if (productDoc.exists()) {
+          const currentStock = productDoc.data().stock || 0;
+          batch.update(productRef, {
+            stock: currentStock + item.quantity,
+            updatedAt: Timestamp.now(),
+          });
+        }
+      }
+
+      await batch.commit();
+      console.log("🔄 Product inventory rollback completed");
+    } catch (error) {
+      console.error("❌ Error during inventory rollback:", error);
+      // ეს არ უნდა fail-დეს, მაგრამ უნდა ვიცოდეთ რა მოხდა
+    }
+  }
+
+  /**
+   * Create new order (FROM WEBSITE) - ✅ With Inventory Management
    */
   static async createOrder(orderData: CreateOrderRequest): Promise<Order> {
+    // ვამზადებთ აიტემებს inventory-სთვის
+    const orderItems = this.convertCartItemsToOrderItems(orderData.items);
+    const inventoryItems = orderItems.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    }));
+
     try {
       const orderNumber = this.generateOrderNumber();
-      const orderItems = this.convertCartItemsToOrderItems(orderData.items);
 
+      // ✅ 1. TRANSACTION: Update inventory first
+      await this.updateProductInventory(inventoryItems);
+
+      // ✅ 2. Create order
       const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
       const shippingCost = this.calculateShippingCost(
         orderData.deliveryInfo.city
@@ -500,15 +302,14 @@ export class OrderService {
         id: orderRef.id,
         userId: orderData.userId || null,
         orderNumber,
-        source: "website", // ✅ Default Source
+        source: "website",
         items: orderItems,
         subtotal,
         shippingCost,
         totalAmount,
         customerInfo: {
           ...orderData.customerInfo,
-          isGuest:
-            orderData.userId === null || orderData.userId === undefined,
+          isGuest: orderData.userId === null || orderData.userId === undefined,
         },
         deliveryInfo: orderData.deliveryInfo,
         paymentMethod: orderData.paymentMethod,
@@ -525,42 +326,70 @@ export class OrderService {
       };
 
       await setDoc(orderRef, firestorePayload);
+
       console.log("✅ Order created successfully:", orderNumber);
       this.sendEmailNotification(order);
 
       return order;
     } catch (error) {
       console.error("❌ Error creating order:", error);
+
+      // 🛑 ROLLBACK: თუ შეკვეთის შექმნა ჩავარდა, მაგრამ მარაგი უკვე მოკლებულია
+      // ვამოწმებთ, რომ შეცდომა "არასაკმარისი რაოდენობა" არ არის (მაგ დროს მარაგი ისედაც არ მოკლებულა)
+      const isInventoryError =
+        error instanceof Error &&
+        error.message.includes("არასაკმარისი რაოდენობა");
+
+      if (!isInventoryError) {
+        console.log(
+          "🔄 Performing inventory rollback due to order creation failure..."
+        );
+        await this.rollbackProductInventory(inventoryItems);
+      }
+
+      if (isInventoryError) {
+        throw error; // ვაბრუნებთ სტოკის ერორს კლიენტთან
+      }
       throw new Error("შეკვეთის შექმნა ვერ მოხერხდა");
     }
   }
 
   /**
-   * ✅ CREATE MANUAL ORDER (FROM ADMIN PANEL)
+   * ✅ CREATE MANUAL ORDER (FROM ADMIN PANEL) - With Inventory Management
    * ეს ფუნქცია გამოიძახება მენეჯერის მიერ ხელით დამატებისას
    */
   static async createManualOrder(
     data: CreateManualOrderRequest
   ): Promise<Order> {
+    // 1. ვამზადებთ აიტემებს
+    const orderItems = this.convertManualItemsToOrderItems(data.items);
+
+    // ვფილტრავთ მხოლოდ რეალურ პროდუქტებს ინვენტარისთვის
+    const inventoryItems = data.items
+      .filter((item) => item.productId && !item.productId.startsWith("manual_"))
+      .map((item) => ({
+        productId: item.productId!,
+        quantity: item.quantity,
+      }));
+
     try {
       const orderNumber = this.generateOrderNumber();
 
-      // 1. გადავიყვანოთ მარტივი აიტემები OrderItem-ებად
-      const orderItems = this.convertManualItemsToOrderItems(data.items);
+      // ✅ 2. TRANSACTION: Update inventory
+      if (inventoryItems.length > 0) {
+        await this.updateProductInventory(inventoryItems);
+      }
 
-      // 2. დავითვალოთ ჯამები
+      // 3. Create Order Object
       const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
-      // მიწოდების ფასს მენეჯერი უთითებს ხელით (data.shippingCost)
       const totalAmount = subtotal + data.shippingCost;
-
       const orderRef = doc(collection(db, this.COLLECTION_NAME));
 
-      // 3. ავაწყოთ სრული Order ობიექტი
       const order: Order = {
         id: orderRef.id,
-        userId: null, // მენეჯერის დამატებულს User ID არ აქვს
+        userId: null,
         orderNumber,
-        source: data.source, // ✅ წყარო (Instagram, Facebook...)
+        source: data.source,
         items: orderItems,
         subtotal,
         shippingCost: data.shippingCost,
@@ -569,17 +398,16 @@ export class OrderService {
           firstName: data.customerInfo.firstName,
           lastName: data.customerInfo.lastName,
           phone: data.customerInfo.phone,
-          email: data.customerInfo.email || "", // შეიძლება ცარიელი იყოს
+          email: data.customerInfo.email || "",
           isGuest: true,
         },
         deliveryInfo: data.deliveryInfo,
         paymentMethod: data.paymentMethod,
-        // თუ სტატუსი 'delivered'-ია, ჩავთვალოთ რომ გადახდილია
         paymentStatus:
           data.status === "delivered" || data.paymentMethod === "cash"
             ? "paid"
             : "pending",
-        orderStatus: data.status, // მენეჯერის არჩეული სტატუსი
+        orderStatus: data.status,
         createdAt: new Date(),
         updatedAt: new Date(),
         adminNotes: "Manually added via Admin Panel",
@@ -591,11 +419,10 @@ export class OrderService {
         updatedAt: Timestamp.fromDate(order.updatedAt),
       };
 
-      // 4. შენახვა
+      // 4. Save
       await setDoc(orderRef, firestorePayload);
       console.log("✅ Manual Order created successfully:", orderNumber);
 
-      // 5. მეილი (თუ მითითებულია)
       if (data.customerInfo.email) {
         this.sendEmailNotification(order);
       }
@@ -603,6 +430,20 @@ export class OrderService {
       return order;
     } catch (error) {
       console.error("❌ Error creating manual order:", error);
+
+      // 🛑 ROLLBACK
+      const isInventoryError =
+        error instanceof Error &&
+        error.message.includes("არასაკმარისი რაოდენობა");
+
+      if (!isInventoryError && inventoryItems.length > 0) {
+        console.log("🔄 Performing manual order rollback...");
+        await this.rollbackProductInventory(inventoryItems);
+      }
+
+      if (isInventoryError) {
+        throw error;
+      }
       throw new Error("მექანიკური შეკვეთის შექმნა ვერ მოხერხდა");
     }
   }

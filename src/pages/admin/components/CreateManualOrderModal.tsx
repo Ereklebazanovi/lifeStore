@@ -1,21 +1,29 @@
 // src/components/admin/CreateManualOrderModal.tsx
-import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  Plus, 
-  Trash2, 
-  Save, 
-  ShoppingBag, 
-  User, 
-  MapPin, 
+import React, { useState, useEffect } from "react";
+import {
+  X,
+  Plus,
+  Trash2,
+  Save,
+  ShoppingBag,
+  User,
+  MapPin,
   DollarSign,
-  Globe
-} from 'lucide-react';
-import { OrderService } from '../../../services/orderService';
-import { showToast } from '../../../components/ui/Toast';
-import type { CreateManualOrderRequest, ManualOrderItem, OrderSource } from '../../../types';
+  Globe,
+} from "lucide-react";
+import { OrderService } from "../../../services/orderService";
+import { showToast } from "../../../components/ui/Toast";
+import type {
+  CreateManualOrderRequest,
+  ManualOrderItem,
+  OrderSource,
+} from "../../../types";
 // ✅ 1. იმპორტი
-import PhoneInput from '../../../components/ui/PhoneInput';
+import PhoneInput from "../../../components/ui/PhoneInput";
+import ProductAutocomplete, {
+  ProductSelection,
+} from "../../../components/admin/ProductAutocomplete";
+import { useProductStore } from "../../../store/productStore";
 
 interface CreateManualOrderModalProps {
   isOpen: boolean;
@@ -23,48 +31,56 @@ interface CreateManualOrderModalProps {
   onOrderCreated: () => void;
 }
 
-const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  onOrderCreated 
+const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
+  isOpen,
+  onClose,
+  onOrderCreated,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const { products } = useProductStore(); // ✅ დავამატოთ products access
 
   // --- Form State ---
   const [customerInfo, setCustomerInfo] = useState({
-    firstName: '',
-    lastName: '',
-    phone: '',
-    email: ''
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
   });
 
   const [deliveryInfo, setDeliveryInfo] = useState({
-    city: 'თბილისი',
-    address: '',
-    comment: ''
+    city: "თბილისი",
+    address: "",
+    comment: "",
   });
 
   const [items, setItems] = useState<ManualOrderItem[]>([
-    { name: '', price: 0, quantity: 1 }
+    { name: "", price: 0, quantity: 1 },
   ]);
 
-  const [source, setSource] = useState<OrderSource>('instagram');
-  const [status, setStatus] = useState<'pending' | 'confirmed' | 'delivered'>('confirmed');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'other' | 'bank_transfer'>('cash');
+  const [source, setSource] = useState<OrderSource>("instagram");
+  const [status, setStatus] = useState<"pending" | "confirmed" | "delivered">(
+    "confirmed"
+  );
+  const [paymentMethod, setPaymentMethod] = useState<
+    "cash" | "other" | "bank_transfer"
+  >("cash");
   const [shippingCost, setShippingCost] = useState(0);
 
   // --- Calculations ---
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
   const total = subtotal + shippingCost;
 
   useEffect(() => {
     if (isOpen) {
-      setCustomerInfo({ firstName: '', lastName: '', phone: '', email: '' });
-      setDeliveryInfo({ city: 'თბილისი', address: '', comment: '' });
-      setItems([{ name: '', price: 0, quantity: 1 }]);
-      setSource('instagram');
-      setStatus('confirmed');
-      setPaymentMethod('cash');
+      setCustomerInfo({ firstName: "", lastName: "", phone: "", email: "" });
+      setDeliveryInfo({ city: "თბილისი", address: "", comment: "" });
+      setItems([{ name: "", price: 0, quantity: 1 }]);
+      setSource("instagram");
+      setStatus("confirmed");
+      setPaymentMethod("cash");
       setShippingCost(0);
     }
   }, [isOpen]);
@@ -84,8 +100,20 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     }
     setItems(newItems);
   };
+
+  const handleProductSelect = (index: number, selection: ProductSelection) => {
+    const newItems = [...items];
+    newItems[index] = {
+      ...newItems[index],
+      productId: selection.product?.id, // 👈 აი, აქ ვინახავთ ID-ს!
+      name: selection.name,
+      price: selection.price,
+    };
+    setItems(newItems);
+  };
+
   const addItemRow = () => {
-    setItems([...items, { name: '', price: 0, quantity: 1 }]);
+    setItems([...items, { name: "", price: 0, quantity: 1 }]);
   };
 
   const removeItemRow = (index: number) => {
@@ -96,21 +124,41 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!customerInfo.firstName || !customerInfo.phone) {
-      showToast('შეავსეთ კლიენტის სახელი და ტელეფონი', 'error');
+      showToast("შეავსეთ კლიენტის სახელი და ტელეფონი", "error");
       return;
     }
     // დამატებითი შემოწმება ტელეფონის სიგრძეზე (9 ციფრი)
     if (customerInfo.phone.length !== 9) {
-      showToast('ტელეფონის ნომერი არასწორია (საჭიროა 9 ციფრი)', 'error');
+      showToast("ტელეფონის ნომერი არასწორია (საჭიროა 9 ციფრი)", "error");
       return;
     }
 
-    if (items.some(item => !item.name || item.price < 0)) {
-      showToast('შეავსეთ პროდუქტის მონაცემები სწორად', 'error');
+    if (items.some((item) => !item.name || item.price < 0)) {
+      showToast("შეავსეთ პროდუქტის მონაცემები სწორად", "error");
       return;
+    }
+
+    // ✅ Stock Validation - Check if any items have stock issues
+    const itemsWithProductId = items.filter(
+      (item) => item.productId && !item.productId.startsWith("manual_")
+    );
+    for (const item of itemsWithProductId) {
+      if (item.productId) {
+        // Get current product data for real-time validation
+        const currentProduct = products.find((p) => p.id === item.productId);
+        if (currentProduct) {
+          if (currentProduct.stock < item.quantity) {
+            showToast(
+              `არასაკმარისი რაოდენობა: "${item.name}" (მოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${currentProduct.stock})`,
+              "error"
+            );
+            return;
+          }
+        }
+      }
     }
 
     try {
@@ -122,16 +170,16 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
         deliveryInfo,
         shippingCost,
         status,
-        paymentMethod: paymentMethod as any
+        paymentMethod: paymentMethod as any,
       };
 
       await OrderService.createManualOrder(orderData);
-      showToast('შეკვეთა წარმატებით შეიქმნა!', 'success');
+      showToast("შეკვეთა წარმატებით შეიქმნა!", "success");
       onOrderCreated();
       onClose();
     } catch (error) {
       console.error(error);
-      showToast('შეკვეთის შექმნა ვერ მოხერხდა', 'error');
+      showToast("შეკვეთის შექმნა ვერ მოხერხდა", "error");
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +190,6 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-white rounded-xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
-        
         {/* --- Header (Fixed) --- */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 flex-shrink-0">
           <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
@@ -151,22 +198,30 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
             </div>
             შეკვეთის დამატება
           </h2>
-          <button onClick={onClose} className="p-1.5 hover:bg-stone-100 rounded-full transition-colors">
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-stone-100 rounded-full transition-colors"
+          >
             <X className="w-5 h-5 text-stone-500" />
           </button>
         </div>
 
         {/* --- Scrollable Body --- */}
         <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
-          <form id="create-order-form" onSubmit={handleSubmit} className="space-y-6">
-            
+          <form
+            id="create-order-form"
+            onSubmit={handleSubmit}
+            className="space-y-6"
+          >
             {/* 1. Quick Settings Row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-stone-50 p-3 rounded-lg border border-stone-100">
               <div>
-                <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">წყარო</label>
+                <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">
+                  წყარო
+                </label>
                 <div className="relative">
                   <Globe className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
-                  <select 
+                  <select
                     value={source}
                     onChange={(e) => setSource(e.target.value as OrderSource)}
                     className="w-full pl-8 pr-2 py-1.5 text-sm border border-stone-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none bg-white"
@@ -181,8 +236,10 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">სტატუსი</label>
-                <select 
+                <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">
+                  სტატუსი
+                </label>
+                <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as any)}
                   className="w-full px-2 py-1.5 text-sm border border-stone-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none bg-white"
@@ -193,8 +250,10 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">გადახდა</label>
-                <select 
+                <label className="block text-[10px] font-bold text-stone-500 uppercase mb-1">
+                  გადახდა
+                </label>
+                <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as any)}
                   className="w-full px-2 py-1.5 text-sm border border-stone-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none bg-white"
@@ -220,26 +279,38 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                       placeholder="სახელი *"
                       required
                       value={customerInfo.firstName}
-                      onChange={(e) => setCustomerInfo({...customerInfo, firstName: e.target.value})}
+                      onChange={(e) =>
+                        setCustomerInfo({
+                          ...customerInfo,
+                          firstName: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-sm border border-stone-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none transition-all placeholder:text-stone-400"
                     />
                     <input
                       type="text"
                       placeholder="გვარი"
                       value={customerInfo.lastName}
-                      onChange={(e) => setCustomerInfo({...customerInfo, lastName: e.target.value})}
+                      onChange={(e) =>
+                        setCustomerInfo({
+                          ...customerInfo,
+                          lastName: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-1.5 text-sm border border-stone-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none transition-all placeholder:text-stone-400"
                     />
                   </div>
-                  
+
                   {/* ✅ Phone Input Component - შეცვლილია */}
                   <div className="phone-input-wrapper">
                     <PhoneInput
-                        value={customerInfo.phone}
-                        onChange={(val) => setCustomerInfo({...customerInfo, phone: val})}
-                        required
-                        className="py-1.5 text-sm !border-stone-200 !rounded-md" 
-                        placeholder="555 12 34 56"
+                      value={customerInfo.phone}
+                      onChange={(val) =>
+                        setCustomerInfo({ ...customerInfo, phone: val })
+                      }
+                      required
+                      className="py-1.5 text-sm !border-stone-200 !rounded-md"
+                      placeholder="555 12 34 56"
                     />
                   </div>
 
@@ -247,7 +318,12 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                     type="email"
                     placeholder="ელ-ფოსტა (არასავალდებულო)"
                     value={customerInfo.email}
-                    onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
+                    onChange={(e) =>
+                      setCustomerInfo({
+                        ...customerInfo,
+                        email: e.target.value,
+                      })
+                    }
                     className="w-full px-3 py-1.5 text-sm border border-stone-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none transition-all placeholder:text-stone-400"
                   />
                 </div>
@@ -262,7 +338,9 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                 <div className="space-y-3">
                   <select
                     value={deliveryInfo.city}
-                    onChange={(e) => setDeliveryInfo({...deliveryInfo, city: e.target.value})}
+                    onChange={(e) =>
+                      setDeliveryInfo({ ...deliveryInfo, city: e.target.value })
+                    }
                     className="w-full px-3 py-1.5 text-sm border border-stone-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none bg-white"
                   >
                     <option value="თბილისი">თბილისი</option>
@@ -275,14 +353,24 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                     placeholder="მისამართი *"
                     required
                     value={deliveryInfo.address}
-                    onChange={(e) => setDeliveryInfo({...deliveryInfo, address: e.target.value})}
+                    onChange={(e) =>
+                      setDeliveryInfo({
+                        ...deliveryInfo,
+                        address: e.target.value,
+                      })
+                    }
                     className="w-full px-3 py-1.5 text-sm border border-stone-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none h-[74px] resize-none placeholder:text-stone-400"
                   />
                   <input
                     type="text"
                     placeholder="კომენტარი..."
                     value={deliveryInfo.comment}
-                    onChange={(e) => setDeliveryInfo({...deliveryInfo, comment: e.target.value})}
+                    onChange={(e) =>
+                      setDeliveryInfo({
+                        ...deliveryInfo,
+                        comment: e.target.value,
+                      })
+                    }
                     className="w-full px-3 py-1.5 text-sm border border-stone-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none placeholder:text-stone-400"
                   />
                 </div>
@@ -295,7 +383,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                 <ShoppingBag className="w-4 h-4 text-emerald-600" />
                 პროდუქტები
               </h3>
-              
+
               <div className="border border-stone-200 rounded-lg overflow-hidden mb-3">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left min-w-[400px]">
@@ -312,13 +400,17 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                       {items.map((item, index) => (
                         <tr key={index}>
                           <td className="p-2">
-                            <input
-                              type="text"
-                              placeholder="მაგ: წითელი ჩანთა"
-                              required
+                            <ProductAutocomplete
                               value={item.name}
-                              onChange={(e) => handleItemChange(index, 'name', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border border-stone-200 rounded focus:ring-1 focus:ring-emerald-500 outline-none"
+                              onChange={(value) =>
+                                handleItemChange(index, "name", value)
+                              }
+                              onProductSelect={(selection) =>
+                                handleProductSelect(index, selection)
+                              }
+                              placeholder="მაგ: წითელი ჩანთა"
+                              className="px-2 py-1 text-sm !border-stone-200 !rounded focus:!ring-1 focus:!ring-emerald-500 !outline-none"
+                              requestedQuantity={item.quantity}
                             />
                           </td>
                           <td className="p-2">
@@ -328,7 +420,9 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                               step="0.01"
                               required
                               value={item.price}
-                              onChange={(e) => handleItemChange(index, 'price', e.target.value)}
+                              onChange={(e) =>
+                                handleItemChange(index, "price", e.target.value)
+                              }
                               className="w-full px-2 py-1 text-sm border border-stone-200 rounded focus:ring-1 focus:ring-emerald-500 outline-none"
                             />
                           </td>
@@ -338,7 +432,13 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                               min="1"
                               required
                               value={item.quantity}
-                              onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  index,
+                                  "quantity",
+                                  e.target.value
+                                )
+                              }
                               className="w-full px-2 py-1 text-sm border border-stone-200 rounded focus:ring-1 focus:ring-emerald-500 outline-none text-center"
                             />
                           </td>
@@ -382,8 +482,8 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                     <span className="flex items-center gap-1">
                       მიწოდება <DollarSign className="w-3 h-3" />
                     </span>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       min="0"
                       value={shippingCost}
                       onChange={(e) => setShippingCost(Number(e.target.value))}
@@ -392,12 +492,13 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                   </div>
                   <div className="flex justify-between text-base font-bold text-stone-900 border-t border-stone-200 pt-2">
                     <span>სულ:</span>
-                    <span className="text-emerald-700">₾{total.toFixed(2)}</span>
+                    <span className="text-emerald-700">
+                      ₾{total.toFixed(2)}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
-
           </form>
         </div>
 
@@ -426,7 +527,6 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
             )}
           </button>
         </div>
-
       </div>
     </div>
   );

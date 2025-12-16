@@ -1,58 +1,67 @@
 // src/pages/admin/components/AddProductModal.tsx
-import React, { useState } from 'react';
-import { X, Package, Upload, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
-import { useProductStore } from '../../../store/productStore';
-import ImageUpload from '../../../components/ui/ImageUpload';
+import React, { useState } from "react";
+import {
+  X,
+  Package,
+  Upload,
+  Link as LinkIcon,
+  Image as ImageIcon,
+} from "lucide-react";
+import { useProductStore } from "../../../store/productStore";
+import ImageUpload from "../../../components/ui/ImageUpload";
 
 interface AddProductModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) => {
+const AddProductModal: React.FC<AddProductModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const { addProduct, isLoading } = useProductStore();
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    category: '',
-    stock: '',
-    images: [] as string[]
+    name: "",
+    description: "",
+    price: "",
+    category: "",
+    stock: "",
+    images: [] as string[],
   });
 
   const [errors, setErrors] = useState({
-    name: '',
-    price: '',
-    category: '',
-    stock: ''
+    name: "",
+    price: "",
+    category: "",
+    stock: "",
   });
 
   const validateForm = () => {
     const newErrors = {
-      name: '',
-      price: '',
-      category: '',
-      stock: ''
+      name: "",
+      price: "",
+      category: "",
+      stock: "",
     };
 
     if (!formData.name.trim()) {
-      newErrors.name = 'პროდუქტის სახელი აუცილებელია';
+      newErrors.name = "პროდუქტის სახელი აუცილებელია";
     }
 
     if (!formData.price || parseFloat(formData.price) <= 0) {
-      newErrors.price = 'ფასი უნდა იყოს დადებითი რიცხვი';
+      newErrors.price = "ფასი უნდა იყოს დადებითი რიცხვი";
     }
 
     if (!formData.category.trim()) {
-      newErrors.category = 'კატეგორია აუცილებელია';
+      newErrors.category = "კატეგორია აუცილებელია";
     }
 
     if (!formData.stock || parseInt(formData.stock) < 0) {
-      newErrors.stock = 'მარაგი უნდა იყოს 0 ან მეტი';
+      newErrors.stock = "მარაგი უნდა იყოს 0 ან მეტი";
     }
 
     setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error !== '');
+    return !Object.values(newErrors).some((error) => error !== "");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,8 +77,8 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
       price: parseFloat(formData.price),
       category: formData.category,
       stock: parseInt(formData.stock),
-      images: formData.images.filter((img: string) => img.trim() !== ''),
-      isActive: true
+      images: formData.images.filter((img: string) => img.trim() !== ""),
+      isActive: true,
     };
 
     try {
@@ -78,30 +87,26 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
 
       // Reset form
       setFormData({
-        name: '',
-        description: '',
-        price: '',
-        category: '',
-        stock: '',
-        images: [] as string[]
+        name: "",
+        description: "",
+        price: "",
+        category: "",
+        stock: "",
+        images: [] as string[],
       });
       setErrors({
-        name: '',
-        price: '',
-        category: '',
-        stock: ''
+        name: "",
+        price: "",
+        category: "",
+        stock: "",
       });
     } catch (error) {
-      console.error('Error adding product:', error);
-      alert('პროდუქტის დამატება ვერ მოხერხდა. გთხოვთ სცადოთ თავიდან.');
+      console.error("Error adding product:", error);
+      alert("პროდუქტის დამატება ვერ მოხერხდა. გთხოვთ სცადოთ თავიდან.");
     }
   };
 
-  const categories = [
-    'კატეგორია-1',
-    'კატეგორია-2',
-    'კატეგორია-3'
-  ];
+  const categories = ["კატეგორია-1", "კატეგორია-2", "კატეგორია-3"];
 
   if (!isOpen) return null;
 
@@ -117,7 +122,9 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
               </div>
               <div>
                 <h2 className="text-xl font-bold">ახალი პროდუქტის დამატება</h2>
-                <p className="text-green-100 text-sm">შეავსეთ ყველა ველი პროდუქტის დასამატებლად</p>
+                <p className="text-green-100 text-sm">
+                  შეავსეთ ყველა ველი პროდუქტის დასამატებლად
+                </p>
               </div>
             </div>
             <button
@@ -133,7 +140,9 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Basic Info Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">ძირითადი ინფორმაცია</h3>
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+              ძირითადი ინფორმაცია
+            </h3>
 
             {/* Product Name */}
             <div>
@@ -143,16 +152,20 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
                   errors.name
-                    ? 'border-red-300 focus:border-red-500'
-                    : 'border-gray-200 focus:border-green-500'
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-200 focus:border-green-500"
                 }`}
                 placeholder="მაგ. iPhone 15 Pro"
                 disabled={isLoading}
               />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+              {errors.name && (
+                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+              )}
             </div>
 
             {/* Description */}
@@ -162,7 +175,9 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
               </label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 rows={3}
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition-colors resize-none"
                 placeholder="პროდუქტის დეტალური აღწერა..."
@@ -182,16 +197,20 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
                   step="0.01"
                   min="0"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, price: e.target.value })
+                  }
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
                     errors.price
-                      ? 'border-red-300 focus:border-red-500'
-                      : 'border-gray-200 focus:border-green-500'
+                      ? "border-red-300 focus:border-red-500"
+                      : "border-gray-200 focus:border-green-500"
                   }`}
                   placeholder="0.00"
                   disabled={isLoading}
                 />
-                {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
+                {errors.price && (
+                  <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+                )}
               </div>
 
               {/* Stock */}
@@ -203,16 +222,20 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
                   type="number"
                   min="0"
                   value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, stock: e.target.value })
+                  }
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
                     errors.stock
-                      ? 'border-red-300 focus:border-red-500'
-                      : 'border-gray-200 focus:border-green-500'
+                      ? "border-red-300 focus:border-red-500"
+                      : "border-gray-200 focus:border-green-500"
                   }`}
                   placeholder="0"
                   disabled={isLoading}
                 />
-                {errors.stock && <p className="text-red-500 text-sm mt-1">{errors.stock}</p>}
+                {errors.stock && (
+                  <p className="text-red-500 text-sm mt-1">{errors.stock}</p>
+                )}
               </div>
             </div>
 
@@ -223,11 +246,13 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
               </label>
               <select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, category: e.target.value })
+                }
                 className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
                   errors.category
-                    ? 'border-red-300 focus:border-red-500'
-                    : 'border-gray-200 focus:border-green-500'
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-200 focus:border-green-500"
                 }`}
                 disabled={isLoading}
               >
@@ -238,7 +263,9 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
                   </option>
                 ))}
               </select>
-              {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
+              {errors.category && (
+                <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+              )}
             </div>
           </div>
 
@@ -251,7 +278,8 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
 
             <div className="bg-gray-50 rounded-xl p-4">
               <p className="text-sm text-gray-600 mb-4">
-                ატვირთეთ პროდუქტის სურათები (მაქსიმუმ 4). მხარდაჭერილია: JPG, PNG, WebP
+                ატვირთეთ პროდუქტის სურათები (მაქსიმუმ 4). მხარდაჭერილია: JPG,
+                PNG, WebP
               </p>
 
               <ImageUpload
@@ -285,7 +313,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose }) =>
               ) : (
                 <>
                   <Package className="w-4 h-4" />
-                  <span className='text-black'>პროდუქტის დამატება</span>
+                  <span className="text-black">პროდუქტის დამატება</span>
                 </>
               )}
             </button>

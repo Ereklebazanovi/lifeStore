@@ -1,13 +1,22 @@
 // src/pages/admin/components/ProductManager.tsx
-import React, { useState } from 'react';
-import { useProductStore } from '../../../store/productStore';
-import { Plus, Edit, Trash2, ToggleLeft, ToggleRight, Image as ImageIcon, AlertTriangle } from 'lucide-react';
-import AddProductModal from './AddProductModal';
-import EditProductModal from './EditProductModal';
-import type { Product } from '../../../types';
+import React, { useState } from "react";
+import { useProductStore } from "../../../store/productStore";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  Image as ImageIcon,
+  AlertTriangle,
+} from "lucide-react";
+import AddProductModal from "./AddProductModal";
+import EditProductModal from "./EditProductModal";
+import type { Product } from "../../../types";
 
 const ProductManager: React.FC = () => {
-  const { products, isLoading, deleteProduct, toggleProductStatus } = useProductStore();
+  const { products, isLoading, deleteProduct, toggleProductStatus } =
+    useProductStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -18,7 +27,9 @@ const ProductManager: React.FC = () => {
   };
 
   const handleDeleteProduct = async (id: string, name: string) => {
-    if (window.confirm(`დარწმუნებული ხართ, რომ გსურთ "${name}" პროდუქტის წაშლა?`)) {
+    if (
+      window.confirm(`დარწმუნებული ხართ, რომ გსურთ "${name}" პროდუქტის წაშლა?`)
+    ) {
       await deleteProduct(id);
     }
   };
@@ -41,12 +52,19 @@ const ProductManager: React.FC = () => {
       {/* Enhanced Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 space-y-4 sm:space-y-0">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">პროდუქტების კატალოგი</h3>
-          <p className="text-gray-500 text-sm">მართეთ თქვენი მაღაზიის ასორტიმენტი და ფასები</p>
+          <h3 className="text-lg font-semibold text-gray-900">
+            პროდუქტების კატალოგი
+          </h3>
+          <p className="text-gray-500 text-sm">
+            მართეთ თქვენი მაღაზიის ასორტიმენტი და ფასები
+          </p>
         </div>
         <div className="flex items-center space-x-3">
           <div className="bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-600">
-            სულ: <span className="font-medium text-gray-900">{products.length} პროდუქტი</span>
+            სულ:{" "}
+            <span className="font-medium text-gray-900">
+              {products.length} პროდუქტი
+            </span>
           </div>
           <button
             onClick={() => setIsAddModalOpen(true)}
@@ -64,7 +82,9 @@ const ProductManager: React.FC = () => {
           <div className="bg-gray-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
             <ImageIcon className="w-12 h-12 text-gray-400" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-3">თქვენი კატალოგი ცარიელია</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">
+            თქვენი კატალოგი ცარიელია
+          </h3>
           <p className="text-gray-500 mb-8 max-w-md mx-auto">
             დაიწყეთ პროდუქტების დამატება თქვენი ონლაინ მაღაზიის შესაქმნელად.
             ყველა პროდუქტი აქ იქნება მოთავსებული და მარტივად მართვადი.
@@ -110,7 +130,10 @@ const ProductManager: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
                 {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-blue-50/50 transition-colors duration-200">
+                  <tr
+                    key={product.id}
+                    className="hover:bg-blue-50/50 transition-colors duration-200"
+                  >
                     <td className="px-6 py-5 whitespace-nowrap">
                       <div className="flex items-center">
                         {product.images.length > 0 ? (
@@ -127,9 +150,13 @@ const ProductManager: React.FC = () => {
                           </div>
                         )}
                         <div className="ml-4">
-                          <div className="text-sm font-semibold text-gray-900">{product.name}</div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            {product.name}
+                          </div>
                           <div className="text-xs text-gray-500 mt-1 max-w-xs truncate">
-                            {product.description ? product.description.substring(0, 60) + '...' : 'აღწერა არ არის მითითებული'}
+                            {product.description
+                              ? product.description.substring(0, 60) + "..."
+                              : "აღწერა არ არის მითითებული"}
                           </div>
                         </div>
                       </div>
@@ -140,17 +167,21 @@ const ProductManager: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap">
-                      <span className="text-sm font-semibold text-gray-900">₾{product.price.toFixed(2)}</span>
+                      <span className="text-sm font-semibold text-gray-900">
+                        ₾{product.price.toFixed(2)}
+                      </span>
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap">
                       <div className="flex items-center">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                          product.stock < 5
-                            ? 'bg-red-100 text-red-800 border border-red-200'
-                            : product.stock < 10
-                            ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                            : 'bg-green-100 text-green-800 border border-green-200'
-                        }`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            product.stock < 5
+                              ? "bg-red-100 text-red-800 border border-red-200"
+                              : product.stock < 10
+                              ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                              : "bg-green-100 text-green-800 border border-green-200"
+                          }`}
+                        >
                           {product.stock}
                         </span>
                         {product.stock < 5 && (
@@ -168,10 +199,14 @@ const ProductManager: React.FC = () => {
                         ) : (
                           <ToggleLeft className="w-5 h-5 text-gray-400" />
                         )}
-                        <span className={`text-sm font-medium ${
-                          product.isActive ? 'text-green-600' : 'text-gray-500'
-                        }`}>
-                          {product.isActive ? 'აქტიური' : 'გაუქმებული'}
+                        <span
+                          className={`text-sm font-medium ${
+                            product.isActive
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          {product.isActive ? "აქტიური" : "გაუქმებული"}
                         </span>
                       </button>
                     </td>
@@ -184,7 +219,9 @@ const ProductManager: React.FC = () => {
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteProduct(product.id, product.name)}
+                          onClick={() =>
+                            handleDeleteProduct(product.id, product.name)
+                          }
                           className="text-red-600 hover:text-red-900 p-1 rounded"
                         >
                           <Trash2 className="w-4 h-4" />

@@ -14,7 +14,7 @@ import {
   Banknote,
   ArrowRight,
   Package,
-  ShieldCheck // ✅ ესეც სილამაზისთვის
+  ShieldCheck, // ✅ ესეც სილამაზისთვის
 } from "lucide-react";
 import type { DeliveryInfo, CreateOrderRequest } from "../types";
 
@@ -37,7 +37,7 @@ const CheckoutPage: React.FC = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // ✅ 1. ახალი State თანხმობისთვის
   const [isAgreed, setIsAgreed] = useState(false);
 
@@ -88,12 +88,19 @@ const CheckoutPage: React.FC = () => {
       const checkboxArea = document.getElementById("terms-container");
       if (checkboxArea) {
         checkboxArea.classList.add("ring-2", "ring-red-500");
-        setTimeout(() => checkboxArea.classList.remove("ring-2", "ring-red-500"), 2000);
+        setTimeout(
+          () => checkboxArea.classList.remove("ring-2", "ring-red-500"),
+          2000
+        );
       }
       return;
     }
 
-    if (!formData.phone || formData.phone.length !== 9 || !formData.phone.startsWith('5')) {
+    if (
+      !formData.phone ||
+      formData.phone.length !== 9 ||
+      !formData.phone.startsWith("5")
+    ) {
       showToast("გთხოვთ ჩაწეროთ სწორი ქართული მობილურის ნომერი", "error");
       return;
     }
@@ -119,21 +126,23 @@ const CheckoutPage: React.FC = () => {
           address: formData.address,
           comment: formData.comment,
         },
-        paymentMethod: formData.paymentMethod as 'cash' | 'tbc_bank',
+        paymentMethod: formData.paymentMethod as "cash" | "tbc_bank",
       };
 
       const createdOrder = await OrderService.createOrder(orderRequest);
 
       navigate(`/order-success/${createdOrder.id}`);
-      
+
       // Fallback
       setTimeout(() => {
         window.location.href = `/order-success/${createdOrder.id}`;
       }, 500);
 
       clearCart();
-      showToast(`შეკვეთა წარმატებით გაფორმდა! ნომერი: ${createdOrder.orderNumber}`, "success");
-
+      showToast(
+        `შეკვეთა წარმატებით გაფორმდა! ნომერი: ${createdOrder.orderNumber}`,
+        "success"
+      );
     } catch (error) {
       console.error("Order failed:", error);
       showToast("შეკვეთის გაფორმება ვერ მოხერხდა", "error");
@@ -384,7 +393,7 @@ const CheckoutPage: React.FC = () => {
 
               {/* ✅ 3. TERMS & CONDITIONS CHECKBOX */}
               {/* ✅ Terms & Conditions - გასუფთავებული ვერსია */}
-              <div 
+              <div
                 id="terms-container"
                 className="flex items-start gap-3 mb-6 p-4 bg-stone-50 rounded-xl border border-stone-100 transition-all hover:border-emerald-100"
               >
@@ -395,12 +404,16 @@ const CheckoutPage: React.FC = () => {
                   onChange={(e) => setIsAgreed(e.target.checked)}
                   className="mt-1 w-5 h-5 text-emerald-600 rounded border-stone-300 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
                 />
-                <label 
-                  htmlFor="terms-checkbox" 
+                <label
+                  htmlFor="terms-checkbox"
                   className="text-sm text-stone-600 cursor-pointer select-none leading-relaxed"
                 >
-                  ვეთანხმები{' '}
-                  <Link to="/terms" target="_blank" className="text-stone-900 font-bold hover:text-emerald-600 underline decoration-stone-300 hover:decoration-emerald-500 underline-offset-4 transition-all">
+                  ვეთანხმები{" "}
+                  <Link
+                    to="/terms"
+                    target="_blank"
+                    className="text-stone-900 font-bold hover:text-emerald-600 underline decoration-stone-300 hover:decoration-emerald-500 underline-offset-4 transition-all"
+                  >
                     მომსახურების პირობებს*
                   </Link>
                 </label>
@@ -412,9 +425,10 @@ const CheckoutPage: React.FC = () => {
                 // ✅ 4. ღილაკი ითიშება თუ არ დაეთანხმა
                 disabled={isSubmitting || !isAgreed}
                 className={`w-full font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-lg active:scale-95
-                  ${isSubmitting || !isAgreed 
-                    ? "bg-stone-300 text-stone-500 cursor-not-allowed shadow-none" 
-                    : "bg-stone-900 hover:bg-emerald-600 text-white hover:shadow-xl"
+                  ${
+                    isSubmitting || !isAgreed
+                      ? "bg-stone-300 text-stone-500 cursor-not-allowed shadow-none"
+                      : "bg-stone-900 hover:bg-emerald-600 text-white hover:shadow-xl"
                   }`}
               >
                 {isSubmitting ? (

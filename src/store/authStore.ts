@@ -1,14 +1,14 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  User as FirebaseUser
-} from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../services/firebase';
-import type { AuthState, User } from '../types';
+  User as FirebaseUser,
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "../services/firebase";
+import type { AuthState, User } from "../types";
 
 interface AuthActions {
   signInWithGoogle: () => Promise<void>;
@@ -31,7 +31,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
 
     // Create a timeout to auto-stop loading after 3 seconds if no response
     const timeoutId = setTimeout(() => {
-      console.log('Sign-in timeout - stopping loading state');
+      console.log("Sign-in timeout - stopping loading state");
       set({ isLoading: false });
     }, 3000);
 
@@ -50,10 +50,10 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       clearTimeout(timeoutId);
 
       // თუ მომხმარებელმა ფანჯარა დახურა, ეს არ არის კრიტიკული ერორი
-      if (error.code === 'auth/popup-closed-by-user') {
-        console.log('მომხმარებელმა გათიშა შესვლის ფანჯარა');
+      if (error.code === "auth/popup-closed-by-user") {
+        console.log("მომხმარებელმა გათიშა შესვლის ფანჯარა");
       } else {
-        console.error('Error signing in with Google:', error);
+        console.error("Error signing in with Google:", error);
       }
 
       // Immediately stop loading on error
@@ -68,17 +68,17 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       set({
         user: null,
         isAuthenticated: false,
-        isLoading: false
+        isLoading: false,
       });
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error("Error signing out:", error);
       set({ isLoading: false });
     }
   },
 
   checkUserRole: async (uid: string): Promise<User | null> => {
     try {
-      const userRef = doc(db, 'users', uid);
+      const userRef = doc(db, "users", uid);
       const userDoc = await getDoc(userRef);
 
       if (userDoc.exists()) {
@@ -86,28 +86,28 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         set({
           user: userData,
           isAuthenticated: true,
-          isLoading: false
+          isLoading: false,
         });
         return userData;
       } else {
         const newUser: User = {
           id: uid,
-          email: auth.currentUser?.email || '',
-          displayName: auth.currentUser?.displayName || '',
-          role: 'customer',
-          createdAt: new Date()
+          email: auth.currentUser?.email || "",
+          displayName: auth.currentUser?.displayName || "",
+          role: "customer",
+          createdAt: new Date(),
         };
 
         await setDoc(userRef, newUser);
         set({
           user: newUser,
           isAuthenticated: true,
-          isLoading: false
+          isLoading: false,
         });
         return newUser;
       }
     } catch (error) {
-      console.error('Error checking user role:', error);
+      console.error("Error checking user role:", error);
       set({ isLoading: false });
       return null;
     }
@@ -121,9 +121,9 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         set({
           user: null,
           isAuthenticated: false,
-          isLoading: false
+          isLoading: false,
         });
       }
     });
-  }
+  },
 }));

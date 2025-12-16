@@ -5,10 +5,10 @@ import {
   setDoc,
   deleteDoc,
   onSnapshot,
-  Timestamp
-} from 'firebase/firestore';
-import { db } from './firebase';
-import type { CartItem } from '../types';
+  Timestamp,
+} from "firebase/firestore";
+import { db } from "./firebase";
+import type { CartItem } from "../types";
 
 export interface FirestoreCartData {
   items: CartItem[];
@@ -19,15 +19,18 @@ export interface FirestoreCartData {
 
 export class CartService {
   // Save user cart to Firestore
-  static async saveUserCart(userId: string, cartData: Omit<FirestoreCartData, 'updatedAt'>) {
+  static async saveUserCart(
+    userId: string,
+    cartData: Omit<FirestoreCartData, "updatedAt">
+  ) {
     try {
-      const cartRef = doc(db, 'userCarts', userId);
+      const cartRef = doc(db, "userCarts", userId);
       await setDoc(cartRef, {
         ...cartData,
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       });
     } catch (error) {
-      console.error('Error saving user cart to Firestore:', error);
+      console.error("Error saving user cart to Firestore:", error);
       throw error;
     }
   }
@@ -35,7 +38,7 @@ export class CartService {
   // Load user cart from Firestore
   static async loadUserCart(userId: string): Promise<FirestoreCartData | null> {
     try {
-      const cartRef = doc(db, 'userCarts', userId);
+      const cartRef = doc(db, "userCarts", userId);
       const cartSnap = await getDoc(cartRef);
 
       if (cartSnap.exists()) {
@@ -43,7 +46,7 @@ export class CartService {
       }
       return null;
     } catch (error) {
-      console.error('Error loading user cart from Firestore:', error);
+      console.error("Error loading user cart from Firestore:", error);
       return null;
     }
   }
@@ -51,10 +54,10 @@ export class CartService {
   // Delete user cart from Firestore
   static async deleteUserCart(userId: string) {
     try {
-      const cartRef = doc(db, 'userCarts', userId);
+      const cartRef = doc(db, "userCarts", userId);
       await deleteDoc(cartRef);
     } catch (error) {
-      console.error('Error deleting user cart from Firestore:', error);
+      console.error("Error deleting user cart from Firestore:", error);
       throw error;
     }
   }
@@ -64,17 +67,21 @@ export class CartService {
     userId: string,
     callback: (cartData: FirestoreCartData | null) => void
   ) {
-    const cartRef = doc(db, 'userCarts', userId);
+    const cartRef = doc(db, "userCarts", userId);
 
-    return onSnapshot(cartRef, (doc) => {
-      if (doc.exists()) {
-        callback(doc.data() as FirestoreCartData);
-      } else {
+    return onSnapshot(
+      cartRef,
+      (doc) => {
+        if (doc.exists()) {
+          callback(doc.data() as FirestoreCartData);
+        } else {
+          callback(null);
+        }
+      },
+      (error) => {
+        console.error("Error in cart subscription:", error);
         callback(null);
       }
-    }, (error) => {
-      console.error('Error in cart subscription:', error);
-      callback(null);
-    });
+    );
   }
 }

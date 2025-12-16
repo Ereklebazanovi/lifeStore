@@ -9,6 +9,7 @@ import OrdersManager from "./components/OrdersManager";
 import AdminStats from "./components/AdminStats";
 import LoadingSpinner from "./components/LoadingSpinner";
 import AddProductModal from "./components/AddProductModal";
+import InventoryAlerts from "../../components/admin/InventoryAlerts";
 import { Package, ShoppingBag, Plus, RotateCcw, Bell } from "lucide-react";
 import type { Order } from "../../types";
 
@@ -102,6 +103,11 @@ const AdminPage: React.FC = () => {
 
         {/* Stats Overview */}
         <AdminStats products={products} />
+
+        {/* Inventory Alerts */}
+        <div className="mt-8">
+          <InventoryAlerts />
+        </div>
 
         {/* Main Content with Tabs */}
         <div className="mt-8">

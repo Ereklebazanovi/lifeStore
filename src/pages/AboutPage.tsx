@@ -1,36 +1,33 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  Leaf, 
-  ShieldCheck, 
-  Sparkles, 
-  Globe2, 
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  Leaf,
+  ShieldCheck,
+  Sparkles,
+  Globe2,
   ArrowRight,
   Heart,
-  Quote
-} from 'lucide-react';
+  Quote,
+} from "lucide-react";
 
 const AboutPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white pb-20">
-      
-    
       {/* --- MAIN STORY SECTION --- */}
       <section className="py-16 lg:py-22">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            
             {/* Image Side with Layered Effect */}
             <div className="relative pl-4 pt-4">
               <div className="absolute top-0 left-0 w-full h-full bg-emerald-50 rounded-3xl -z-10 transform -translate-x-4 -translate-y-4"></div>
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg border border-stone-100">
-                <img 
-                  src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=2070&auto=format&fit=crop" 
-                  alt="Modern sustainable kitchen" 
+                <img
+                  src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=2070&auto=format&fit=crop"
+                  alt="Modern sustainable kitchen"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                 />
               </div>
-              
+
               {/* Quote Badge */}
               <div className="absolute -bottom-6 -right-4 md:-right-8 bg-white p-6 rounded-xl shadow-xl border border-stone-100 max-w-xs hidden md:block">
                 <Quote className="w-8 h-8 text-emerald-200 mb-2" />
@@ -48,24 +45,30 @@ const AboutPage: React.FC = () => {
                   <div className="h-px flex-1 bg-stone-200 ml-4"></div>
                 </h2>
               </div>
-              
+
               <div className="prose prose-lg text-stone-600 space-y-4">
                 <p>
-                  LifeStore არის იმპორტიორი კომპანია, რომელიც ქართულ ბაზარზე წარმოადგენს თანამედროვე, დახვეწილ და რაც მთავარია — უსაფრთხო პროდუქციას.
+                  LifeStore არის იმპორტიორი კომპანია, რომელიც ქართულ ბაზარზე
+                  წარმოადგენს თანამედროვე, დახვეწილ და რაც მთავარია — უსაფრთხო
+                  პროდუქციას.
                 </p>
                 <div className="pl-4 border-l-4 border-emerald-500 py-2 bg-stone-50 pr-4 rounded-r-lg">
                   <p className="font-medium text-stone-800 m-0">
-                    ჩვენი მთავარი ნიშა ეკომეგობრული და მაღალი ხარისხის სახლისა და სამზარეულოს ნივთებია.
+                    ჩვენი მთავარი ნიშა ეკომეგობრული და მაღალი ხარისხის სახლისა
+                    და სამზარეულოს ნივთებია.
                   </p>
                 </div>
                 <p>
-                  ჩვენ გვჯერა, რომ ნივთები, რომლებიც ყოველდღიურად გვეხება, უნდა იყოს არა მხოლოდ ლამაზი, არამედ სრულიად უვნებელი ჯანმრთელობისთვის. ჩვენი გუნდი მუდმივად ეძებს პროდუქციას, რომელიც აკმაყოფილებს თანამედროვე დიზაინის უმაღლეს სტანდარტებს.
+                  ჩვენ გვჯერა, რომ ნივთები, რომლებიც ყოველდღიურად გვეხება, უნდა
+                  იყოს არა მხოლოდ ლამაზი, არამედ სრულიად უვნებელი
+                  ჯანმრთელობისთვის. ჩვენი გუნდი მუდმივად ეძებს პროდუქციას,
+                  რომელიც აკმაყოფილებს თანამედროვე დიზაინის უმაღლეს სტანდარტებს.
                 </p>
               </div>
 
               <div className="pt-2">
-                <Link 
-                  to="/products" 
+                <Link
+                  to="/products"
                   className="group inline-flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-xl hover:bg-emerald-600 transition-all shadow-md hover:shadow-lg"
                 >
                   კოლექციის ნახვა
@@ -73,7 +76,6 @@ const AboutPage: React.FC = () => {
                 </Link>
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -82,41 +84,52 @@ const AboutPage: React.FC = () => {
       <section className="py-16 bg-stone-50 border-y border-stone-200/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-stone-900 mb-3">ჩვენი ღირებულებები</h2>
-            <p className="text-stone-500">ხარისხი და პასუხისმგებლობა უპირველესია</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-stone-900 mb-3">
+              ჩვენი ღირებულებები
+            </h2>
+            <p className="text-stone-500">
+              ხარისხი და პასუხისმგებლობა უპირველესია
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <ValueCard 
-              icon={<Leaf className="w-6 h-6" />} 
-              title="ეკო-მეგობრული" 
+            <ValueCard
+              icon={<Leaf className="w-6 h-6" />}
+              title="ეკო-მეგობრული"
               desc="ბუნებრივი და გადამუშავებადი მასალები გარემოს დასაცავად."
             />
-            <ValueCard 
-              icon={<ShieldCheck className="w-6 h-6" />} 
-              title="უსაფრთხო" 
+            <ValueCard
+              icon={<ShieldCheck className="w-6 h-6" />}
+              title="უსაფრთხო"
               desc="ჯანმრთელობისთვის უვნებელი, ტოქსინებისგან თავისუფალი ნივთები."
             />
-            <ValueCard 
-              icon={<Sparkles className="w-6 h-6" />} 
-              title="თანამედროვე" 
+            <ValueCard
+              icon={<Sparkles className="w-6 h-6" />}
+              title="თანამედროვე"
               desc="დახვეწილი დიზაინი, რომელიც ნებისმიერ ინტერიერს დაამშვენებს."
             />
-            <ValueCard 
-              icon={<Globe2 className="w-6 h-6" />} 
-              title="გლობალური" 
+            <ValueCard
+              icon={<Globe2 className="w-6 h-6" />}
+              title="გლობალური"
               desc="საუკეთესო იმპორტირებული პროდუქცია პირდაპირ თქვენი ოჯახისთვის."
             />
           </div>
         </div>
       </section>
-
     </div>
   );
 };
 
 // Helper Component for consistency
-const ValueCard = ({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) => (
+const ValueCard = ({
+  icon,
+  title,
+  desc,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}) => (
   <div className="bg-white p-6 rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition-shadow hover:border-emerald-100 group">
     <div className="w-12 h-12 bg-stone-50 rounded-xl flex items-center justify-center text-emerald-600 mb-4 group-hover:scale-110 group-hover:bg-emerald-50 transition-all">
       {icon}

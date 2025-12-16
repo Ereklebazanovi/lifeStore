@@ -1,11 +1,25 @@
 // CartPage.tsx
 import React from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, ArrowRight, Minus, Plus, Trash2, ArrowLeft } from "lucide-react";
+import {
+  ShoppingCart,
+  ArrowRight,
+  Minus,
+  Plus,
+  Trash2,
+  ArrowLeft,
+} from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 
 const CartPage: React.FC = () => {
-  const { items, totalPrice, totalItems, updateQuantity, removeItem, clearCart } = useCartStore();
+  const {
+    items,
+    totalPrice,
+    totalItems,
+    updateQuantity,
+    removeItem,
+    clearCart,
+  } = useCartStore();
 
   if (items.length === 0) {
     return (
@@ -16,7 +30,8 @@ const CartPage: React.FC = () => {
           </div>
           <h1 className="text-2xl font-bold text-stone-900">კალათა ცარიელია</h1>
           <p className="text-stone-500">
-            დაამატეთ პროდუქტები თქვენს კალათაში და დაიწყეთ ეკო-მეგობრული შოპინგი.
+            დაამატეთ პროდუქტები თქვენს კალათაში და დაიწყეთ ეკო-მეგობრული
+            შოპინგი.
           </p>
           <Link
             to="/products"
@@ -33,12 +48,15 @@ const CartPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-stone-50 py-20 lg:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
-             <h1 className="text-2xl lg:text-3xl font-bold text-stone-900">თქვენი კალათა</h1>
-             <p className="text-stone-500 text-sm mt-1">{totalItems} ნივთი შერჩეულია</p>
+            <h1 className="text-2xl lg:text-3xl font-bold text-stone-900">
+              თქვენი კალათა
+            </h1>
+            <p className="text-stone-500 text-sm mt-1">
+              {totalItems} ნივთი შერჩეულია
+            </p>
           </div>
           <button
             onClick={clearCart}
@@ -50,7 +68,6 @@ const CartPage: React.FC = () => {
         </div>
 
         <div className="grid lg:grid-cols-12 gap-8">
-          
           {/* --- Cart Items List (Left Side) --- */}
           <div className="lg:col-span-8 space-y-4">
             {items.map((item) => (
@@ -60,7 +77,6 @@ const CartPage: React.FC = () => {
               >
                 {/* Flex Container: Mobile = Column, Tablet+ = Row */}
                 <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                  
                   {/* Image */}
                   <div className="w-full sm:w-32 h-40 sm:h-32 bg-stone-100 rounded-xl overflow-hidden flex-shrink-0">
                     {item.product.images && item.product.images.length > 0 ? (
@@ -78,12 +94,15 @@ const CartPage: React.FC = () => {
 
                   {/* Content */}
                   <div className="flex-1 flex flex-col justify-between">
-                    
                     {/* Title & Delete Row */}
                     <div className="flex justify-between items-start gap-2 mb-2">
                       <div>
-                         <h3 className="text-lg font-bold text-stone-900 line-clamp-1">{item.product.name}</h3>
-                         <p className="text-xs text-stone-500 line-clamp-1">{item.product.category}</p>
+                        <h3 className="text-lg font-bold text-stone-900 line-clamp-1">
+                          {item.product.name}
+                        </h3>
+                        <p className="text-xs text-stone-500 line-clamp-1">
+                          {item.product.category}
+                        </p>
                       </div>
                       <button
                         onClick={() => removeItem(item.productId)}
@@ -96,29 +115,37 @@ const CartPage: React.FC = () => {
 
                     {/* Price & Quantity Controls Row */}
                     <div className="flex flex-wrap items-end justify-between gap-4 mt-auto">
-                      
                       {/* Quantity Selector */}
                       <div className="flex flex-col gap-1">
-                          <span className="text-xs text-stone-500 font-medium ml-1">რაოდენობა</span>
-                          <div className="flex items-center bg-stone-50 border border-stone-200 rounded-lg h-10">
-                            <button
-                                onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))}
-                                disabled={item.quantity <= 1}
-                                className="w-10 h-full flex items-center justify-center text-stone-500 hover:text-stone-900 disabled:opacity-30 transition-colors"
-                            >
-                                <Minus className="w-4 h-4" />
-                            </button>
-                            <span className="w-8 text-center font-bold text-stone-900 text-sm">
-                                {item.quantity}
-                            </span>
-                            <button
-                                onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                                disabled={item.quantity >= item.product.stock}
-                                className="w-10 h-full flex items-center justify-center text-stone-500 hover:text-stone-900 disabled:opacity-30 transition-colors"
-                            >
-                                <Plus className="w-4 h-4" />
-                            </button>
-                          </div>
+                        <span className="text-xs text-stone-500 font-medium ml-1">
+                          რაოდენობა
+                        </span>
+                        <div className="flex items-center bg-stone-50 border border-stone-200 rounded-lg h-10">
+                          <button
+                            onClick={() =>
+                              updateQuantity(
+                                item.productId,
+                                Math.max(1, item.quantity - 1)
+                              )
+                            }
+                            disabled={item.quantity <= 1}
+                            className="w-10 h-full flex items-center justify-center text-stone-500 hover:text-stone-900 disabled:opacity-30 transition-colors"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="w-8 text-center font-bold text-stone-900 text-sm">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.productId, item.quantity + 1)
+                            }
+                            disabled={item.quantity >= item.product.stock}
+                            className="w-10 h-full flex items-center justify-center text-stone-500 hover:text-stone-900 disabled:opacity-30 transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* Price */}
@@ -127,12 +154,11 @@ const CartPage: React.FC = () => {
                           ₾{(item.product.price * item.quantity).toFixed(2)}
                         </div>
                         {item.quantity > 1 && (
-                            <div className="text-xs text-stone-400 font-medium">
+                          <div className="text-xs text-stone-400 font-medium">
                             ₾{item.product.price} / ცალი
-                            </div>
+                          </div>
                         )}
                       </div>
-
                     </div>
                   </div>
                 </div>
@@ -150,7 +176,9 @@ const CartPage: React.FC = () => {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-stone-600 text-sm">
                   <span>პროდუქტები ({totalItems})</span>
-                  <span className="font-medium text-stone-900">₾{totalPrice.toFixed(2)}</span>
+                  <span className="font-medium text-stone-900">
+                    ₾{totalPrice.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-stone-600 text-sm">
                   <span>მიწოდება</span>
@@ -158,7 +186,9 @@ const CartPage: React.FC = () => {
                 </div>
                 <div className="border-t border-dashed border-stone-200 pt-4 mt-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-base font-bold text-stone-900">სულ გადასახდელი</span>
+                    <span className="text-base font-bold text-stone-900">
+                      სულ გადასახდელი
+                    </span>
                     <span className="text-2xl font-bold text-emerald-700">
                       ₾{totalPrice.toFixed(2)}
                     </span>
@@ -166,7 +196,7 @@ const CartPage: React.FC = () => {
                 </div>
               </div>
 
-              <Link 
+              <Link
                 to="/checkout" // შეცვლილია /checkout-ზე
                 className="w-full bg-stone-900 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95"
               >
@@ -183,7 +213,6 @@ const CartPage: React.FC = () => {
               </Link>
             </div>
           </div>
-
         </div>
       </div>
     </div>

@@ -28,12 +28,14 @@ const OrdersManager: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | Order["orderStatus"]>("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | Order["orderStatus"]
+  >("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
   const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
-  
+
   // ✅ ახალი state მოდალისთვის
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -122,8 +124,12 @@ const OrdersManager: React.FC = () => {
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerInfo.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerInfo.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customerInfo.firstName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      order.customerInfo.lastName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       order.customerInfo.phone.includes(searchTerm);
 
     const matchesStatus =
@@ -141,31 +147,46 @@ const OrdersManager: React.FC = () => {
 
   const getStatusIcon = (status: Order["orderStatus"]) => {
     switch (status) {
-      case "pending": return <Clock className="w-4 h-4" />;
-      case "confirmed": return <CheckCircle className="w-4 h-4" />;
-      case "delivered": return <CheckCircle className="w-4 h-4" />;
-      case "cancelled": return <AlertCircle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+      case "pending":
+        return <Clock className="w-4 h-4" />;
+      case "confirmed":
+        return <CheckCircle className="w-4 h-4" />;
+      case "delivered":
+        return <CheckCircle className="w-4 h-4" />;
+      case "cancelled":
+        return <AlertCircle className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
     }
   };
 
   const getStatusColor = (status: Order["orderStatus"]) => {
     switch (status) {
-      case "pending": return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "confirmed": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "delivered": return "bg-green-100 text-green-800 border-green-200";
-      case "cancelled": return "bg-red-100 text-red-800 border-red-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "confirmed":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "delivered":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "cancelled":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   const getStatusText = (status: Order["orderStatus"]) => {
     switch (status) {
-      case "pending": return "მუშავდება";
-      case "confirmed": return "დადასტურებული";
-      case "delivered": return "მიტანილი";
-      case "cancelled": return "გაუქმებული";
-      default: return status;
+      case "pending":
+        return "მუშავდება";
+      case "confirmed":
+        return "დადასტურებული";
+      case "delivered":
+        return "მიტანილი";
+      case "cancelled":
+        return "გაუქმებული";
+      default:
+        return status;
     }
   };
 
@@ -185,7 +206,7 @@ const OrdersManager: React.FC = () => {
         <h2 className="text-2xl font-bold text-stone-900">
           შეკვეთები ({orders.length})
         </h2>
-        
+
         {/* ✅ ღილაკების ჯგუფი (დაემატა "დამატება") */}
         <div className="flex items-center gap-3">
           <button
@@ -193,9 +214,9 @@ const OrdersManager: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
-           ხელით დამატება
+            ხელით დამატება
           </button>
-          
+
           <button
             onClick={fetchOrders}
             className="px-4 py-2 bg-white border border-stone-200 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors"
@@ -291,7 +312,7 @@ const OrdersManager: React.FC = () => {
           <p className="text-stone-500">
             {searchTerm || statusFilter !== "all"
               ? "მოცემული ფილტრებით შეკვეთები ვერ მოიძებნა"
-              : "ახალი შეკვეთების მოსალოდნელად"}
+              : "შეკვეთები ჯერ არ არის შექმნილი"}
           </p>
         </div>
       ) : (
@@ -319,12 +340,12 @@ const OrdersManager: React.FC = () => {
                         minute: "2-digit",
                       })}
                     </p>
-                    
+
                     {/* ✅ Source Tag - აქ გამოჩნდება საიდანაა შეკვეთა */}
-                    {order.source && order.source !== 'website' && (
-                        <span className="text-xs font-bold text-purple-600 mt-1 block uppercase">
-                            {order.source}
-                        </span>
+                    {order.source && order.source !== "website" && (
+                      <span className="text-xs font-bold text-purple-600 mt-1 block uppercase">
+                        {order.source}
+                      </span>
                     )}
                   </div>
                   <span
@@ -462,7 +483,7 @@ const OrdersManager: React.FC = () => {
       )}
 
       {/* ✅ 5. ახალი მოდალი - Create Manual Order */}
-      <CreateManualOrderModal 
+      <CreateManualOrderModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onOrderCreated={fetchOrders} // რომ სიამ განახლება გააკეთოს შექმნის შემდეგ
@@ -515,7 +536,7 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
           </p>
           {order.customerInfo.email && (
             <p>
-                <strong>Email:</strong> {order.customerInfo.email}
+              <strong>Email:</strong> {order.customerInfo.email}
             </p>
           )}
           <p>
@@ -689,11 +710,16 @@ const BulkReportPrintView: React.FC<{
 // Helper function for status text
 const getInvoiceStatusText = (status: Order["orderStatus"]) => {
   switch (status) {
-    case "pending": return "მუშავდება";
-    case "confirmed": return "დადასტურებული";
-    case "delivered": return "მიტანილი";
-    case "cancelled": return "გაუქმებული";
-    default: return status;
+    case "pending":
+      return "მუშავდება";
+    case "confirmed":
+      return "დადასტურებული";
+    case "delivered":
+      return "მიტანილი";
+    case "cancelled":
+      return "გაუქმებული";
+    default:
+      return status;
   }
 };
 

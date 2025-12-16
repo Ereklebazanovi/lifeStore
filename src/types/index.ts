@@ -1,14 +1,14 @@
 // src/types/index.ts
 
 // 1. ✅ ახალი ტიპი წყაროებისთვის
-export type OrderSource = 
-  | 'website' 
-  | 'instagram' 
-  | 'facebook' 
-  | 'tiktok' 
-  | 'phone' 
-  | 'personal' 
-  | 'other';
+export type OrderSource =
+  | "website"
+  | "instagram"
+  | "facebook"
+  | "tiktok"
+  | "phone"
+  | "personal"
+  | "other";
 
 // Product Types
 export interface Product {
@@ -45,9 +45,9 @@ export interface Order {
   id: string;
   userId: string | null; // null = guest user
   orderNumber: string; // LS-240001 format
-  
+
   // ✅ ახალი ველი: საიდან მოვიდა შეკვეთა
-  source?: OrderSource; 
+  source?: OrderSource;
 
   // Product Info
   items: OrderItem[];
@@ -73,9 +73,15 @@ export interface Order {
 
   // Payment & Status
   // ✅ გავაფართოვეთ მეთოდები
-  paymentMethod: 'cash' | 'tbc_bank' | 'visa' | 'mastercard' | 'bank_transfer' | 'other';
-  paymentStatus: 'pending' | 'paid' | 'failed';
-  orderStatus: 'pending' | 'confirmed' | 'delivered' | 'cancelled';
+  paymentMethod:
+    | "cash"
+    | "tbc_bank"
+    | "visa"
+    | "mastercard"
+    | "bank_transfer"
+    | "other";
+  paymentStatus: "pending" | "paid" | "failed";
+  orderStatus: "pending" | "confirmed" | "delivered" | "cancelled";
 
   // Metadata
   createdAt: Date;
@@ -97,6 +103,7 @@ export interface OrderItem {
 
 // ✅ ახალი ტიპი: მხოლოდ მენეჯერის ფორმისთვის (ხელით შეყვანილი ნივთი)
 export interface ManualOrderItem {
+  productId?: string;
   name: string;
   price: number;
   quantity: number;
@@ -117,7 +124,7 @@ export interface CreateOrderRequest {
     address: string;
     comment?: string;
   };
-  paymentMethod: 'cash' | 'tbc_bank';
+  paymentMethod: "cash" | "tbc_bank";
 }
 
 // ✅ ახალი ტიპი: მენეჯერის მიერ შეკვეთის შექმნა
@@ -136,19 +143,19 @@ export interface CreateManualOrderRequest {
     comment?: string;
   };
   shippingCost: number; // მენეჯერს შეუძლია ხელით მიუთითოს
-  status: 'pending' | 'confirmed' | 'delivered'; // მენეჯერი ირჩევს სტატუსს
-  paymentMethod: Order['paymentMethod'];
+  status: "pending" | "confirmed" | "delivered"; // მენეჯერი ირჩევს სტატუსს
+  paymentMethod: Order["paymentMethod"];
 }
 
-export type OrderStatus = 'pending' | 'confirmed' | 'delivered' | 'cancelled';
-export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+export type OrderStatus = "pending" | "confirmed" | "delivered" | "cancelled";
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
 // User Types (for admin)
 export interface User {
   id: string;
   email: string;
   displayName?: string;
-  role: 'admin' | 'customer';
+  role: "admin" | "customer";
   createdAt: Date;
 }
 
@@ -180,5 +187,5 @@ export interface DeliveryInfo {
   city: string;
   address: string;
   comment?: string;
-  paymentMethod: 'cash' | 'card';
+  paymentMethod: "cash" | "card";
 }

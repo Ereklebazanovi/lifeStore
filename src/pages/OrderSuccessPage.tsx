@@ -93,23 +93,35 @@ const OrderSuccessPage: React.FC = () => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case "pending": return "მიღებულია";
-      case "confirmed": return "დადასტურებულია";
-      case "shipped": return "გზაშია";
-      case "delivered": return "ჩაბარებულია";
-      case "cancelled": return "გაუქმებული";
-      default: return status;
+      case "pending":
+        return "მიღებულია";
+      case "confirmed":
+        return "დადასტურებულია";
+      case "shipped":
+        return "გზაშია";
+      case "delivered":
+        return "ჩაბარებულია";
+      case "cancelled":
+        return "გაუქმებული";
+      default:
+        return status;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending": return "bg-emerald-100 text-emerald-800 border-emerald-200";
-      case "confirmed": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "shipped": return "bg-purple-100 text-purple-800 border-purple-200";
-      case "delivered": return "bg-green-100 text-green-800 border-green-200";
-      case "cancelled": return "bg-red-100 text-red-800 border-red-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
+      case "pending":
+        return "bg-emerald-100 text-emerald-800 border-emerald-200";
+      case "confirmed":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "shipped":
+        return "bg-purple-100 text-purple-800 border-purple-200";
+      case "delivered":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "cancelled":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -117,7 +129,6 @@ const OrderSuccessPage: React.FC = () => {
     <div className="min-h-screen bg-stone-50 py-20 lg:py-20 print:bg-white print:py-0">
       {/* ✅ print-content კლასი დამატებულია */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 print-content">
-        
         {/* --- Success Header (ეკრანზე ჩანს, ბეჭდვისას არა) --- */}
         <div className="text-center mb-10 print:hidden">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6 animate-bounce-slow shadow-sm">
@@ -155,7 +166,6 @@ const OrderSuccessPage: React.FC = () => {
           {/* --- MAIN CONTENT (LEFT) --- */}
           {/* print:col-span-3 - ბეჭდვისას მთელ სიგანეზე გაიშლება */}
           <div className="lg:col-span-2 space-y-6 print:col-span-3">
-            
             {/* Order Info Card */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-200 print:shadow-none print:border print:border-stone-300 print:rounded-lg print:p-4 print:mb-4">
               <div className="flex items-center justify-between mb-6 border-b border-stone-100 pb-4 print:border-stone-300 print:mb-2 print:pb-2">
@@ -237,19 +247,25 @@ const OrderSuccessPage: React.FC = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 print:grid-cols-2 print:gap-y-2 print:gap-x-4">
                 <div>
-                  <p className="text-stone-500 text-sm mb-1 print:text-xs">მიმღები</p>
+                  <p className="text-stone-500 text-sm mb-1 print:text-xs">
+                    მიმღები
+                  </p>
                   <p className="font-bold text-stone-900 text-lg print:text-sm">
                     {order.customerInfo.firstName} {order.customerInfo.lastName}
                   </p>
                 </div>
                 <div>
-                  <p className="text-stone-500 text-sm mb-1 print:text-xs">ტელეფონი</p>
+                  <p className="text-stone-500 text-sm mb-1 print:text-xs">
+                    ტელეფონი
+                  </p>
                   <p className="font-bold text-stone-900 text-lg print:text-sm">
                     {order.customerInfo.phone}
                   </p>
                 </div>
                 <div className="md:col-span-2">
-                  <p className="text-stone-500 text-sm mb-1 print:text-xs">მისამართი</p>
+                  <p className="text-stone-500 text-sm mb-1 print:text-xs">
+                    მისამართი
+                  </p>
                   <p className="font-medium text-stone-900 text-lg print:text-sm">
                     {order.deliveryInfo.city}, {order.deliveryInfo.address}
                   </p>
@@ -273,7 +289,7 @@ const OrderSuccessPage: React.FC = () => {
                 <Package className="w-5 h-5 text-emerald-600 print:text-stone-900 print:w-4 print:h-4" />
                 პროდუქტები
               </h3>
-              
+
               {/* ✅ Reduced spacing for print */}
               <div className="space-y-6 print:space-y-2">
                 {order.items.map((item, index) => (

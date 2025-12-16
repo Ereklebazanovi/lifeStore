@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
-import { OrderService } from '../services/orderService';
-import { useAuthStore } from '../store/authStore';
-import { showToast } from '../components/ui/Toast';
-import type { Order } from '../types';
+import React, { useEffect, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { OrderService } from "../services/orderService";
+import { useAuthStore } from "../store/authStore";
+import { showToast } from "../components/ui/Toast";
+import type { Order } from "../types";
 import {
   Package,
   Calendar,
@@ -16,14 +16,16 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-} from 'lucide-react';
+} from "lucide-react";
 
 const OrderHistoryPage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | Order['orderStatus']>('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | Order["orderStatus"]
+  >("all");
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -39,8 +41,8 @@ const OrderHistoryPage: React.FC = () => {
       const userOrders = await OrderService.getUserOrders(user.id);
       setOrders(userOrders);
     } catch (error) {
-      console.error('Error fetching user orders:', error);
-      showToast('შეკვეთების ჩატვირთვა ვერ მოხერხდა', 'error');
+      console.error("Error fetching user orders:", error);
+      showToast("შეკვეთების ჩატვირთვა ვერ მოხერხდა", "error");
     } finally {
       setIsLoading(false);
     }
@@ -52,45 +54,61 @@ const OrderHistoryPage: React.FC = () => {
   }
 
   // Filter orders
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.items.some(item =>
+      order.items.some((item) =>
         item.product.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
-    const matchesStatus = statusFilter === 'all' || order.orderStatus === statusFilter;
+    const matchesStatus =
+      statusFilter === "all" || order.orderStatus === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusIcon = (status: Order['orderStatus']) => {
+  const getStatusIcon = (status: Order["orderStatus"]) => {
     switch (status) {
-      case 'pending': return <Clock className="w-4 h-4" />;
-      case 'confirmed': return <CheckCircle className="w-4 h-4" />;
-      case 'delivered': return <Package className="w-4 h-4" />;
-      case 'cancelled': return <AlertCircle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+      case "pending":
+        return <Clock className="w-4 h-4" />;
+      case "confirmed":
+        return <CheckCircle className="w-4 h-4" />;
+      case "delivered":
+        return <Package className="w-4 h-4" />;
+      case "cancelled":
+        return <AlertCircle className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
     }
   };
 
-  const getStatusColor = (status: Order['orderStatus']) => {
+  const getStatusColor = (status: Order["orderStatus"]) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'confirmed': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'delivered': return 'bg-green-100 text-green-800 border-green-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "confirmed":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "delivered":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "cancelled":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
-  const getStatusText = (status: Order['orderStatus']) => {
+  const getStatusText = (status: Order["orderStatus"]) => {
     switch (status) {
-      case 'pending': return 'მუშავდება';
-      case 'confirmed': return 'მიღებულია';
-      case 'delivered': return 'მიტანილია';
-      case 'cancelled': return 'გაუქმებული';
-      default: return status;
+      case "pending":
+        return "მუშავდება";
+      case "confirmed":
+        return "მიღებულია";
+      case "delivered":
+        return "მიტანილია";
+      case "cancelled":
+        return "გაუქმებული";
+      default:
+        return status;
     }
   };
 
@@ -110,7 +128,9 @@ const OrderHistoryPage: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-stone-900 mb-2">შეკვეთების ისტორია</h1>
+          <h1 className="text-3xl font-bold text-stone-900 mb-2">
+            შეკვეთების ისტორია
+          </h1>
           <p className="text-stone-600">
             აქ ნახავთ თქვენ მიერ გაკეთებული შეკვეთების სრულ ისტორიას
           </p>
@@ -129,22 +149,25 @@ const OrderHistoryPage: React.FC = () => {
               className="w-full pl-11 pr-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
             />
           </div>
-
         </div>
 
         {/* Orders List */}
         {filteredOrders.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-stone-200">
-            {searchTerm || statusFilter !== 'all' ? (
+            {searchTerm || statusFilter !== "all" ? (
               // No results found
               <div>
                 <Search className="w-16 h-16 text-stone-300 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-stone-600 mb-2">შედეგები ვერ მოიძებნა</h3>
-                <p className="text-stone-500 mb-6">სცადეთ სხვა საძიებო კრიტერიუმები</p>
+                <h3 className="text-xl font-bold text-stone-600 mb-2">
+                  შედეგები ვერ მოიძებნა
+                </h3>
+                <p className="text-stone-500 mb-6">
+                  სცადეთ სხვა საძიებო კრიტერიუმები
+                </p>
                 <button
                   onClick={() => {
-                    setSearchTerm('');
-                    setStatusFilter('all');
+                    setSearchTerm("");
+                    setStatusFilter("all");
                   }}
                   className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
                 >
@@ -155,9 +178,12 @@ const OrderHistoryPage: React.FC = () => {
               // No orders at all
               <div>
                 <ShoppingBag className="w-16 h-16 text-stone-300 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-stone-600 mb-2">შეკვეთები ჯერ არ გაქვთ</h3>
+                <h3 className="text-xl font-bold text-stone-600 mb-2">
+                  შეკვეთები ჯერ არ გაქვთ
+                </h3>
                 <p className="text-stone-500 mb-6">
-                  დაიწყეთ ყიდვა ჩვენი მაღაზიიდან და იხილეთ თქვენი შეკვეთების ისტორია აქ
+                  დაიწყეთ ყიდვა ჩვენი მაღაზიიდან და იხილეთ თქვენი შეკვეთების
+                  ისტორია აქ
                 </p>
                 <Link
                   to="/products"
@@ -183,14 +209,16 @@ const OrderHistoryPage: React.FC = () => {
                       <Package className="w-6 h-6 text-emerald-600" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-stone-900 text-lg">{order.orderNumber}</h3>
+                      <h3 className="font-bold text-stone-900 text-lg">
+                        {order.orderNumber}
+                      </h3>
                       <div className="flex items-center gap-4 text-sm text-stone-500 mt-1">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          {order.createdAt.toLocaleDateString('ka-GE', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
+                          {order.createdAt.toLocaleDateString("ka-GE", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
                           })}
                         </div>
                         <div className="flex items-center gap-1">
@@ -202,7 +230,11 @@ const OrderHistoryPage: React.FC = () => {
                   </div>
 
                   {/* Status Badge */}
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.orderStatus)}`}>
+                  <span
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
+                      order.orderStatus
+                    )}`}
+                  >
                     {getStatusIcon(order.orderStatus)}
                     {getStatusText(order.orderStatus)}
                   </span>
@@ -210,10 +242,15 @@ const OrderHistoryPage: React.FC = () => {
 
                 {/* Order Items Preview */}
                 <div className="mb-4">
-                  <h4 className="font-semibold text-stone-900 mb-3">პროდუქტები ({order.items.length})</h4>
+                  <h4 className="font-semibold text-stone-900 mb-3">
+                    პროდუქტები ({order.items.length})
+                  </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {order.items.slice(0, 3).map((item, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-stone-50 rounded-lg">
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 p-3 bg-stone-50 rounded-lg"
+                      >
                         <div className="w-10 h-10 bg-stone-200 rounded-lg flex items-center justify-center flex-shrink-0">
                           {item.product.images?.[0] ? (
                             <img
@@ -248,7 +285,9 @@ const OrderHistoryPage: React.FC = () => {
                   <div className="flex items-center gap-6 text-sm text-stone-600">
                     <div>
                       <span className="font-medium">სულ: </span>
-                      <span className="font-bold text-emerald-700 text-lg">₾{order.totalAmount.toFixed(2)}</span>
+                      <span className="font-bold text-emerald-700 text-lg">
+                        ₾{order.totalAmount.toFixed(2)}
+                      </span>
                     </div>
                     {order.shippingCost > 0 && (
                       <div>
@@ -277,18 +316,21 @@ const OrderHistoryPage: React.FC = () => {
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <ShoppingBag className="w-6 h-6 text-blue-600" />
               </div>
-              <h3 className="font-bold text-2xl text-stone-900">{orders.length}</h3>
+              <h3 className="font-bold text-2xl text-stone-900">
+                {orders.length}
+              </h3>
               <p className="text-stone-600">სულ შეკვეთები</p>
             </div>
-
-         
 
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 text-center">
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Package className="w-6 h-6 text-green-600" />
               </div>
               <h3 className="font-bold text-2xl text-emerald-700">
-                ₾{orders.reduce((sum, order) => sum + order.totalAmount, 0).toFixed(2)}
+                ₾
+                {orders
+                  .reduce((sum, order) => sum + order.totalAmount, 0)
+                  .toFixed(2)}
               </h3>
               <p className="text-stone-600">სრული ღირებულება</p>
             </div>

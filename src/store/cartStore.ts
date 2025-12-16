@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartState, Product } from "../types";
 import { CartService } from "../services/cartService";
-import { showToast } from "../components/ui/Toast"; 
+import { showToast } from "../components/ui/Toast";
 
 const loadGuestCartOnInit = () => {
   try {
@@ -178,38 +178,38 @@ export const useCartStore = create<CartStoreState & CartActions>()(
                       });
                     }
                   }
-              );
+                );
 
-              set({ cartUnsubscribe: unsubscribe });
-            } catch (error) {
-              console.error("Error loading user cart from Firestore:", error);
+                set({ cartUnsubscribe: unsubscribe });
+              } catch (error) {
+                console.error("Error loading user cart from Firestore:", error);
+                set({
+                  ...get(),
+                  items: [],
+                  totalItems: 0,
+                  totalPrice: 0,
+                  isLoading: false,
+                });
+              }
+            } else {
+              // For guest users (userId is null/undefined), just load from localStorage
               set({
                 ...get(),
-                items: [],
-                totalItems: 0,
-                totalPrice: 0,
+                currentUserId: null,
                 isLoading: false,
               });
             }
-          } else {
-            // For guest users (userId is null/undefined), just load from localStorage
-            set({
-              ...get(),
-              currentUserId: null,
-              isLoading: false,
-            });
           }
-        }
         },
 
         // --- ADD ITEM LOGIC ---
         addItem: async (product: Product, quantity = 1) => {
           const state = get();
-          
+
           // 1. მარაგი მთლიანად ამოწურულია?
           if (product.stock === 0) {
-             showToast("სამწუხაროდ, პროდუქტი მარაგში არ არის", "error");
-             return;
+            showToast("სამწუხაროდ, პროდუქტი მარაგში არ არის", "error");
+            return;
           }
 
           const existingItem = state.items.find(
@@ -219,8 +219,8 @@ export const useCartStore = create<CartStoreState & CartActions>()(
           // 2. ლიმიტის შემოწმება (არსებულს + ახალი)
           const currentQty = existingItem ? existingItem.quantity : 0;
           if (currentQty + quantity > product.stock) {
-             showToast(`მარაგში მხოლოდ ${product.stock} ერთეულია`, "error");
-             return;
+            showToast(`მარაგში მხოლოდ ${product.stock} ერთეულია`, "error");
+            return;
           }
 
           let newItems;
@@ -312,7 +312,7 @@ export const useCartStore = create<CartStoreState & CartActions>()(
         updateQuantity: async (productId: string, quantity: number) => {
           const state = get();
           const item = state.items.find((i) => i.productId === productId);
-          
+
           if (!item) return;
 
           // 3. შემოწმება გაზრდისას
