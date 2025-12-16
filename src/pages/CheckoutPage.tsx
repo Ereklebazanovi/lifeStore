@@ -1,4 +1,4 @@
-// CheckoutPage.tsx
+// src/pages/CheckoutPage.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom"; // ✅ Link დავამატეთ
 import { useCartStore } from "../store/cartStore";
@@ -172,7 +172,6 @@ const CheckoutPage: React.FC = () => {
                 onSubmit={handleSubmit}
                 className="space-y-6"
               >
-                {/* ... Name & Contact Rows (იგივე) ... */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-stone-700 mb-1">
@@ -392,7 +391,6 @@ const CheckoutPage: React.FC = () => {
               </div>
 
               {/* ✅ 3. TERMS & CONDITIONS CHECKBOX */}
-              {/* ✅ Terms & Conditions - გასუფთავებული ვერსია */}
               <div
                 id="terms-container"
                 className="flex items-start gap-3 mb-6 p-4 bg-stone-50 rounded-xl border border-stone-100 transition-all hover:border-emerald-100"
