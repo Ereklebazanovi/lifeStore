@@ -70,16 +70,20 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   }, [isOpen]);
 
   // --- Handlers ---
-  const handleItemChange = (index: number, field: keyof ManualOrderItem, value: string | number) => {
+  const handleItemChange = (
+    index: number,
+    field: keyof ManualOrderItem,
+    value: string | number
+  ) => {
     const newItems = [...items];
-    if (field === 'price' || field === 'quantity') {
+    if (field === "price" || field === "quantity") {
       newItems[index] = { ...newItems[index], [field]: Number(value) };
     } else {
-      newItems[index] = { ...newItems[index], [field]: value };
+      // ✅ აქ დავამატეთ "as string", რაც ასწორებს error-ს
+      newItems[index] = { ...newItems[index], [field]: value as string };
     }
     setItems(newItems);
   };
-
   const addItemRow = () => {
     setItems([...items, { name: '', price: 0, quantity: 1 }]);
   };
