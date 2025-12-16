@@ -46,7 +46,7 @@ const ProductsPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50 mt-2">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12 lg:py-16">
         {/* Header Section */}
         <div className="mb-12">

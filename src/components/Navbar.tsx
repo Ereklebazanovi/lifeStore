@@ -78,7 +78,7 @@ const Navbar: React.FC = () => {
                 პროდუქტები
               </NavLink>
               <NavLink to="/about" isActive={isActivePath("/about")}>
-                ჩვენს შესახებ
+                ჩვენ შესახებ
               </NavLink>
 
               {user && (
@@ -201,7 +201,7 @@ const Navbar: React.FC = () => {
                 პროდუქტები
               </MobileNavLink>
               <MobileNavLink to="/about" isActive={isActivePath("/about")} onClick={() => setIsMenuOpen(false)}>
-                ჩვენს შესახებ
+                ჩვენ შესახებ
               </MobileNavLink>
 
               {user && (

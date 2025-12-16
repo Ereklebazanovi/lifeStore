@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
   const navigationLinks = [
     { to: "/", label: "მთავარი" },
     { to: "/products", label: "პროდუქტები" },
-    { to: "/about", label: "ჩვენს შესახებ" },
+    { to: "/about", label: "ჩვენ შესახებ" },
   ];
 
   // 2. ✅ დახმარება & სამართლებრივი (სრული სია)
