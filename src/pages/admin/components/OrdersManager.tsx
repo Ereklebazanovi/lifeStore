@@ -1,8 +1,8 @@
 //OrdersManager.tsx
-import React, { useState, useEffect } from 'react';
-import { OrderService } from '../../../services/orderService';
-import { showToast } from '../../../components/ui/Toast';
-import type { Order } from '../../../types';
+import React, { useState, useEffect } from "react";
+import { OrderService } from "../../../services/orderService";
+import { showToast } from "../../../components/ui/Toast";
+import type { Order } from "../../../types";
 // Removed jsPDF import - using browser's print instead
 import {
   Package,
@@ -19,16 +19,18 @@ import {
   Download,
   FileText,
   Trash2,
-} from 'lucide-react';
+} from "lucide-react";
 
 const OrdersManager: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | Order['orderStatus']>('all');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | Order["orderStatus"]
+  >("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
   const [showBulkPrintModal, setShowBulkPrintModal] = useState(false);
 
@@ -42,21 +44,24 @@ const OrdersManager: React.FC = () => {
       const allOrders = await OrderService.getAllOrders();
       setOrders(allOrders);
     } catch (error) {
-      console.error('Error fetching orders:', error);
-      showToast('შეკვეთების ჩატვირთვა ვერ მოხერხდა', 'error');
+      console.error("Error fetching orders:", error);
+      showToast("შეკვეთების ჩატვირთვა ვერ მოხერხდა", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleStatusChange = async (orderId: string, newStatus: Order['orderStatus']) => {
+  const handleStatusChange = async (
+    orderId: string,
+    newStatus: Order["orderStatus"]
+  ) => {
     try {
       await OrderService.updateOrderStatus(orderId, newStatus);
-      showToast('სტატუსი წარმატებით განახლდა', 'success');
+      showToast("სტატუსი წარმატებით განახლდა", "success");
 
       // Update local state
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
           order.id === orderId
             ? { ...order, orderStatus: newStatus, updatedAt: new Date() }
             : order
@@ -65,11 +70,15 @@ const OrdersManager: React.FC = () => {
 
       // Update selected order if it's the same
       if (selectedOrder?.id === orderId) {
-        setSelectedOrder(prev => prev ? { ...prev, orderStatus: newStatus, updatedAt: new Date() } : null);
+        setSelectedOrder((prev) =>
+          prev
+            ? { ...prev, orderStatus: newStatus, updatedAt: new Date() }
+            : null
+        );
       }
     } catch (error) {
-      console.error('Error updating order status:', error);
-      showToast('სტატუსის განახლება ვერ მოხერხდა', 'error');
+      console.error("Error updating order status:", error);
+      showToast("სტატუსის განახლება ვერ მოხერხდა", "error");
     }
   };
 
@@ -79,10 +88,12 @@ const OrdersManager: React.FC = () => {
       // Note: This assumes OrderService.deleteOrder exists
       // You may need to implement this method in your OrderService
       await OrderService.deleteOrder(orderId);
-      showToast('შეკვეთა წარმატებით წაიშალა', 'success');
+      showToast("შეკვეთა წარმატებით წაიშალა", "success");
 
       // Remove from local state
-      setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+      setOrders((prevOrders) =>
+        prevOrders.filter((order) => order.id !== orderId)
+      );
 
       // Clear selected order if it was deleted
       if (selectedOrder?.id === orderId) {
@@ -91,8 +102,8 @@ const OrdersManager: React.FC = () => {
 
       setShowDeleteModal(null);
     } catch (error) {
-      console.error('Error deleting order:', error);
-      showToast('შეკვეთის წაშლა ვერ მოხერხდა', 'error');
+      console.error("Error deleting order:", error);
+      showToast("შეკვეთის წაშლა ვერ მოხერხდა", "error");
     }
   };
 
@@ -114,54 +125,73 @@ const OrdersManager: React.FC = () => {
   };
 
   // Filter orders based on search term, status, and date range
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerInfo.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerInfo.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customerInfo.firstName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      order.customerInfo.lastName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       order.customerInfo.phone.includes(searchTerm);
 
-    const matchesStatus = statusFilter === 'all' || order.orderStatus === statusFilter;
+    const matchesStatus =
+      statusFilter === "all" || order.orderStatus === statusFilter;
 
     // Date filtering
     const orderDate = new Date(order.createdAt);
     const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo + 'T23:59:59') : null; // Include the whole day
+    const toDate = dateTo ? new Date(dateTo + "T23:59:59") : null; // Include the whole day
 
     const matchesDateRange =
-      (!fromDate || orderDate >= fromDate) &&
-      (!toDate || orderDate <= toDate);
+      (!fromDate || orderDate >= fromDate) && (!toDate || orderDate <= toDate);
 
     return matchesSearch && matchesStatus && matchesDateRange;
   });
 
-  const getStatusIcon = (status: Order['orderStatus']) => {
+  const getStatusIcon = (status: Order["orderStatus"]) => {
     switch (status) {
-      case 'pending': return <Clock className="w-4 h-4" />;
-      case 'confirmed': return <CheckCircle className="w-4 h-4" />;
-      case 'delivered': return <CheckCircle className="w-4 h-4" />;
-      case 'cancelled': return <AlertCircle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+      case "pending":
+        return <Clock className="w-4 h-4" />;
+      case "confirmed":
+        return <CheckCircle className="w-4 h-4" />;
+      case "delivered":
+        return <CheckCircle className="w-4 h-4" />;
+      case "cancelled":
+        return <AlertCircle className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
     }
   };
 
-  const getStatusColor = (status: Order['orderStatus']) => {
+  const getStatusColor = (status: Order["orderStatus"]) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'confirmed': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'delivered': return 'bg-green-100 text-green-800 border-green-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "confirmed":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "delivered":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "cancelled":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
-  const getStatusText = (status: Order['orderStatus']) => {
+  const getStatusText = (status: Order["orderStatus"]) => {
     switch (status) {
-      case 'pending': return 'მუშავდება';
-      case 'confirmed': return 'დადასტურებული';
-      case 'delivered': return 'მიტანილი';
-      case 'cancelled': return 'გაუქმებული';
-      default: return status;
+      case "pending":
+        return "მუშავდება";
+      case "confirmed":
+        return "დადასტურებული";
+      case "delivered":
+        return "მიტანილი";
+      case "cancelled":
+        return "გაუქმებული";
+      default:
+        return status;
     }
   };
 
@@ -178,7 +208,9 @@ const OrdersManager: React.FC = () => {
     <div className="p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-stone-900">შეკვეთები ({orders.length})</h2>
+        <h2 className="text-2xl font-bold text-stone-900">
+          შეკვეთები ({orders.length})
+        </h2>
         <button
           onClick={fetchOrders}
           className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
@@ -206,7 +238,9 @@ const OrdersManager: React.FC = () => {
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            onChange={(e) =>
+              setStatusFilter(e.target.value as typeof statusFilter)
+            }
             className="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
           >
             <option value="all">ყველა სტატუსი</option>
@@ -253,13 +287,13 @@ const OrdersManager: React.FC = () => {
           შემაჯამებელი რეპორტი PDF
         </button>
 
-        {(dateFrom || dateTo || statusFilter !== 'all') && (
+        {(dateFrom || dateTo || statusFilter !== "all") && (
           <button
             onClick={() => {
-              setDateFrom('');
-              setDateTo('');
-              setStatusFilter('all');
-              setSearchTerm('');
+              setDateFrom("");
+              setDateTo("");
+              setStatusFilter("all");
+              setSearchTerm("");
             }}
             className="flex items-center gap-2 px-4 py-2 bg-stone-500 text-white rounded-lg hover:bg-stone-600 transition-colors"
           >
@@ -272,12 +306,13 @@ const OrdersManager: React.FC = () => {
       {filteredOrders.length === 0 ? (
         <div className="text-center py-12 bg-stone-50 rounded-xl">
           <Package className="w-16 h-16 text-stone-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-stone-600 mb-2">შეკვეთები არ არის</h3>
+          <h3 className="text-lg font-semibold text-stone-600 mb-2">
+            შეკვეთები არ არის
+          </h3>
           <p className="text-stone-500">
-            {searchTerm || statusFilter !== 'all'
-              ? 'მოცემული ფილტრებით შეკვეთები ვერ მოიძებნა'
-              : 'ახალი შეკვეთების მოსალოდნელად'
-            }
+            {searchTerm || statusFilter !== "all"
+              ? "მოცემული ფილტრებით შეკვეთები ვერ მოიძებნა"
+              : "ახალი შეკვეთების მოსალოდნელად"}
           </p>
         </div>
       ) : (
@@ -289,19 +324,29 @@ const OrdersManager: React.FC = () => {
                 key={order.id}
                 className={`border rounded-xl p-4 cursor-pointer transition-all ${
                   selectedOrder?.id === order.id
-                    ? 'border-emerald-300 bg-emerald-50'
-                    : 'border-stone-200 bg-white hover:border-stone-300'
+                    ? "border-emerald-300 bg-emerald-50"
+                    : "border-stone-200 bg-white hover:border-stone-300"
                 }`}
                 onClick={() => setSelectedOrder(order)}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="font-bold text-stone-900">{order.orderNumber}</h3>
+                    <h3 className="font-bold text-stone-900">
+                      {order.orderNumber}
+                    </h3>
                     <p className="text-sm text-stone-500">
-                      {order.createdAt.toLocaleDateString('ka-GE')} • {order.createdAt.toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' })}
+                      {order.createdAt.toLocaleDateString("ka-GE")} •{" "}
+                      {order.createdAt.toLocaleTimeString("ka-GE", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.orderStatus)}`}>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                      order.orderStatus
+                    )}`}
+                  >
                     {getStatusIcon(order.orderStatus)}
                     {getStatusText(order.orderStatus)}
                   </span>
@@ -319,7 +364,9 @@ const OrdersManager: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-emerald-700">₾{order.totalAmount.toFixed(2)}</span>
+                  <span className="font-bold text-emerald-700">
+                    ₾{order.totalAmount.toFixed(2)}
+                  </span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={(e) => {
@@ -368,8 +415,12 @@ const OrdersManager: React.FC = () => {
             ) : (
               <div className="text-center py-12">
                 <Package className="w-16 h-16 text-stone-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-stone-600 mb-2">აირჩიეთ შეკვეთა</h3>
-                <p className="text-stone-500">დეტალების სანახავად აირჩიეთ შეკვეთა ცხრილიდან</p>
+                <h3 className="text-lg font-semibold text-stone-600 mb-2">
+                  აირჩიეთ შეკვეთა
+                </h3>
+                <p className="text-stone-500">
+                  დეტალების სანახავად აირჩიეთ შეკვეთა ცხრილიდან
+                </p>
               </div>
             )}
           </div>
@@ -377,12 +428,25 @@ const OrdersManager: React.FC = () => {
       )}
 
       {/* Invoice Print Modal */}
+     {/* Invoice Print Modal */}
       {selectedOrder && (
-        <div className="hidden print:block print:fixed print:inset-0 print:bg-white print:z-50">
+        <div className="print-content"> {/* 👈 აქ წაიშალა ზედმეტი კლასები */}
           <InvoicePrintView order={selectedOrder} />
         </div>
       )}
 
+      {/* Bulk Report Print Modal */}
+      {showBulkPrintModal && (
+        <div className="print-content"> {/* 👈 აქაც წაიშალა */}
+          <BulkReportPrintView
+            orders={filteredOrders}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            statusFilter={statusFilter}
+            getStatusText={getStatusText}
+          />
+        </div>
+      )}
       {/* Bulk Report Print Modal */}
       {showBulkPrintModal && (
         <div className="hidden print:block print:fixed print:inset-0 print:bg-white print:z-50">
@@ -428,7 +492,9 @@ const OrdersManager: React.FC = () => {
 
       {/* Print cleanup - remove modals after print */}
       <div className="print:hidden">
-        {showBulkPrintModal && setTimeout(() => setShowBulkPrintModal(false), 2000) && null}
+        {showBulkPrintModal &&
+          setTimeout(() => setShowBulkPrintModal(false), 2000) &&
+          null}
       </div>
     </div>
   );
@@ -449,8 +515,12 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
         <div className="text-right">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">ინვოისი</h2>
           <p className="text-gray-600">ნომერი: {order.orderNumber}</p>
-          <p className="text-gray-600">თარიღი: {order.createdAt.toLocaleDateString('ka-GE')}</p>
-          <p className="text-gray-600">სტატუსი: {getInvoiceStatusText(order.orderStatus)}</p>
+          <p className="text-gray-600">
+            თარიღი: {order.createdAt.toLocaleDateString("ka-GE")}
+          </p>
+          <p className="text-gray-600">
+            სტატუსი: {getInvoiceStatusText(order.orderStatus)}
+          </p>
         </div>
       </div>
 
@@ -458,10 +528,20 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
       <div className="mb-8">
         <h3 className="text-lg font-bold text-gray-900 mb-4">მყიდველი:</h3>
         <div className="bg-gray-50 p-4 rounded">
-          <p><strong>სახელი:</strong> {order.customerInfo.firstName} {order.customerInfo.lastName}</p>
-          <p><strong>ტელეფონი:</strong> {order.customerInfo.phone}</p>
-          <p><strong>Email:</strong> {order.customerInfo.email}</p>
-          <p><strong>მისამართი:</strong> {order.deliveryInfo.city}, {order.deliveryInfo.address}</p>
+          <p>
+            <strong>სახელი:</strong> {order.customerInfo.firstName}{" "}
+            {order.customerInfo.lastName}
+          </p>
+          <p>
+            <strong>ტელეფონი:</strong> {order.customerInfo.phone}
+          </p>
+          <p>
+            <strong>Email:</strong> {order.customerInfo.email}
+          </p>
+          <p>
+            <strong>მისამართი:</strong> {order.deliveryInfo.city},{" "}
+            {order.deliveryInfo.address}
+          </p>
         </div>
       </div>
 
@@ -472,8 +552,12 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
             <tr className="bg-gray-100">
               <th className="border border-gray-300 p-3 text-left">#</th>
               <th className="border border-gray-300 p-3 text-left">პროდუქტი</th>
-              <th className="border border-gray-300 p-3 text-center">ღირებულება</th>
-              <th className="border border-gray-300 p-3 text-center">რაოდენობა</th>
+              <th className="border border-gray-300 p-3 text-center">
+                ღირებულება
+              </th>
+              <th className="border border-gray-300 p-3 text-center">
+                რაოდენობა
+              </th>
               <th className="border border-gray-300 p-3 text-right">ჯამი</th>
             </tr>
           </thead>
@@ -481,10 +565,18 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
             {order.items.map((item, index) => (
               <tr key={index}>
                 <td className="border border-gray-300 p-3">{index + 1}</td>
-                <td className="border border-gray-300 p-3">{item.product.name}</td>
-                <td className="border border-gray-300 p-3 text-center">₾{item.price.toFixed(2)}</td>
-                <td className="border border-gray-300 p-3 text-center">{item.quantity}</td>
-                <td className="border border-gray-300 p-3 text-right">₾{item.total.toFixed(2)}</td>
+                <td className="border border-gray-300 p-3">
+                  {item.product.name}
+                </td>
+                <td className="border border-gray-300 p-3 text-center">
+                  ₾{item.price.toFixed(2)}
+                </td>
+                <td className="border border-gray-300 p-3 text-center">
+                  {item.quantity}
+                </td>
+                <td className="border border-gray-300 p-3 text-right">
+                  ₾{item.total.toFixed(2)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -500,7 +592,11 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
           </div>
           <div className="flex justify-between py-2 border-b">
             <span>მიწოდება:</span>
-            <span>{order.shippingCost === 0 ? 'უფასო' : `₾${order.shippingCost.toFixed(2)}`}</span>
+            <span>
+              {order.shippingCost === 0
+                ? "უფასო"
+                : `₾${order.shippingCost.toFixed(2)}`}
+            </span>
           </div>
           <div className="flex justify-between py-3 font-bold text-lg border-t-2 border-gray-900">
             <span>სულ:</span>
@@ -512,7 +608,7 @@ const InvoicePrintView: React.FC<{ order: Order }> = ({ order }) => {
       {/* Footer */}
       <div className="text-center text-gray-500 text-sm pt-8 border-t">
         <p>მადლობთ შეკვეთისთვის!</p>
-        <p>დოკუმენტი გენერირებულია: {new Date().toLocaleString('ka-GE')}</p>
+        <p>დოკუმენტი გენერირებულია: {new Date().toLocaleString("ka-GE")}</p>
       </div>
     </div>
   );
@@ -524,24 +620,34 @@ const BulkReportPrintView: React.FC<{
   dateFrom: string;
   dateTo: string;
   statusFilter: string;
-  getStatusText: (status: Order['orderStatus']) => string;
+  getStatusText: (status: Order["orderStatus"]) => string;
 }> = ({ orders, dateFrom, dateTo, statusFilter, getStatusText }) => {
-  const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const totalRevenue = orders.reduce(
+    (sum, order) => sum + order.totalAmount,
+    0
+  );
 
   return (
     <div className="p-8 max-w-6xl mx-auto bg-white">
       {/* Header */}
       <div className="text-center mb-8 pb-6 border-b-2 border-gray-900">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">LifeStore</h1>
-        <h2 className="text-xl font-bold text-gray-700">შეკვეთების შემაჯამებელი რეპორტი</h2>
+        <h2 className="text-xl font-bold text-gray-700">
+          შეკვეთების შემაჯამებელი რეპორტი
+        </h2>
         <div className="mt-4 text-gray-600">
           {dateFrom && dateTo && (
-            <p>პერიოდი: {new Date(dateFrom).toLocaleDateString('ka-GE')} - {new Date(dateTo).toLocaleDateString('ka-GE')}</p>
+            <p>
+              პერიოდი: {new Date(dateFrom).toLocaleDateString("ka-GE")} -{" "}
+              {new Date(dateTo).toLocaleDateString("ka-GE")}
+            </p>
           )}
-          {statusFilter !== 'all' && (
-            <p>სტატუსი: {getStatusText(statusFilter as Order['orderStatus'])}</p>
+          {statusFilter !== "all" && (
+            <p>
+              სტატუსი: {getStatusText(statusFilter as Order["orderStatus"])}
+            </p>
           )}
-          <p>ჩანაწერის თარიღი: {new Date().toLocaleString('ka-GE')}</p>
+          <p>ჩანაწერის თარიღი: {new Date().toLocaleString("ka-GE")}</p>
         </div>
       </div>
 
@@ -553,18 +659,24 @@ const BulkReportPrintView: React.FC<{
               <th className="border border-gray-300 p-3 text-left">თარიღი</th>
               <th className="border border-gray-300 p-3 text-left">ნომერი</th>
               <th className="border border-gray-300 p-3 text-left">კლიენტი</th>
-              <th className="border border-gray-300 p-3 text-center">ტელეფონი</th>
+              <th className="border border-gray-300 p-3 text-center">
+                ტელეფონი
+              </th>
               <th className="border border-gray-300 p-3 text-right">თანხა</th>
-              <th className="border border-gray-300 p-3 text-center">სტატუსი</th>
+              <th className="border border-gray-300 p-3 text-center">
+                სტატუსი
+              </th>
             </tr>
           </thead>
           <tbody>
             {orders.map((order, index) => (
               <tr key={index}>
                 <td className="border border-gray-300 p-2">
-                  {order.createdAt.toLocaleDateString('ka-GE')}
+                  {order.createdAt.toLocaleDateString("ka-GE")}
                 </td>
-                <td className="border border-gray-300 p-2">{order.orderNumber}</td>
+                <td className="border border-gray-300 p-2">
+                  {order.orderNumber}
+                </td>
                 <td className="border border-gray-300 p-2">
                   {order.customerInfo.firstName} {order.customerInfo.lastName}
                 </td>
@@ -601,26 +713,33 @@ const BulkReportPrintView: React.FC<{
 };
 
 // Helper function for status text (used in print components)
-const getInvoiceStatusText = (status: Order['orderStatus']) => {
+const getInvoiceStatusText = (status: Order["orderStatus"]) => {
   switch (status) {
-    case 'pending': return 'მუშავდება';
-    case 'confirmed': return 'დადასტურებული';
-    case 'delivered': return 'მიტანილი';
-    case 'cancelled': return 'გაუქმებული';
-    default: return status;
+    case "pending":
+      return "მუშავდება";
+    case "confirmed":
+      return "დადასტურებული";
+    case "delivered":
+      return "მიტანილი";
+    case "cancelled":
+      return "გაუქმებული";
+    default:
+      return status;
   }
 };
 
 // Order Details Component
 const OrderDetails: React.FC<{
   order: Order;
-  onStatusChange: (orderId: string, newStatus: Order['orderStatus']) => void;
+  onStatusChange: (orderId: string, newStatus: Order["orderStatus"]) => void;
   onPrintInvoice: (order: Order) => void;
 }> = ({ order, onStatusChange, onPrintInvoice }) => {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-stone-900">{order.orderNumber}</h3>
+        <h3 className="text-lg font-bold text-stone-900">
+          {order.orderNumber}
+        </h3>
         <div className="flex items-center gap-2">
           <button
             onClick={() => onPrintInvoice(order)}
@@ -630,7 +749,7 @@ const OrderDetails: React.FC<{
             PDF ინვოისი
           </button>
           <span className="text-sm text-stone-500">
-            {order.createdAt.toLocaleDateString('ka-GE')}
+            {order.createdAt.toLocaleDateString("ka-GE")}
           </span>
         </div>
       </div>
@@ -642,10 +761,20 @@ const OrderDetails: React.FC<{
           მომხმარებელი
         </h4>
         <div className="space-y-2 text-sm">
-          <p><strong>სახელი:</strong> {order.customerInfo.firstName} {order.customerInfo.lastName}</p>
-          <p><strong>ტელეფონი:</strong> {order.customerInfo.phone}</p>
-          <p><strong>ელ-ფოსტა:</strong> {order.customerInfo.email}</p>
-          <p><strong>ტიპი:</strong> {order.customerInfo.isGuest ? 'სტუმარი' : 'დარეგისტრირებული'}</p>
+          <p>
+            <strong>სახელი:</strong> {order.customerInfo.firstName}{" "}
+            {order.customerInfo.lastName}
+          </p>
+          <p>
+            <strong>ტელეფონი:</strong> {order.customerInfo.phone}
+          </p>
+          <p>
+            <strong>ელ-ფოსტა:</strong> {order.customerInfo.email}
+          </p>
+          <p>
+            <strong>ტიპი:</strong>{" "}
+            {order.customerInfo.isGuest ? "სტუმარი" : "დარეგისტრირებული"}
+          </p>
         </div>
       </div>
 
@@ -656,10 +785,16 @@ const OrderDetails: React.FC<{
           მიწოდება
         </h4>
         <div className="space-y-2 text-sm">
-          <p><strong>ქალაქი:</strong> {order.deliveryInfo.city}</p>
-          <p><strong>მისამართი:</strong> {order.deliveryInfo.address}</p>
+          <p>
+            <strong>ქალაქი:</strong> {order.deliveryInfo.city}
+          </p>
+          <p>
+            <strong>მისამართი:</strong> {order.deliveryInfo.address}
+          </p>
           {order.deliveryInfo.comment && (
-            <p><strong>კომენტარი:</strong> {order.deliveryInfo.comment}</p>
+            <p>
+              <strong>კომენტარი:</strong> {order.deliveryInfo.comment}
+            </p>
           )}
         </div>
       </div>
@@ -672,7 +807,10 @@ const OrderDetails: React.FC<{
         </h4>
         <div className="space-y-3">
           {order.items.map((item, index) => (
-            <div key={index} className="flex items-start gap-3 p-3 bg-stone-50 rounded-lg">
+            <div
+              key={index}
+              className="flex items-start gap-3 p-3 bg-stone-50 rounded-lg"
+            >
               <div className="w-12 h-12 bg-stone-200 rounded-lg flex items-center justify-center flex-shrink-0">
                 {item.product.images?.[0] ? (
                   <img
@@ -685,9 +823,12 @@ const OrderDetails: React.FC<{
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <h5 className="font-medium text-stone-900 truncate">{item.product.name}</h5>
+                <h5 className="font-medium text-stone-900 truncate">
+                  {item.product.name}
+                </h5>
                 <p className="text-sm text-stone-600">
-                  {item.quantity} x ₾{item.price.toFixed(2)} = ₾{item.total.toFixed(2)}
+                  {item.quantity} x ₾{item.price.toFixed(2)} = ₾
+                  {item.total.toFixed(2)}
                 </p>
               </div>
             </div>
@@ -704,11 +845,17 @@ const OrderDetails: React.FC<{
           </div>
           <div className="flex justify-between">
             <span>მიწოდება:</span>
-            <span>{order.shippingCost === 0 ? 'უფასო' : `₾${order.shippingCost.toFixed(2)}`}</span>
+            <span>
+              {order.shippingCost === 0
+                ? "უფასო"
+                : `₾${order.shippingCost.toFixed(2)}`}
+            </span>
           </div>
           <div className="flex justify-between font-bold text-base pt-2 border-t border-stone-200">
             <span>სულ:</span>
-            <span className="text-emerald-700">₾{order.totalAmount.toFixed(2)}</span>
+            <span className="text-emerald-700">
+              ₾{order.totalAmount.toFixed(2)}
+            </span>
           </div>
         </div>
       </div>
@@ -717,27 +864,27 @@ const OrderDetails: React.FC<{
       <div>
         <h4 className="font-semibold text-stone-900 mb-3">სტატუსის მართვა</h4>
         <div className="grid grid-cols-2 gap-2">
-          {(['pending', 'confirmed', 'delivered'] as const).map((status) => (
+          {(["pending", "confirmed", "delivered"] as const).map((status) => (
             <button
               key={status}
               onClick={() => onStatusChange(order.id, status)}
               disabled={order.orderStatus === status}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 order.orderStatus === status
-                  ? 'bg-stone-200 text-stone-500 cursor-not-allowed'
-                  : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                  ? "bg-stone-200 text-stone-500 cursor-not-allowed"
+                  : "bg-stone-100 text-stone-700 hover:bg-stone-200"
               }`}
             >
-              {status === 'pending' && 'მუშავდება'}
-              {status === 'confirmed' && 'დადასტურება'}
-              {status === 'delivered' && 'მიტანა'}
+              {status === "pending" && "მუშავდება"}
+              {status === "confirmed" && "დადასტურება"}
+              {status === "delivered" && "მიტანა"}
             </button>
           ))}
         </div>
 
-        {order.orderStatus !== 'cancelled' && (
+        {order.orderStatus !== "cancelled" && (
           <button
-            onClick={() => onStatusChange(order.id, 'cancelled')}
+            onClick={() => onStatusChange(order.id, "cancelled")}
             className="w-full mt-2 px-3 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
           >
             გაუქმება

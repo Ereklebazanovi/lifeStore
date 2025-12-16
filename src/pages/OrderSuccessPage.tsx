@@ -333,7 +333,7 @@ const OrderSuccessPage: React.FC = () => {
                     ₾{order.subtotal.toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between text-stone-600">
+                <div className="flex justify-between text-stone-600 mt-10">
                   <span>მიწოდება</span>
                   <span
                     className={`font-medium ${
