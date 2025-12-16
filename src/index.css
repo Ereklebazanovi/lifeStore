@@ -61,4 +61,13 @@ body {
     -webkit-print-color-adjust: exact;
     font-size: 12pt; /* ფიქსირებული ზომა */
   }
+
+ .print-break-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    break-before: auto;
+    break-after: auto;
+    display: block;
+    position: relative;
+  }
 }

@@ -115,10 +115,7 @@ const OrderSuccessPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 py-20 lg:py-20 print:bg-white print:py-0">
-      {/* 👇 აქ დავამატე 'print-content' კლასი! 
-          ეს არის ყველაზე მნიშვნელოვანი ცვლილება.
-          ახლა ჩვენი CSS ამ კონტეინერს ბეჭდვის დროს გამოაჩენს.
-      */}
+      {/* ✅ print-content კლასი დამატებულია */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 print-content">
         
         {/* --- Success Header (ეკრანზე ჩანს, ბეჭდვისას არა) --- */}
@@ -149,31 +146,38 @@ const OrderSuccessPage: React.FC = () => {
         <div className="hidden print:block text-center mb-8 border-b-2 border-stone-800 pb-4">
           <h1 className="text-3xl font-bold text-stone-900 mb-2">LifeStore</h1>
           <p className="text-stone-600 mb-1">ინვოისი / შეკვეთის დასტური</p>
-          <p className="text-stone-500 text-sm">თარიღი: {new Date().toLocaleDateString('ka-GE')}</p>
+          <p className="text-stone-500 text-sm">
+            თარიღი: {new Date().toLocaleDateString("ka-GE")}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* --- MAIN CONTENT (LEFT) --- */}
+          {/* print:col-span-3 - ბეჭდვისას მთელ სიგანეზე გაიშლება */}
           <div className="lg:col-span-2 space-y-6 print:col-span-3">
             
             {/* Order Info Card */}
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-200 print:shadow-none print:border print:border-stone-300 print:rounded-lg print:p-6 print:mb-6">
-              <div className="flex items-center justify-between mb-6 border-b border-stone-100 pb-4 print:border-stone-300">
-                <h2 className="text-xl font-bold text-stone-900">
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-200 print:shadow-none print:border print:border-stone-300 print:rounded-lg print:p-4 print:mb-4">
+              <div className="flex items-center justify-between mb-6 border-b border-stone-100 pb-4 print:border-stone-300 print:mb-2 print:pb-2">
+                <h2 className="text-xl font-bold text-stone-900 print:text-lg">
                   შეკვეთის დეტალები
                 </h2>
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.orderStatus)} print:border-stone-300 print:bg-transparent print:text-stone-900`}>
+                <span
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
+                    order.orderStatus
+                  )} print:border-stone-300 print:bg-transparent print:text-stone-900`}
+                >
                   {getStatusText(order.orderStatus)}
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4 print:grid-cols-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4 print:grid-cols-2 print:gap-y-2">
                 <div>
-                  <p className="text-xs text-stone-500 uppercase tracking-wide font-bold mb-1.5">
+                  <p className="text-xs text-stone-500 uppercase tracking-wide font-bold mb-1.5 print:mb-0">
                     შეკვეთის ნომერი
                   </p>
                   <div className="flex items-center gap-3">
-                    <span className="font-bold text-stone-900 text-xl tracking-wider">
+                    <span className="font-bold text-stone-900 text-xl tracking-wider print:text-base">
                       {order.orderNumber}
                     </span>
                     <button
@@ -181,34 +185,43 @@ const OrderSuccessPage: React.FC = () => {
                       className="p-2 bg-stone-50 hover:bg-stone-100 rounded-lg transition-colors print:hidden text-stone-500 hover:text-emerald-600"
                       title="ნომრის კოპირება"
                     >
-                      {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                      {copied ? (
+                        <Check className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs text-stone-500 uppercase tracking-wide font-bold mb-1.5">
+                  <p className="text-xs text-stone-500 uppercase tracking-wide font-bold mb-1.5 print:mb-0">
                     თარიღი
                   </p>
-                  <p className="font-medium text-stone-900 text-lg">
+                  <p className="font-medium text-stone-900 text-lg print:text-base">
                     {order.createdAt.toLocaleDateString("ka-GE")}
                     <span className="text-sm text-stone-400 ml-2 print:text-stone-600">
-                      {order.createdAt.toLocaleTimeString("ka-GE", { hour: "2-digit", minute: "2-digit" })}
+                      {order.createdAt.toLocaleTimeString("ka-GE", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-stone-500 uppercase tracking-wide font-bold mb-1.5">
+                  <p className="text-xs text-stone-500 uppercase tracking-wide font-bold mb-1.5 print:mb-0">
                     გადახდის მეთოდი
                   </p>
-                  <p className="font-medium text-stone-900 flex items-center gap-2">
-                    {order.paymentMethod === "cash" ? "ადგილზე გადახდა" : "საბანკო გადარიცხვა"}
+                  <p className="font-medium text-stone-900 flex items-center gap-2 print:text-base">
+                    {order.paymentMethod === "cash"
+                      ? "ადგილზე გადახდა"
+                      : "საბანკო გადარიცხვა"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-stone-500 uppercase tracking-wide font-bold mb-1.5">
+                  <p className="text-xs text-stone-500 uppercase tracking-wide font-bold mb-1.5 print:mb-0">
                     სრული ღირებულება
                   </p>
-                  <p className="font-bold text-emerald-700 text-2xl print:text-stone-900">
+                  <p className="font-bold text-emerald-700 text-2xl print:text-stone-900 print:text-xl">
                     ₾{order.totalAmount.toFixed(2)}
                   </p>
                 </div>
@@ -216,51 +229,61 @@ const OrderSuccessPage: React.FC = () => {
             </div>
 
             {/* Delivery Info */}
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-200 print:shadow-none print:border print:border-stone-300 print:rounded-lg print:p-6 print:mb-6">
-              <h3 className="text-lg font-bold text-stone-900 mb-6 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-emerald-600 print:text-stone-900" />
+            {/* ✅ print-break-avoid დამატებულია */}
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-200 print:shadow-none print:border print:border-stone-300 print:rounded-lg print:p-4 print:mb-4 print-break-avoid">
+              <h3 className="text-lg font-bold text-stone-900 mb-6 flex items-center gap-2 print:mb-2 print:text-base">
+                <MapPin className="w-5 h-5 text-emerald-600 print:text-stone-900 print:w-4 print:h-4" />
                 საკონტაქტო ინფორმაცია
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 print:grid-cols-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 print:grid-cols-2 print:gap-y-2 print:gap-x-4">
                 <div>
-                  <p className="text-stone-500 text-sm mb-1">მიმღები</p>
-                  <p className="font-bold text-stone-900 text-lg">
+                  <p className="text-stone-500 text-sm mb-1 print:text-xs">მიმღები</p>
+                  <p className="font-bold text-stone-900 text-lg print:text-sm">
                     {order.customerInfo.firstName} {order.customerInfo.lastName}
                   </p>
                 </div>
                 <div>
-                  <p className="text-stone-500 text-sm mb-1">ტელეფონი</p>
-                  <p className="font-bold text-stone-900 text-lg">
+                  <p className="text-stone-500 text-sm mb-1 print:text-xs">ტელეფონი</p>
+                  <p className="font-bold text-stone-900 text-lg print:text-sm">
                     {order.customerInfo.phone}
                   </p>
                 </div>
                 <div className="md:col-span-2">
-                  <p className="text-stone-500 text-sm mb-1">მისამართი</p>
-                  <p className="font-medium text-stone-900 text-lg">
+                  <p className="text-stone-500 text-sm mb-1 print:text-xs">მისამართი</p>
+                  <p className="font-medium text-stone-900 text-lg print:text-sm">
                     {order.deliveryInfo.city}, {order.deliveryInfo.address}
                   </p>
                 </div>
                 {order.deliveryInfo.comment && (
-                  <div className="md:col-span-2 bg-stone-50 p-4 rounded-2xl border border-stone-100 print:bg-transparent print:border print:border-stone-200">
+                  <div className="md:col-span-2 bg-stone-50 p-4 rounded-2xl border border-stone-100 print:bg-transparent print:border print:border-stone-200 print:p-2">
                     <p className="text-stone-500 text-xs mb-1 font-bold uppercase">
                       კომენტარი კურიერისთვის
                     </p>
-                    <p className="text-stone-800">"{order.deliveryInfo.comment}"</p>
+                    <p className="text-stone-800 print:text-sm">
+                      "{order.deliveryInfo.comment}"
+                    </p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Items List */}
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-200 print:shadow-none print:border print:border-stone-300 print:rounded-lg print:p-6">
-              <h3 className="text-lg font-bold text-stone-900 mb-6 flex items-center gap-2">
-                <Package className="w-5 h-5 text-emerald-600 print:text-stone-900" />
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-200 print:shadow-none print:border print:border-stone-300 print:rounded-lg print:p-4">
+              <h3 className="text-lg font-bold text-stone-900 mb-6 flex items-center gap-2 print:mb-4 print:text-base">
+                <Package className="w-5 h-5 text-emerald-600 print:text-stone-900 print:w-4 print:h-4" />
                 პროდუქტები
               </h3>
-              <div className="space-y-6">
+              
+              {/* ✅ Reduced spacing for print */}
+              <div className="space-y-6 print:space-y-2">
                 {order.items.map((item, index) => (
-                  <div key={index} className="flex gap-4 items-start border-b border-stone-100 pb-6 last:border-0 last:pb-0 print:border-stone-200">
+                  <div
+                    key={index}
+                    // ✅ print-break-avoid და კომპაქტური padding
+                    className="flex gap-4 items-start border-b border-stone-100 pb-6 last:border-0 last:pb-0 print:border-stone-200 print:pb-2 print-break-avoid"
+                  >
                     <div className="w-20 h-20 bg-stone-100 rounded-2xl overflow-hidden flex-shrink-0 border border-stone-100 print:hidden">
+                      {/* სურათი დამალულია ბეჭდვისას, რომ ადგილი დაზოგოს */}
                       {item.product.images?.[0] ? (
                         <img
                           src={item.product.images[0]}
@@ -272,14 +295,14 @@ const OrderSuccessPage: React.FC = () => {
                       )}
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-bold text-stone-900 text-lg line-clamp-2">
+                      <h4 className="font-bold text-stone-900 text-lg line-clamp-2 print:text-sm">
                         {item.product.name}
                       </h4>
-                      <div className="flex justify-between items-end mt-2">
-                        <div className="text-stone-500 font-medium">
+                      <div className="flex justify-between items-end mt-2 print:mt-1">
+                        <div className="text-stone-500 font-medium print:text-xs">
                           {item.quantity} ცალი x ₾{item.price.toFixed(2)}
                         </div>
-                        <span className="font-bold text-stone-900 text-lg">
+                        <span className="font-bold text-stone-900 text-lg print:text-sm">
                           ₾{item.total.toFixed(2)}
                         </span>
                       </div>
@@ -289,18 +312,29 @@ const OrderSuccessPage: React.FC = () => {
               </div>
 
               {/* Final Calculations */}
-              <div className="border-t border-stone-100 mt-6 pt-6 space-y-3 bg-stone-50/50 p-6 rounded-2xl print:bg-transparent print:border-stone-300 print:p-0 print:mt-4">
-                <div className="flex justify-between text-stone-600">
+              {/* ✅ print-break-avoid და კომპაქტური სტილი */}
+              <div className="border-t border-stone-100 mt-6 pt-6 space-y-3 bg-stone-50/50 p-6 rounded-2xl print:bg-transparent print:border-stone-300 print:p-2 print:mt-4 print-break-avoid">
+                <div className="flex justify-between text-stone-600 print:text-sm">
                   <span>პროდუქტების ღირებულება</span>
-                  <span className="font-medium">₾{order.subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-stone-600 mt-10 print:mt-2">
-                  <span>მიწოდება</span>
-                  <span className={`font-medium ${order.shippingCost === 0 ? "text-green-600 print:text-stone-900" : ""}`}>
-                    {order.shippingCost === 0 ? "უფასო" : `₾${order.shippingCost.toFixed(2)}`}
+                  <span className="font-medium">
+                    ₾{order.subtotal.toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between text-xl font-bold text-stone-900 pt-4 border-t border-stone-200 mt-2 print:border-stone-800">
+                <div className="flex justify-between text-stone-600 mt-10 print:mt-2 print:text-sm">
+                  <span>მიწოდება</span>
+                  <span
+                    className={`font-medium ${
+                      order.shippingCost === 0
+                        ? "text-green-600 print:text-stone-900"
+                        : ""
+                    }`}
+                  >
+                    {order.shippingCost === 0
+                      ? "უფასო"
+                      : `₾${order.shippingCost.toFixed(2)}`}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xl font-bold text-stone-900 pt-4 border-t border-stone-200 mt-2 print:border-stone-800 print:text-base">
                   <span>სულ გადასახდელი</span>
                   <span className="text-emerald-700 print:text-stone-900">
                     ₾{order.totalAmount.toFixed(2)}
@@ -318,25 +352,40 @@ const OrderSuccessPage: React.FC = () => {
                 დახმარება გჭირდებათ?
               </h3>
               <p className="text-stone-500 text-sm mb-6 leading-relaxed">
-                თუ შეკვეთასთან დაკავშირებით რაიმე კითხვა გაქვთ, ჩვენი გუნდი მზადაა დაგეხმაროთ:
+                თუ შეკვეთასთან დაკავშირებით რაიმე კითხვა გაქვთ, ჩვენი გუნდი
+                მზადაა დაგეხმაროთ:
               </p>
               <div className="space-y-3">
-                <a href="tel:+995 511 72 72 57" className="flex items-center gap-4 p-4 bg-stone-50 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 transition-all group border border-transparent hover:border-emerald-100">
+                <a
+                  href="tel:+995 511 72 72 57"
+                  className="flex items-center gap-4 p-4 bg-stone-50 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 transition-all group border border-transparent hover:border-emerald-100"
+                >
                   <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm group-hover:scale-110 transition-transform">
                     <Phone className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs text-stone-400 block font-bold uppercase tracking-wider">დაგვირეკეთ</span>
-                    <span className="font-bold text-stone-800 text-lg group-hover:text-emerald-700">+995 511 72 72 57</span>
+                    <span className="text-xs text-stone-400 block font-bold uppercase tracking-wider">
+                      დაგვირეკეთ
+                    </span>
+                    <span className="font-bold text-stone-800 text-lg group-hover:text-emerald-700">
+                      +995 511 72 72 57
+                    </span>
                   </div>
                 </a>
-                <a href="mailto:info@lifestore.ge" className="flex items-center gap-4 p-4 bg-stone-50 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 transition-all group border border-transparent hover:border-emerald-100">
+                <a
+                  href="mailto:info@lifestore.ge"
+                  className="flex items-center gap-4 p-4 bg-stone-50 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 transition-all group border border-transparent hover:border-emerald-100"
+                >
                   <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm group-hover:scale-110 transition-transform">
                     <Mail className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs text-stone-400 block font-bold uppercase tracking-wider">მოგვწერეთ</span>
-                    <span className="font-bold text-stone-800 group-hover:text-emerald-700">info@lifestore.ge</span>
+                    <span className="text-xs text-stone-400 block font-bold uppercase tracking-wider">
+                      მოგვწერეთ
+                    </span>
+                    <span className="font-bold text-stone-800 group-hover:text-emerald-700">
+                      info@lifestore.ge
+                    </span>
                   </div>
                 </a>
               </div>
@@ -344,11 +393,17 @@ const OrderSuccessPage: React.FC = () => {
 
             {/* Navigation Buttons */}
             <div className="space-y-3 pt-2">
-              <Link to="/" className="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold py-4 px-6 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 hover:shadow-xl">
+              <Link
+                to="/"
+                className="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold py-4 px-6 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 hover:shadow-xl"
+              >
                 <ArrowLeft className="w-5 h-5" />
                 მთავარზე დაბრუნება
               </Link>
-              <Link to="/products" className="w-full bg-white border-2 border-stone-100 hover:border-emerald-500 text-stone-700 hover:text-emerald-700 font-bold py-4 px-6 rounded-2xl flex items-center justify-center gap-2 transition-all">
+              <Link
+                to="/products"
+                className="w-full bg-white border-2 border-stone-100 hover:border-emerald-500 text-stone-700 hover:text-emerald-700 font-bold py-4 px-6 rounded-2xl flex items-center justify-center gap-2 transition-all"
+              >
                 <Package className="w-5 h-5" />
                 შოპინგის გაგრძელება
               </Link>
