@@ -202,7 +202,7 @@ function getAlertStyles(type: InventoryAlert["type"]): string {
   }
 }
 
-function getAlertIcon(type: InventoryAlert["type"]): JSX.Element {
+function getAlertIcon(type: InventoryAlert["type"]) {
   switch (type) {
     case "out_of_stock":
       return <AlertCircle className="w-4 h-4 text-red-500" />;
