@@ -40,4 +40,25 @@ body {
     size: auto;
     margin: 10mm;
   }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    break-inside: auto; /* ნებას რთავს გვერდებზე გადატანას */
+  }
+
+  tr {
+    break-inside: avoid; /* კრძალავს სტრიქონის შუაზე გაჭრას */
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group; /* ✅ ეს იმეორებს ჰედერს ყოველ ახალ გვერდზე! */
+  }
+
+  /* ფონტის ზომა რომ არ დაპატარავდეს */
+  body {
+    -webkit-print-color-adjust: exact;
+    font-size: 12pt; /* ფიქსირებული ზომა */
+  }
 }
