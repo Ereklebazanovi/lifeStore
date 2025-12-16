@@ -1,3 +1,4 @@
+//auth store: src/store/authStore.ts
 import { create } from "zustand";
 import {
   signInWithPopup,

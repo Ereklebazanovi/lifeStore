@@ -50,6 +50,7 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
       setFilteredProducts([]);
       return;
     }
+    
     const searchTerm = value.toLowerCase().trim();
     const filtered = products
       .filter(p => p.isActive && p.name.toLowerCase().includes(searchTerm))
