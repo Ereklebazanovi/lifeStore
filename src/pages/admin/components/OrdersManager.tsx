@@ -1,13 +1,14 @@
+//OrdersManager.tsx
 import React, { useState, useEffect } from 'react';
 import { OrderService } from '../../../services/orderService';
 import { showToast } from '../../../components/ui/Toast';
 import type { Order } from '../../../types';
+import jsPDF from 'jspdf';
 import {
   Package,
   Eye,
   Clock,
   CheckCircle,
-  Truck,
   AlertCircle,
   Search,
   Filter,
@@ -15,6 +16,9 @@ import {
   Calendar,
   Phone,
   MapPin,
+  Download,
+  FileText,
+  Trash2,
 } from 'lucide-react';
 
 const OrdersManager: React.FC = () => {
@@ -23,6 +27,9 @@ const OrdersManager: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | Order['orderStatus']>('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -65,7 +72,237 @@ const OrdersManager: React.FC = () => {
     }
   };
 
-  // Filter orders based on search term and status
+  // Delete order function
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      // Note: This assumes OrderService.deleteOrder exists
+      // You may need to implement this method in your OrderService
+      await OrderService.deleteOrder(orderId);
+      showToast('შეკვეთა წარმატებით წაიშალა', 'success');
+
+      // Remove from local state
+      setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+
+      // Clear selected order if it was deleted
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(null);
+      }
+
+      setShowDeleteModal(null);
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      showToast('შეკვეთის წაშლა ვერ მოხერხდა', 'error');
+    }
+  };
+
+  // PDF Generation Functions
+  const generateInvoicePDF = (order: Order) => {
+    const doc = new jsPDF();
+
+    // Company info (replace with your actual company details)
+    const companyName = 'LifeStore';
+    const companyAddress = 'თბილისი, საქართველო';
+    const companyPhone = '+995 XXX XXX XXX';
+    const companyEmail = 'info@lifestore.ge';
+
+    // Set font
+    doc.setFont('helvetica');
+
+    // Header - Company Info
+    doc.setFontSize(20);
+    doc.setTextColor(0, 0, 0);
+    doc.text(companyName, 20, 25);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(companyAddress, 20, 35);
+    doc.text(`Tel: ${companyPhone}`, 20, 42);
+    doc.text(`Email: ${companyEmail}`, 20, 49);
+
+    // Invoice title and number
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.text('ინვოისი', 150, 25);
+
+    doc.setFontSize(10);
+    doc.text(`ნომერი: ${order.orderNumber}`, 150, 35);
+    doc.text(`თარიღი: ${order.createdAt.toLocaleDateString('ka-GE')}`, 150, 42);
+    doc.text(`სტატუსი: ${getStatusText(order.orderStatus)}`, 150, 49);
+
+    // Line separator
+    doc.setLineWidth(0.5);
+    doc.line(20, 60, 190, 60);
+
+    // Customer info
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text('მყიდველი:', 20, 75);
+
+    doc.setFontSize(10);
+    doc.text(`${order.customerInfo.firstName} ${order.customerInfo.lastName}`, 20, 85);
+    doc.text(`ტელ: ${order.customerInfo.phone}`, 20, 92);
+    doc.text(`Email: ${order.customerInfo.email}`, 20, 99);
+    doc.text(`მისამართი: ${order.deliveryInfo.city}, ${order.deliveryInfo.address}`, 20, 106);
+
+    // Products table header
+    let yPos = 125;
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+
+    // Table headers
+    doc.rect(20, yPos - 8, 170, 10); // Header background
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, yPos - 8, 170, 10, 'F');
+
+    doc.text('#', 25, yPos);
+    doc.text('პროდუქტი', 35, yPos);
+    doc.text('ღირებულება', 110, yPos);
+    doc.text('რაოდენობა', 140, yPos);
+    doc.text('ჯამი', 170, yPos);
+
+    yPos += 15;
+
+    // Products
+    order.items.forEach((item, index) => {
+      doc.text((index + 1).toString(), 25, yPos);
+
+      // Truncate long product names
+      const productName = item.product.name.length > 30
+        ? item.product.name.substring(0, 27) + '...'
+        : item.product.name;
+      doc.text(productName, 35, yPos);
+
+      doc.text(`₾${item.price.toFixed(2)}`, 110, yPos);
+      doc.text(item.quantity.toString(), 145, yPos);
+      doc.text(`₾${item.total.toFixed(2)}`, 170, yPos);
+
+      yPos += 10;
+    });
+
+    // Line separator before totals
+    yPos += 5;
+    doc.line(20, yPos, 190, yPos);
+
+    // Totals
+    yPos += 15;
+    doc.text(`პროდუქტები: ₾${order.subtotal.toFixed(2)}`, 130, yPos);
+    yPos += 8;
+    doc.text(`მიწოდება: ${order.shippingCost === 0 ? 'უფასო' : `₾${order.shippingCost.toFixed(2)}`}`, 130, yPos);
+    yPos += 8;
+
+    // Total with emphasis
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`სულ: ₾${order.totalAmount.toFixed(2)}`, 130, yPos);
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text('მადლობთ შეკვეთისთვის!', 20, 270);
+    doc.text(`დოკუმენტი გენერირებულია: ${new Date().toLocaleDateString('ka-GE')} ${new Date().toLocaleTimeString('ka-GE')}`, 20, 280);
+
+    // Download PDF
+    doc.save(`ინვოისი-${order.orderNumber}.pdf`);
+  };
+
+  const generateBulkReportPDF = () => {
+    const doc = new jsPDF();
+
+    // Company info
+    const companyName = 'LifeStore';
+    const reportTitle = 'შეკვეთების შემაჯამებელი რეპორტი';
+
+    // Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text(companyName, 20, 25);
+
+    doc.setFontSize(14);
+    doc.text(reportTitle, 20, 40);
+
+    // Date range and filters info
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    let infoY = 55;
+
+    if (dateFrom || dateTo) {
+      const fromText = dateFrom ? new Date(dateFrom).toLocaleDateString('ka-GE') : 'დასაწყისი';
+      const toText = dateTo ? new Date(dateTo).toLocaleDateString('ka-GE') : 'ბოლო';
+      doc.text(`პერიოდი: ${fromText} - ${toText}`, 20, infoY);
+      infoY += 8;
+    }
+
+    if (statusFilter !== 'all') {
+      doc.text(`სტატუსი: ${getStatusText(statusFilter)}`, 20, infoY);
+      infoY += 8;
+    }
+
+    doc.text(`სულ შეკვეთები: ${filteredOrders.length}`, 20, infoY);
+    doc.text(`ჩანაწერის თარიღი: ${new Date().toLocaleDateString('ka-GE')} ${new Date().toLocaleTimeString('ka-GE')}`, 100, infoY);
+
+    // Line separator
+    doc.setLineWidth(0.5);
+    doc.line(20, infoY + 10, 190, infoY + 10);
+
+    // Table header
+    let yPos = infoY + 25;
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, yPos - 8, 170, 10, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('თარიღი', 25, yPos);
+    doc.text('ნომერი', 55, yPos);
+    doc.text('კლიენტი', 85, yPos);
+    doc.text('თანხა', 140, yPos);
+    doc.text('სტატუსი', 165, yPos);
+
+    yPos += 15;
+    doc.setFont('helvetica', 'normal');
+
+    // Orders data
+    let totalRevenue = 0;
+    filteredOrders.forEach((order) => {
+      // Check if we need a new page
+      if (yPos > 260) {
+        doc.addPage();
+        yPos = 25;
+      }
+
+      doc.setFontSize(8);
+      doc.text(order.createdAt.toLocaleDateString('ka-GE'), 25, yPos);
+      doc.text(order.orderNumber, 55, yPos);
+
+      const customerName = `${order.customerInfo.firstName} ${order.customerInfo.lastName}`;
+      const truncatedName = customerName.length > 20 ? customerName.substring(0, 17) + '...' : customerName;
+      doc.text(truncatedName, 85, yPos);
+
+      doc.text(`₾${order.totalAmount.toFixed(2)}`, 140, yPos);
+      doc.text(getStatusText(order.orderStatus), 165, yPos);
+
+      totalRevenue += order.totalAmount;
+      yPos += 8;
+    });
+
+    // Total summary
+    yPos += 10;
+    doc.setLineWidth(0.5);
+    doc.line(20, yPos, 190, yPos);
+
+    yPos += 15;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(`მთლიანი შემოსავალი: ₾${totalRevenue.toFixed(2)}`, 20, yPos);
+
+    // Download PDF
+    const dateRange = dateFrom && dateTo
+      ? `${new Date(dateFrom).toLocaleDateString('ka-GE')}-${new Date(dateTo).toLocaleDateString('ka-GE')}`
+      : new Date().toLocaleDateString('ka-GE');
+
+    doc.save(`შეკვეთების-რეპორტი-${dateRange}.pdf`);
+  };
+
+  // Filter orders based on search term, status, and date range
   const filteredOrders = orders.filter(order => {
     const matchesSearch =
       order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,7 +312,16 @@ const OrdersManager: React.FC = () => {
 
     const matchesStatus = statusFilter === 'all' || order.orderStatus === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    // Date filtering
+    const orderDate = new Date(order.createdAt);
+    const fromDate = dateFrom ? new Date(dateFrom) : null;
+    const toDate = dateTo ? new Date(dateTo + 'T23:59:59') : null; // Include the whole day
+
+    const matchesDateRange =
+      (!fromDate || orderDate >= fromDate) &&
+      (!toDate || orderDate <= toDate);
+
+    return matchesSearch && matchesStatus && matchesDateRange;
   });
 
   const getStatusIcon = (status: Order['orderStatus']) => {
@@ -131,7 +377,7 @@ const OrdersManager: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
@@ -159,6 +405,56 @@ const OrdersManager: React.FC = () => {
             <option value="cancelled">გაუქმებული</option>
           </select>
         </div>
+
+        {/* Date From */}
+        <div className="relative">
+          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+            placeholder="თარიღიდან"
+          />
+        </div>
+
+        {/* Date To */}
+        <div className="relative">
+          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+            placeholder="თარიღამდე"
+          />
+        </div>
+      </div>
+
+      {/* Bulk Actions */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <button
+          onClick={generateBulkReportPDF}
+          disabled={filteredOrders.length === 0}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          შემაჯამებელი რეპორტი PDF
+        </button>
+
+        {(dateFrom || dateTo || statusFilter !== 'all') && (
+          <button
+            onClick={() => {
+              setDateFrom('');
+              setDateTo('');
+              setStatusFilter('all');
+              setSearchTerm('');
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-stone-500 text-white rounded-lg hover:bg-stone-600 transition-colors"
+          >
+            ფილტრების გასუფთავება
+          </button>
+        )}
       </div>
 
       {/* Orders List */}
@@ -213,16 +509,38 @@ const OrdersManager: React.FC = () => {
 
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-emerald-700">₾{order.totalAmount.toFixed(2)}</span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedOrder(order);
-                    }}
-                    className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
-                  >
-                    <Eye className="w-4 h-4 inline mr-1" />
-                    ნახვა
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        generateInvoicePDF(order);
+                      }}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+                      title="PDF ინვოისი"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedOrder(order);
+                      }}
+                      className="text-emerald-600 hover:text-emerald-700 text-sm font-medium flex items-center gap-1"
+                    >
+                      <Eye className="w-4 h-4" />
+                      ნახვა
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDeleteModal(order.id);
+                      }}
+                      className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center gap-1"
+                      title="წაშლა"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -242,6 +560,36 @@ const OrdersManager: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold text-stone-900 mb-4">
+              შეკვეთის წაშლა
+            </h3>
+            <p className="text-stone-600 mb-6">
+              დარწმუნებული ხართ რომ გსურთ წაიშალოთ ეს შეკვეთა?
+              <br />
+              <strong>ეს მოქმედება ვერ შეიძლება დაბრუნება!</strong>
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteModal(null)}
+                className="px-4 py-2 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 transition-colors"
+              >
+                გაუქმება
+              </button>
+              <button
+                onClick={() => handleDeleteOrder(showDeleteModal)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                დიახ, წაშლა
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -251,13 +599,141 @@ const OrderDetails: React.FC<{
   order: Order;
   onStatusChange: (orderId: string, newStatus: Order['orderStatus']) => void;
 }> = ({ order, onStatusChange }) => {
+  const generateInvoicePDF = (order: Order) => {
+    const doc = new jsPDF();
+
+    // Company info (replace with your actual company details)
+    const companyName = 'LifeStore';
+    const companyAddress = 'თბილისი, საქართველო';
+    const companyPhone = '+995 XXX XXX XXX';
+    const companyEmail = 'info@lifestore.ge';
+
+    // Set font
+    doc.setFont('helvetica');
+
+    // Header - Company Info
+    doc.setFontSize(20);
+    doc.setTextColor(0, 0, 0);
+    doc.text(companyName, 20, 25);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(companyAddress, 20, 35);
+    doc.text(`Tel: ${companyPhone}`, 20, 42);
+    doc.text(`Email: ${companyEmail}`, 20, 49);
+
+    // Invoice title and number
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.text('ინვოისი', 150, 25);
+
+    doc.setFontSize(10);
+    doc.text(`ნომერი: ${order.orderNumber}`, 150, 35);
+    doc.text(`თარიღი: ${order.createdAt.toLocaleDateString('ka-GE')}`, 150, 42);
+    doc.text(`სტატუსი: ${getStatusText(order.orderStatus)}`, 150, 49);
+
+    // Line separator
+    doc.setLineWidth(0.5);
+    doc.line(20, 60, 190, 60);
+
+    // Customer info
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text('მყიდველი:', 20, 75);
+
+    doc.setFontSize(10);
+    doc.text(`${order.customerInfo.firstName} ${order.customerInfo.lastName}`, 20, 85);
+    doc.text(`ტელ: ${order.customerInfo.phone}`, 20, 92);
+    doc.text(`Email: ${order.customerInfo.email}`, 20, 99);
+    doc.text(`მისამართი: ${order.deliveryInfo.city}, ${order.deliveryInfo.address}`, 20, 106);
+
+    // Products table header
+    let yPos = 125;
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+
+    // Table headers
+    doc.rect(20, yPos - 8, 170, 10); // Header background
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, yPos - 8, 170, 10, 'F');
+
+    doc.text('#', 25, yPos);
+    doc.text('პროდუქტი', 35, yPos);
+    doc.text('ღირებულება', 110, yPos);
+    doc.text('რაოდენობა', 140, yPos);
+    doc.text('ჯამი', 170, yPos);
+
+    yPos += 15;
+
+    // Products
+    order.items.forEach((item, index) => {
+      doc.text((index + 1).toString(), 25, yPos);
+
+      // Truncate long product names
+      const productName = item.product.name.length > 30
+        ? item.product.name.substring(0, 27) + '...'
+        : item.product.name;
+      doc.text(productName, 35, yPos);
+
+      doc.text(`₾${item.price.toFixed(2)}`, 110, yPos);
+      doc.text(item.quantity.toString(), 145, yPos);
+      doc.text(`₾${item.total.toFixed(2)}`, 170, yPos);
+
+      yPos += 10;
+    });
+
+    // Line separator before totals
+    yPos += 5;
+    doc.line(20, yPos, 190, yPos);
+
+    // Totals
+    yPos += 15;
+    doc.text(`პროდუქტები: ₾${order.subtotal.toFixed(2)}`, 130, yPos);
+    yPos += 8;
+    doc.text(`მიწოდება: ${order.shippingCost === 0 ? 'უფასო' : `₾${order.shippingCost.toFixed(2)}`}`, 130, yPos);
+    yPos += 8;
+
+    // Total with emphasis
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`სულ: ₾${order.totalAmount.toFixed(2)}`, 130, yPos);
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text('მადლობთ შეკვეთისთვის!', 20, 270);
+    doc.text(`დოკუმენტი გენერირებულია: ${new Date().toLocaleDateString('ka-GE')} ${new Date().toLocaleTimeString('ka-GE')}`, 20, 280);
+
+    // Download PDF
+    doc.save(`ინვოისი-${order.orderNumber}.pdf`);
+  };
+
+  const getStatusText = (status: Order['orderStatus']) => {
+    switch (status) {
+      case 'pending': return 'მუშავდება';
+      case 'confirmed': return 'დადასტურებული';
+      case 'delivered': return 'მიტანილი';
+      case 'cancelled': return 'გაუქმებული';
+      default: return status;
+    }
+  };
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-stone-900">{order.orderNumber}</h3>
-        <span className="text-sm text-stone-500">
-          {order.createdAt.toLocaleDateString('ka-GE')}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => generateInvoicePDF(order)}
+            className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+          >
+            <FileText className="w-4 h-4" />
+            PDF ინვოისი
+          </button>
+          <span className="text-sm text-stone-500">
+            {order.createdAt.toLocaleDateString('ka-GE')}
+          </span>
+        </div>
       </div>
 
       {/* Customer Info */}

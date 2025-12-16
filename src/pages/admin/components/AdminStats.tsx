@@ -19,33 +19,25 @@ const AdminStats: React.FC<AdminStatsProps> = ({ products }) => {
       label: 'სულ პროდუქტები',
       value: totalProducts,
       icon: Package,
-      bgColor: 'bg-gradient-to-br from-blue-500 to-blue-600',
-      change: '+12%',
-      changeType: 'positive'
+      bgColor: 'bg-gradient-to-br from-blue-500 to-blue-600'
     },
     {
       label: 'აქტიური პროდუქტები',
       value: activeProducts,
       icon: CheckCircle,
-      bgColor: 'bg-gradient-to-br from-green-500 to-green-600',
-      change: '+8%',
-      changeType: 'positive'
+      bgColor: 'bg-gradient-to-br from-green-500 to-green-600'
     },
     {
       label: 'მარაგის ღირებულება',
       value: `₾${totalValue.toFixed(0)}`,
       icon: DollarSign,
-      bgColor: 'bg-gradient-to-br from-purple-500 to-purple-600',
-      change: '+15%',
-      changeType: 'positive'
+      bgColor: 'bg-gradient-to-br from-purple-500 to-purple-600'
     },
     {
       label: 'დაბალი მარაგი',
       value: lowStockProducts,
       icon: AlertTriangle,
-      bgColor: 'bg-gradient-to-br from-red-500 to-red-600',
-      change: '-3%',
-      changeType: 'negative'
+      bgColor: 'bg-gradient-to-br from-red-500 to-red-600'
     }
   ];
 
@@ -58,16 +50,9 @@ const AdminStats: React.FC<AdminStatsProps> = ({ products }) => {
             key={index}
             className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center mb-4">
               <div className={`${stat.bgColor} p-3 rounded-xl shadow-lg`}>
                 <Icon className="w-6 h-6 text-white" />
-              </div>
-              <div className={`text-sm font-medium px-2 py-1 rounded-full ${
-                stat.changeType === 'positive'
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-red-100 text-red-700'
-              }`}>
-                {stat.change}
               </div>
             </div>
 
@@ -76,21 +61,6 @@ const AdminStats: React.FC<AdminStatsProps> = ({ products }) => {
               <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
             </div>
 
-            {/* Mini chart placeholder */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex items-center space-x-1">
-                {[...Array(12)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-1 rounded-full ${stat.bgColor} opacity-60`}
-                    style={{
-                      height: `${Math.random() * 16 + 8}px`,
-                      animation: `fadeIn 0.5s ease-in-out ${i * 0.1}s both`
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
           </div>
         );
       })}

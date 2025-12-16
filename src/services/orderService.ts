@@ -3,13 +3,14 @@ import {
   collection,
   doc,
   setDoc,
-  addDoc, // ✅ დამატებულია
+  addDoc,
   getDocs,
   query,
   orderBy,
   where,
   updateDoc,
   getDoc,
+  deleteDoc,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
@@ -295,6 +296,20 @@ export class OrderService {
     } catch (error) {
       console.error("❌ Error adding tracking number:", error);
       throw new Error("ტრეკინგ კოდის დამატება ვერ მოხერხდა");
+    }
+  }
+
+  /**
+   * Delete order
+   */
+  static async deleteOrder(orderId: string): Promise<void> {
+    try {
+      const orderRef = doc(db, this.COLLECTION_NAME, orderId);
+      await deleteDoc(orderRef);
+      console.log("✅ Order deleted successfully:", orderId);
+    } catch (error) {
+      console.error("❌ Error deleting order:", error);
+      throw new Error("შეკვეთის წაშლა ვერ მოხერხდა");
     }
   }
 }

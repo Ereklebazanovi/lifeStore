@@ -227,7 +227,7 @@ const ProductDetailsPage: React.FC = () => {
                 </div>
 
                 <div className="prose prose-stone prose-sm md:prose-base max-w-none mb-8 text-stone-600 leading-relaxed">
-                  <p>{product.description}</p>
+                  <p className="whitespace-pre-wrap">{product.description}</p>
                 </div>
 
                 {/* Features Grid - FIXED BOXES */}
