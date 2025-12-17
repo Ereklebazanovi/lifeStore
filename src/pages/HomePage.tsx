@@ -16,6 +16,7 @@ import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
 import { hasDiscount, getDiscountText } from "../utils/discount";
+import { getStockText, getStockColorClassesCompact, getStockStatus, getStockMessage } from "../utils/stock";
 import SEOHead from "../components/SEOHead";
 
 // ფოტოები: სამზარეულო, ხე, კერამიკა, ეკო-ნივთები (არა ავეჯი)
@@ -54,10 +55,15 @@ const HomePage: React.FC = () => {
   }, []);
 
   const handleAddToCart = (product: any) => {
-    if (product.stock > 0) {
-      addItem(product);
-      showToast(`${product.name} კალათაში დაემატა!`, "success");
+    // შევამოწმოთ მარაგი
+    const stockMessage = getStockMessage(product, 1, 0);
+    if (stockMessage) {
+      showToast(stockMessage, "error");
+      return;
     }
+
+    addItem(product);
+    showToast(`${product.name} კალათაში დაემატა!`, "success");
   };
 
   // Structured data for homepage
@@ -305,6 +311,13 @@ const HomePage: React.FC = () => {
                           {product.name}
                         </h3>
                       </Link>
+
+                      {/* Stock Status */}
+                      <div className="mb-2">
+                        <span className={`text-xs font-medium ${getStockColorClassesCompact(product)}`}>
+                          {getStockText(product)}
+                        </span>
+                      </div>
 
                       <div className="mt-auto flex items-center justify-between">
                         <div className="flex flex-col">

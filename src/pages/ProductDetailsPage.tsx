@@ -15,6 +15,7 @@ import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
 import { hasDiscount, getDiscountText } from "../utils/discount";
+import { getStockText, getStockColorClasses, getStockStatus, canAddToCart, getStockMessage } from "../utils/stock";
 import SEOHead from "../components/SEOHead";
 import type { Product } from "../types";
 
@@ -48,6 +49,14 @@ const ProductDetailsPage: React.FC = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
+
+    // შევამოწმოთ მარაგი
+    const stockMessage = getStockMessage(product, quantity, 0);
+    if (stockMessage) {
+      showToast(stockMessage, "error");
+      return;
+    }
+
     addItem(product, quantity);
     if (product.stock > 0) {
       showToast(`${quantity} x ${product.name} კალათაში დაემატა!`, "success");
@@ -211,11 +220,9 @@ const ProductDetailsPage: React.FC = () => {
                   <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider rounded-lg">
                     {product.category}
                   </span>
-                  {product.stock > 0 && product.stock < 5 && (
-                    <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100">
-                      დარჩენილია: {product.stock}
-                    </span>
-                  )}
+                  <span className={`text-xs font-bold px-2 py-1 rounded-lg border ${getStockColorClasses(product)}`}>
+                    {getStockText(product)}
+                  </span>
                 </div>
 
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-stone-900 mb-4 leading-tight">

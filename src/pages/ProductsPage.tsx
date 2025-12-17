@@ -11,6 +11,7 @@ import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
 import { hasDiscount, getDiscountText } from "../utils/discount";
+import { getStockText, getStockColorClassesCompact, getStockStatus, getStockMessage } from "../utils/stock";
 import SEOHead from "../components/SEOHead";
 
 const ProductsPage: React.FC = () => {
@@ -24,11 +25,15 @@ const ProductsPage: React.FC = () => {
   }, [fetchProducts]);
 
   const handleAddToCart = (product: any) => {
-    // Stock-ის შემოწმება
-    if (product.stock > 0) {
-      addItem(product);
-      showToast(`${product.name} კალათაში დაემატა!`, "success");
+    // შევამოწმოთ მარაგი
+    const stockMessage = getStockMessage(product, 1, 0);
+    if (stockMessage) {
+      showToast(stockMessage, "error");
+      return;
     }
+
+    addItem(product);
+    showToast(`${product.name} კალათაში დაემატა!`, "success");
   };
 
   const filteredProducts =
@@ -191,6 +196,13 @@ const ProductsPage: React.FC = () => {
                       {product.description ||
                         "ხელით დამზადებული, ეკო-მეგობრული მასალისგან"}
                     </p>
+
+                    {/* Stock Status */}
+                    <div>
+                      <span className={`text-xs font-medium ${getStockColorClassesCompact(product)}`}>
+                        {getStockText(product)}
+                      </span>
+                    </div>
 
                     <div className="flex items-center justify-between pt-2">
                       <div className="flex flex-col">
