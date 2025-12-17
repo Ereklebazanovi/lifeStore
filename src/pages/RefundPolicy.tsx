@@ -1,3 +1,4 @@
+//RefundPolicy.tsx
 import {
   ShieldCheck,
   RefreshCw,

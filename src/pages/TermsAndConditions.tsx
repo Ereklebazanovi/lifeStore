@@ -1,4 +1,4 @@
-import React from "react";
+//TermsAndConditions.tsx
 import {
   FileText,
   Truck,

@@ -1,4 +1,3 @@
-// src/pages/admin/components/ProductManager.tsx
 import React, { useState } from "react";
 import { useProductStore } from "../../../store/productStore";
 import {
@@ -13,6 +12,7 @@ import {
 import AddProductModal from "./AddProductModal";
 import EditProductModal from "./EditProductModal";
 import type { Product } from "../../../types";
+import { getPriorityEmoji } from "../../../utils/priority"; // ✅ იმპორტი
 
 const ProductManager: React.FC = () => {
   const { products, isLoading, deleteProduct, toggleProductStatus } =
@@ -49,14 +49,14 @@ const ProductManager: React.FC = () => {
 
   return (
     <div className="p-6">
-      {/* Enhanced Header */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 space-y-4 sm:space-y-0">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">
             პროდუქტების კატალოგი
           </h3>
           <p className="text-gray-500 text-sm">
-            მართეთ თქვენი მაღაზიის ასორტიმენტი და ფასები
+            მართეთ თქვენი მაღაზიის ასორტიმენტი, ფასები და პოზიციონირება
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -76,7 +76,7 @@ const ProductManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Enhanced Empty State */}
+      {/* Empty State */}
       {products.length === 0 ? (
         <div className="text-center py-16">
           <div className="bg-gray-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
@@ -87,20 +87,14 @@ const ProductManager: React.FC = () => {
           </h3>
           <p className="text-gray-500 mb-8 max-w-md mx-auto">
             დაიწყეთ პროდუქტების დამატება თქვენი ონლაინ მაღაზიის შესაქმნელად.
-            ყველა პროდუქტი აქ იქნება მოთავსებული და მარტივად მართვადი.
           </p>
-          <div className="space-y-3">
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-3 rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-sm hover:shadow-md font-medium"
-            >
-              <Plus className="w-5 h-5 inline mr-2" />
-              პირველი პროდუქტის დამატება
-            </button>
-            <p className="text-sm text-gray-400">
-              ან იმპორტი Excel/CSV ფაილიდან (მალე ხელმისაწვდომი)
-            </p>
-          </div>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-3 rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-sm hover:shadow-md font-medium"
+          >
+            <Plus className="w-5 h-5 inline mr-2" />
+            პირველი პროდუქტის დამატება
+          </button>
         </div>
       ) : (
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -132,45 +126,90 @@ const ProductManager: React.FC = () => {
                 {products.map((product) => (
                   <tr
                     key={product.id}
-                    className="hover:bg-blue-50/50 transition-colors duration-200"
+                    className={`hover:bg-blue-50/50 transition-colors duration-200 ${
+                      (product.priority || 0) >= 100 ? "bg-amber-50/30" : ""
+                    }`}
                   >
                     <td className="px-6 py-5 whitespace-nowrap">
                       <div className="flex items-center">
-                        {product.images.length > 0 ? (
-                          <div className="h-12 w-12 rounded-xl overflow-hidden shadow-sm border border-gray-200">
+                        <div className="h-12 w-12 rounded-xl overflow-hidden shadow-sm border border-gray-200 flex-shrink-0 relative">
+                          {product.images.length > 0 ? (
                             <img
                               className="h-full w-full object-cover"
                               src={product.images[0]}
                               alt={product.name}
                             />
-                          </div>
-                        ) : (
-                          <div className="h-12 w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center border border-gray-200">
-                            <ImageIcon className="w-6 h-6 text-gray-400" />
-                          </div>
-                        )}
+                          ) : (
+                            <div className="h-full w-full bg-gray-100 flex items-center justify-center">
+                              <ImageIcon className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+
+                          {/* ✅ Priority Badge on Image */}
+                          {(product.priority || 0) > 0 && (
+                            <div className="absolute top-0 right-0 bg-white/90 backdrop-blur-sm p-0.5 rounded-bl-lg text-xs shadow-sm">
+                              {getPriorityEmoji(product.priority || 0)}
+                            </div>
+                          )}
+                        </div>
+
                         <div className="ml-4">
-                          <div className="text-sm font-semibold text-gray-900">
+                          <div className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                            {/* ✅ Priority Emoji next to name */}
+                            {(product.priority || 0) > 0 && (
+                              <span
+                                title={`Priority Level: ${product.priority}`}
+                              >
+                                {getPriorityEmoji(product.priority || 0)}
+                              </span>
+                            )}
                             {product.name}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1 max-w-xs truncate">
-                            {product.description
-                              ? product.description.substring(0, 60) + "..."
-                              : "აღწერა არ არის მითითებული"}
+
+                          <div className="flex items-center gap-2 mt-1">
+                            {/* Discount Badge Logic */}
+                            {product.originalPrice &&
+                              product.originalPrice > product.price && (
+                                <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">
+                                  SAVE{" "}
+                                  {Math.round(
+                                    ((product.originalPrice - product.price) /
+                                      product.originalPrice) *
+                                      100
+                                  )}
+                                  %
+                                </span>
+                              )}
+                            <div className="text-xs text-gray-500 max-w-xs truncate">
+                              {product.description
+                                ? product.description.substring(0, 40) + "..."
+                                : "აღწერის გარეშე"}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </td>
+
                     <td className="px-6 py-5 whitespace-nowrap">
-                      <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 border border-blue-200">
+                      <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-100">
                         {product.category}
                       </span>
                     </td>
+
                     <td className="px-6 py-5 whitespace-nowrap">
-                      <span className="text-sm font-semibold text-gray-900">
-                        ₾{product.price.toFixed(2)}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-gray-900">
+                          ₾{product.price.toFixed(2)}
+                        </span>
+                        {product.originalPrice &&
+                          product.originalPrice > product.price && (
+                            <span className="text-xs text-gray-400 line-through">
+                              ₾{product.originalPrice.toFixed(2)}
+                            </span>
+                          )}
+                      </div>
                     </td>
+
                     <td className="px-6 py-5 whitespace-nowrap">
                       <div className="flex items-center">
                         <span
@@ -189,6 +228,7 @@ const ProductManager: React.FC = () => {
                         )}
                       </div>
                     </td>
+
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
                         onClick={() => handleToggleStatus(product.id)}
@@ -210,11 +250,12 @@ const ProductManager: React.FC = () => {
                         </span>
                       </button>
                     </td>
+
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           onClick={() => handleEditProduct(product)}
-                          className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                          className="text-blue-600 hover:text-blue-900 p-1.5 hover:bg-blue-50 rounded transition-colors"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
@@ -222,7 +263,7 @@ const ProductManager: React.FC = () => {
                           onClick={() =>
                             handleDeleteProduct(product.id, product.name)
                           }
-                          className="text-red-600 hover:text-red-900 p-1 rounded"
+                          className="text-red-600 hover:text-red-900 p-1.5 hover:bg-red-50 rounded transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

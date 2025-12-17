@@ -21,6 +21,7 @@ export interface Product {
   category: string;
   stock: number;
   featured?: boolean;
+  priority?: number; // პროდუქტის პრიორიტეტი (0 = სტანდარტული, მაღალი = ზემოთ)
   createdAt: Date;
   updatedAt: Date;
   isActive?: boolean;
@@ -96,7 +97,7 @@ export interface Order {
 
 export interface OrderItem {
   productId: string;
-  product: Product; // აქ შევინარჩუნეთ სრული პროდუქტი თავსებადობისთვის
+  product: Product;
   quantity: number;
   price: number;
   total: number;

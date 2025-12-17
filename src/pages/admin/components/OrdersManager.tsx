@@ -284,7 +284,7 @@ const OrdersManager: React.FC = () => {
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <Download className="w-4 h-4" />
-          შემაჯამებელი რეპორტი PDF
+          დოკუმენტის ჩამოტვირთვა PDF
         </button>
 
         {(dateFrom || dateTo || statusFilter !== "all") && (
@@ -630,7 +630,7 @@ const BulkReportPrintView: React.FC<{
       <div className="text-center mb-8 pb-6 border-b-2 border-gray-900">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">LifeStore</h1>
         <h2 className="text-xl font-bold text-gray-700">
-          შეკვეთების შემაჯამებელი რეპორტი
+         დოკუმენტის ჩამოტვირთვა PDF
         </h2>
         <div className="mt-4 text-gray-600">
           {dateFrom && dateTo && (

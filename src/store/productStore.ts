@@ -14,6 +14,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "../services/firebase";
+import { sortProductsByPriority } from "../utils/priority";
 import type { ProductState, Product } from "../types";
 
 interface ProductActions {
@@ -44,12 +45,16 @@ export const useProductStore = create<ProductState & ProductActions>(
         const q = query(productsRef, orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
 
-        const products: Product[] = snapshot.docs.map((doc) => ({
+        let products: Product[] = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
           createdAt: doc.data().createdAt?.toDate() || new Date(),
           updatedAt: doc.data().updatedAt?.toDate() || new Date(),
+          priority: doc.data().priority || 0, // Default priority to 0
         })) as Product[];
+
+        // Sort products by priority and date
+        products = sortProductsByPriority(products);
 
         // Extract unique categories
         const categories = [
@@ -185,12 +190,16 @@ export const useProductStore = create<ProductState & ProductActions>(
       const q = query(productsRef, orderBy("createdAt", "desc"));
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const products: Product[] = snapshot.docs.map((doc) => ({
+        let products: Product[] = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
           createdAt: doc.data().createdAt?.toDate() || new Date(),
           updatedAt: doc.data().updatedAt?.toDate() || new Date(),
+          priority: doc.data().priority || 0, // Default priority to 0
         })) as Product[];
+
+        // Sort products by priority and date
+        products = sortProductsByPriority(products);
 
         // Extract unique categories
         const categories = [

@@ -1,14 +1,8 @@
-// src/pages/admin/components/AddProductModal.tsx
 import React, { useState } from "react";
-import {
-  X,
-  Package,
-  Upload,
-  Link as LinkIcon,
-  Image as ImageIcon,
-} from "lucide-react";
+import { X, Package, ImageIcon } from "lucide-react";
 import { useProductStore } from "../../../store/productStore";
 import ImageUpload from "../../../components/ui/ImageUpload";
+import { PRIORITY_PRESETS, getPriorityEmoji } from "../../../utils/priority";
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -20,6 +14,10 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
   onClose,
 }) => {
   const { addProduct, isLoading } = useProductStore();
+
+  // ✅ ახალი State: აკონტროლებს, ჩართულია თუ არა "ხელით" რეჟიმი
+  const [isCustomMode, setIsCustomMode] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -28,6 +26,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     category: "",
     stock: "",
     images: [] as string[],
+    priority: 0,
   });
 
   const [hasDiscountEnabled, setHasDiscountEnabled] = useState(false);
@@ -69,7 +68,9 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     if (hasDiscountEnabled) {
       if (!formData.originalPrice || parseFloat(formData.originalPrice) <= 0) {
         newErrors.originalPrice = "ძველი ფასი აუცილებელია";
-      } else if (parseFloat(formData.originalPrice) <= parseFloat(formData.price || "0")) {
+      } else if (
+        parseFloat(formData.originalPrice) <= parseFloat(formData.price || "0")
+      ) {
         newErrors.originalPrice = "ძველი ფასი ახალ ფასზე მეტი უნდა იყოს";
       }
     }
@@ -89,12 +90,14 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price),
-      ...(hasDiscountEnabled && formData.originalPrice && {
-        originalPrice: parseFloat(formData.originalPrice)
-      }),
+      ...(hasDiscountEnabled &&
+        formData.originalPrice && {
+          originalPrice: parseFloat(formData.originalPrice),
+        }),
       category: formData.category,
       stock: parseInt(formData.stock),
       images: formData.images.filter((img: string) => img.trim() !== ""),
+      priority: formData.priority,
       isActive: true,
     };
 
@@ -111,8 +114,10 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         category: "",
         stock: "",
         images: [] as string[],
+        priority: 0,
       });
       setHasDiscountEnabled(false);
+      setIsCustomMode(false); // Reset mode
       setErrors({
         name: "",
         price: "",
@@ -127,6 +132,10 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
   };
 
   const categories = ["კატეგორია-1", "კატეგორია-2", "კატეგორია-3"];
+
+  const handleNumberInputWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+    e.currentTarget.blur();
+  };
 
   if (!isOpen) return null;
 
@@ -221,18 +230,34 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                 className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
                 disabled={isLoading}
               />
-              <label htmlFor="discountToggle" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="discountToggle"
+                className="text-sm font-medium text-gray-700"
+              >
                 ფასდაკლების დამატება
               </label>
-              {hasDiscountEnabled && formData.originalPrice && formData.price && (
-                <span className="ml-auto px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">
-                  -{Math.round(((parseFloat(formData.originalPrice) - parseFloat(formData.price)) / parseFloat(formData.originalPrice)) * 100)}%
-                </span>
-              )}
+              {hasDiscountEnabled &&
+                formData.originalPrice &&
+                formData.price && (
+                  <span className="ml-auto px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">
+                    -
+                    {Math.round(
+                      ((parseFloat(formData.originalPrice) -
+                        parseFloat(formData.price)) /
+                        parseFloat(formData.originalPrice)) *
+                        100
+                    )}
+                    %
+                  </span>
+                )}
             </div>
 
             {/* Price Fields */}
-            <div className={`grid grid-cols-1 ${hasDiscountEnabled ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
+            <div
+              className={`grid grid-cols-1 ${
+                hasDiscountEnabled ? "md:grid-cols-3" : "md:grid-cols-2"
+              } gap-4`}
+            >
               {/* Original Price (if discount enabled) */}
               {hasDiscountEnabled && (
                 <div>
@@ -245,8 +270,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                     min="0"
                     value={formData.originalPrice}
                     onChange={(e) =>
-                      setFormData({ ...formData, originalPrice: e.target.value })
+                      setFormData({
+                        ...formData,
+                        originalPrice: e.target.value,
+                      })
                     }
+                    onWheel={handleNumberInputWheel}
                     className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
                       errors.originalPrice
                         ? "border-red-300 focus:border-red-500"
@@ -256,7 +285,9 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                     disabled={isLoading}
                   />
                   {errors.originalPrice && (
-                    <p className="text-red-500 text-sm mt-1">{errors.originalPrice}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.originalPrice}
+                    </p>
                   )}
                 </div>
               )}
@@ -264,7 +295,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
               {/* Current Price */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {hasDiscountEnabled ? 'ახალი ფასი (₾) *' : 'ფასი (₾) *'}
+                  {hasDiscountEnabled ? "ახალი ფასი (₾) *" : "ფასი (₾) *"}
                 </label>
                 <input
                   type="number"
@@ -274,6 +305,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   onChange={(e) =>
                     setFormData({ ...formData, price: e.target.value })
                   }
+                  onWheel={handleNumberInputWheel}
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
                     errors.price
                       ? "border-red-300 focus:border-red-500"
@@ -299,6 +331,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   onChange={(e) =>
                     setFormData({ ...formData, stock: e.target.value })
                   }
+                  onWheel={handleNumberInputWheel}
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
                     errors.stock
                       ? "border-red-300 focus:border-red-500"
@@ -361,6 +394,95 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                 onChange={(images) => setFormData({ ...formData, images })}
                 maxImages={4}
               />
+            </div>
+
+            {/* ✅ Priority Section - განახლებული ლოგიკით */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                პოზიციონირება საიტზე
+              </label>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {/* Preset ღილაკები */}
+                {PRIORITY_PRESETS.map((preset) => (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, priority: preset.value });
+                      setIsCustomMode(false); // ✅ თიშავს Custom რეჟიმს
+                    }}
+                    className={`p-2 border-2 rounded-xl transition-all text-center hover:scale-105 flex flex-col items-center justify-center min-h-[80px] ${
+                      !isCustomMode && formData.priority === preset.value
+                        ? "border-green-500 bg-green-50 text-green-700 shadow-sm"
+                        : "border-gray-200 hover:border-green-300 text-gray-600"
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{preset.emoji}</div>
+                    <div className="font-bold text-xs">{preset.label}</div>
+                    <div className="text-[10px] text-gray-400 mt-1 leading-tight">
+                      {preset.description}
+                    </div>
+                  </button>
+                ))}
+
+                {/* Custom ღილაკი */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomMode(true); // ✅ რთავს Custom რეჟიმს
+                    if (formData.priority === 0)
+                      setFormData({ ...formData, priority: 50 });
+                  }}
+                  className={`p-2 border-2 rounded-xl transition-all text-center hover:scale-105 flex flex-col items-center justify-center min-h-[80px] ${
+                    isCustomMode
+                      ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
+                      : "border-gray-200 hover:border-blue-300 text-gray-600"
+                  }`}
+                >
+                  <div className="text-xl mb-1">✏️</div>
+                  <div className="font-bold text-xs">ხელით</div>
+                  <div className="text-[10px] text-gray-400 mt-1 leading-tight">
+                    ნებისმიერი რიცხვი
+                  </div>
+                </button>
+              </div>
+
+              {/* Custom Input - დამოკიდებულია isCustomMode-ზე */}
+              {isCustomMode && (
+                <div className="mt-3 bg-blue-50 p-4 rounded-xl border border-blue-100 animate-in fade-in slide-in-from-top-2">
+                  <label className="block text-xs font-bold text-blue-800 uppercase mb-2">
+                    მიუთითეთ პრიორიტეტის დონე
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      value={formData.priority === 0 ? "" : formData.priority}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          priority:
+                            e.target.value === ""
+                              ? 0
+                              : parseInt(e.target.value),
+                        })
+                      }
+                      className="block w-full px-4 py-2 border-2 border-blue-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg font-bold text-blue-900"
+                      placeholder="0"
+                    />
+                    <div className="text-xs text-blue-600 w-full">
+                      <p>• 100 = TOP</p>
+                      <p>• 1000 = Super TOP</p>
+                      <p>• -1 = სიის ბოლოს</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-2 text-sm text-gray-500 text-right">
+                ამჟამინდელი პრიორიტეტი: <strong>{formData.priority}</strong>{" "}
+                {getPriorityEmoji(formData.priority)}
+              </div>
             </div>
           </div>
 
