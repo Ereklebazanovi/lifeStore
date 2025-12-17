@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+
+# Important pages
+Allow: /products
+Allow: /about
+Allow: /product/*
+
+# Disallow admin and private areas
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+Disallow: /order-success/*
+Disallow: /order-history
+
+# Allow access to static files
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.gif$
+Allow: /*.svg$
+
+# Sitemap location
+Sitemap: https://lifestore.ge/sitemap.xml

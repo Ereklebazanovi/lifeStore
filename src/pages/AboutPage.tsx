@@ -9,10 +9,30 @@ import {
   Heart,
   Quote,
 } from "lucide-react";
+import SEOHead from "../components/SEOHead";
 
 const AboutPage: React.FC = () => {
+  const aboutStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "mainEntity": {
+      "@type": "Organization",
+      "name": "Life Store",
+      "description": "კომპანია, რომელიც ახორციელებს ეკომეგობრული და თანამედროვე დიზაინის მორგებული მაღალი ხარისხის სახლის და სამზარეულოს ნივთების იმპორტს",
+      "slogan": "ჰარმონია დეტალებშია"
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white pb-20">
+    <>
+      <SEOHead
+        title="ჩვენ შესახებ | Life Store - ჰარმონია დეტალებშია"
+        description="გაიცანი Life Store-ის მისია - ეკომეგობრული და ჯანმრთელობისთვის უვნებელი სახლის ნივთების იმპორტი. ჰარმონია დეტალებშია - აქციე შენი სახლი კომფორტულ და დახვეწილ სივრცედ."
+        keywords="Life Store, ჩვენ შესახებ, მისია, ეკომეგობრული ნივთები, სახლის ნივთები, ჯანსაღი ცხოვრება, იმპორტი"
+        canonicalUrl="https://lifestore.ge/about"
+        structuredData={aboutStructuredData}
+      />
+      <div className="min-h-screen bg-white pb-20">
       {/* --- MAIN STORY SECTION --- */}
       <section className="py-16 lg:py-22">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -117,6 +137,7 @@ const AboutPage: React.FC = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 

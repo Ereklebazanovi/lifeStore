@@ -16,6 +16,7 @@ import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
 import { hasDiscount, getDiscountText } from "../utils/discount";
+import SEOHead from "../components/SEOHead";
 
 // ფოტოები: სამზარეულო, ხე, კერამიკა, ეკო-ნივთები (არა ავეჯი)
 const HERO_IMAGES = [
@@ -59,8 +60,34 @@ const HomePage: React.FC = () => {
     }
   };
 
+  // Structured data for homepage
+  const organizationStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Life Store",
+    "url": "https://lifestore.ge",
+    "logo": "https://lifestore.ge/Screenshot 2025-12-10 151703.png",
+    "description": "Life Store - თანამედროვე დიზაინისა და ჯანმრთელობისთვის უვნებელი ეკომეგობრული სახლისა და სამზარეულოს ნივთები",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "GE"
+    },
+    "sameAs": [
+      "https://facebook.com/lifestore",
+      "https://instagram.com/lifestore"
+    ]
+  };
+
   return (
-    <div className="min-h-screen bg-stone-50 overflow-x-hidden">
+    <>
+      <SEOHead
+        title="Life Store - ჰარმონია დეტალებშია | ეკომეგობრული სახლის ნივთები"
+        description="Life Store - თანამედროვე დიზაინისა და ჯანმრთელობისთვის უვნებელი ეკომეგობრული სახლისა და სამზარეულოს ნივთები. გახადე შენი სახლი კომფორტული და დახვეწილი სივრცე."
+        keywords="ეკომეგობრული ნივთები, სახლის ნივთები, სამზარეულო, თანამედროვე დიზაინი, ჯანსაღი ცხოვრება, Life Store"
+        canonicalUrl="https://lifestore.ge/"
+        structuredData={organizationStructuredData}
+      />
+      <div className="min-h-screen bg-stone-50 overflow-x-hidden">
       {/* --- HERO SLIDER --- */}
       <section className="relative h-[400px] lg:h-[520px] w-full overflow-hidden">
         {HERO_IMAGES.map((slide, index) => (
@@ -344,6 +371,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 

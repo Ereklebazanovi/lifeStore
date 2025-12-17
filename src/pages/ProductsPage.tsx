@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom"; // <--- დაემატა Link
+import { Link } from "react-router-dom";
 import {
   Leaf,
   ShoppingCart,
@@ -11,6 +11,7 @@ import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
 import { hasDiscount, getDiscountText } from "../utils/discount";
+import SEOHead from "../components/SEOHead";
 
 const ProductsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -46,8 +47,33 @@ const ProductsPage: React.FC = () => {
     ...Array.from(new Set(products.filter(product => product.isActive !== false).map((p) => p.category))),
   ];
 
+  const productsStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "ეკომეგობრული სახლის ნივთები",
+    "description": "Life Store-ის ყველა პროდუქტი - ეკომეგობრული და ჯანმრთელობისთვის უვნებელი სახლისა და სამზარეულოს ნივთები",
+    "mainEntity": {
+      "@type": "ItemList",
+      "numberOfItems": products.length,
+      "itemListElement": products.map((product, index) => ({
+        "@type": "Product",
+        "position": index + 1,
+        "name": product.name,
+        "url": `https://lifestore.ge/product/${product.id}`
+      }))
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-stone-50 mt-2">
+    <>
+      <SEOHead
+        title="ყველა პროდუქტი | Life Store - ეკომეგობრული სახლის ნივთები"
+        description="იხილე Life Store-ის სრული პროდუქციის კატალოგი - ეკომეგობრული და ჯანმრთელობისთვის უვნებელი სახლისა და სამზარეულოს ნივთები. თანამედროვე დიზაინი და მაღალი ხარისხი."
+        keywords="პროდუქტები, კატალოგი, ეკომეგობრული ნივთები, სახლის ნივთები, სამზარეულო, თანამედროვე დიზაინი, Life Store"
+        canonicalUrl="https://lifestore.ge/products"
+        structuredData={productsStructuredData}
+      />
+      <div className="min-h-screen bg-stone-50 mt-2">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12 lg:py-16">
         {/* Header Section */}
         <div className="mb-12">
@@ -244,6 +270,7 @@ const ProductsPage: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

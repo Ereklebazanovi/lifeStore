@@ -60,7 +60,7 @@ const Footer: React.FC = () => {
               </div>
               <p className="text-stone-600 leading-relaxed text-sm">
                 ეკო-მეგობრული ნივთები შენი სახლისთვის. ბუნებრივი მასალები და
-                მდგრადი ცხოვრება.
+                ჯანსაღი გარემო.
               </p>
             </motion.div>
 

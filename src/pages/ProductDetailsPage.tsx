@@ -14,7 +14,8 @@ import {
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
-import { hasDiscount, getDiscountText, calculateDiscountAmount } from "../utils/discount";
+import { hasDiscount, getDiscountText } from "../utils/discount";
+import SEOHead from "../components/SEOHead";
 import type { Product } from "../types";
 
 const ProductDetailsPage: React.FC = () => {
@@ -89,8 +90,42 @@ const ProductDetailsPage: React.FC = () => {
   const isOutOfStock = product.stock === 0;
   const totalPrice = product.price * quantity;
 
+  // SEO data for product
+  const productStructuredData = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": product.name,
+    "description": product.description,
+    "image": product.images || [],
+    "brand": {
+      "@type": "Brand",
+      "name": "Life Store"
+    },
+    "category": product.category,
+    "offers": {
+      "@type": "Offer",
+      "price": product.price,
+      "priceCurrency": "GEL",
+      "availability": isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+      "seller": {
+        "@type": "Organization",
+        "name": "Life Store"
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white md:bg-stone-50 pb-28 md:pb-12 md:pt-8">
+    <>
+      <SEOHead
+        title={`${product.name} | Life Store - ეკომეგობრული სახლის ნივთები`}
+        description={`${product.description.slice(0, 150)}... - Life Store-ში შეიძინე ${product.name} მხოლოდ ${product.price}₾-ად. უფასო მიტანა თბილისში!`}
+        keywords={`${product.name}, ${product.category}, ეკომეგობრული ნივთები, სახლის ნივთები, Life Store`}
+        ogImage={product.images?.[0] || "https://lifestore.ge/Screenshot 2025-12-10 151703.png"}
+        ogType="product"
+        canonicalUrl={`https://lifestore.ge/product/${product.id}`}
+        structuredData={productStructuredData}
+      />
+      <div className="min-h-screen bg-white md:bg-stone-50 pb-28 md:pb-12 md:pt-8">
       {/* --- MOBILE HEADER (Sticky Top) --- */}
       <div className="md:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-100 px-4 h-14 flex items-center justify-between">
         <button
@@ -200,7 +235,7 @@ const ProductDetailsPage: React.FC = () => {
                             ₾{product.price}
                           </span>
                           <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded">
-                            -{Math.round(((product.originalPrice! - product.price) / product.originalPrice!) * 100)}% ზოგვა
+                            -{Math.round(((product.originalPrice! - product.price) / product.originalPrice!) * 100)}% დანაზოგი
                           </span>
                         </div>
                       </div>
@@ -375,6 +410,7 @@ const ProductDetailsPage: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
