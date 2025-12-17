@@ -15,6 +15,7 @@ import {
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
+import { hasDiscount, getDiscountText } from "../utils/discount";
 
 // ფოტოები: სამზარეულო, ხე, კერამიკა, ეკო-ნივთები (არა ავეჯი)
 const HERO_IMAGES = [
@@ -210,7 +211,7 @@ const HomePage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 lg:gap-8">
-              {products.slice(0, 8).map((product) => {
+              {products.filter(product => product.isActive !== false).slice(0, 8).map((product) => {
                 const isOutOfStock = product.stock === 0;
 
                 return (
@@ -227,6 +228,10 @@ const HomePage: React.FC = () => {
                       {isOutOfStock ? (
                         <div className="absolute top-3 left-3 z-10 bg-stone-900/90 backdrop-blur text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">
                           ამოწურულია
+                        </div>
+                      ) : hasDiscount(product) ? (
+                        <div className="absolute top-3 left-3 z-10 bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
+                          {getDiscountText(product)}
                         </div>
                       ) : (
                         <div className="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur text-emerald-700 text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
@@ -275,9 +280,22 @@ const HomePage: React.FC = () => {
                       </Link>
 
                       <div className="mt-auto flex items-center justify-between">
-                        <span className="text-lg font-bold text-emerald-700">
-                          ₾{product.price}
-                        </span>
+                        <div className="flex flex-col">
+                          {hasDiscount(product) ? (
+                            <>
+                              <span className="text-sm text-stone-400 line-through">
+                                ₾{product.originalPrice}
+                              </span>
+                              <span className="text-lg font-bold text-red-600">
+                                ₾{product.price}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-lg font-bold text-emerald-700">
+                              ₾{product.price}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex text-yellow-400 gap-0.5">
                           {[...Array(5)].map((_, i) => (
                             <Star key={i} className="w-3 h-3 fill-current" />

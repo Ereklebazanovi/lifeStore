@@ -24,14 +24,18 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     name: "",
     description: "",
     price: "",
+    originalPrice: "",
     category: "",
     stock: "",
     images: [] as string[],
   });
 
+  const [hasDiscountEnabled, setHasDiscountEnabled] = useState(false);
+
   const [errors, setErrors] = useState({
     name: "",
     price: "",
+    originalPrice: "",
     category: "",
     stock: "",
   });
@@ -40,6 +44,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     const newErrors = {
       name: "",
       price: "",
+      originalPrice: "",
       category: "",
       stock: "",
     };
@@ -60,6 +65,15 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       newErrors.stock = "მარაგი უნდა იყოს 0 ან მეტი";
     }
 
+    // ფასდაკლების ვალიდაცია
+    if (hasDiscountEnabled) {
+      if (!formData.originalPrice || parseFloat(formData.originalPrice) <= 0) {
+        newErrors.originalPrice = "ძველი ფასი აუცილებელია";
+      } else if (parseFloat(formData.originalPrice) <= parseFloat(formData.price || "0")) {
+        newErrors.originalPrice = "ძველი ფასი ახალ ფასზე მეტი უნდა იყოს";
+      }
+    }
+
     setErrors(newErrors);
     return !Object.values(newErrors).some((error) => error !== "");
   };
@@ -75,6 +89,9 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price),
+      ...(hasDiscountEnabled && formData.originalPrice && {
+        originalPrice: parseFloat(formData.originalPrice)
+      }),
       category: formData.category,
       stock: parseInt(formData.stock),
       images: formData.images.filter((img: string) => img.trim() !== ""),
@@ -90,13 +107,16 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         name: "",
         description: "",
         price: "",
+        originalPrice: "",
         category: "",
         stock: "",
         images: [] as string[],
       });
+      setHasDiscountEnabled(false);
       setErrors({
         name: "",
         price: "",
+        originalPrice: "",
         category: "",
         stock: "",
       });
@@ -185,12 +205,66 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
               />
             </div>
 
-            {/* Price and Stock Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Price */}
+            {/* Discount Toggle */}
+            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl">
+              <input
+                type="checkbox"
+                id="discountToggle"
+                checked={hasDiscountEnabled}
+                onChange={(e) => {
+                  setHasDiscountEnabled(e.target.checked);
+                  if (!e.target.checked) {
+                    setFormData({ ...formData, originalPrice: "" });
+                    setErrors({ ...errors, originalPrice: "" });
+                  }
+                }}
+                className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+                disabled={isLoading}
+              />
+              <label htmlFor="discountToggle" className="text-sm font-medium text-gray-700">
+                ფასდაკლების დამატება
+              </label>
+              {hasDiscountEnabled && formData.originalPrice && formData.price && (
+                <span className="ml-auto px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">
+                  -{Math.round(((parseFloat(formData.originalPrice) - parseFloat(formData.price)) / parseFloat(formData.originalPrice)) * 100)}%
+                </span>
+              )}
+            </div>
+
+            {/* Price Fields */}
+            <div className={`grid grid-cols-1 ${hasDiscountEnabled ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
+              {/* Original Price (if discount enabled) */}
+              {hasDiscountEnabled && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ძველი ფასი (₾) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.originalPrice}
+                    onChange={(e) =>
+                      setFormData({ ...formData, originalPrice: e.target.value })
+                    }
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
+                      errors.originalPrice
+                        ? "border-red-300 focus:border-red-500"
+                        : "border-gray-200 focus:border-green-500"
+                    }`}
+                    placeholder="0.00"
+                    disabled={isLoading}
+                  />
+                  {errors.originalPrice && (
+                    <p className="text-red-500 text-sm mt-1">{errors.originalPrice}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Current Price */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  ფასი (₾) *
+                  {hasDiscountEnabled ? 'ახალი ფასი (₾) *' : 'ფასი (₾) *'}
                 </label>
                 <input
                   type="number"

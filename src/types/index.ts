@@ -15,7 +15,8 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number;
+  price: number; // საბოლოო გასაყიდი ფასი (რასაც კლიენტი იხდის)
+  originalPrice?: number; // ძველი ფასი (ფასდაკლების შემთხვევაში)
   images: string[];
   category: string;
   stock: number;

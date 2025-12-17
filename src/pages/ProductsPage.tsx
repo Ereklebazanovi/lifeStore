@@ -10,6 +10,7 @@ import {
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
+import { hasDiscount, getDiscountText } from "../utils/discount";
 
 const ProductsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -31,8 +32,8 @@ const ProductsPage: React.FC = () => {
 
   const filteredProducts =
     selectedCategory === "all"
-      ? products
-      : products.filter((product) => product.category === selectedCategory);
+      ? products.filter(product => product.isActive !== false)
+      : products.filter((product) => product.category === selectedCategory && product.isActive !== false);
 
   const productsPerPage = 8;
   const startIndex = (currentPage - 1) * productsPerPage;
@@ -42,7 +43,7 @@ const ProductsPage: React.FC = () => {
 
   const categories = [
     "all",
-    ...Array.from(new Set(products.map((p) => p.category))),
+    ...Array.from(new Set(products.filter(product => product.isActive !== false).map((p) => p.category))),
   ];
 
   return (
@@ -116,12 +117,16 @@ const ProductsPage: React.FC = () => {
                   key={product.id}
                   className="group bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-xl hover:-translate-y-2 transition-all duration-300 relative"
                 >
-                  {/* Out of Stock Overlay */}
-                  {isOutOfStock && (
+                  {/* Badges */}
+                  {isOutOfStock ? (
                     <div className="absolute top-3 right-3 z-10 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg pointer-events-none">
                       მარაგში არ არის
                     </div>
-                  )}
+                  ) : hasDiscount(product) ? (
+                    <div className="absolute top-3 left-3 z-10 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-lg">
+                      {getDiscountText(product)}
+                    </div>
+                  ) : null}
 
                   {/* Product Image LINK */}
                   <Link
@@ -162,9 +167,22 @@ const ProductsPage: React.FC = () => {
                     </p>
 
                     <div className="flex items-center justify-between pt-2">
-                      <span className="text-xl text-emerald-700 tracking-tight">
-                        ₾{product.price.toFixed(2)}
-                      </span>
+                      <div className="flex flex-col">
+                        {hasDiscount(product) ? (
+                          <>
+                            <span className="text-sm text-stone-400 line-through">
+                              ₾{product.originalPrice?.toFixed(2)}
+                            </span>
+                            <span className="text-xl text-red-600 font-bold tracking-tight">
+                              ₾{product.price.toFixed(2)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-xl text-emerald-700 tracking-tight">
+                            ₾{product.price.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
 
                       {/* Add to Cart Button (Not a Link) */}
                       <button

@@ -14,6 +14,7 @@ import {
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
+import { hasDiscount, getDiscountText, calculateDiscountAmount } from "../utils/discount";
 import type { Product } from "../types";
 
 const ProductDetailsPage: React.FC = () => {
@@ -123,11 +124,16 @@ const ProductDetailsPage: React.FC = () => {
             <div className="bg-white md:border-r border-stone-100 relative">
               {/* Main Image Wrapper */}
               <div className="relative w-full aspect-square md:aspect-auto md:h-[500px] flex items-center justify-center bg-stone-50/50">
-                {isOutOfStock && (
+                {/* Badges */}
+                {isOutOfStock ? (
                   <div className="absolute top-4 left-4 z-10 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">
                     მარაგში არ არის
                   </div>
-                )}
+                ) : hasDiscount(product) ? (
+                  <div className="absolute top-4 left-4 z-10 bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-sm">
+                    {getDiscountText(product)}
+                  </div>
+                ) : null}
                 {product.images && product.images.length > 0 ? (
                   <img
                     src={selectedImage}
@@ -184,9 +190,25 @@ const ProductDetailsPage: React.FC = () => {
                 {/* Desktop Price View */}
                 <div className="hidden md:block mb-6">
                   <div className="flex items-baseline gap-3">
-                    <span className="text-4xl font-bold text-emerald-700">
-                      ₾{product.price}
-                    </span>
+                    {hasDiscount(product) ? (
+                      <div className="flex flex-col">
+                        <span className="text-lg text-stone-400 line-through">
+                          ₾{product.originalPrice}
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-4xl font-bold text-red-600">
+                            ₾{product.price}
+                          </span>
+                          <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded">
+                            -{Math.round(((product.originalPrice! - product.price) / product.originalPrice!) * 100)}% ზოგვა
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-4xl font-bold text-emerald-700">
+                        ₾{product.price}
+                      </span>
+                    )}
                     {quantity > 1 && (
                       <span className="text-stone-400 font-medium">
                         x {quantity} ცალი
@@ -199,9 +221,20 @@ const ProductDetailsPage: React.FC = () => {
                 <div className="md:hidden mb-6 flex items-center justify-between">
                   <div>
                     <p className="text-sm text-stone-500">ერთეულის ფასი</p>
-                    <span className="text-2xl font-bold text-emerald-700">
-                      ₾{product.price}
-                    </span>
+                    {hasDiscount(product) ? (
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm text-stone-400 line-through">
+                          ₾{product.originalPrice}
+                        </span>
+                        <span className="text-2xl font-bold text-red-600">
+                          ₾{product.price}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-2xl font-bold text-emerald-700">
+                        ₾{product.price}
+                      </span>
+                    )}
                   </div>
                   {!isOutOfStock && (
                     <div className="flex items-center bg-stone-100 rounded-xl p-1">
