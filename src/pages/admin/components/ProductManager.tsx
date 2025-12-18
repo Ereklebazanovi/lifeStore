@@ -106,7 +106,7 @@ const ProductManager: React.FC = () => {
                     პროდუქტი
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    კატეგორია
+                    პრიორიტეტი
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     ფასი
@@ -191,9 +191,25 @@ const ProductManager: React.FC = () => {
                     </td>
 
                     <td className="px-6 py-5 whitespace-nowrap">
-                      <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-                        {product.category}
-                      </span>
+                      <div className="flex flex-col items-start space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">
+                            {getPriorityEmoji(product.priority || 0)}
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {product.priority || 0}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {product.priority === 100
+                            ? "🔥 TOP"
+                            : product.priority === 10
+                            ? "⭐ პოპულარული"
+                            : product.priority === 0
+                            ? "📋 სტანდარტული"
+                            : "✏️ ხელით"}
+                        </div>
+                      </div>
                     </td>
 
                     <td className="px-6 py-5 whitespace-nowrap">

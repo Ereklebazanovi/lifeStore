@@ -23,7 +23,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     description: "",
     price: "",
     originalPrice: "",
-    category: "",
     stock: "",
     images: [] as string[],
     priority: 0,
@@ -35,7 +34,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     name: "",
     price: "",
     originalPrice: "",
-    category: "",
     stock: "",
   });
 
@@ -44,7 +42,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       name: "",
       price: "",
       originalPrice: "",
-      category: "",
       stock: "",
     };
 
@@ -56,9 +53,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       newErrors.price = "ფასი უნდა იყოს დადებითი რიცხვი";
     }
 
-    if (!formData.category.trim()) {
-      newErrors.category = "კატეგორია აუცილებელია";
-    }
 
     if (!formData.stock || parseInt(formData.stock) < 0) {
       newErrors.stock = "მარაგი უნდა იყოს 0 ან მეტი";
@@ -94,7 +88,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         formData.originalPrice && {
           originalPrice: parseFloat(formData.originalPrice),
         }),
-      category: formData.category,
+      category: "General", // ✅ ავტომატურად "General" კატეგორია
       stock: parseInt(formData.stock),
       images: formData.images.filter((img: string) => img.trim() !== ""),
       priority: formData.priority,
@@ -111,7 +105,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         description: "",
         price: "",
         originalPrice: "",
-        category: "",
         stock: "",
         images: [] as string[],
         priority: 0,
@@ -122,7 +115,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         name: "",
         price: "",
         originalPrice: "",
-        category: "",
         stock: "",
       });
     } catch (error) {
@@ -131,7 +123,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     }
   };
 
-  const categories = ["კატეგორია-1", "კატეგორია-2", "კატეგორია-3"];
 
   const handleNumberInputWheel = (e: React.WheelEvent<HTMLInputElement>) => {
     e.currentTarget.blur();
@@ -346,34 +337,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
               </div>
             </div>
 
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                კატეგორია *
-              </label>
-              <select
-                value={formData.category}
-                onChange={(e) =>
-                  setFormData({ ...formData, category: e.target.value })
-                }
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
-                  errors.category
-                    ? "border-red-300 focus:border-red-500"
-                    : "border-gray-200 focus:border-green-500"
-                }`}
-                disabled={isLoading}
-              >
-                <option value="">აირჩიეთ კატეგორია</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-              {errors.category && (
-                <p className="text-red-500 text-sm mt-1">{errors.category}</p>
-              )}
-            </div>
           </div>
 
           {/* Images Section */}
@@ -467,6 +430,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                               : parseInt(e.target.value),
                         })
                       }
+                      onWheel={handleNumberInputWheel}
                       className="block w-full px-4 py-2 border-2 border-blue-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg font-bold text-blue-900"
                       placeholder="0"
                     />

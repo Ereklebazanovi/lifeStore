@@ -6,6 +6,7 @@ import {
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
+  Search,
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
@@ -15,7 +16,8 @@ import { getStockText, getStockColorClassesCompact, getStockStatus, getStockMess
 import SEOHead from "../components/SEOHead";
 
 const ProductsPage: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const { products, fetchProducts, isLoading } = useProductStore();
   const { addItem } = useCartStore();
@@ -36,20 +38,44 @@ const ProductsPage: React.FC = () => {
     showToast(`${product.name} კალათაში დაემატა!`, "success");
   };
 
-  const filteredProducts =
-    selectedCategory === "all"
-      ? products.filter(product => product.isActive !== false)
-      : products.filter((product) => product.category === selectedCategory && product.isActive !== false);
+  const getFilteredProducts = () => {
+    let filtered = products.filter(product => product.isActive !== false);
 
-  const productsPerPage = 8;
+    // ძებნა
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // ფილტრი
+    switch (selectedFilter) {
+      case "popular":
+        return filtered.filter(product => product.priority === 100);
+      case "discounts":
+        return filtered.filter(product => hasDiscount(product));
+      case "new":
+        return [...filtered].sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime());
+      case "all":
+      default:
+        return filtered;
+    }
+  };
+
+  const filteredProducts = getFilteredProducts();
+
+  const productsPerPage = 12;
   const startIndex = (currentPage - 1) * productsPerPage;
   const endIndex = startIndex + productsPerPage;
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
-  const categories = [
-    "all",
-    ...Array.from(new Set(products.filter(product => product.isActive !== false).map((p) => p.category))),
+  const filterOptions = [
+    { value: "all", label: "ყველა პროდუქტი", count: products.filter(p => p.isActive !== false).length },
+    { value: "popular", label: "პოპულარული", count: products.filter(p => p.isActive !== false && p.priority === 100).length },
+    { value: "discounts", label: "ფასდაკლებები", count: products.filter(p => p.isActive !== false && hasDiscount(p)).length },
+    { value: "new", label: "ახალი დამატებული", count: products.filter(p => p.isActive !== false).length },
   ];
 
   const productsStructuredData = {
@@ -90,31 +116,50 @@ const ProductsPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-10">
-          <div className="flex items-center gap-3 flex-1">
-            <SlidersHorizontal className="h-5 w-5 text-stone-500" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="flex-1 sm:flex-none border border-stone-300 bg-white rounded-xl px-4 py-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all"
-            >
-              <option value="all">ყველა კატეგორია</option>
-              {categories
-                .filter((cat) => cat !== "all")
-                .map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-            </select>
+        {/* Professional Filter Bar */}
+        <div className="bg-white rounded-xl border border-stone-200 p-6 shadow-sm mb-12">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-stone-400" />
+              <input
+                type="text"
+                placeholder="ძებნა პროდუქტების დასახელებით..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+              />
+            </div>
+
+            {/* Filter Buttons */}
+            <div className="flex flex-wrap gap-2">
+              {filterOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setSelectedFilter(option.value);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-4 py-2.5 rounded-lg border transition-all text-sm font-medium flex items-center gap-2 ${
+                    selectedFilter === option.value
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                      : "border-stone-300 bg-white text-stone-700 hover:border-stone-400"
+                  }`}
+                >
+                  <span>{option.label}</span>
+                  <span className="text-xs bg-stone-100 text-stone-500 px-2 py-1 rounded">
+                    {option.count}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Products Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12 !mt-10">
-            {[...Array(8)].map((_, i) => (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12">
+            {[...Array(12)].map((_, i) => (
               <div
                 key={i}
                 className="bg-white rounded-2xl border border-stone-200 overflow-hidden animate-pulse"
@@ -139,7 +184,7 @@ const ProductsPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12 !mt-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12">
             {currentProducts.map((product) => {
               const isOutOfStock = product.stock === 0;
 

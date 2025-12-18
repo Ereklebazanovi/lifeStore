@@ -26,7 +26,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     description: "",
     price: "",
     originalPrice: "",
-    category: "",
     stock: "",
     images: [] as string[],
     isActive: true,
@@ -44,7 +43,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         originalPrice: product.originalPrice
           ? product.originalPrice.toString()
           : "",
-        category: product.category,
         stock: product.stock.toString(),
         images: product.images || [],
         isActive: product.isActive ?? true,
@@ -74,7 +72,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price),
-      category: formData.category,
+      category: "General", // ✅ ავტომატურად "General" კატეგორია
       stock: parseInt(formData.stock),
       images: formData.images.filter((img: string) => img.trim() !== ""),
       isActive: formData.isActive,
@@ -195,6 +193,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                         originalPrice: e.target.value,
                       })
                     }
+                    onWheel={handleNumberInputWheel}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500"
                     placeholder="0.00"
                   />
@@ -214,6 +213,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   onChange={(e) =>
                     setFormData({ ...formData, price: e.target.value })
                   }
+                  onWheel={handleNumberInputWheel}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500"
                 />
               </div>
@@ -230,26 +230,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   onChange={(e) =>
                     setFormData({ ...formData, stock: e.target.value })
                   }
+                  onWheel={handleNumberInputWheel}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500"
                 />
               </div>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              კატეგორია *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.category}
-              onChange={(e) =>
-                setFormData({ ...formData, category: e.target.value })
-              }
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500"
-            />
-          </div>
 
           {/* Images */}
           <div className="space-y-4">
@@ -333,6 +320,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                           e.target.value === "" ? 0 : parseInt(e.target.value),
                       })
                     }
+                    onWheel={handleNumberInputWheel}
                     className="block w-full px-4 py-2 border-2 border-blue-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg font-bold text-blue-900"
                     placeholder="0"
                   />
