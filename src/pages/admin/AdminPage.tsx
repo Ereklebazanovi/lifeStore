@@ -1,5 +1,5 @@
 // src/pages/admin/AdminPage.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { useProductStore } from "../../store/productStore";
 import { OrderService } from "../../services/orderService";
@@ -20,6 +20,7 @@ const AdminPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"products" | "orders">("products");
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const ordersRef = useRef<HTMLDivElement>(null);
 
   // Fetch data when admin logs in
   useEffect(() => {
@@ -87,7 +88,13 @@ const AdminPage: React.FC = () => {
               <button
                 onClick={() => {
                   setActiveTab("orders");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  // ვეცადოთ ჯერ დავაყენოთ tab, შემდეგ scroll
+                  setTimeout(() => {
+                    ordersRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start"
+                    });
+                  }, 100);
                 }}
                 className="flex items-center justify-center space-x-3 p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all duration-200 group"
               >
@@ -184,7 +191,11 @@ const AdminPage: React.FC = () => {
 
             {/* Tab Content */}
             {activeTab === "products" && <ProductManager />}
-            {activeTab === "orders" && <OrdersManager />}
+            {activeTab === "orders" && (
+              <div ref={ordersRef}>
+                <OrdersManager />
+              </div>
+            )}
           </div>
         </div>
       </div>
