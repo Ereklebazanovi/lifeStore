@@ -72,10 +72,30 @@ const ProductsPage: React.FC = () => {
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
   const filterOptions = [
-    { value: "all", label: "ყველა პროდუქტი", count: products.filter(p => p.isActive !== false).length },
-    { value: "popular", label: "პოპულარული", count: products.filter(p => p.isActive !== false && p.priority === 100).length },
-    { value: "discounts", label: "ფასდაკლებები", count: products.filter(p => p.isActive !== false && hasDiscount(p)).length },
-    { value: "new", label: "ახალი დამატებული", count: products.filter(p => p.isActive !== false).length },
+    {
+      value: "all",
+      label: "ყველა პროდუქტი",
+      shortLabel: "ყველა",
+      count: products.filter(p => p.isActive !== false).length
+    },
+    {
+      value: "popular",
+      label: "პოპულარული",
+      shortLabel: "პოპულარული",
+      count: products.filter(p => p.isActive !== false && p.priority === 100).length
+    },
+    {
+      value: "discounts",
+      label: "ფასდაკლებები",
+      shortLabel: "ფასდაკლება",
+      count: products.filter(p => p.isActive !== false && hasDiscount(p)).length
+    },
+    {
+      value: "new",
+      label: "ახალი დამატებული",
+      shortLabel: "ახალი",
+      count: products.filter(p => p.isActive !== false).length
+    },
   ];
 
   const productsStructuredData = {
@@ -105,34 +125,34 @@ const ProductsPage: React.FC = () => {
         structuredData={productsStructuredData}
       />
       <div className="min-h-screen bg-stone-50 mt-2">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12 lg:py-16">
+      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-16 lg:py-16">
         {/* Header Section */}
-        <div className="mb-12">
-          <h1 className="text-3xl lg:text-4xl text-stone-900 tracking-tight mb-3 !mt-4">
+        <div className="mb-6 lg:mb-12">
+          <h1 className="text-2xl lg:text-4xl text-stone-900 tracking-tight mb-2 lg:mb-3 !mt-2 lg:!mt-4">
             ყველა პროდუქტი
           </h1>
-          <p className="text-stone-600">
+          <p className="text-sm lg:text-base text-stone-600">
             აღმოაჩინეთ ჩვენი ეკო-მეგობრული პროდუქტების სრული კოლექცია
           </p>
         </div>
 
         {/* Professional Filter Bar */}
-        <div className="bg-white rounded-xl border border-stone-200 p-6 shadow-sm mb-12">
-          <div className="flex flex-col lg:flex-row gap-4">
+        <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-6 shadow-sm mb-6 lg:mb-12">
+          <div className="flex flex-col gap-3 lg:gap-4">
             {/* Search */}
-            <div className="flex-1 relative">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-stone-400" />
               <input
                 type="text"
                 placeholder="ძებნა პროდუქტების დასახელებით..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-sm lg:text-base"
               />
             </div>
 
             {/* Filter Buttons */}
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 lg:flex gap-2">
               {filterOptions.map((option) => (
                 <button
                   key={option.value}
@@ -140,14 +160,15 @@ const ProductsPage: React.FC = () => {
                     setSelectedFilter(option.value);
                     setCurrentPage(1);
                   }}
-                  className={`px-4 py-2.5 rounded-lg border transition-all text-sm font-medium flex items-center gap-2 ${
+                  className={`px-2 sm:px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg border transition-all text-xs lg:text-sm font-medium flex items-center justify-center gap-1 lg:gap-2 min-h-[40px] ${
                     selectedFilter === option.value
                       ? "border-emerald-500 bg-emerald-50 text-emerald-700"
                       : "border-stone-300 bg-white text-stone-700 hover:border-stone-400"
                   }`}
                 >
-                  <span>{option.label}</span>
-                  <span className="text-xs bg-stone-100 text-stone-500 px-2 py-1 rounded">
+                  <span className="truncate block sm:hidden">{option.shortLabel}</span>
+                  <span className="truncate hidden sm:block">{option.label}</span>
+                  <span className="text-xs bg-stone-100 text-stone-500 px-1 sm:px-1.5 lg:px-2 py-0.5 lg:py-1 rounded flex-shrink-0 min-w-[20px] text-center">
                     {option.count}
                   </span>
                 </button>
