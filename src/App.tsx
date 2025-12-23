@@ -19,6 +19,8 @@ import ProductDetailsPage from "./pages/ProductDetailsPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
 import OrderHistoryPage from "./pages/OrderHistoryPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import PaymentFailurePage from "./pages/PaymentFailurePage";
 import LoadingScreen from "./components/LoadingScreen";
 import ScrollToTop from "./components/ScrollToTop";
 import PageTransition from "./components/PageTransition";
@@ -51,7 +53,7 @@ const AnimatedRoutes: React.FC = () => {
             </PageTransition>
           }
         />
-       <Route
+        <Route
           path="/about"
           element={
             <PageTransition>
@@ -67,7 +69,7 @@ const AnimatedRoutes: React.FC = () => {
             </PageTransition>
           }
         />
-         <Route
+        <Route
           path="/refund-policy"
           element={
             <PageTransition>
@@ -83,7 +85,7 @@ const AnimatedRoutes: React.FC = () => {
             </PageTransition>
           }
         />
-         <Route
+        <Route
           path="/privacy-policy"
           element={
             <PageTransition>
@@ -124,6 +126,22 @@ const AnimatedRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/payment/success"
+          element={
+            <PageTransition>
+              <PaymentSuccessPage />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/payment/failure"
+          element={
+            <PageTransition>
+              <PaymentFailurePage />
+            </PageTransition>
+          }
+        />
+        <Route
           path="/admin"
           element={
             <PageTransition>
@@ -139,7 +157,7 @@ const AnimatedRoutes: React.FC = () => {
 function App() {
   // ვიზუალური "სპლეშ სქრინის" სტეიტი
   const [isSplashLoading, setIsSplashLoading] = useState(true);
-  
+
   // Auth სტორის მონაცემები (isLoading-ს გადავარქვით სახელი კონფლიქტის თავიდან ასაცილებლად)
   const { initializeAuth, user, isLoading: isAuthLoading } = useAuthStore();
   const { loadUserCart } = useCartStore();

@@ -126,7 +126,30 @@ export interface CreateOrderRequest {
     address: string;
     comment?: string;
   };
-  paymentMethod: "cash" | "tbc_bank";
+  paymentMethod: "cash" | "tbc_bank" | "flitt";
+}
+
+// Payment Integration Types
+export interface CreatePaymentRequest {
+  orderId: string;
+  amount: number;
+  customerEmail: string;
+  customerName: string;
+  description?: string;
+}
+
+export interface PaymentResponse {
+  success: boolean;
+  checkoutUrl?: string;
+  paymentId?: string;
+  error?: string;
+  response?: any;
+}
+
+export interface PaymentStatus {
+  success: boolean;
+  status: "pending" | "approved" | "declined" | "processing";
+  response?: any;
 }
 
 // ✅ ახალი ტიპი: მენეჯერის მიერ შეკვეთის შექმნა

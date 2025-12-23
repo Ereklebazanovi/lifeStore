@@ -13,6 +13,7 @@
     "@tailwindcss/vite": "^4.1.17",
     "antd": "^6.1.0",
     "aos": "^2.3.4",
+    "cloudipsp-node-js-sdk": "^1.0.8",
     "firebase": "^12.6.0",
     "framer-motion": "^12.23.26",
     "lucide-react": "^0.556.0",
@@ -24,7 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-    "@types/node": "^24.10.2",
+    "@types/node": "^24.10.4",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
