@@ -1,13 +1,13 @@
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-// ✅ შესწორებული გასაღები (დიდი I-თი და არა L-ით)
+// ⚠️ უკვე დადასტურებული, სწორი მონაცემები
 const SECRET = "hP3gV40vV3yhKM2EUeRK1IOrEoTvvhwu"; 
 const MERCH_ID = "4055351";
 const CALLBACK_URL = "https://lifestore.ge/api/payment/callback"; 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Setup
+  // CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*'); 
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -17,16 +17,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const { orderId, amount, customerEmail, description } = req.body;
+    const { orderId, amount, description } = req.body; // email ამოვიღეთ აქედანაც
 
     if (!orderId || !amount) return res.status(400).json({ error: "Missing required fields" });
 
     const amountInKopecks = Math.round(amount * 100);
-    // აღწერის გასუფთავება (სფეისების გარეშე ჯობია, ან რაც ტესტში იმუშავა ის დავტოვოთ)
+    // Description-ს ვასუფთავებთ სფეისებისგან, როგორც ლოკალურ ტესტში
     const cleanDesc = (description || "Order").replace(/[^a-zA-Z0-9]/g, "") || "Order";
 
-    // 1. სტრიქონის აწყობა (ზუსტად ისე, როგორც ტესტში იმუშავა!)
+    // 1. სტრიქონის აწყობა (ზუსტად ისე, როგორც test-flitt.cjs-ში!)
     // თანმიმდევრობა: Secret | Amount | Currency | MerchID | Desc | OrderID | Callback
+    // ❌ Sender Email აქ არ არის!
     const rawString = [
       SECRET,
       amountInKopecks,
@@ -43,17 +44,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const signature = createHash("sha1").update(rawString).digest("hex");
 
     // 3. რექვესთის მომზადება
+    // ❌ Sender Email-ს არც აქ ვსვამთ! რომ 100% დაემთხვეს ხელმოწერას.
     const requestBody = {
       request: {
         amount: amountInKopecks,
         currency: "GEL",
-        merchant_id: Number(MERCH_ID), // რიცხვი, როგორც ტესტში
+        merchant_id: Number(MERCH_ID),
         order_desc: cleanDesc,
         order_id: String(orderId),
         server_callback_url: CALLBACK_URL,
-        signature: signature,
-        // email-ს ვამატებთ მხოლოდ payload-ში, ხელმოწერაში არ მონაწილეობს!
-        ...(customerEmail && { sender_email: customerEmail }) 
+        signature: signature
       },
     };
 
