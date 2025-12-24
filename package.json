@@ -15,6 +15,7 @@
     "aos": "^2.3.4",
     "cloudipsp-node-js-sdk": "^1.0.8",
     "firebase": "^12.6.0",
+    "firebase-admin": "^13.6.0",
     "framer-motion": "^12.23.26",
     "lucide-react": "^0.556.0",
     "react": "^19.2.0",

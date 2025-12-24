@@ -72,6 +72,7 @@ export interface Order {
   orderStatus: "pending" | "confirmed" | "delivered" | "cancelled";
   createdAt: Date;
   updatedAt: Date;
+  paidAt?: Date; // ✅ Added for payment completion timestamp
   deliveredAt?: Date;
   adminNotes?: string;
   trackingNumber?: string;
