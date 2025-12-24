@@ -27,20 +27,38 @@ const OrderFailedPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!orderId) {
+    // 🔧 Get orderId from URL path parameter OR query parameter
+    let orderIdToUse = orderId;
+    if (!orderIdToUse) {
+      // Try to get from query parameters (Flitt callback format)
+      orderIdToUse = searchParams.get('order_id');
+    }
+
+    console.log("🔍 OrderFailedPage Debug:", {
+      pathOrderId: orderId,
+      queryOrderId: searchParams.get('order_id'),
+      finalOrderId: orderIdToUse,
+      allParams: Object.fromEntries(searchParams.entries())
+    });
+
+    if (!orderIdToUse) {
+      console.error("❌ No orderId found in path or query parameters");
+      showToast("შეკვეთის ID არ მოიძებნა", "error");
       navigate("/");
       return;
     }
 
     const fetchOrder = async () => {
       try {
-        const orderData = await OrderService.getOrderById(orderId);
+        console.log("📊 Fetching failed order:", orderIdToUse);
+        const orderData = await OrderService.getOrderById(orderIdToUse);
         if (!orderData) {
           showToast("შეკვეთა არ მოიძებნა", "error");
           navigate("/");
           return;
         }
         setOrder(orderData);
+        console.log("✅ Failed order loaded successfully:", orderData.orderNumber);
       } catch (error) {
         console.error("Error fetching order:", error);
         showToast("მონაცემების ჩატვირთვა ვერ მოხერხდა", "error");
@@ -51,7 +69,7 @@ const OrderFailedPage: React.FC = () => {
     };
 
     fetchOrder();
-  }, [orderId, navigate]);
+  }, [orderId, searchParams, navigate]);
 
   const handleRetryPayment = () => {
     if (order) {

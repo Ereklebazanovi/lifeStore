@@ -118,7 +118,23 @@ const AnimatedRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/order-success"
+          element={
+            <PageTransition>
+              <OrderSuccessPage />
+            </PageTransition>
+          }
+        />
+        <Route
           path="/order-failed/:orderId"
+          element={
+            <PageTransition>
+              <OrderFailedPage />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/order-failed"
           element={
             <PageTransition>
               <OrderFailedPage />
