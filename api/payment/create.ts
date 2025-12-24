@@ -61,14 +61,15 @@ module.exports = async function handler(
 ) {
   console.log("🚀 Payment API Called! Method:", req.method);
 
-  // Enable CORS
+  // Enable CORS for all origins
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  res.setHeader("Access-Control-Max-Age", "86400"); // Cache preflight for 24 hours
 
   // Handle preflight OPTIONS request
   if (req.method === "OPTIONS") {
-    console.log("✅ OPTIONS request handled");
+    console.log("✅ OPTIONS preflight request handled");
     return res.status(200).end();
   }
 
