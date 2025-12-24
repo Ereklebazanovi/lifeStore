@@ -53,7 +53,7 @@ export class PaymentService {
         headers: {
           "Content-Type": "application/json",
           // ეს ჰედერები ეხმარება CORS-ის პრობლემების თავიდან აცილებაში
-          "Accept": "application/json",
+          Accept: "application/json",
         },
         body: JSON.stringify(paymentData),
       });
@@ -63,14 +63,15 @@ export class PaymentService {
         const errorText = await response.text();
         let errorJson;
         try {
-            errorJson = JSON.parse(errorText);
+          errorJson = JSON.parse(errorText);
         } catch {
-            errorJson = { error: errorText };
+          errorJson = { error: errorText };
         }
-        
+
         console.error("❌ API Error Response:", errorJson);
         throw new Error(
-          errorJson.error || `HTTP Error ${response.status}: ${response.statusText}`
+          errorJson.error ||
+            `HTTP Error ${response.status}: ${response.statusText}`
         );
       }
 

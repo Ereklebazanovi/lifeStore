@@ -29,10 +29,16 @@ function generateSignature(params: any, secretKey: string): string {
   // 5. გაერთიანება | სიმბოლოთი
   const signatureString = values.join("|");
 
-  console.log("🔐 Signing String:", signatureString); // დებაგისთვის
+  console.log("🔐 DETAILED DEBUG:");
+  console.log("  📝 Active Keys:", activeKeys);
+  console.log("  📊 Values:", values);
+  console.log("  🔗 Final String:", signatureString);
 
   // 6. SHA1 ჰეშირება
-  return createHash("sha1").update(signatureString).digest("hex");
+  const signature = createHash("sha1").update(signatureString, "utf8").digest("hex");
+  console.log("  🔐 Final SHA1:", signature);
+
+  return signature;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -72,7 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // პარამეტრების ობიექტი
     const requestParams: any = {
-      version: "1.0.1",  // ✅ აუცილებელი!
+      version: "1.0.1", // ✅ აუცილებელი!
       amount: amountInKopecks,
       currency: "GEL",
       merchant_id: FLITT_MERCHANT_ID,
