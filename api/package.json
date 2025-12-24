@@ -1,0 +1,6 @@
+{
+  "type": "commonjs",
+  "dependencies": {
+    "@vercel/node": "^5.5.16"
+  }
+}

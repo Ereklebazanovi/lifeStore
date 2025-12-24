@@ -1,8 +1,8 @@
 // Vercel Serverless Function for Flitt Payment Creation
 // Much faster deployment than Firebase Functions (10-30s vs 3-4min)
 
+const { createHash } = require('crypto')
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createHash } from 'crypto'
 
 // Flitt Configuration
 const FLITT_MERCHANT_ID = process.env.FLITT_MERCHANT_ID || '4055351'
@@ -53,7 +53,7 @@ function generateSignature(params: any, secretKey: string): string {
   return signature
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
