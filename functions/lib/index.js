@@ -30,7 +30,7 @@ function generateSignature(params, secretKey) {
         merchantId,
         params.order_desc,
         params.order_id,
-        params.server_callback_url
+        params.server_callback_url,
     ];
     const signatureString = signatureParams.join("|");
     console.log("🔍 Debug Info:");
@@ -40,8 +40,14 @@ function generateSignature(params, secretKey) {
     console.log("  - Order desc:", params.order_desc);
     console.log("🔐 Signature String:", signatureString);
     // Try multiple approaches
-    const sig1 = crypto.createHash("sha1").update(signatureString, 'utf8').digest("hex");
-    const sig2 = crypto.createHash("sha1").update(signatureString, 'ascii').digest("hex");
+    const sig1 = crypto
+        .createHash("sha1")
+        .update(signatureString, "utf8")
+        .digest("hex");
+    const sig2 = crypto
+        .createHash("sha1")
+        .update(signatureString, "ascii")
+        .digest("hex");
     console.log("🔐 Signature UTF-8:", sig1);
     console.log("🔐 Signature ASCII:", sig2);
     return sig1;
@@ -58,7 +64,13 @@ exports.createPayment = (0, https_1.onRequest)({ cors: true, region: "europe-wes
                 response.status(400).json({ error: "Missing required fields" });
                 return;
             }
-            const amountInKopecks = Math.round(amount * 100);
+            // Try both formats to debug the issue
+            const amountInKopecks = Math.round(amount * 100); // 2.00 GEL = 200 tetri
+            const amountInLari = amount; // 2.00 GEL = 2 lari
+            console.log("💰 Amount Debug:");
+            console.log("  - Original amount:", amount);
+            console.log("  - Amount in kopecks/tetri:", amountInKopecks);
+            console.log("  - Amount in lari:", amountInLari);
             // Clean description - remove special chars but keep spaces for now
             const rawDesc = description || `Order ${orderId}`;
             const cleanDesc = rawDesc.replace(/[^a-zA-Z0-9 -]/g, "");
@@ -83,7 +95,18 @@ exports.createPayment = (0, https_1.onRequest)({ cors: true, region: "europe-wes
                 requestParams.sender_email = customerEmail;
             }
             // 1. ვაგენერირებთ ხელმოწერას ამ ობიექტზე (დინამიურად)
-            const signature = generateSignature(requestParams, FLITT_SECRET_KEY);
+            console.log("🧪 Testing both amount formats:");
+            // Test 1: Amount in tetri/kopecks (current: 200)
+            console.log("🧪 Testing with tetri format (200):");
+            const sig1 = generateSignature(requestParams, FLITT_SECRET_KEY);
+            // Test 2: Amount in lari (2.00)
+            console.log("🧪 Testing with lari format (2):");
+            const paramsWithLariAmount = { ...requestParams, amount: amountInLari };
+            const sig2 = generateSignature(paramsWithLariAmount, FLITT_SECRET_KEY);
+            console.log("🧪 Final choice: Using tetri format");
+            console.log("🧪 Comparison - Tetri signature:", sig1);
+            console.log("🧪 Comparison - Lari signature:", sig2);
+            const signature = sig1;
             // 2. ვამზადებთ გასაგზავნ მონაცემებს
             const requestBody = {
                 request: {
