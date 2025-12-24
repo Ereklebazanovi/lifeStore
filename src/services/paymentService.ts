@@ -1,13 +1,13 @@
 import type {
   CreatePaymentRequest,
   PaymentResponse,
-  PaymentStatus,
+  PaymentGatewayStatus, // ✅ შეცვლილი სახელი
 } from "../types";
 
-// ✅ შენი დადეპლოებული ფუნქციების ზუსტი მისამართები
+// ✅ Firebase Functions URLs
 const API_URLS = {
-  createPayment: "https://createpayment-oj2s6bdcma-ew.a.run.app",
-  getPaymentStatus: "https://getpaymentstatus-oj2s6bdcma-ew.a.run.app",
+  createPayment: "https://europe-west1-lifestore-5d2b7.cloudfunctions.net/createPayment",
+  getPaymentStatus: "https://europe-west1-lifestore-5d2b7.cloudfunctions.net/getPaymentStatus",
 };
 
 export class PaymentService {
@@ -18,7 +18,6 @@ export class PaymentService {
     paymentData: CreatePaymentRequest
   ): Promise<PaymentResponse> {
     try {
-      // ვიყენებთ პირდაპირ createPayment-ის URL-ს
       const response = await fetch(API_URLS.createPayment, {
         method: "POST",
         headers: {
@@ -50,9 +49,8 @@ export class PaymentService {
   /**
    * Check payment status
    */
-  static async getPaymentStatus(paymentId: string): Promise<PaymentStatus> {
+  static async getPaymentStatus(paymentId: string): Promise<PaymentGatewayStatus> {
     try {
-      // ვიყენებთ პირდაპირ getPaymentStatus-ის URL-ს
       const response = await fetch(
         `${API_URLS.getPaymentStatus}?paymentId=${paymentId}`,
         {
@@ -68,7 +66,7 @@ export class PaymentService {
         throw new Error(errorData.error || "Failed to get payment status");
       }
 
-      const result: PaymentStatus = await response.json();
+      const result: PaymentGatewayStatus = await response.json();
       return result;
     } catch (error) {
       console.error("Error getting payment status:", error);

@@ -1,4 +1,4 @@
-//Path: src/pages/PaymentSuccessPage.tsx
+// Path: src/pages/PaymentSuccessPage.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle, Package, Home, ShoppingBag, Loader } from "lucide-react";
@@ -7,15 +7,16 @@ import { showToast } from "../components/ui/Toast";
 
 const PaymentSuccessPage: React.FC = () => {
   const navigate = useNavigate();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [searchParams] = useSearchParams();
   const [isVerifying, setIsVerifying] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [orderInfo, setOrderInfo] = useState<any>(null);
 
   useEffect(() => {
     const verifyPayment = async () => {
       try {
-        // Get pending payment info
         const pendingPayment = PaymentService.getPendingPayment();
 
         if (!pendingPayment) {
@@ -24,7 +25,6 @@ const PaymentSuccessPage: React.FC = () => {
           return;
         }
 
-        // Check payment status with Flitt
         if (pendingPayment.paymentId) {
           const paymentStatus = await PaymentService.getPaymentStatus(
             pendingPayment.paymentId
@@ -34,8 +34,6 @@ const PaymentSuccessPage: React.FC = () => {
             setPaymentVerified(true);
             setOrderInfo(pendingPayment);
             showToast("გადახდა წარმატებით დასრულდა!", "success");
-
-            // Clear pending payment
             PaymentService.clearPendingPayment();
           } else {
             showToast("გადახდის ვერიფიკაცია ვერ მოხერხდა", "error");
@@ -73,12 +71,10 @@ const PaymentSuccessPage: React.FC = () => {
     <div className="min-h-screen bg-stone-50 py-20">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-          {/* Success Icon */}
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-12 h-12 text-green-600" />
           </div>
 
-          {/* Success Message */}
           <h1 className="text-3xl font-bold text-stone-900 mb-4">
             გადახდა წარმატებით დასრულდა!
           </h1>
@@ -87,7 +83,6 @@ const PaymentSuccessPage: React.FC = () => {
             თქვენი შეკვეთა წარმატებით გადახდილია და მუშავდება.
           </p>
 
-          {/* Order Info */}
           {orderInfo && (
             <div className="bg-stone-50 rounded-xl p-6 mb-8">
               <div className="flex items-center justify-center gap-3 mb-4">
@@ -111,7 +106,6 @@ const PaymentSuccessPage: React.FC = () => {
             </div>
           )}
 
-          {/* Information */}
           <div className="bg-blue-50 rounded-xl p-6 mb-8">
             <h3 className="text-lg font-semibold text-blue-900 mb-3">
               რა მოხდება შემდეგ?
@@ -124,7 +118,6 @@ const PaymentSuccessPage: React.FC = () => {
             </ul>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => navigate("/order-history")}
@@ -143,7 +136,6 @@ const PaymentSuccessPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Contact Info */}
           <div className="mt-8 pt-6 border-t border-stone-200">
             <p className="text-sm text-stone-500">
               კითხვების შემთხვევაში დაგვიკავშირდით:

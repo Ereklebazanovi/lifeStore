@@ -1,6 +1,5 @@
 // src/types/index.ts
 
-// 1. ✅ ახალი ტიპი წყაროებისთვის
 export type OrderSource =
   | "website"
   | "instagram"
@@ -10,24 +9,22 @@ export type OrderSource =
   | "personal"
   | "other";
 
-// Product Types
 export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number; // საბოლოო გასაყიდი ფასი (რასაც კლიენტი იხდის)
-  originalPrice?: number; // ძველი ფასი (ფასდაკლების შემთხვევაში)
+  price: number;
+  originalPrice?: number;
   images: string[];
   category: string;
   stock: number;
   featured?: boolean;
-  priority?: number; // პროდუქტის პრიორიტეტი (0 = სტანდარტული, მაღალი = ზემოთ)
+  priority?: number;
   createdAt: Date;
   updatedAt: Date;
   isActive?: boolean;
 }
 
-// Category Types
 export interface Category {
   id: string;
   name: string;
@@ -35,62 +32,47 @@ export interface Category {
   image?: string;
 }
 
-// Cart Types
 export interface CartItem {
   productId: string;
   product: Product;
   quantity: number;
 }
 
-// Order Types
 export interface Order {
   id: string;
-  userId: string | null; // null = guest user
-  orderNumber: string; // LS-240001 format
-
-  // ✅ ახალი ველი: საიდან მოვიდა შეკვეთა
+  userId: string | null;
+  orderNumber: string;
   source?: OrderSource;
-
-  // Product Info
   items: OrderItem[];
   subtotal: number;
   shippingCost: number;
   totalAmount: number;
-
-  // Customer Info
   customerInfo: {
     firstName: string;
     lastName: string;
     phone: string;
-    email: string; // manual შეკვეთისას შეიძლება ცარიელი იყოს ან fake
+    email: string;
     isGuest: boolean;
   };
-
-  // Delivery Info
   deliveryInfo: {
     city: string;
     address: string;
     comment?: string;
   };
-
-  // Payment & Status
-  // ✅ გავაფართოვეთ მეთოდები
+  // ✅ შესწორება 1: დაემატა "flitt"
   paymentMethod:
     | "cash"
     | "tbc_bank"
+    | "flitt" 
     | "visa"
     | "mastercard"
     | "bank_transfer"
     | "other";
   paymentStatus: "pending" | "paid" | "failed";
   orderStatus: "pending" | "confirmed" | "delivered" | "cancelled";
-
-  // Metadata
   createdAt: Date;
   updatedAt: Date;
   deliveredAt?: Date;
-
-  // Admin notes
   adminNotes?: string;
   trackingNumber?: string;
 }
@@ -103,7 +85,6 @@ export interface OrderItem {
   total: number;
 }
 
-// ✅ ახალი ტიპი: მხოლოდ მენეჯერის ფორმისთვის (ხელით შეყვანილი ნივთი)
 export interface ManualOrderItem {
   productId?: string;
   name: string;
@@ -111,7 +92,6 @@ export interface ManualOrderItem {
   quantity: number;
 }
 
-// For creating new orders (საიტიდან)
 export interface CreateOrderRequest {
   userId: string | null;
   items: CartItem[];
@@ -129,7 +109,6 @@ export interface CreateOrderRequest {
   paymentMethod: "cash" | "tbc_bank" | "flitt";
 }
 
-// Payment Integration Types
 export interface CreatePaymentRequest {
   orderId: string;
   amount: number;
@@ -146,36 +125,36 @@ export interface PaymentResponse {
   response?: any;
 }
 
-export interface PaymentStatus {
+// ✅ შესწორება 2: გადავარქვით სახელი, რომ არ დამთხვეოდა ქვედა ტიპს
+export interface PaymentGatewayStatus {
   success: boolean;
   status: "pending" | "approved" | "declined" | "processing";
   response?: any;
 }
 
-// ✅ ახალი ტიპი: მენეჯერის მიერ შეკვეთის შექმნა
 export interface CreateManualOrderRequest {
-  items: ManualOrderItem[]; // აქ უკვე გამარტივებული ნივთებია
+  items: ManualOrderItem[];
   source: OrderSource;
   customerInfo: {
     firstName: string;
     lastName: string;
     phone: string;
-    email?: string; // მეილი არასავალდებულოა ხელით შეყვანისას
+    email?: string;
   };
   deliveryInfo: {
     city: string;
     address: string;
     comment?: string;
   };
-  shippingCost: number; // მენეჯერს შეუძლია ხელით მიუთითოს
-  status: "pending" | "confirmed" | "delivered"; // მენეჯერი ირჩევს სტატუსს
+  shippingCost: number;
+  status: "pending" | "confirmed" | "delivered";
   paymentMethod: Order["paymentMethod"];
 }
 
 export type OrderStatus = "pending" | "confirmed" | "delivered" | "cancelled";
+// ეს რჩება როგორც არის (სტრინგების ტიპი)
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
-// User Types (for admin)
 export interface User {
   id: string;
   email: string;
@@ -184,7 +163,6 @@ export interface User {
   createdAt: Date;
 }
 
-// Store State Types
 export interface AuthState {
   user: User | null;
   isLoading: boolean;
@@ -203,7 +181,6 @@ export interface ProductState {
   categories: string[];
 }
 
-// Checkout Form Types
 export interface DeliveryInfo {
   firstName: string;
   lastName: string;
