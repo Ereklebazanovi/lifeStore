@@ -63,14 +63,35 @@ function generateSignature(params: any, secretKey: string): string {
 
   logger.info("🔐 Signature String (exact match to docs):", signatureString);
 
-  // Generate SHA1 hash
-  const signature = crypto
+  // Try different encoding approaches to debug the issue
+  const signature1 = crypto
     .createHash("sha1")
-    .update(signatureString)
+    .update(signatureString, "utf8")
     .digest("hex");
-  logger.info("🔐 Generated Signature:", signature);
+  const signature2 = crypto
+    .createHash("sha1")
+    .update(Buffer.from(signatureString, "utf8"))
+    .digest("hex");
+  const signature3 = crypto
+    .createHash("sha1")
+    .update(signatureString, "binary")
+    .digest("hex");
 
-  return signature;
+  logger.info("🔐 Signature UTF8:", signature1);
+  logger.info("🔐 Signature Buffer:", signature2);
+  logger.info("🔐 Signature Binary:", signature3);
+
+  // Let's also try manual test with documentation example
+  const testString =
+    "test|1000|GEL|1549901|Test payment|TestOrder2|http://myshop/callback/";
+  const testSignature = crypto
+    .createHash("sha1")
+    .update(testString, "utf8")
+    .digest("hex");
+  logger.info("🧪 Test Documentation String:", testString);
+  logger.info("🧪 Test Signature:", testSignature);
+
+  return signature1;
 }
 
 /**
