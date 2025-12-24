@@ -18,9 +18,11 @@ export interface PaymentResponse {
 }
 
 export class PaymentService {
-  private static readonly API_BASE_URL = import.meta.env.MODE === 'development'
-    ? 'http://localhost:3000'
-    : 'https://lifestore.ge'
+  // TEMP: Force localhost to debug API connectivity
+  private static readonly API_BASE_URL = 'http://localhost:3000'
+  // private static readonly API_BASE_URL = import.meta.env.MODE === 'development'
+  //   ? 'http://localhost:3000'
+  //   : 'https://lifestore.ge'
 
   /**
    * Create Flitt payment using Vercel API
