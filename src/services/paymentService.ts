@@ -28,6 +28,8 @@ export class PaymentService {
   static async createFlittPayment(paymentData: CreatePaymentRequest): Promise<PaymentResponse> {
     try {
       console.log('🚀 Creating payment via Vercel API:', paymentData)
+      console.log('🔗 API URL:', `${this.API_BASE_URL}/api/payment/create`)
+      console.log('📤 Request method: POST')
 
       const response = await fetch(`${this.API_BASE_URL}/api/payment/create`, {
         method: 'POST',
@@ -36,6 +38,8 @@ export class PaymentService {
         },
         body: JSON.stringify(paymentData),
       })
+
+      console.log('📨 Response received:', response.status, response.statusText)
 
       if (!response.ok) {
         const errorData = await response.json()
