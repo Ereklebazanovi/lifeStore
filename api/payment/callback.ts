@@ -1,12 +1,11 @@
-// Vercel Serverless Function for Flitt Payment Callback
-// Receives payment status updates from Flitt and updates Firestore
+// api/payment/callback.ts
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-// Note: For Firestore updates, we'll need Firebase Admin SDK
-// For now, just log the callback - implement Firestore later if needed
-
-module.exports = async function handler(req: VercelRequest, res: VercelResponse) {
+module.exports = async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -47,4 +46,4 @@ module.exports = async function handler(req: VercelRequest, res: VercelResponse)
     // Still return OK to avoid retries from Flitt
     return res.status(200).send("OK");
   }
-}
+};

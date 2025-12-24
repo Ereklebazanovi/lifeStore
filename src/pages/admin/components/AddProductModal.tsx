@@ -53,7 +53,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       newErrors.price = "ფასი უნდა იყოს დადებითი რიცხვი";
     }
 
-
     if (!formData.stock || parseInt(formData.stock) < 0) {
       newErrors.stock = "მარაგი უნდა იყოს 0 ან მეტი";
     }
@@ -122,7 +121,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       alert("პროდუქტის დამატება ვერ მოხერხდა. გთხოვთ სცადოთ თავიდან.");
     }
   };
-
 
   const handleNumberInputWheel = (e: React.WheelEvent<HTMLInputElement>) => {
     e.currentTarget.blur();
@@ -336,7 +334,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                 )}
               </div>
             </div>
-
           </div>
 
           {/* Images Section */}

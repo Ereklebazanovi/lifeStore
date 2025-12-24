@@ -1,143 +1,94 @@
-// Vercel Serverless Function for Flitt Payment Creation
-// Much faster deployment than Firebase Functions (10-30s vs 3-4min)
-//create.ts
-const { createHash } = require("crypto");
+import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-// Flitt Configuration - TEMPORARY HARDCODED FOR DEBUG
+// კონფიგურაცია (დროებით Hardcoded, სანამ გატესტავ)
 const FLITT_MERCHANT_ID = "4055351";
-const FLITT_SECRET_KEY = "hP3gV40vV3yhKM2EUeRK1lOrEoTvvhwu"; // TEMPORARY HARDCODE
+const FLITT_SECRET_KEY = "hP3gV40vV3yhKM2EUeRK1lOrEoTvvhwu";
 const FLITT_API_URL = "https://pay.flitt.com/api/checkout/url";
 
-console.log("🔧 DEBUG: Using hardcoded credentials for testing");
-
-interface CreatePaymentRequest {
-  orderId: string;
-  amount: number;
-  customerEmail?: string;
-  description?: string;
-}
-
-interface FlittPaymentResponse {
-  success: boolean;
-  checkoutUrl?: string;
-  paymentId?: string;
-  error?: string;
-  errorCode?: string;
-  details?: any;
-}
-
 /**
- * Generate Flitt signature according to official documentation
- * Format: secret|amount|currency|merchant_id|order_desc|order_id|server_callback_url
+ * ✅ სწორი Signature გენერაცია (დინამიური სორტირებით)
  */
 function generateSignature(params: any, secretKey: string): string {
-  const signatureParams = [
-    secretKey,
-    params.amount,
-    params.currency,
-    params.merchant_id,
-    params.order_desc,
-    params.order_id,
-    params.server_callback_url,
-  ];
+  // 1. ვიღებთ მხოლოდ არაცარიელ მნიშვნელობებს და ვფილტრავთ signature-ს
+  const activeKeys = Object.keys(params).filter(
+    (key) =>
+      key !== "signature" && params[key] !== undefined && params[key] !== ""
+  );
 
-  const signatureString = signatureParams.join("|");
+  // 2. სორტირება ანბანის მიხედვით (A-Z) - აუცილებელია!
+  activeKeys.sort();
 
-  console.log("🔐 Signature String:", signatureString);
+  // 3. მნიშვნელობების აღება სტრინგებად
+  const values = activeKeys.map((key) => String(params[key]));
 
-  const signature = createHash("sha1")
-    .update(signatureString, "utf8")
-    .digest("hex");
+  // 4. Secret Key ემატება თავში (Start) - ეს არის TPay/Flitt სტანდარტი
+  values.unshift(secretKey.trim());
 
-  console.log("🔐 Generated Signature:", signature);
+  // 5. გაერთიანება | სიმბოლოთი
+  const signatureString = values.join("|");
 
-  return signature;
+  console.log("🔐 Signing String:", signatureString); // დებაგისთვის
+
+  // 6. SHA1 ჰეშირება
+  return createHash("sha1").update(signatureString).digest("hex");
 }
 
-module.exports = async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
-  console.log("🚀 Payment API Called! Method:", req.method);
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS Headers - რომ React-მა შეძლოს დაკავშირება
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Origin", "*"); // ან 'http://localhost:5173'
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+  );
 
-  // Enable CORS for all origins
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
-  res.setHeader("Access-Control-Max-Age", "86400"); // Cache preflight for 24 hours
-
-  // Handle preflight OPTIONS request
+  // Preflight request-ის დამუშავება
   if (req.method === "OPTIONS") {
-    console.log("✅ OPTIONS preflight request handled");
     return res.status(200).end();
   }
 
   if (req.method !== "POST") {
-    console.log("❌ Invalid method:", req.method);
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  console.log("📝 Request body:", JSON.stringify(req.body, null, 2));
-
   try {
-    const {
-      orderId,
-      amount,
-      customerEmail,
-      description,
-    }: CreatePaymentRequest = req.body;
+    const { orderId, amount, customerEmail, description } = req.body;
 
-    // Validation
     if (!orderId || !amount) {
-      return res
-        .status(400)
-        .json({ error: "Missing required fields: orderId, amount" });
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
-    if (!FLITT_SECRET_KEY) {
-      console.error("❌ FLITT_SECRET_KEY not configured in Vercel environment");
-      return res
-        .status(500)
-        .json({ error: "Payment system configuration error" });
-    }
-
-    // Convert amount to kopecks/tetri (2.00 GEL = 200 tetri)
     const amountInKopecks = Math.round(amount * 100);
-
-    // Clean description
     const cleanDesc = (description || `Order ${orderId}`).replace(
       /[^a-zA-Z0-9 -]/g,
       ""
     );
 
-    console.log("💰 Payment Request Debug:");
-    console.log("  - Order ID:", orderId);
-    console.log("  - Original amount:", amount);
-    console.log("  - Amount in tetri:", amountInKopecks);
-    console.log("  - Clean description:", cleanDesc);
-
-    // Prepare request parameters
-    const requestParams = {
-      version: "1.0.1",
-      order_id: String(orderId),
-      merchant_id: FLITT_MERCHANT_ID,
-      order_desc: cleanDesc,
+    // პარამეტრების ობიექტი
+    const requestParams: any = {
       amount: amountInKopecks,
       currency: "GEL",
-      server_callback_url: "https://lifestore.ge/api/payment/callback",
-      response_url: "https://lifestore.ge/payment/success",
+      merchant_id: FLITT_MERCHANT_ID,
+      order_desc: cleanDesc,
+      order_id: String(orderId),
+      // server_callback_url-ს აქ არ ვუთითებთ, თუ Flitt პორტალზე უკვე გაწერილი გაქვს!
+      // თუ პორტალზე არ გაქვს, მაშინ დაამატე აქ, მაგრამ ჯობია პორტალზე იყოს.
     };
 
-    // Add optional email
-    if (customerEmail && customerEmail.trim() !== "") {
-      requestParams.sender_email = customerEmail.trim();
+    // თუ მეილი არის, ვამატებთ (ხელმოწერამდე!)
+    if (customerEmail) {
+      requestParams.sender_email = customerEmail;
     }
 
-    // Generate signature
+    // გენერაცია
     const signature = generateSignature(requestParams, FLITT_SECRET_KEY);
 
-    // Prepare final request body
+    // საბოლოო რექვესთი
     const requestBody = {
       request: {
         ...requestParams,
@@ -145,55 +96,33 @@ module.exports = async function handler(
       },
     };
 
-    console.log("🚀 Sending to Flitt:", JSON.stringify(requestBody, null, 2));
+    console.log("🚀 Sending to Flitt:", JSON.stringify(requestBody));
 
-    // Send request to Flitt API
     const response = await fetch(FLITT_API_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
     });
 
-    const data = await response.json();
+    const data: any = await response.json();
+    console.log("📩 Flitt Response:", data);
 
-    console.log("📩 Flitt Response:", JSON.stringify(data, null, 2));
-
-    const responseBody = data.response;
-
-    if (responseBody && responseBody.response_status === "success") {
-      // Success
-      const successResponse: FlittPaymentResponse = {
+    if (data.response?.response_status === "success") {
+      return res.status(200).json({
         success: true,
-        checkoutUrl: responseBody.checkout_url,
-        paymentId: responseBody.payment_id,
-      };
-
-      return res.status(200).json(successResponse);
+        checkoutUrl: data.response.checkout_url,
+        paymentId: data.response.payment_id,
+      });
     } else {
-      // Payment creation failed
-      console.error("❌ Flitt Payment Failed:", responseBody);
-
-      const errorResponse: FlittPaymentResponse = {
+      console.error("❌ Flitt Error:", data);
+      return res.status(400).json({
         success: false,
-        error: responseBody?.error_message || "Payment creation failed",
-        errorCode: responseBody?.error_code,
-        details: responseBody,
-      };
-
-      return res.status(400).json(errorResponse);
+        error: data.response?.error_message || "Payment Failed",
+        details: data.response,
+      });
     }
   } catch (error: any) {
-    console.error("🔥 System Error:", error.message);
-
-    const errorResponse: FlittPaymentResponse = {
-      success: false,
-      error: "Internal server error",
-      details: error.message,
-    };
-
-    return res.status(500).json(errorResponse);
+    console.error("🔥 Server Error:", error);
+    return res.status(500).json({ error: error.message });
   }
-};
+}

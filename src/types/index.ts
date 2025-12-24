@@ -63,7 +63,7 @@ export interface Order {
   paymentMethod:
     | "cash"
     | "tbc_bank"
-    | "flitt" 
+    | "flitt"
     | "visa"
     | "mastercard"
     | "bank_transfer"
