@@ -33,7 +33,7 @@ const OrderSuccessPage: React.FC = () => {
     let orderIdToUse = orderId;
     if (!orderIdToUse) {
       // Try to get from query parameters (Flitt callback format)
-      orderIdToUse = searchParams.get('order_id');
+      orderIdToUse = searchParams.get('order_id') || undefined;
     }
 
     console.log("🔍 OrderSuccessPage Debug:", {
