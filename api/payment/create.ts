@@ -2,7 +2,7 @@
 // Much faster deployment than Firebase Functions (10-30s vs 3-4min)
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import crypto from 'crypto'
+import { createHash } from 'crypto'
 
 // Flitt Configuration
 const FLITT_MERCHANT_ID = process.env.FLITT_MERCHANT_ID || '4055351'
@@ -44,8 +44,7 @@ function generateSignature(params: any, secretKey: string): string {
 
   console.log('🔐 Signature String:', signatureString)
 
-  const signature = crypto
-    .createHash('sha1')
+  const signature = createHash('sha1')
     .update(signatureString, 'utf8')
     .digest('hex')
 
