@@ -21,15 +21,15 @@ export class PaymentService {
    * API URL-ის განსაზღვრა გარემოს მიხედვით.
    * * DEVELOPMENT: თუ მუშაობთ 'npm run dev'-ით (Vite), ის ეშვება 5173 პორტზე.
    * მაგრამ Vercel API ('vercel dev') ეშვება 3000 პორტზე.
-   * ამიტომ, დეველოპმენტში ხელით ვუთითებთ localhost:3000-ს.
+   * ამიტომ, დეველოპმენტში ხელით ვუთითებთ localhost:3003-ს.
    * * PRODUCTION: ვიყენებთ ფარდობით მისამართს (Relative Path), რადგან
    * ფრონტიც და ბექიც ერთ დომენზე იქნება.
    */
   private static getApiUrl(): string {
     // Vite-ს გარემოს შემოწმება (import.meta.env.DEV ავტომატურად true-ა ლოკალურად)
     if (import.meta.env.DEV) {
-      console.log("🔧 Dev Mode Detected: Targeting localhost:3000");
-      return "http://localhost:3000/api/payment/create";
+      console.log("🔧 Dev Mode Detected: Targeting localhost:3003");
+      return "http://localhost:3003/api/payment/create";
     }
     // Production Mode (Vercel)
     return "/api/payment/create";
