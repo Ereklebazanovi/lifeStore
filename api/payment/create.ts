@@ -1,112 +1,90 @@
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const FLITT_MERCHANT_ID = 4055351; // ⚠️ შევცვალე რიცხვად (Number)!
-const FLITT_SECRET_KEY = "hP3gV40vV3yhKM2EUeRK1lOrEoTvvhwu";
-const FLITT_API_URL = "https://pay.flitt.com/api/checkout/url";
-const CALLBACK_URL = "https://lifestore.ge/api/payment/callback";
-
-function generateSignature(params: any, secretKey: string): string {
-  // 1. ვიღებთ ველებს (signature-ის გარეშე)
-  const activeKeys = Object.keys(params).filter(
-    (key) =>
-      key !== "signature" && params[key] !== undefined && params[key] !== ""
-  );
-
-  // 2. სორტირება (A-Z)
-  activeKeys.sort();
-
-  // 3. მნიშვნელობები
-  const values = activeKeys.map((key) => String(params[key]));
-
-  // 4. Secret Key თავში
-  values.unshift(secretKey.trim());
-
-  // 5. გაერთიანება
-  const signatureString = values.join("|");
-
-  console.log("🔐 Signing String:", signatureString);
-
-  // 6. SHA1
-  return createHash("sha1").update(signatureString).digest("hex");
-}
+// ⚠️ შეამოწმე, რომ ეს 100% ემთხვევა პორტალს
+const MERCH_ID = "4055351";
+const SECRET = "hP3gV40vV3yhKM2EUeRK1lOrEoTvvhwu";
+const CALLBACK = "https://lifestore.ge/api/payment/callback"; // ეს უნდა იყოს პორტალზეც!
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET,OPTIONS,PATCH,DELETE,POST,PUT"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
-  );
+  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST")
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ error: "Method Not Allowed" });
 
   try {
-    const { orderId, amount, customerEmail } = req.body; // description ამოვიღე დროებით
+    const { orderId, amount } = req.body;
+    const amountInt = Math.round(amount * 100);
 
-    if (!orderId || !amount)
-      return res.status(400).json({ error: "Missing required fields" });
+    // 🛑 HARDCODED აღწერა, რომ სფეისებმა არ აურიოს
+    const desc = "Order123";
 
-    const amountInKopecks = Math.round(amount * 100);
+    // 1. ვაგროვებთ მონაცემებს (ანბანის მიხედვით!)
+    // Flitt ითხოვს: amount, currency, merchant_id, order_desc, order_id, server_callback_url
+    // თანმიმდევრობა (A-Z):
+    // 1. amount
+    // 2. currency
+    // 3. merchant_id
+    // 4. order_desc
+    // 5. order_id
+    // 6. server_callback_url
 
-    // ⚠️ HARDCODE: სფეისების და სიმბოლოების გარეშე
-    const simpleDesc = "TestOrder";
+    const rawString = [
+      SECRET, // პაროლი თავში
+      amountInt, // amount
+      "GEL", // currency
+      MERCH_ID, // merchant_id
+      desc, // order_desc
+      orderId, // order_id
+      CALLBACK, // server_callback_url
+    ].join("|");
 
-    const requestParams: any = {
-      amount: amountInKopecks,
-      currency: "GEL",
-      merchant_id: FLITT_MERCHANT_ID, // Number
-      order_desc: simpleDesc, // უსაფრთხო სტრინგი
-      order_id: String(orderId),
-      server_callback_url: CALLBACK_URL,
-    };
+    console.log("🔐 Signing String:", rawString);
 
-    if (customerEmail) {
-      requestParams.sender_email = customerEmail;
-    }
-
-    const signature = generateSignature(requestParams, FLITT_SECRET_KEY);
+    const signature = createHash("sha1").update(rawString).digest("hex");
 
     const requestBody = {
       request: {
-        ...requestParams,
+        amount: amountInt,
+        currency: "GEL",
+        merchant_id: MERCH_ID,
+        order_desc: desc,
+        order_id: String(orderId),
+        server_callback_url: CALLBACK, // ესეც იგზავნება!
         signature: signature,
       },
     };
 
-    console.log("🚀 Sending FIXED request:", JSON.stringify(requestBody));
+    console.log("🚀 Sending:", JSON.stringify(requestBody));
 
-    const response = await fetch(FLITT_API_URL, {
+    const apiRes = await fetch("https://pay.flitt.com/api/checkout/url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
     });
 
-    const data: any = await response.json();
-    console.log("📩 Flitt Response:", data);
+    const data: any = await apiRes.json();
+    console.log("📩 Response:", data);
 
     if (data.response?.response_status === "success") {
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         checkoutUrl: data.response.checkout_url,
-        paymentId: data.response.payment_id,
       });
     } else {
-      console.error("❌ Flitt Error:", data);
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
-        error: data.response?.error_message || "Payment Failed",
+        error: data.response?.error_message,
         details: data.response,
       });
     }
-  } catch (error: any) {
-    console.error("🔥 Server Error:", error);
-    return res.status(500).json({ error: error.message });
+  } catch (e: any) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
   }
 }
