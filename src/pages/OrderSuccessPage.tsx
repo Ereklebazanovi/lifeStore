@@ -53,14 +53,27 @@ const OrderSuccessPage: React.FC = () => {
     const fetchOrder = async () => {
       try {
         console.log("📊 Fetching order:", orderIdToUse);
-        const orderData = await OrderService.getOrderById(orderIdToUse);
+
+        // 🔧 Try both methods: by orderNumber (for Flitt callback) and by document ID
+        let orderData = await OrderService.getOrderByNumber(orderIdToUse);
+
+        if (!orderData) {
+          console.log("🔄 Order not found by orderNumber, trying by document ID...");
+          orderData = await OrderService.getOrderById(orderIdToUse);
+        }
+
         if (!orderData) {
           showToast("შეკვეთა არ მოიძებნა", "error");
           navigate("/");
           return;
         }
+
         setOrder(orderData);
-        console.log("✅ Order loaded successfully:", orderData.orderNumber);
+        console.log("✅ Order loaded successfully:", {
+          id: orderData.id,
+          orderNumber: orderData.orderNumber,
+          paymentStatus: orderData.paymentStatus
+        });
       } catch (error) {
         console.error("Error fetching order:", error);
         showToast("მონაცემების ჩატვირთვა ვერ მოხერხდა", "error");

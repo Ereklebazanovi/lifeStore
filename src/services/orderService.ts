@@ -457,12 +457,54 @@ export class OrderService {
       const data = orderDoc.data();
       return {
         ...data,
+        id: orderDoc.id, // Add document ID
         createdAt: data.createdAt.toDate(),
         updatedAt: data.updatedAt.toDate(),
         deliveredAt: data.deliveredAt?.toDate(),
+        paidAt: data.paidAt?.toDate(), // Add paidAt
       } as Order;
     } catch (error) {
       console.error("❌ Error getting order:", error);
+      throw new Error("შეკვეთის მოძიება ვერ მოხერხდა");
+    }
+  }
+
+  /**
+   * Get order by order number (for payment callbacks)
+   * ✅ ახალი მეთოდი: orderNumber-ით მოძიება Flitt callback-ისთვის
+   */
+  static async getOrderByNumber(orderNumber: string): Promise<Order | null> {
+    try {
+      console.log("🔍 Searching for order by number:", orderNumber);
+
+      const ordersRef = collection(db, this.COLLECTION_NAME);
+      const q = query(ordersRef, where("orderNumber", "==", orderNumber));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        console.log("❌ No order found with number:", orderNumber);
+        return null;
+      }
+
+      const orderDoc = querySnapshot.docs[0];
+      const data = orderDoc.data();
+
+      console.log("✅ Order found:", {
+        id: orderDoc.id,
+        orderNumber: data.orderNumber,
+        paymentStatus: data.paymentStatus
+      });
+
+      return {
+        ...data,
+        id: orderDoc.id, // Add document ID
+        createdAt: data.createdAt.toDate(),
+        updatedAt: data.updatedAt.toDate(),
+        deliveredAt: data.deliveredAt?.toDate(),
+        paidAt: data.paidAt?.toDate(), // Add paidAt
+      } as Order;
+    } catch (error) {
+      console.error("❌ Error getting order by number:", error);
       throw new Error("შეკვეთის მოძიება ვერ მოხერხდა");
     }
   }
