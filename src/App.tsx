@@ -124,22 +124,7 @@ const AnimatedRoutes: React.FC = () => {
             </PageTransition>
           }
         />
-        <Route
-          path="/payment/success"
-          element={
-            <PageTransition>
-              <PaymentSuccessPage />
-            </PageTransition>
-          }
-        />
-        <Route
-          path="/payment/failure"
-          element={
-            <PageTransition>
-              <PaymentFailurePage />
-            </PageTransition>
-          }
-        />
+
         <Route
           path="/admin"
           element={
