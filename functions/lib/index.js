@@ -18,21 +18,33 @@ const FLITT_MERCHANT_ID = 4055351;
 const FLITT_SECRET_KEY = "hP3gV40vV3yhKM2EUeRK1lOrEoTvvhwu";
 const FLITT_API_URL = "https://pay.flitt.com/api/checkout/url";
 function generateSignature(params, secretKey) {
-    // 1. ვიღებთ მხოლოდ არაცარიელ ველებს (signature-ის გარეშე)
-    const activeKeys = Object.keys(params).filter((key) => key !== "signature" &&
-        params[key] !== null &&
-        params[key] !== undefined &&
-        String(params[key]).trim() !== "");
-    // 2. ვასორტირებთ ანბანის მიხედვით (A-Z) - ეს აუცილებელია!
-    activeKeys.sort();
-    // 3. ვიღებთ მნიშვნელობებს (ყველაფერი სტრინგად)
-    const values = activeKeys.map((key) => String(params[key]));
-    // 4. Secret Key თავში (array_unshift)
-    values.unshift(secretKey);
-    // 5. გაერთიანება
-    const signatureString = values.join("|");
-    console.log("🔐 Signing String (Should match sent params):", signatureString);
-    return crypto.createHash("sha1").update(signatureString).digest("hex");
+    // Based on Flitt documentation, only these specific parameters should be in signature:
+    // secret|amount|currency|merchant_id|order_desc|order_id|server_callback_url
+    // Convert all to strings and log details
+    const amount = String(params.amount);
+    const merchantId = String(params.merchant_id);
+    const signatureParams = [
+        secretKey,
+        amount,
+        params.currency,
+        merchantId,
+        params.order_desc,
+        params.order_id,
+        params.server_callback_url
+    ];
+    const signatureString = signatureParams.join("|");
+    console.log("🔍 Debug Info:");
+    console.log("  - Amount (type):", typeof params.amount, "value:", params.amount);
+    console.log("  - Amount as string:", amount);
+    console.log("  - Merchant ID (type):", typeof params.merchant_id, "value:", params.merchant_id);
+    console.log("  - Order desc:", params.order_desc);
+    console.log("🔐 Signature String:", signatureString);
+    // Try multiple approaches
+    const sig1 = crypto.createHash("sha1").update(signatureString, 'utf8').digest("hex");
+    const sig2 = crypto.createHash("sha1").update(signatureString, 'ascii').digest("hex");
+    console.log("🔐 Signature UTF-8:", sig1);
+    console.log("🔐 Signature ASCII:", sig2);
+    return sig1;
 }
 exports.createPayment = (0, https_1.onRequest)({ cors: true, region: "europe-west1" }, async (request, response) => {
     return corsHandler(request, response, async () => {
@@ -47,7 +59,13 @@ exports.createPayment = (0, https_1.onRequest)({ cors: true, region: "europe-wes
                 return;
             }
             const amountInKopecks = Math.round(amount * 100);
-            const cleanDesc = (description || `Order ${orderId}`).replace(/[^a-zA-Z0-9 -]/g, "");
+            // Clean description - remove special chars but keep spaces for now
+            const rawDesc = description || `Order ${orderId}`;
+            const cleanDesc = rawDesc.replace(/[^a-zA-Z0-9 -]/g, "");
+            console.log("📝 Description processing:");
+            console.log("  - Raw description:", rawDesc);
+            console.log("  - Clean description:", cleanDesc);
+            console.log("  - Clean desc length:", cleanDesc.length);
             // ✅ ვქმნით ერთ ობიექტს.
             // რადგან აქ წერია response_url და version, ისინი ავტომატურად მოხვდებიან ხელმოწერაშიც!
             const requestParams = {
@@ -73,9 +91,15 @@ exports.createPayment = (0, https_1.onRequest)({ cors: true, region: "europe-wes
                     signature: signature,
                 },
             };
-            logger.info("🚀 Sending Request:", JSON.stringify(requestBody));
-            const apiResponse = await axios_1.default.post(FLITT_API_URL, requestBody);
-            logger.info("📩 Flitt Response:", apiResponse.data);
+            logger.info("🚀 Sending Request:", JSON.stringify(requestBody, null, 2));
+            const apiResponse = await axios_1.default.post(FLITT_API_URL, requestBody, {
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                },
+                timeout: 30000,
+            });
+            logger.info("📩 Flitt Response:", JSON.stringify(apiResponse.data, null, 2));
             const responseBody = apiResponse.data.response;
             if (responseBody && responseBody.response_status === "success") {
                 response.status(200).json({
