@@ -1,16 +1,13 @@
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-// ⚠️ ყურადღება: ეს მონაცემები ზუსტად უნდა ემთხვეოდეს პორტალს!
+// კონფიგურაცია
 const FLITT_MERCHANT_ID = "4055351";
 const FLITT_SECRET_KEY = "hP3gV40vV3yhKM2EUeRK1lOrEoTvvhwu";
 const FLITT_API_URL = "https://pay.flitt.com/api/checkout/url";
 
-// ✅ ეს ლინკი ზუსტად უნდა ეწეროს Flitt-ის პორტალზეც!
-const CALLBACK_URL = "https://lifestore.ge/api/payment/callback";
-
 function generateSignature(params: any, secretKey: string): string {
-  // 1. ვიღებთ ველებს
+  // 1. ვიღებთ მხოლოდ ველებს (signature-ის გარეშე)
   const activeKeys = Object.keys(params).filter(
     (key) =>
       key !== "signature" && params[key] !== undefined && params[key] !== ""
@@ -35,7 +32,7 @@ function generateSignature(params: any, secretKey: string): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS
+  // CORS Setup
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
@@ -52,32 +49,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const { orderId, amount, customerEmail, description } = req.body;
+    const { orderId, amount, description } = req.body;
 
     if (!orderId || !amount)
       return res.status(400).json({ error: "Missing required fields" });
 
     const amountInKopecks = Math.round(amount * 100);
+    // აღწერაში ამოვიღოთ ზედმეტი სიმბოლოები, რომ პრობლემა არ შექმნას
     const cleanDesc = (description || `Order ${orderId}`).replace(
       /[^a-zA-Z0-9 -]/g,
       ""
     );
 
-    // ✅ აი აქ არის მთავარი ცვლილება:
-    // server_callback_url აუცილებლად უნდა იყოს პარამეტრებში!
+    // ✅ სტრატეგიული ცვლილება:
+    // ვაგზავნით მხოლოდ 5 აუცილებელ ველს!
+    // არანაირი email, არანაირი callback_url.
+    // Callback-ს ბანკი აიღებს პორტალიდან.
     const requestParams: any = {
-      amount: amountInKopecks,
-      currency: "GEL",
-      merchant_id: FLITT_MERCHANT_ID,
-      order_desc: cleanDesc,
-      order_id: String(orderId),
-      server_callback_url: CALLBACK_URL, // <--- ეს აკლდა შენს ლოგებს!
+      amount: amountInKopecks, // 1
+      currency: "GEL", // 2
+      merchant_id: FLITT_MERCHANT_ID, // 3
+      order_desc: cleanDesc, // 4
+      order_id: String(orderId), // 5
     };
-
-    // Email-ს ვამატებთ (თუ არის)
-    if (customerEmail) {
-      requestParams.sender_email = customerEmail;
-    }
 
     const signature = generateSignature(requestParams, FLITT_SECRET_KEY);
 
@@ -88,7 +82,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     };
 
-    console.log("🚀 Sending to Flitt:", JSON.stringify(requestBody));
+    console.log(
+      "🚀 Sending SIMPLIFIED request to Flitt:",
+      JSON.stringify(requestBody)
+    );
 
     const response = await fetch(FLITT_API_URL, {
       method: "POST",
