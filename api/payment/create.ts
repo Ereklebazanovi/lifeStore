@@ -1,14 +1,14 @@
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-// კონფიგურაცია (დროებით Hardcoded, სანამ გატესტავ)
+// კონფიგურაცია
 const FLITT_MERCHANT_ID = "4055351";
 const FLITT_SECRET_KEY = "hP3gV40vV3yhKM2EUeRK1lOrEoTvvhwu";
 const FLITT_API_URL = "https://pay.flitt.com/api/checkout/url";
 
-/**
- * ✅ სწორი Signature გენერაცია (დინამიური სორტირებით)
- */
+// ✅ შენი საიტის რეალური მისამართი (რადგან lifestore.ge-ზე ტესტავ)
+const CALLBACK_URL = "https://lifestore.ge/api/payment/callback";
+
 function generateSignature(params: any, secretKey: string): string {
   // 1. ვიღებთ მხოლოდ არაცარიელ მნიშვნელობებს და ვფილტრავთ signature-ს
   const activeKeys = Object.keys(params).filter(
@@ -16,28 +16,28 @@ function generateSignature(params: any, secretKey: string): string {
       key !== "signature" && params[key] !== undefined && params[key] !== ""
   );
 
-  // 2. სორტირება ანბანის მიხედვით (A-Z) - აუცილებელია!
+  // 2. სორტირება ანბანის მიხედვით (A-Z)
   activeKeys.sort();
 
   // 3. მნიშვნელობების აღება სტრინგებად
   const values = activeKeys.map((key) => String(params[key]));
 
-  // 4. Secret Key ემატება თავში (Start) - ეს არის TPay/Flitt სტანდარტი
+  // 4. Secret Key ემატება თავში (Start)
   values.unshift(secretKey.trim());
 
-  // 5. გაერთიანება | სიმბოლოთი
+  // 5. გაერთიანება
   const signatureString = values.join("|");
 
-  console.log("🔐 Signing String:", signatureString); // დებაგისთვის
+  console.log("🔐 Signing String:", signatureString);
 
   // 6. SHA1 ჰეშირება
   return createHash("sha1").update(signatureString).digest("hex");
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Headers - რომ React-მა შეძლოს დაკავშირება
+  // CORS Headers
   res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Origin", "*"); // ან 'http://localhost:5173'
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET,OPTIONS,PATCH,DELETE,POST,PUT"
@@ -47,7 +47,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
   );
 
-  // Preflight request-ის დამუშავება
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -69,26 +68,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ""
     );
 
-    // პარამეტრების ობიექტი
+    // ✅ პარამეტრების ობიექტი - დავაბრუნეთ server_callback_url !
     const requestParams: any = {
       amount: amountInKopecks,
       currency: "GEL",
       merchant_id: FLITT_MERCHANT_ID,
       order_desc: cleanDesc,
       order_id: String(orderId),
-      // server_callback_url-ს აქ არ ვუთითებთ, თუ Flitt პორტალზე უკვე გაწერილი გაქვს!
-      // თუ პორტალზე არ გაქვს, მაშინ დაამატე აქ, მაგრამ ჯობია პორტალზე იყოს.
+      server_callback_url: CALLBACK_URL, // აუცილებელია ხელმოწერისთვის!
     };
 
-    // თუ მეილი არის, ვამატებთ (ხელმოწერამდე!)
+    // თუ მეილი არის, ვამატებთ
     if (customerEmail) {
       requestParams.sender_email = customerEmail;
     }
 
-    // გენერაცია
+    // გენერაცია (ახლა უკვე callback_url-საც მოიცავს)
     const signature = generateSignature(requestParams, FLITT_SECRET_KEY);
 
-    // საბოლოო რექვესთი
     const requestBody = {
       request: {
         ...requestParams,
