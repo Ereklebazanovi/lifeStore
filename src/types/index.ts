@@ -112,8 +112,7 @@ export interface CreateOrderRequest {
 export interface CreatePaymentRequest {
   orderId: string;
   amount: number;
-  customerEmail: string;
-  customerName: string;
+  customerEmail?: string;
   description?: string;
 }
 

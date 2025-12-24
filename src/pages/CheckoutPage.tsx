@@ -169,7 +169,6 @@ const CheckoutPage: React.FC = () => {
           orderId: createdOrder.orderNumber,
           amount: grandTotal,
           customerEmail: formData.email,
-          customerName: `${formData.firstName} ${formData.lastName}`,
           description: `LifeStore Order #${createdOrder.orderNumber}`,
         };
 
