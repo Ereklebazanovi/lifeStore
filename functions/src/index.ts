@@ -11,31 +11,28 @@ if (!admin.apps.length) {
 
 const corsHandler = cors({ origin: true, credentials: true });
 
-// ესენი სწორია (შენი ბოლო ლოგებიდან)
+// ✅ შემოწმებულია შენი სქრინით - სწორია
 const FLITT_MERCHANT_ID = 4055351;
 const FLITT_SECRET_KEY = "hP3gV40vV3yhKM2EUeRK1lOrEoTvvhwu";
-// URL-ის ბოლოში "/" არ უნდა იყოს!
 const FLITT_API_URL = "https://pay.flitt.com/api/checkout/url";
 
-// ✅ დინამიური ხელმოწერა (ყველაზე სანდო მეთოდი)
 function generateSignature(params: any, secretKey: string): string {
-  // 1. ვიღებთ ყველა ველს
+  // 1. ვიღებთ მხოლოდ იმას, რასაც ვაგზავნით
   const activeKeys = Object.keys(params).filter(
     (key) => key !== "signature" && params[key]
   );
 
-  // 2. სორტირება ანბანის მიხედვით (A-Z)
+  // 2. სორტირება (აუცილებელია!)
   activeKeys.sort();
 
-  // 3. მნიშვნელობების აღება სტრინგებად
+  // 3. მნიშვნელობები
   const values = activeKeys.map((key) => String(params[key]));
 
-  // 4. Secret Key ემატება თავში (Start)
-  values.unshift(secretKey);
+  // 4. Secret Key თავში (დაზღვევის მიზნით ვუკეთებთ trim-ს)
+  values.unshift(secretKey.trim());
 
   // 5. გაერთიანება
   const signatureString = values.join("|");
-
   console.log("🔐 FINAL SIGNING STRING:", signatureString);
 
   return crypto.createHash("sha1").update(signatureString).digest("hex");
@@ -46,29 +43,19 @@ export const createPayment = onRequest(
   async (request, response) => {
     return corsHandler(request, response, async () => {
       try {
-        const { orderId, amount, description } = request.body;
+        const { orderId, amount } = request.body;
 
-        // თანხა თეთრებში (მაგ: 1.00 GEL = 100)
         const amountInKopecks = Math.round(amount * 100);
-        const cleanDesc = (description || `Order ${orderId}`).replace(
-          /[^a-zA-Z0-9 -]/g,
-          ""
-        );
 
-        // ✅ სუპერ-მინიმალისტური ობიექტი.
-        // ამოვიღე "version", "response_url", "email".
-        // ვტოვებთ მხოლოდ იმ 5 პარამეტრს, რაც სასიცოცხლოდ აუცილებელია.
+        // 🛑 ყურადღება: ამოვიღე "server_callback_url" და "order_desc"
+        // ვაგზავნით მხოლოდ 4 პარამეტრს, რაც უეჭველი უნდა მიიღოს.
         const requestParams: any = {
           amount: amountInKopecks, // Number
           currency: "GEL",
           merchant_id: FLITT_MERCHANT_ID, // Number
-          order_desc: cleanDesc,
           order_id: String(orderId),
-          server_callback_url:
-            "https://europe-west1-lifestore-5d2b7.cloudfunctions.net/paymentCallback",
         };
 
-        // Signature გენერაცია (ავტომატურად აიღებს ამ 6 ველს)
         const signature = generateSignature(requestParams, FLITT_SECRET_KEY);
 
         const requestBody = {
@@ -78,10 +65,9 @@ export const createPayment = onRequest(
           },
         };
 
-        logger.info("🚀 Sending Minimal Request:", JSON.stringify(requestBody));
+        logger.info("🚀 Sending NAKED Request:", JSON.stringify(requestBody));
 
         const apiResponse = await axios.post(FLITT_API_URL, requestBody);
-
         const responseBody = apiResponse.data.response;
 
         if (responseBody?.response_status === "success") {
@@ -92,7 +78,6 @@ export const createPayment = onRequest(
           });
         } else {
           logger.error("❌ Flitt Error:", responseBody);
-          // შეცდომის დეტალური დაბრუნება, რომ ფრონტზეც გამოჩნდეს
           response.status(400).json({
             success: false,
             error: responseBody?.error_message,
@@ -107,11 +92,10 @@ export const createPayment = onRequest(
   }
 );
 
-// Callback (ეს გვჭირდება რომ Order ID დავაფიქსიროთ)
+// Callback ფუნქცია რჩება (ბანკი პორტალიდან წაიკითხავს მისამართს)
 export const paymentCallback = onRequest(
   { cors: true, region: "europe-west1" },
   async (request, response) => {
-    logger.info("✅ Payment Callback Received:", request.body);
     response.status(200).send("OK");
   }
 );
