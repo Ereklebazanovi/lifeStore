@@ -7,50 +7,38 @@ const cors = require("cors");
 const admin = require("firebase-admin");
 const axios_1 = require("axios");
 const crypto = require("crypto");
+// ინიციალიზაცია
 if (!admin.apps.length) {
     admin.initializeApp();
 }
+// CORS (უსაფრთხოება)
 const corsHandler = cors({
     origin: true,
     credentials: true,
 });
+// კონფიგურაცია
 const FLITT_MERCHANT_ID = 4055351;
 const FLITT_SECRET_KEY = "hP3gV40vV3yhKM2EUeRK1lOrEoTvvhwu";
 const FLITT_API_URL = "https://pay.flitt.com/api/checkout/url";
+// ✅ სწორი, დინამიური ხელმოწერის ფუნქცია
 function generateSignature(params, secretKey) {
-    // Based on Flitt documentation, only these specific parameters should be in signature:
-    // secret|amount|currency|merchant_id|order_desc|order_id|server_callback_url
-    // Convert all to strings and log details
-    const amount = String(params.amount);
-    const merchantId = String(params.merchant_id);
-    const signatureParams = [
-        secretKey,
-        amount,
-        params.currency,
-        merchantId,
-        params.order_desc,
-        params.order_id,
-        params.server_callback_url,
-    ];
-    const signatureString = signatureParams.join("|");
-    console.log("🔍 Debug Info:");
-    console.log("  - Amount (type):", typeof params.amount, "value:", params.amount);
-    console.log("  - Amount as string:", amount);
-    console.log("  - Merchant ID (type):", typeof params.merchant_id, "value:", params.merchant_id);
-    console.log("  - Order desc:", params.order_desc);
-    console.log("🔐 Signature String:", signatureString);
-    // Try multiple approaches
-    const sig1 = crypto
-        .createHash("sha1")
-        .update(signatureString, "utf8")
-        .digest("hex");
-    const sig2 = crypto
-        .createHash("sha1")
-        .update(signatureString, "ascii")
-        .digest("hex");
-    console.log("🔐 Signature UTF-8:", sig1);
-    console.log("🔐 Signature ASCII:", sig2);
-    return sig1;
+    // 1. ვიღებთ ყველა ველს (გარდა signature-ისა და ცარიელი ველებისა)
+    const activeKeys = Object.keys(params).filter((key) => key !== "signature" &&
+        params[key] !== null &&
+        params[key] !== undefined &&
+        String(params[key]).trim() !== "");
+    // 2. ⚠️ სორტირება ანბანის მიხედვით (A-Z) - ეს აუცილებელია!
+    // ეს ავტომატურად დაალაგებს: amount, currency, merchant_id, order_desc, order_id, response_url, server_callback_url, version
+    activeKeys.sort();
+    // 3. ვიღებთ მნიშვნელობებს (ყველაფერს ვაქცევთ სტრინგად)
+    const values = activeKeys.map((key) => String(params[key]));
+    // 4. Secret Key ემატება თავში (Start) - PHP-ის array_unshift-ის ანალოგი
+    values.unshift(secretKey);
+    // 5. გაერთიანება | სიმბოლოთი
+    const signatureString = values.join("|");
+    console.log("🔐 FINAL SIGNING STRING:", signatureString);
+    // 6. SHA1 ჰეშირება
+    return crypto.createHash("sha1").update(signatureString).digest("hex");
 }
 exports.createPayment = (0, https_1.onRequest)({ cors: true, region: "europe-west1" }, async (request, response) => {
     return corsHandler(request, response, async () => {
@@ -64,65 +52,40 @@ exports.createPayment = (0, https_1.onRequest)({ cors: true, region: "europe-wes
                 response.status(400).json({ error: "Missing required fields" });
                 return;
             }
-            // Try both formats to debug the issue
-            const amountInKopecks = Math.round(amount * 100); // 2.00 GEL = 200 tetri
-            const amountInLari = amount; // 2.00 GEL = 2 lari
-            console.log("💰 Amount Debug:");
-            console.log("  - Original amount:", amount);
-            console.log("  - Amount in kopecks/tetri:", amountInKopecks);
-            console.log("  - Amount in lari:", amountInLari);
-            // Clean description - remove special chars but keep spaces for now
-            const rawDesc = description || `Order ${orderId}`;
-            const cleanDesc = rawDesc.replace(/[^a-zA-Z0-9 -]/g, "");
-            console.log("📝 Description processing:");
-            console.log("  - Raw description:", rawDesc);
-            console.log("  - Clean description:", cleanDesc);
-            console.log("  - Clean desc length:", cleanDesc.length);
-            // ✅ ვქმნით ერთ ობიექტს.
-            // რადგან აქ წერია response_url და version, ისინი ავტომატურად მოხვდებიან ხელმოწერაშიც!
+            const amountInKopecks = Math.round(amount * 100);
+            // აღწერის გასუფთავება სპეც. სიმბოლოებისგან
+            const cleanDesc = (description || `Order ${orderId}`).replace(/[^a-zA-Z0-9 -]/g, "");
+            // ✅ ვამზადებთ ობიექტს ყველა საჭირო ველით.
+            // რადგან generateSignature ფუნქცია დინამიურია, ის აქ ჩაწერილ ყველა ველს
+            // (version-საც და response_url-საც) ავტომატურად ჩასვამს ხელმოწერაში.
             const requestParams = {
                 version: "1.0.1",
                 order_id: String(orderId),
-                merchant_id: FLITT_MERCHANT_ID, // Number
+                merchant_id: FLITT_MERCHANT_ID, // JSON-ში წავა როგორც Number
                 order_desc: cleanDesc,
-                amount: amountInKopecks, // Number
+                amount: amountInKopecks, // JSON-ში წავა როგორც Number
                 currency: "GEL",
                 server_callback_url: "https://europe-west1-lifestore-5d2b7.cloudfunctions.net/paymentCallback",
                 response_url: "https://lifestore.ge/payment/success",
             };
-            // Email-ს ვამატებთ მხოლოდ თუ არსებობს
+            // Email-ს ვამატებთ მხოლოდ თუ მომხმარებელმა შეიყვანა (და არ არის ცარიელი)
             if (customerEmail && customerEmail.trim() !== "") {
                 requestParams.sender_email = customerEmail;
             }
-            // 1. ვაგენერირებთ ხელმოწერას ამ ობიექტზე (დინამიურად)
-            console.log("🧪 Testing both amount formats:");
-            // Test 1: Amount in tetri/kopecks (current: 200)
-            console.log("🧪 Testing with tetri format (200):");
-            const sig1 = generateSignature(requestParams, FLITT_SECRET_KEY);
-            // Test 2: Amount in lari (2.00)
-            console.log("🧪 Testing with lari format (2):");
-            const paramsWithLariAmount = { ...requestParams, amount: amountInLari };
-            const sig2 = generateSignature(paramsWithLariAmount, FLITT_SECRET_KEY);
-            console.log("🧪 Final choice: Using tetri format");
-            console.log("🧪 Comparison - Tetri signature:", sig1);
-            console.log("🧪 Comparison - Lari signature:", sig2);
-            const signature = sig1;
-            // 2. ვამზადებთ გასაგზავნ მონაცემებს
+            // 1. ვაგენერირებთ ხელმოწერას ამ ობიექტზე
+            // ფუნქცია თავისით აიღებს ყველა ველს ზემოთ შექმნილი ობიექტიდან
+            const signature = generateSignature(requestParams, FLITT_SECRET_KEY);
+            // 2. ვამზადებთ საბოლოო გასაგზავნ მონაცემებს
             const requestBody = {
                 request: {
                     ...requestParams,
                     signature: signature,
                 },
             };
-            logger.info("🚀 Sending Request:", JSON.stringify(requestBody, null, 2));
-            const apiResponse = await axios_1.default.post(FLITT_API_URL, requestBody, {
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                },
-                timeout: 30000,
-            });
-            logger.info("📩 Flitt Response:", JSON.stringify(apiResponse.data, null, 2));
+            logger.info("🚀 Sending Request:", JSON.stringify(requestBody));
+            // 3. ვაგზავნით მოთხოვნას
+            const apiResponse = await axios_1.default.post(FLITT_API_URL, requestBody);
+            logger.info("📩 Flitt Response:", apiResponse.data);
             const responseBody = apiResponse.data.response;
             if (responseBody && responseBody.response_status === "success") {
                 response.status(200).json({
@@ -150,11 +113,12 @@ exports.createPayment = (0, https_1.onRequest)({ cors: true, region: "europe-wes
         }
     });
 });
-// ... დანარჩენი იგივე
+// Callback ფუნქცია (Flitt-დან სტატუსის მისაღებად)
 exports.paymentCallback = (0, https_1.onRequest)({ cors: true, region: "europe-west1" }, async (request, response) => {
     logger.info("Callback received:", request.body);
     response.status(200).send("OK");
 });
+// სტატუსის შემოწმების ფუნქცია (Frontend-ისთვის)
 exports.getPaymentStatus = (0, https_1.onRequest)({ cors: true, region: "europe-west1" }, async (request, response) => {
     response.status(200).json({ status: "pending" });
 });
