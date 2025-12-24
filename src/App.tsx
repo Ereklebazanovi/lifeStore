@@ -19,8 +19,7 @@ import ProductDetailsPage from "./pages/ProductDetailsPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
 import OrderHistoryPage from "./pages/OrderHistoryPage";
-import PaymentSuccessPage from "./pages/PaymentSuccessPage";
-import PaymentFailurePage from "./pages/PaymentFailurePage";
+
 import LoadingScreen from "./components/LoadingScreen";
 import ScrollToTop from "./components/ScrollToTop";
 import PageTransition from "./components/PageTransition";
