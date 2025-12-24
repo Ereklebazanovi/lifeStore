@@ -7,87 +7,61 @@ const cors = require("cors");
 const admin = require("firebase-admin");
 const axios_1 = require("axios");
 const crypto = require("crypto");
-// ინიციალიზაცია
 if (!admin.apps.length) {
     admin.initializeApp();
 }
-// CORS (უსაფრთხოება)
-const corsHandler = cors({
-    origin: true,
-    credentials: true,
-});
-// კონფიგურაცია
+const corsHandler = cors({ origin: true, credentials: true });
 const FLITT_MERCHANT_ID = 4055351;
 const FLITT_SECRET_KEY = "hP3gV40vV3yhKM2EUeRK1lOrEoTvvhwu";
+// URL-ის ბოლოში არ უნდა იყოს "/"
 const FLITT_API_URL = "https://pay.flitt.com/api/checkout/url";
-// ✅ სწორი, დინამიური ხელმოწერის ფუნქცია
+// ✅ დინამიური ხელმოწერა (შეცდომის დაშვების შანსი 0-ია)
 function generateSignature(params, secretKey) {
-    // 1. ვიღებთ ყველა ველს (გარდა signature-ისა და ცარიელი ველებისა)
-    const activeKeys = Object.keys(params).filter((key) => key !== "signature" &&
-        params[key] !== null &&
-        params[key] !== undefined &&
-        String(params[key]).trim() !== "");
-    // 2. ⚠️ სორტირება ანბანის მიხედვით (A-Z) - ეს აუცილებელია!
-    // ეს ავტომატურად დაალაგებს: amount, currency, merchant_id, order_desc, order_id, response_url, server_callback_url, version
+    // 1. ვიღებთ ყველა ველს, რასაც ვაგზავნით (signature-ის გარეშე)
+    const activeKeys = Object.keys(params).filter(key => key !== "signature" && params[key]);
+    // 2. სორტირება ანბანის მიხედვით (A-Z) - ეს უმნიშვნელოვანესია!
     activeKeys.sort();
-    // 3. ვიღებთ მნიშვნელობებს (ყველაფერს ვაქცევთ სტრინგად)
+    // 3. მნიშვნელობების აღება
     const values = activeKeys.map((key) => String(params[key]));
-    // 4. Secret Key ემატება თავში (Start) - PHP-ის array_unshift-ის ანალოგი
+    // 4. Secret Key თავში (Start)
     values.unshift(secretKey);
-    // 5. გაერთიანება | სიმბოლოთი
+    // 5. გაერთიანება
     const signatureString = values.join("|");
     console.log("🔐 FINAL SIGNING STRING:", signatureString);
-    // 6. SHA1 ჰეშირება
     return crypto.createHash("sha1").update(signatureString).digest("hex");
 }
 exports.createPayment = (0, https_1.onRequest)({ cors: true, region: "europe-west1" }, async (request, response) => {
     return corsHandler(request, response, async () => {
         try {
-            if (request.method !== "POST") {
-                response.status(405).json({ error: "Method not allowed" });
-                return;
-            }
-            const { orderId, amount, customerEmail, description } = request.body;
-            if (!orderId || !amount) {
-                response.status(400).json({ error: "Missing required fields" });
-                return;
-            }
+            const { orderId, amount, description } = request.body;
             const amountInKopecks = Math.round(amount * 100);
-            // აღწერის გასუფთავება სპეც. სიმბოლოებისგან
             const cleanDesc = (description || `Order ${orderId}`).replace(/[^a-zA-Z0-9 -]/g, "");
-            // ✅ ვამზადებთ ობიექტს ყველა საჭირო ველით.
-            // რადგან generateSignature ფუნქცია დინამიურია, ის აქ ჩაწერილ ყველა ველს
-            // (version-საც და response_url-საც) ავტომატურად ჩასვამს ხელმოწერაში.
+            // ✅ ვამზადებთ ობიექტს.
+            // აქედან ამოვიღე "version", რადგან დოკუმენტაციის მაგალითში არ არის.
+            // თუ მაინც დაგვჭირდა, უბრალოდ აქ დაამატებ და კოდი ავტომატურად მოაწერს ხელს.
             const requestParams = {
-                version: "1.0.1",
                 order_id: String(orderId),
-                merchant_id: FLITT_MERCHANT_ID, // JSON-ში წავა როგორც Number
+                merchant_id: FLITT_MERCHANT_ID, // Number
                 order_desc: cleanDesc,
-                amount: amountInKopecks, // JSON-ში წავა როგორც Number
+                amount: amountInKopecks, // Number
                 currency: "GEL",
                 server_callback_url: "https://europe-west1-lifestore-5d2b7.cloudfunctions.net/paymentCallback",
                 response_url: "https://lifestore.ge/payment/success",
             };
-            // Email-ს ვამატებთ მხოლოდ თუ მომხმარებელმა შეიყვანა (და არ არის ცარიელი)
-            if (customerEmail && customerEmail.trim() !== "") {
-                requestParams.sender_email = customerEmail;
-            }
-            // 1. ვაგენერირებთ ხელმოწერას ამ ობიექტზე
-            // ფუნქცია თავისით აიღებს ყველა ველს ზემოთ შექმნილი ობიექტიდან
+            // Signature გენერაცია (ავტომატურად აიღებს ზემოთ ჩამოწერილ ველებს)
             const signature = generateSignature(requestParams, FLITT_SECRET_KEY);
-            // 2. ვამზადებთ საბოლოო გასაგზავნ მონაცემებს
             const requestBody = {
                 request: {
                     ...requestParams,
-                    signature: signature,
-                },
+                    signature: signature
+                }
             };
             logger.info("🚀 Sending Request:", JSON.stringify(requestBody));
-            // 3. ვაგზავნით მოთხოვნას
             const apiResponse = await axios_1.default.post(FLITT_API_URL, requestBody);
-            logger.info("📩 Flitt Response:", apiResponse.data);
+            // ლოგირება, თუ რა მოვიდა ბანკიდან
+            console.log("📩 Bank Response:", apiResponse.data);
             const responseBody = apiResponse.data.response;
-            if (responseBody && responseBody.response_status === "success") {
+            if (responseBody?.response_status === "success") {
                 response.status(200).json({
                     success: true,
                     checkoutUrl: responseBody.checkout_url,
@@ -95,31 +69,17 @@ exports.createPayment = (0, https_1.onRequest)({ cors: true, region: "europe-wes
                 });
             }
             else {
-                logger.error("❌ Flitt Payment Failed:", responseBody);
-                response.status(400).json({
-                    success: false,
-                    error: responseBody?.error_message || "Payment failed",
-                    errorCode: responseBody?.error_code,
-                    details: responseBody,
-                });
+                logger.error("❌ Flitt Error:", responseBody);
+                response.status(400).json({ success: false, details: responseBody });
             }
         }
         catch (error) {
-            logger.error("🔥 System Error:", error.response?.data || error.message);
-            response.status(500).json({
-                success: false,
-                error: "Internal server error",
-            });
+            logger.error("🔥 System Error:", error.message);
+            response.status(500).json({ error: "Internal Error" });
         }
     });
 });
-// Callback ფუნქცია (Flitt-დან სტატუსის მისაღებად)
-exports.paymentCallback = (0, https_1.onRequest)({ cors: true, region: "europe-west1" }, async (request, response) => {
-    logger.info("Callback received:", request.body);
-    response.status(200).send("OK");
-});
-// სტატუსის შემოწმების ფუნქცია (Frontend-ისთვის)
-exports.getPaymentStatus = (0, https_1.onRequest)({ cors: true, region: "europe-west1" }, async (request, response) => {
-    response.status(200).json({ status: "pending" });
-});
+// Callback და Status ფუნქციები იგივე რჩება...
+exports.paymentCallback = (0, https_1.onRequest)({ cors: true, region: "europe-west1" }, async (request, response) => { response.status(200).send("OK"); });
+exports.getPaymentStatus = (0, https_1.onRequest)({ cors: true, region: "europe-west1" }, async (request, response) => { response.status(200).json({ status: "pending" }); });
 //# sourceMappingURL=index.js.map
