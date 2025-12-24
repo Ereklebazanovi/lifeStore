@@ -1,10 +1,20 @@
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-// ⚠️ უკვე დადასტურებული, სწორი მონაცემები
-const SECRET = "hP3gV40vV3yhKM2EUeRK1IOrEoTvvhwu"; 
-const MERCH_ID = "4055351";
-const CALLBACK_URL = "https://lifestore.ge/api/payment/callback"; 
+// Flitt Configuration - Environment variables only for security
+const FLITT_SECRET_KEY = process.env.FLITT_SECRET_KEY;
+const FLITT_MERCHANT_ID = process.env.FLITT_MERCHANT_ID;
+const FLITT_CALLBACK_URL = process.env.FLITT_CALLBACK_URL || "https://lifestore.ge/api/payment/callback";
+
+// Validate required environment variables
+if (!FLITT_SECRET_KEY || !FLITT_MERCHANT_ID) {
+  console.error("❌ Required Flitt environment variables not set!");
+  console.error("Missing:", {
+    FLITT_SECRET_KEY: !FLITT_SECRET_KEY,
+    FLITT_MERCHANT_ID: !FLITT_MERCHANT_ID
+  });
+  throw new Error("Missing required Flitt environment variables");
+} 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS
@@ -29,13 +39,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // თანმიმდევრობა: Secret | Amount | Currency | MerchID | Desc | OrderID | Callback
     // ❌ Sender Email აქ არ არის!
     const rawString = [
-      SECRET,
+      FLITT_SECRET_KEY,
       amountInKopecks,
       "GEL",
-      MERCH_ID,
+      FLITT_MERCHANT_ID,
       cleanDesc,
       String(orderId),
-      CALLBACK_URL
+      FLITT_CALLBACK_URL
     ].join("|");
 
     console.log("🔐 Signing String:", rawString);
@@ -49,10 +59,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       request: {
         amount: amountInKopecks,
         currency: "GEL",
-        merchant_id: Number(MERCH_ID),
+        merchant_id: Number(FLITT_MERCHANT_ID),
         order_desc: cleanDesc,
         order_id: String(orderId),
-        server_callback_url: CALLBACK_URL,
+        server_callback_url: FLITT_CALLBACK_URL,
         signature: signature
       },
     };

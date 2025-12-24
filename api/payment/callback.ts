@@ -3,8 +3,13 @@ import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminDb } from "../lib/firebase-admin";
 
-// Flitt Configuration - Use same values as in create.ts
-const FLITT_SECRET_KEY = process.env.FLITT_SECRET_KEY || "hP3gV40vV3yhKM2EUeRK1lOrEoTvvhwu";
+// Flitt Configuration - Environment variables only for security
+const FLITT_SECRET_KEY = process.env.FLITT_SECRET_KEY;
+
+if (!FLITT_SECRET_KEY) {
+  console.error("❌ FLITT_SECRET_KEY environment variable not set!");
+  throw new Error("Missing required environment variables");
+}
 
 /**
  * Verify Flitt signature according to PHP documentation
