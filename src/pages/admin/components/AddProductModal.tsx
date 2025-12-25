@@ -7,11 +7,13 @@ import { PRIORITY_PRESETS, getPriorityEmoji } from "../../../utils/priority";
 interface AddProductModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onProductAdded?: () => void;
 }
 
 const AddProductModal: React.FC<AddProductModalProps> = ({
   isOpen,
   onClose,
+  onProductAdded,
 }) => {
   const { addProduct, isLoading } = useProductStore();
 
@@ -96,6 +98,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 
     try {
       await addProduct(productData);
+      onProductAdded?.();
       onClose();
 
       // Reset form

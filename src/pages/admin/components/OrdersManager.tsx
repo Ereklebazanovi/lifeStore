@@ -270,7 +270,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       {selectedOrder.customerInfo.firstName} {selectedOrder.customerInfo.lastName}
                     </p>
                     <p className="text-sm text-gray-600">ტელეფონი: {selectedOrder.customerInfo.phone}</p>
-                    <p className="text-sm text-gray-600">მისამართი: {selectedOrder.customerInfo.address}</p>
+                    <p className="text-sm text-gray-600">მისამართი: {selectedOrder.deliveryInfo.address}</p>
                   </div>
 
                   <div>

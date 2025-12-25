@@ -148,7 +148,7 @@ const CheckoutPage: React.FC = () => {
           firstName: formData.firstName,
           lastName: formData.lastName,
           phone: formData.phone,
-          // @ts-ignore - secondaryPhone might not be in types yet, but we send it
+          // @ts-expect-error - secondaryPhone might not be in types yet, but we send it
           secondaryPhone: formData.secondaryPhone,
           email: formData.email,
         },

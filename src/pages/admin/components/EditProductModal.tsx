@@ -9,12 +9,14 @@ interface EditProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product;
+  onProductUpdated?: () => void;
 }
 
 const EditProductModal: React.FC<EditProductModalProps> = ({
   isOpen,
   onClose,
   product,
+  onProductUpdated,
 }) => {
   const { updateProduct, isLoading } = useProductStore();
 
@@ -87,6 +89,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     }
 
     await updateProduct(product.id, productData);
+    onProductUpdated?.();
     onClose();
   };
 

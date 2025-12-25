@@ -32,7 +32,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   activeSection = 'dashboard',
   onSectionChange = () => {}
 }) => {
-  const { user, logout } = useAuthStore();
+  const { user, signOut } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Start open on desktop
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -147,7 +147,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
             <button
               onClick={() => {
                 console.log("🚪 Logging out...");
-                logout();
+                signOut();
               }}
               className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-200"
             >
@@ -209,7 +209,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <button
                   onClick={() => {
                     console.log("🚪 Logging out...");
-                    logout();
+                    signOut();
                   }}
                   className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-200"
                 >
@@ -222,7 +222,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <button
                   onClick={() => {
                     console.log("🚪 Logging out...");
-                    logout();
+                    signOut();
                   }}
                   className="w-full p-2 rounded-lg text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-200"
                   title="გასვლა"
