@@ -477,32 +477,35 @@ export class OrderService {
     try {
       console.log("🔍 Searching for order by number:", orderNumber);
 
-      const ordersRef = collection(db, this.COLLECTION_NAME);
-      const q = query(ordersRef, where("orderNumber", "==", orderNumber));
-      const querySnapshot = await getDocs(q);
+      // Use server-side API to bypass Firestore security rules
+      const response = await fetch(`/api/order/getByNumber?orderNumber=${encodeURIComponent(orderNumber)}`);
 
-      if (querySnapshot.empty) {
+      if (response.status === 404) {
         console.log("❌ No order found with number:", orderNumber);
         return null;
       }
 
-      const orderDoc = querySnapshot.docs[0];
-      const data = orderDoc.data();
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
 
-      console.log("✅ Order found:", {
-        id: orderDoc.id,
-        orderNumber: data.orderNumber,
-        paymentStatus: data.paymentStatus
+      const { order: orderData } = await response.json();
+
+      const order: Order = {
+        ...orderData,
+        createdAt: orderData.createdAt ? new Date(orderData.createdAt) : new Date(),
+        updatedAt: orderData.updatedAt ? new Date(orderData.updatedAt) : new Date(),
+        deliveredAt: orderData.deliveredAt ? new Date(orderData.deliveredAt) : undefined,
+        paidAt: orderData.paidAt ? new Date(orderData.paidAt) : undefined,
+      };
+
+      console.log("✅ Order found via server-side:", {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        paymentStatus: order.paymentStatus
       });
 
-      return {
-        ...data,
-        id: orderDoc.id, // Add document ID
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-        deliveredAt: data.deliveredAt?.toDate(),
-        paidAt: data.paidAt?.toDate(), // Add paidAt
-      } as Order;
+      return order;
     } catch (error) {
       console.error("❌ Error getting order by number:", error);
       throw new Error("შეკვეთის მოძიება ვერ მოხერხდა");
