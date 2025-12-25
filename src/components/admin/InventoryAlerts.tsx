@@ -139,7 +139,7 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({
             {/* Product Image */}
             <div className="flex-shrink-0">
               <img
-                src={alert.product.image}
+                src={alert.product.images?.[0] || '/placeholder-product.png'}
                 alt={alert.product.name}
                 className="w-16 h-16 object-cover rounded-lg border border-gray-200"
                 onError={(e) => {
