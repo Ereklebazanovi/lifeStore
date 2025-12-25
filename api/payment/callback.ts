@@ -30,22 +30,28 @@ function verifyFlittSignature(responseData: any, secretKey: string): boolean {
 
     // Filter empty values
     const filteredData: Record<string, any> = {};
-    Object.keys(dataForVerification).forEach(key => {
-      if (dataForVerification[key] !== undefined && dataForVerification[key] !== null && dataForVerification[key] !== '') {
+    Object.keys(dataForVerification).forEach((key) => {
+      if (
+        dataForVerification[key] !== undefined &&
+        dataForVerification[key] !== null &&
+        dataForVerification[key] !== ""
+      ) {
         filteredData[key] = dataForVerification[key];
       }
     });
 
     // Sort keys alphabetically
     const sortedKeys = Object.keys(filteredData).sort();
-    const sortedValues = sortedKeys.map(key => String(filteredData[key]));
+    const sortedValues = sortedKeys.map((key) => String(filteredData[key]));
 
     // Add secret key at the beginning
     const signatureParams = [secretKey, ...sortedValues];
     const signatureString = signatureParams.join("|");
 
     // Generate SHA1 hash
-    const expectedSignature = createHash("sha1").update(signatureString, "utf8").digest("hex");
+    const expectedSignature = createHash("sha1")
+      .update(signatureString, "utf8")
+      .digest("hex");
 
     console.log("🔐 Callback Signature Verification:");
     console.log("  📝 Filtered data:", filteredData);
@@ -66,7 +72,11 @@ function verifyFlittSignature(responseData: any, secretKey: string): boolean {
 /**
  * Update order status in Firestore
  */
-async function updateOrderStatus(orderId: string, isPaymentSuccessful: boolean, paymentData: any): Promise<void> {
+async function updateOrderStatus(
+  orderId: string,
+  isPaymentSuccessful: boolean,
+  paymentData: any
+): Promise<void> {
   try {
     const orderRef = adminDb.collection("orders").doc(orderId);
 
@@ -104,19 +114,28 @@ module.exports = async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  // Only accept POST requests
-  if (req.method !== "POST") {
+  // Accept both GET and POST requests (TBC uses GET for callbacks)
+  if (req.method !== "GET" && req.method !== "POST") {
     console.log(`❌ Invalid method: ${req.method}`);
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
     console.log("📞 Flitt Payment Callback Received:");
+    console.log(`📋 Method: ${req.method}`);
     console.log("📋 Request body:", JSON.stringify(req.body, null, 2));
+    console.log("📋 Query params:", JSON.stringify(req.query, null, 2));
     console.log("📋 Request headers:", JSON.stringify(req.headers, null, 2));
 
-    // Extract response data (Flitt sends data in 'response' field)
-    const responseData = req.body.response || req.body;
+    // Extract response data based on request method
+    let responseData;
+    if (req.method === "GET") {
+      // For GET requests, data is in query parameters
+      responseData = req.query;
+    } else {
+      // For POST requests, data is in body (legacy support)
+      responseData = req.body.response || req.body;
+    }
 
     if (!responseData) {
       console.error("❌ No response data received");
@@ -124,10 +143,15 @@ module.exports = async function handler(
     }
 
     // ✅ CRITICAL: Verify signature to ensure request is from Flitt
-    const isSignatureValid = verifyFlittSignature(responseData, FLITT_SECRET_KEY);
+    const isSignatureValid = verifyFlittSignature(
+      responseData,
+      FLITT_SECRET_KEY
+    );
 
     if (!isSignatureValid) {
-      console.error("❌ SECURITY: Invalid signature from callback. Possible fraud attempt!");
+      console.error(
+        "❌ SECURITY: Invalid signature from callback. Possible fraud attempt!"
+      );
       console.error("📋 Received data:", responseData);
       // Return OK to avoid retries, but don't process the payment
       return res.status(200).send("OK");
@@ -161,19 +185,20 @@ module.exports = async function handler(
     }
 
     // Determine if payment was successful
-    const isPaymentSuccessful = orderStatus === "approved" && response_status === "success";
+    const isPaymentSuccessful =
+      orderStatus === "approved" && response_status === "success";
 
     if (isPaymentSuccessful) {
       console.log(`✅ Payment APPROVED for order ${orderId}`, {
         paymentId,
         amount,
-        currency
+        currency,
       });
     } else {
       console.log(`❌ Payment FAILED for order ${orderId}`, {
         orderStatus,
         response_status,
-        paymentId
+        paymentId,
       });
     }
 
@@ -183,7 +208,6 @@ module.exports = async function handler(
     // Always respond with 200 OK to acknowledge receipt
     console.log(`📤 Sending OK response to Flitt for order ${orderId}`);
     return res.status(200).send("OK");
-
   } catch (error) {
     console.error("❌ Error processing payment callback:", error);
     // Still return OK to avoid infinite retries from Flitt
