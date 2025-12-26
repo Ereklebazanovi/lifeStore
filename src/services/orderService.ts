@@ -611,6 +611,50 @@ export class OrderService {
     }
   }
 
+  static async cancelOrder(orderId: string, cancelReason: string): Promise<void> {
+    try {
+      const orderRef = doc(db, this.COLLECTION_NAME, orderId);
+      const orderDoc = await getDoc(orderRef);
+
+      if (!orderDoc.exists()) {
+        throw new Error("შეკვეთა არ მოიძებნა");
+      }
+
+      const orderData = orderDoc.data();
+
+      // Return stock to products
+      if (orderData.items) {
+        const productUpdates = orderData.items.map(async (item: any) => {
+          const productRef = doc(db, "products", item.product.id);
+          const productDoc = await getDoc(productRef);
+
+          if (productDoc.exists()) {
+            const currentStock = productDoc.data().stock || 0;
+            await updateDoc(productRef, {
+              stock: currentStock + item.quantity,
+              updatedAt: Timestamp.now()
+            });
+          }
+        });
+
+        await Promise.all(productUpdates);
+      }
+
+      // Update order status to cancelled
+      await updateDoc(orderRef, {
+        orderStatus: "cancelled",
+        cancelReason,
+        cancelledAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+
+      console.log("✅ Order cancelled and stock returned:", orderId);
+    } catch (error) {
+      console.error("❌ Error cancelling order:", error);
+      throw new Error("შეკვეთის გაუქმება ვერ მოხერხდა");
+    }
+  }
+
   static async deleteOrder(orderId: string): Promise<void> {
     try {
       const orderRef = doc(db, this.COLLECTION_NAME, orderId);

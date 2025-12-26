@@ -21,6 +21,7 @@ import {
   X,
   Trash2,
   Check,
+  XCircle,
 } from "lucide-react";
 
 interface OrdersManagerProps {
@@ -40,6 +41,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
 
   // PDF Export functions
   const exportSingleOrderPDF = (order: Order) => {
@@ -376,6 +380,30 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     setShowDeleteConfirm(true);
   };
 
+  const handleCancelOrder = (orderId: string) => {
+    setOrderToCancel(orderId);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancel = async () => {
+    if (!orderToCancel || !cancelReason.trim()) {
+      showToast("გაუქმების მიზეზი სავალდებულოა", "error");
+      return;
+    }
+
+    try {
+      await OrderService.cancelOrder(orderToCancel, cancelReason);
+      showToast("შეკვეთა გაუქმდა და პროდუქტები დაბრუნდა", "success");
+      setShowCancelModal(false);
+      setOrderToCancel(null);
+      setCancelReason("");
+      onRefresh();
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      showToast("შეკვეთის გაუქმება ვერ მოხერხდა", "error");
+    }
+  };
+
   const confirmDelete = async () => {
     try {
       if (orderToDelete === "selected") {
@@ -420,17 +448,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
             {/* Action Buttons */}
             <div className="flex items-center space-x-2">
-              {selectedOrderIds.length > 0 && (
-                <button
-                  onClick={handleDeleteSelected}
-                  className="flex items-center space-x-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm"
-                  title={`${selectedOrderIds.length} შეკვეთის წაშლა`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>წაშლა ({selectedOrderIds.length})</span>
-                </button>
-              )}
-
               <button
                 onClick={exportFilteredOrdersPDF}
                 disabled={filteredOrders.length === 0}
@@ -651,13 +668,15 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         >
                           <Download className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => handleDeleteSingle(order.id)}
-                          className="text-red-600 hover:text-red-700 p-1 rounded hover:bg-red-50"
-                          title="შეკვეთის წაშლა"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {order.orderStatus !== "cancelled" && (
+                          <button
+                            onClick={() => handleCancelOrder(order.id)}
+                            className="text-orange-600 hover:text-orange-700 p-1 rounded hover:bg-orange-50"
+                            title="შეკვეთის გაუქმება"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -717,6 +736,28 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         >
                           <Download className="w-4 h-4" />
                           <span>PDF</span>
+                        </button>
+                        {selectedOrder.orderStatus !== "cancelled" && (
+                          <button
+                            onClick={() => {
+                              handleCancelOrder(selectedOrder.id);
+                              setSelectedOrder(null);
+                            }}
+                            className="flex items-center space-x-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors duration-200"
+                          >
+                            <XCircle className="w-4 h-4" />
+                            <span>გაუქმება</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            handleDeleteSingle(selectedOrder.id);
+                            setSelectedOrder(null);
+                          }}
+                          className="flex items-center space-x-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200"
+                          title="სრული წაშლა (შეუქცევადი)"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setSelectedOrder(null)}
@@ -893,6 +934,62 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           );
         })()}
 
+      {/* Cancel Order Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-[9999] overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" onClick={() => setShowCancelModal(false)}></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-6 pt-6 pb-4">
+                <div className="flex items-center">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-orange-100">
+                    <XCircle className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div className="ml-4 text-left">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      შეკვეთის გაუქმება
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500 mb-4">
+                        მიუთითეთ გაუქმების მიზეზი. პროდუქტები ავტომატურად დაბრუნდება საწყობში.
+                      </p>
+                      <textarea
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        placeholder="მიზეზი (მაგ: მომხმარებლის მოთხოვნით, არარსებული პროდუქტი, ტექნიკური ხარვეზი)"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-6 py-3 flex flex-row-reverse space-x-2 space-x-reverse">
+                <button
+                  type="button"
+                  onClick={confirmCancel}
+                  disabled={!cancelReason.trim()}
+                  className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  გაუქმება
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setCancelReason("");
+                  }}
+                  className="mr-3 inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm"
+                >
+                  უკან
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[9999] overflow-y-auto">
@@ -907,14 +1004,17 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                   </div>
                   <div className="ml-4 text-left">
                     <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      შეკვეთის წაშლა
+                      ⚠️ შეკვეთის სრული წაშლა
                     </h3>
                     <div className="mt-2">
-                      <p className="text-sm text-gray-500">
-                        {orderToDelete === "selected"
-                          ? `დარწმუნებული ხართ რომ გსურთ ${selectedOrderIds.length} შეკვეთის წაშლა? ეს მოქმედება შეუქცევადია.`
-                          : "დარწმუნებული ხართ რომ გსურთ ამ შეკვეთის წაშლა? ეს მოქმედება შეუქცევადია."
-                        }
+                      <p className="text-sm text-red-600 font-medium mb-2">
+                        ეს არის ფიზიკური წაშლა! მონაცემები სამუდამოდ წაიშლება.
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        სანაცვლოდ, გამოიყენეთ "გაუქმება" რომ შეკვეთა უკეთესად იყოს ტრეკინგი და მომხმარებელმა იცოდეს რა მოხდა.
+                      </p>
+                      <p className="text-sm text-gray-500 mt-2">
+                        გაგრძელება მხოლოდ სატესტო ან ნაგვისთვისაა.
                       </p>
                     </div>
                   </div>
