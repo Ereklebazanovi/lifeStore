@@ -159,7 +159,7 @@ const OrderSuccessPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-stone-50 py-20 lg:py-20 print:bg-white print:py-0">
       {/* ✅ print-content კლასი დამატებულია */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 print-content">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 print-content print:max-w-none print:px-2">
         {/* --- Success Header (ეკრანზე ჩანს, ბეჭდვისას არა) --- */}
         <div className="text-center mb-10 print:hidden">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6 animate-bounce-slow shadow-sm">
@@ -193,10 +193,9 @@ const OrderSuccessPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 print:grid-cols-1 print:gap-2">
           {/* --- MAIN CONTENT (LEFT) --- */}
-          {/* print:col-span-3 - ბეჭდვისას მთელ სიგანეზე გაიშლება */}
-          <div className="lg:col-span-2 space-y-6 print:col-span-3">
+          <div className="lg:col-span-2 space-y-6 print:col-span-1 print:space-y-2">
             {/* Order Info Card */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-200 print:shadow-none print:border print:border-stone-300 print:rounded-lg print:p-4 print:mb-4">
               <div className="flex items-center justify-between mb-6 border-b border-stone-100 pb-4 print:border-stone-300 print:mb-2 print:pb-2">
