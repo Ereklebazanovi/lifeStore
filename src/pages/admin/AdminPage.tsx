@@ -56,6 +56,7 @@ const AdminPage: React.FC = () => {
     console.log("🔄 Refreshing all data...");
     fetchProducts(); // from useProductStore
     fetchOrdersData(); // local function
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     showToast && showToast("მონაცემები განახლდა", "success");
   };
 
