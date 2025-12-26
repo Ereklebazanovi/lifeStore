@@ -12,7 +12,16 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import AddProductModal from "./components/AddProductModal";
 import InventoryAlerts from "../../components/admin/InventoryAlerts";
 import { showToast } from "../../components/ui/Toast";
-import { Plus, RefreshCw, AlertTriangle, Package, ShoppingBag, TrendingDown, DollarSign, Clock } from "lucide-react";
+import {
+  Plus,
+  RefreshCw,
+  AlertTriangle,
+  Package,
+  ShoppingBag,
+  TrendingDown,
+  DollarSign,
+  Clock,
+} from "lucide-react";
 import type { Order } from "../../types";
 
 const AdminPage: React.FC = () => {
@@ -61,9 +70,10 @@ const AdminPage: React.FC = () => {
   };
 
   // Content renderer based on active section
+
   const renderContent = () => {
     switch (activeSection) {
-      case 'dashboard':
+      case "dashboard":
         return (
           <div className="space-y-6">
             {/* Quick Actions */}
@@ -76,7 +86,7 @@ const AdminPage: React.FC = () => {
                 <span className="text-sm text-gray-700">ახალი პროდუქტი</span>
               </button>
               <button
-                onClick={() => setActiveSection('orders')}
+                onClick={() => setActiveSection("orders")}
                 className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm"
               >
                 <ShoppingBag className="w-5 h-5 text-emerald-600" />
@@ -96,19 +106,27 @@ const AdminPage: React.FC = () => {
           </div>
         );
 
-      case 'products':
+      case "products":
         return <ProductManager />;
 
-      case 'orders':
-        return ordersLoading ? <LoadingSpinner /> : <OrdersManager orders={orders} onRefresh={fetchOrdersData} />;
+      case "orders":
+        return ordersLoading ? (
+          <LoadingSpinner />
+        ) : (
+          <OrdersManager orders={orders} onRefresh={fetchOrdersData} />
+        );
 
-      case 'inventory':
+      case "inventory":
         return (
           <div className="space-y-6">
             {/* Inventory Overview */}
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">მარაგის მართვა</h2>
-              <p className="text-gray-600 text-sm mb-4">პროდუქტების მარაგის მონიტორინგი და შეტყობინებები</p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                მარაგის მართვა
+              </h2>
+              <p className="text-gray-600 text-sm mb-4">
+                პროდუქტების მარაგის მონიტორინგი და შეტყობინებები
+              </p>
 
               {/* Stats Overview */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -116,8 +134,12 @@ const AdminPage: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <Package className="w-8 h-8 text-blue-600" />
                     <div>
-                      <p className="text-xs text-blue-600 font-medium">სულ პროდუქტი</p>
-                      <p className="text-lg font-bold text-blue-900">{products.filter(p => p.isActive).length}</p>
+                      <p className="text-xs text-blue-600 font-medium">
+                        სულ პროდუქტი
+                      </p>
+                      <p className="text-lg font-bold text-blue-900">
+                        {products.filter((p) => p.isActive).length}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -125,8 +147,15 @@ const AdminPage: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <AlertTriangle className="w-8 h-8 text-red-600" />
                     <div>
-                      <p className="text-xs text-red-600 font-medium">ამოიწურა</p>
-                      <p className="text-lg font-bold text-red-900">{products.filter(p => p.isActive && p.stock <= 0).length}</p>
+                      <p className="text-xs text-red-600 font-medium">
+                        ამოიწურა
+                      </p>
+                      <p className="text-lg font-bold text-red-900">
+                        {
+                          products.filter((p) => p.isActive && p.stock <= 0)
+                            .length
+                        }
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -134,8 +163,16 @@ const AdminPage: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <AlertTriangle className="w-8 h-8 text-amber-600" />
                     <div>
-                      <p className="text-xs text-amber-600 font-medium">კრიტიკული</p>
-                      <p className="text-lg font-bold text-amber-900">{products.filter(p => p.isActive && p.stock > 0 && p.stock <= 3).length}</p>
+                      <p className="text-xs text-amber-600 font-medium">
+                        კრიტიკული
+                      </p>
+                      <p className="text-lg font-bold text-amber-900">
+                        {
+                          products.filter(
+                            (p) => p.isActive && p.stock > 0 && p.stock <= 3
+                          ).length
+                        }
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -143,8 +180,16 @@ const AdminPage: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <TrendingDown className="w-8 h-8 text-yellow-600" />
                     <div>
-                      <p className="text-xs text-yellow-600 font-medium">დაბალი მარაგი</p>
-                      <p className="text-lg font-bold text-yellow-900">{products.filter(p => p.isActive && p.stock > 3 && p.stock <= 10).length}</p>
+                      <p className="text-xs text-yellow-600 font-medium">
+                        დაბალი მარაგი
+                      </p>
+                      <p className="text-lg font-bold text-yellow-900">
+                        {
+                          products.filter(
+                            (p) => p.isActive && p.stock > 3 && p.stock <= 10
+                          ).length
+                        }
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -158,18 +203,29 @@ const AdminPage: React.FC = () => {
           </div>
         );
 
-      case 'analytics':
-        const totalRevenue = orders.filter(o => o.orderStatus === 'delivered').reduce((sum, order) => sum + order.totalAmount, 0);
-        const pendingRevenue = orders.filter(o => o.orderStatus === 'pending').reduce((sum, order) => sum + order.totalAmount, 0);
+      case "analytics":
+        { const totalRevenue = orders
+          .filter((o) => o.orderStatus === "delivered")
+          .reduce((sum, order) => sum + order.totalAmount, 0);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const pendingRevenue = orders
+          .filter((o) => o.orderStatus === "pending")
+          .reduce((sum, order) => sum + order.totalAmount, 0);
         const totalOrdersCount = orders.length;
-        const deliveredOrdersCount = orders.filter(o => o.orderStatus === 'delivered').length;
+        const deliveredOrdersCount = orders.filter(
+          (o) => o.orderStatus === "delivered"
+        ).length;
 
         return (
           <div className="space-y-6">
             {/* Analytics Header */}
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">ანალიტიკა და რეპორტები</h2>
-              <p className="text-gray-600 text-sm">ბიზნესის პერფორმანსის ანალიზი</p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                ანალიტიკა და რეპორტები
+              </h2>
+              <p className="text-gray-600 text-sm">
+                ბიზნესის პერფორმანსის ანალიზი
+              </p>
             </div>
 
             {/* Revenue Stats */}
@@ -178,8 +234,12 @@ const AdminPage: React.FC = () => {
                 <div className="flex items-center space-x-3">
                   <DollarSign className="w-8 h-8 text-emerald-600" />
                   <div>
-                    <p className="text-xs text-emerald-600 font-medium">მიღებული შემოსავალი</p>
-                    <p className="text-lg font-bold text-emerald-900">₾{totalRevenue.toFixed(2)}</p>
+                    <p className="text-xs text-emerald-600 font-medium">
+                      მიღებული შემოსავალი
+                    </p>
+                    <p className="text-lg font-bold text-emerald-900">
+                      ₾{totalRevenue.toFixed(2)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -187,8 +247,12 @@ const AdminPage: React.FC = () => {
                 <div className="flex items-center space-x-3">
                   <Package className="w-8 h-8 text-blue-600" />
                   <div>
-                    <p className="text-xs text-blue-600 font-medium">მიტანილი შეკვეთები</p>
-                    <p className="text-lg font-bold text-blue-900">{deliveredOrdersCount}</p>
+                    <p className="text-xs text-blue-600 font-medium">
+                      მიტანილი შეკვეთები
+                    </p>
+                    <p className="text-lg font-bold text-blue-900">
+                      {deliveredOrdersCount}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -196,8 +260,12 @@ const AdminPage: React.FC = () => {
                 <div className="flex items-center space-x-3">
                   <Clock className="w-8 h-8 text-amber-600" />
                   <div>
-                    <p className="text-xs text-amber-600 font-medium">მოლოდინში შეკვეთები</p>
-                    <p className="text-lg font-bold text-amber-900">{orders.filter(o => o.orderStatus === 'pending').length}</p>
+                    <p className="text-xs text-amber-600 font-medium">
+                      მოლოდინში შეკვეთები
+                    </p>
+                    <p className="text-lg font-bold text-amber-900">
+                      {orders.filter((o) => o.orderStatus === "pending").length}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -205,9 +273,14 @@ const AdminPage: React.FC = () => {
                 <div className="flex items-center space-x-3">
                   <TrendingDown className="w-8 h-8 text-gray-600" />
                   <div>
-                    <p className="text-xs text-gray-600 font-medium">საშ. შეკვეთის ღირ.</p>
+                    <p className="text-xs text-gray-600 font-medium">
+                      საშ. შეკვეთის ღირ.
+                    </p>
                     <p className="text-lg font-bold text-gray-900">
-                      ₾{totalOrdersCount > 0 ? (totalRevenue / deliveredOrdersCount || 0).toFixed(2) : '0.00'}
+                      ₾
+                      {totalOrdersCount > 0
+                        ? (totalRevenue / deliveredOrdersCount || 0).toFixed(2)
+                        : "0.00"}
                     </p>
                   </div>
                 </div>
@@ -216,32 +289,51 @@ const AdminPage: React.FC = () => {
 
             {/* Quick Insights */}
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">სწრაფი ანალიზი</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                სწრაფი ანალიზი
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">ღირებული მომხმარებლები</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    ღირებული მომხმარებლები
+                  </h4>
                   <div className="space-y-2">
                     {orders
-                      .filter(o => o.orderStatus === 'delivered')
+                      .filter((o) => o.orderStatus === "delivered")
                       .slice(0, 3)
                       .map((order, index) => (
-                        <div key={index} className="flex justify-between text-sm">
-                          <span>{order.customerInfo.firstName} {order.customerInfo.lastName}</span>
-                          <span className="font-semibold">₾{order.totalAmount.toFixed(2)}</span>
+                        <div
+                          key={index}
+                          className="flex justify-between text-sm"
+                        >
+                          <span>
+                            {order.customerInfo.firstName}{" "}
+                            {order.customerInfo.lastName}
+                          </span>
+                          <span className="font-semibold">
+                            ₾{order.totalAmount.toFixed(2)}
+                          </span>
                         </div>
                       ))}
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">პოპულარული პროდუქტები</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    პოპულარული პროდუქტები
+                  </h4>
                   <div className="space-y-2">
                     {products
                       .sort((a, b) => (b.priority || 0) - (a.priority || 0))
                       .slice(0, 3)
                       .map((product, index) => (
-                        <div key={index} className="flex justify-between text-sm">
+                        <div
+                          key={index}
+                          className="flex justify-between text-sm"
+                        >
                           <span>{product.name}</span>
-                          <span className="text-gray-500">{product.stock} ცალი</span>
+                          <span className="text-gray-500">
+                            {product.stock} ცალი
+                          </span>
                         </div>
                       ))}
                   </div>
@@ -249,8 +341,7 @@ const AdminPage: React.FC = () => {
               </div>
             </div>
           </div>
-        );
-
+        ); }
 
       default:
         return <div>Content not found</div>;
