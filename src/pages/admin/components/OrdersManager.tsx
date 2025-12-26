@@ -30,6 +30,173 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Order["orderStatus"]>("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  // PDF Export functions
+  const exportSingleOrderPDF = (order: Order) => {
+    // Create a new window with the order details for printing
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>შეკვეთა ${order.orderNumber}</title>
+        <style>
+          body { font-family: 'Noto Sans Georgian', Arial, sans-serif; margin: 20px; line-height: 1.4; }
+          .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+          .section { margin-bottom: 15px; }
+          .label { font-weight: bold; display: inline-block; width: 120px; }
+          .products { margin-top: 20px; }
+          .product-item { border-bottom: 1px solid #eee; padding: 8px 0; display: flex; justify-content: space-between; }
+          .total { border-top: 2px solid #333; padding-top: 10px; margin-top: 15px; font-weight: bold; }
+          @media print { body { margin: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>LifeStore</h1>
+          <h2>შეკვეთის ინვოისი</h2>
+          <p>თარიღი: ${new Date().toLocaleDateString('ka-GE')}</p>
+        </div>
+
+        <div class="section">
+          <div><span class="label">შეკვეთის №:</span> ${order.orderNumber}</div>
+          <div><span class="label">თარიღი:</span> ${order.createdAt.toLocaleDateString('ka-GE')} ${order.createdAt.toLocaleTimeString('ka-GE', {hour: '2-digit', minute: '2-digit'})}</div>
+          <div><span class="label">სტატუსი:</span> ${getStatusText(order.orderStatus)}</div>
+          <div><span class="label">გადახდა:</span> ${order.paymentMethod === 'cash' ? 'ადგილზე გადახდა' : 'საბანკო გადარიცხვა'}</div>
+        </div>
+
+        <div class="section">
+          <h3>მომხმარებლის ინფო:</h3>
+          <div><span class="label">სახელი:</span> ${order.customerInfo.firstName} ${order.customerInfo.lastName}</div>
+          <div><span class="label">ტელეფონი:</span> ${order.customerInfo.phone}</div>
+          <div><span class="label">მისამართი:</span> ${order.deliveryInfo.city}, ${order.deliveryInfo.address}</div>
+          ${order.deliveryInfo.comment ? `<div><span class="label">კომენტარი:</span> ${order.deliveryInfo.comment}</div>` : ''}
+        </div>
+
+        <div class="products">
+          <h3>პროდუქტები:</h3>
+          ${order.items.map(item => `
+            <div class="product-item">
+              <span>${item.product.name} - ${item.quantity} ცალი × ₾${item.price.toFixed(2)}</span>
+              <span>₾${item.total.toFixed(2)}</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="total">
+          <div style="display: flex; justify-content: space-between;">
+            <span>პროდუქტები:</span>
+            <span>₾${order.subtotal.toFixed(2)}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>მიწოდება:</span>
+            <span>${order.shippingCost === 0 ? 'უფასო' : '₾' + order.shippingCost.toFixed(2)}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 18px; margin-top: 10px;">
+            <span>სულ გადასახდელი:</span>
+            <span>₾${order.totalAmount.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+            window.onafterprint = function() {
+              window.close();
+            };
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+  };
+
+  const exportFilteredOrdersPDF = () => {
+    const filtered = getFilteredOrders();
+    if (filtered.length === 0) {
+      showToast("ფილტრირებული შეკვეთები არ არის", "warning");
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const totalAmount = filtered.reduce((sum, order) => sum + order.totalAmount, 0);
+    const fromDate = dateFrom ? new Date(dateFrom).toLocaleDateString('ka-GE') : 'დასაწყისი';
+    const toDate = dateTo ? new Date(dateTo).toLocaleDateString('ka-GE') : 'ახლა';
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>შეკვეთების ანგარიში</title>
+        <style>
+          body { font-family: 'Noto Sans Georgian', Arial, sans-serif; margin: 20px; line-height: 1.4; font-size: 12px; }
+          .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+          .summary { background: #f5f5f5; padding: 10px; margin-bottom: 20px; border-radius: 5px; }
+          .order { border-bottom: 1px solid #ddd; padding: 10px 0; }
+          .order-header { font-weight: bold; margin-bottom: 5px; }
+          .order-details { font-size: 11px; color: #666; }
+          .total { border-top: 2px solid #333; padding-top: 10px; margin-top: 15px; font-weight: bold; text-align: right; }
+          @media print { body { margin: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>LifeStore</h1>
+          <h2>შეკვეთების ანგარიში</h2>
+          <p>პერიოდი: ${fromDate} - ${toDate}</p>
+          <p>ანგარიშის თარიღი: ${new Date().toLocaleDateString('ka-GE')}</p>
+        </div>
+
+        <div class="summary">
+          <strong>ჯამური ინფორმაცია:</strong><br>
+          შეკვეთების რაოდენობა: ${filtered.length}<br>
+          სრული ღირებულება: ₾${totalAmount.toFixed(2)}
+        </div>
+
+        ${filtered.map(order => `
+          <div class="order">
+            <div class="order-header">
+              ${order.orderNumber} - ${order.customerInfo.firstName} ${order.customerInfo.lastName} - ₾${order.totalAmount.toFixed(2)}
+            </div>
+            <div class="order-details">
+              ${order.createdAt.toLocaleDateString('ka-GE')} ${order.createdAt.toLocaleTimeString('ka-GE', {hour: '2-digit', minute: '2-digit'})} |
+              ${getStatusText(order.orderStatus)} |
+              ${order.customerInfo.phone} |
+              ${order.items.length} პროდუქტი
+            </div>
+          </div>
+        `).join('')}
+
+        <div class="total">
+          <div>ჯამი: ₾${totalAmount.toFixed(2)}</div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+            window.onafterprint = function() {
+              window.close();
+            };
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+  };
 
   const handleStatusChange = async (orderId: string, newStatus: Order["orderStatus"]) => {
     try {
@@ -72,13 +239,23 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.customerInfo.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.customerInfo.lastName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || order.orderStatus === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const getFilteredOrders = () => {
+    return orders.filter((order) => {
+      const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           order.customerInfo.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           order.customerInfo.lastName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "all" || order.orderStatus === statusFilter;
+
+      // Date filtering
+      const orderDate = order.createdAt.toISOString().split('T')[0];
+      const matchesDateFrom = !dateFrom || orderDate >= dateFrom;
+      const matchesDateTo = !dateTo || orderDate <= dateTo;
+
+      return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
+    });
+  };
+
+  const filteredOrders = getFilteredOrders();
 
   const handleCreateOrderSuccess = () => {
     setShowCreateModal(false);
@@ -98,20 +275,35 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           <div className="flex items-center space-x-4 mt-4 sm:mt-0">
             <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm">
               <span className="text-gray-600">სულ: </span>
-              <span className="font-semibold text-gray-900">{orders.length} შეკვეთა</span>
+              <span className="font-semibold text-gray-900">{filteredOrders.length} / {orders.length} შეკვეთა</span>
             </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors duration-200"
-            >
-              <Plus className="w-4 h-4" />
-              <span>ხელით შეკვეთა</span>
-            </button>
+
+            {/* PDF Export Buttons */}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={exportFilteredOrdersPDF}
+                disabled={filteredOrders.length === 0}
+                className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                title="ფილტრირებული შეკვეთების PDF"
+              >
+                <Download className="w-4 h-4" />
+                <span>PDF ანგარიში</span>
+              </button>
+
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors duration-200"
+              >
+                <Plus className="w-4 h-4" />
+                <span>ხელით შეკვეთა</span>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search */}
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -124,6 +316,40 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               />
             </div>
           </div>
+
+          {/* Date Range */}
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              placeholder="თარიღიდან"
+            />
+            <span className="text-gray-400 text-sm">-</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              placeholder="თარიღამდე"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => {
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+                className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                title="თარიღების გასუფთავება"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Status Filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
@@ -222,13 +448,22 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => setSelectedOrder(order)}
-                        className="text-blue-600 hover:text-blue-700 p-1 rounded hover:bg-blue-50"
-                        title="დეტალების ნახვა"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setSelectedOrder(order)}
+                          className="text-blue-600 hover:text-blue-700 p-1 rounded hover:bg-blue-50"
+                          title="დეტალების ნახვა"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => exportSingleOrderPDF(order)}
+                          className="text-green-600 hover:text-green-700 p-1 rounded hover:bg-green-50"
+                          title="PDF ჩამოტვირთვა"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

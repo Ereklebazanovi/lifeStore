@@ -7,7 +7,6 @@ import {
   ShoppingBag,
   AlertTriangle,
   BarChart3,
-  Settings,
   User,
   LogOut,
   Menu,
@@ -42,7 +41,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     { id: 'orders', icon: ShoppingBag, label: 'შეკვეთები' },
     { id: 'inventory', icon: AlertTriangle, label: 'მარაგი' },
     { id: 'analytics', icon: BarChart3, label: 'ანალიტიკა' },
-    { id: 'settings', icon: Settings, label: 'პარამეტრები' },
   ];
 
   const SidebarNavItem: React.FC<NavItem & { isActive: boolean; onClick: () => void }> = ({
@@ -265,8 +263,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                    activeSection === 'products' ? 'პროდუქტები' :
                    activeSection === 'orders' ? 'შეკვეთები' :
                    activeSection === 'inventory' ? 'მარაგი' :
-                   activeSection === 'analytics' ? 'ანალიტიკა' :
-                   activeSection === 'settings' ? 'პარამეტრები' : activeSection}
+                   activeSection === 'analytics' ? 'ანალიტიკა' : activeSection}
                 </h1>
                 <p className="text-xs lg:text-sm text-gray-600 truncate hidden sm:block">
                   {greeting}, {user?.email || 'ადმინისტრატორი'}
