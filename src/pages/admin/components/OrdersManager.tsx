@@ -369,7 +369,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
   const handleDeleteSelected = () => {
     if (selectedOrderIds.length === 0) {
-      showToast("მონიშნეთ შეკვეთები წასაშლელად", "warning");
+      showToast("მონიშნეთ შეკვეთები წასაშლელად", "error");
       return;
     }
     setOrderToDelete("selected");
