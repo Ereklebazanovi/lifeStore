@@ -19,6 +19,8 @@ import {
   Plus,
   DollarSign,
   X,
+  Trash2,
+  Check,
 } from "lucide-react";
 
 interface OrdersManagerProps {
@@ -35,6 +37,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
 
   // PDF Export functions
   const exportSingleOrderPDF = (order: Order) => {
@@ -340,6 +345,58 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     showToast("შეკვეთა წარმატებით შეიქმნა", "success");
   };
 
+  // Delete functions
+  const handleSelectOrder = (orderId: string, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedOrderIds(prev => [...prev, orderId]);
+    } else {
+      setSelectedOrderIds(prev => prev.filter(id => id !== orderId));
+    }
+  };
+
+  const handleSelectAll = (isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedOrderIds(filteredOrders.map(order => order.id));
+    } else {
+      setSelectedOrderIds([]);
+    }
+  };
+
+  const handleDeleteSingle = (orderId: string) => {
+    setOrderToDelete(orderId);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedOrderIds.length === 0) {
+      showToast("მონიშნეთ შეკვეთები წასაშლელად", "warning");
+      return;
+    }
+    setOrderToDelete("selected");
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      if (orderToDelete === "selected") {
+        // Delete selected orders
+        await Promise.all(selectedOrderIds.map(id => OrderService.deleteOrder(id)));
+        showToast(`${selectedOrderIds.length} შეკვეთა წაიშალა`, "success");
+        setSelectedOrderIds([]);
+      } else if (orderToDelete) {
+        // Delete single order
+        await OrderService.deleteOrder(orderToDelete);
+        showToast("შეკვეთა წაიშალა", "success");
+      }
+      setShowDeleteConfirm(false);
+      setOrderToDelete(null);
+      onRefresh();
+    } catch (error) {
+      console.error("Error deleting orders:", error);
+      showToast("შეკვეთის წაშლა ვერ მოხერხდა", "error");
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -361,8 +418,19 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               </span>
             </div>
 
-            {/* PDF Export Buttons */}
+            {/* Action Buttons */}
             <div className="flex items-center space-x-2">
+              {selectedOrderIds.length > 0 && (
+                <button
+                  onClick={handleDeleteSelected}
+                  className="flex items-center space-x-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm"
+                  title={`${selectedOrderIds.length} შეკვეთის წაშლა`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>წაშლა ({selectedOrderIds.length})</span>
+                </button>
+              )}
+
               <button
                 onClick={exportFilteredOrdersPDF}
                 disabled={filteredOrders.length === 0}
@@ -465,6 +533,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <input
+                      type="checkbox"
+                      checked={selectedOrderIds.length === filteredOrders.length && filteredOrders.length > 0}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     შეკვეთა
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -487,6 +563,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedOrderIds.includes(order.id)}
+                        onChange={(e) => handleSelectOrder(order.id, e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {order.orderNumber}
@@ -566,6 +650,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           title="PDF ჩამოტვირთვა"
                         >
                           <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSingle(order.id)}
+                          className="text-red-600 hover:text-red-700 p-1 rounded hover:bg-red-50"
+                          title="შეკვეთის წაშლა"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -801,6 +892,54 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             </div>
           );
         })()}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[9999] overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" onClick={() => setShowDeleteConfirm(false)}></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-6 pt-6 pb-4">
+                <div className="flex items-center">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <Trash2 className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div className="ml-4 text-left">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      შეკვეთის წაშლა
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        {orderToDelete === "selected"
+                          ? `დარწმუნებული ხართ რომ გსურთ ${selectedOrderIds.length} შეკვეთის წაშლა? ეს მოქმედება შეუქცევადია.`
+                          : "დარწმუნებული ხართ რომ გსურთ ამ შეკვეთის წაშლა? ეს მოქმედება შეუქცევადია."
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-6 py-3 flex flex-row-reverse space-x-2 space-x-reverse">
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm"
+                >
+                  წაშლა
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="mr-3 inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm"
+                >
+                  გაუქმება
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create Manual Order Modal */}
       {showCreateModal && (
