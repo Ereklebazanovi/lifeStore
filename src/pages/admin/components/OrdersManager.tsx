@@ -352,15 +352,15 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   // Delete functions
   const handleSelectOrder = (orderId: string, isSelected: boolean) => {
     if (isSelected) {
-      setSelectedOrderIds(prev => [...prev, orderId]);
+      setSelectedOrderIds((prev) => [...prev, orderId]);
     } else {
-      setSelectedOrderIds(prev => prev.filter(id => id !== orderId));
+      setSelectedOrderIds((prev) => prev.filter((id) => id !== orderId));
     }
   };
 
   const handleSelectAll = (isSelected: boolean) => {
     if (isSelected) {
-      setSelectedOrderIds(filteredOrders.map(order => order.id));
+      setSelectedOrderIds(filteredOrders.map((order) => order.id));
     } else {
       setSelectedOrderIds([]);
     }
@@ -408,7 +408,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     try {
       if (orderToDelete === "selected") {
         // Delete selected orders
-        await Promise.all(selectedOrderIds.map(id => OrderService.deleteOrder(id)));
+        await Promise.all(
+          selectedOrderIds.map((id) => OrderService.deleteOrder(id))
+        );
         showToast(`${selectedOrderIds.length} შეკვეთა წაიშალა`, "success");
         setSelectedOrderIds([]);
       } else if (orderToDelete) {
@@ -438,8 +440,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               გამოიყენეთ ფილტრები შეკვეთების ძებნისთვის
             </p>
           </div>
-          <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-            <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-4 gap-4">
+            <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm w-fit">
               <span className="text-gray-600">სულ: </span>
               <span className="font-semibold text-gray-900">
                 {filteredOrders.length} / {orders.length} შეკვეთა
@@ -447,30 +449,32 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2">
               <button
                 onClick={exportFilteredOrdersPDF}
                 disabled={filteredOrders.length === 0}
-                className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 title="ფილტრირებული შეკვეთების PDF"
               >
                 <Download className="w-4 h-4" />
-                <span>PDF ანგარიში</span>
+                <span className="hidden sm:inline">PDF ანგარიში</span>
+                <span className="sm:hidden">PDF</span>
               </button>
 
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors duration-200"
+                className="flex items-center justify-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors duration-200 text-sm"
               >
                 <Plus className="w-4 h-4" />
-                <span>ხელით შეკვეთა</span>
+                <span className="hidden sm:inline">ხელით შეკვეთა</span>
+                <span className="sm:hidden">შექმნა</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="space-y-4 lg:space-y-0 lg:flex lg:items-center lg:gap-4">
           {/* Search */}
           <div className="flex-1">
             <div className="relative">
@@ -485,50 +489,55 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             </div>
           </div>
 
-          {/* Date Range */}
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-gray-400" />
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              placeholder="თარიღიდან"
-            />
-            <span className="text-gray-400 text-sm">-</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              placeholder="თარიღამდე"
-            />
-            {(dateFrom || dateTo) && (
-              <button
-                onClick={() => {
-                  setDateFrom("");
-                  setDateTo("");
-                }}
-                className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm"
-                title="თარიღების გასუფთავება"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+          {/* Filters Row */}
+          <div className="flex flex-col sm:flex-row gap-3 lg:gap-2">
+            {/* Date Range */}
+            <div className="flex items-center gap-2 min-w-0">
+              <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <div className="flex items-center gap-2 min-w-0">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-full sm:w-auto"
+                  placeholder="თარიღიდან"
+                />
+                <span className="text-gray-400 text-sm">-</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-full sm:w-auto"
+                  placeholder="თარიღამდე"
+                />
+                {(dateFrom || dateTo) && (
+                  <button
+                    onClick={() => {
+                      setDateFrom("");
+                      setDateTo("");
+                    }}
+                    className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm flex-shrink-0"
+                    title="თარიღების გასუფთავება"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
 
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">ყველა სტატუსი</option>
-            <option value="pending">მოლოდინში</option>
-            <option value="confirmed">დადასტურებული</option>
-            <option value="delivered">მიტანილი</option>
-            <option value="cancelled">გაუქმებული</option>
-          </select>
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-auto"
+            >
+              <option value="all">ყველა სტატუსი</option>
+              <option value="pending">მოლოდინში</option>
+              <option value="confirmed">დადასტურებული</option>
+              <option value="delivered">მიტანილი</option>
+              <option value="cancelled">გაუქმებული</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -544,15 +553,20 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+        <>
+          {/* Desktop Table */}
+          <div className="hidden lg:block bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <input
                       type="checkbox"
-                      checked={selectedOrderIds.length === filteredOrders.length && filteredOrders.length > 0}
+                      checked={
+                        selectedOrderIds.length === filteredOrders.length &&
+                        filteredOrders.length > 0
+                      }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
@@ -584,7 +598,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       <input
                         type="checkbox"
                         checked={selectedOrderIds.includes(order.id)}
-                        onChange={(e) => handleSelectOrder(order.id, e.target.checked)}
+                        onChange={(e) =>
+                          handleSelectOrder(order.id, e.target.checked)
+                        }
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                     </td>
@@ -682,9 +698,132 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* Mobile Card Layout */}
+          <div className="lg:hidden space-y-4">
+            {/* Mobile Bulk Select */}
+            {filteredOrders.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <label className="flex items-center space-x-3 text-sm font-medium text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={selectedOrderIds.length === filteredOrders.length && filteredOrders.length > 0}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>
+                    {selectedOrderIds.length === filteredOrders.length && filteredOrders.length > 0
+                      ? "ყველას მონიშვნის გაუქმება"
+                      : "ყველას მონიშვნა"
+                    }
+                    {selectedOrderIds.length > 0 && (
+                      <span className="ml-2 text-blue-600">({selectedOrderIds.length} მონიშნული)</span>
+                    )}
+                  </span>
+                </label>
+              </div>
+            )}
+
+            {/* Order Cards */}
+            {filteredOrders.map((order) => (
+              <div key={order.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                {/* Card Header */}
+                <div className="p-4 border-b border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedOrderIds.includes(order.id)}
+                        onChange={(e) => handleSelectOrder(order.id, e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div>
+                        <h3 className="font-semibold text-gray-900 text-sm">{order.orderNumber}</h3>
+                        <p className="text-xs text-gray-500">{order.items.length} პროდუქტი</p>
+                      </div>
+                    </div>
+                    <select
+                      value={order.orderStatus}
+                      onChange={(e) => handleStatusChange(order.id, e.target.value as Order["orderStatus"])}
+                      className={`px-2 py-1 text-xs font-medium rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(order.orderStatus)}`}
+                    >
+                      <option value="pending">მოლოდინში</option>
+                      <option value="confirmed">დადასტურებული</option>
+                      <option value="delivered">მიტანილი</option>
+                      <option value="cancelled">გაუქმებული</option>
+                    </select>
+                  </div>
+
+                  {/* Customer Info */}
+                  <div className="flex items-center space-x-2 mb-2">
+                    <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {order.customerInfo.firstName} {order.customerInfo.lastName}
+                      </p>
+                      <p className="text-xs text-gray-500">{order.customerInfo.phone}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Content */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-600">
+                        {order.createdAt.toLocaleDateString('ka-GE')}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <DollarSign className="w-4 h-4 text-gray-400" />
+                      <span className="text-lg font-semibold text-gray-900">
+                        ₾{order.totalAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-center space-x-4">
+                    <button
+                      onClick={() => {
+                        console.log("Opening order detail for:", order.orderNumber);
+                        console.log("Setting selectedOrder to:", order);
+                        setSelectedOrder(order);
+                      }}
+                      className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      title="დეტალების ნახვა"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>ნახვა</span>
+                    </button>
+                    <button
+                      onClick={() => exportSingleOrderPDF(order)}
+                      className="flex items-center space-x-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+                      title="PDF ჩამოტვირთვა"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>PDF</span>
+                    </button>
+                    {order.orderStatus !== "cancelled" && (
+                      <button
+                        onClick={() => handleCancelOrder(order.id)}
+                        className="flex items-center space-x-2 bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm"
+                        title="შეკვეთის გაუქმება"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        <span>გაუქმება</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Order Detail Modal */}
@@ -938,8 +1077,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       {showCancelModal && (
         <div className="fixed inset-0 z-[9999] overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" onClick={() => setShowCancelModal(false)}></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            <div
+              className="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity"
+              onClick={() => setShowCancelModal(false)}
+            ></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen">
+              &#8203;
+            </span>
             <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="bg-white px-6 pt-6 pb-4">
                 <div className="flex items-center">
@@ -952,7 +1096,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     </h3>
                     <div className="mt-2">
                       <p className="text-sm text-gray-500 mb-4">
-                        მიუთითეთ გაუქმების მიზეზი. პროდუქტები ავტომატურად დაბრუნდება საწყობში.
+                        მიუთითეთ გაუქმების მიზეზი. პროდუქტები ავტომატურად
+                        დაბრუნდება საწყობში.
                       </p>
                       <textarea
                         value={cancelReason}
@@ -994,8 +1139,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[9999] overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" onClick={() => setShowDeleteConfirm(false)}></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            <div
+              className="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity"
+              onClick={() => setShowDeleteConfirm(false)}
+            ></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen">
+              &#8203;
+            </span>
             <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="bg-white px-6 pt-6 pb-4">
                 <div className="flex items-center">
@@ -1004,14 +1154,17 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                   </div>
                   <div className="ml-4 text-left">
                     <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      ⚠️ შეკვეთის სრული წაშლა
+                      ⚠️ შეკვეთის სამუდამოდ წაშლა
                     </h3>
                     <div className="mt-2">
                       <p className="text-sm text-red-600 font-medium mb-2">
-                        ეს არის ფიზიკური წაშლა! მონაცემები სამუდამოდ წაიშლება.
+                        ყურადღება: ეს მოქმედება შეუქცევადია! მონაცემები ბაზიდან
+                        სრულად წაიშლება და მათი აღდგენა შეუძლებელია.
                       </p>
                       <p className="text-sm text-gray-600">
-                        სანაცვლოდ, გამოიყენეთ "გაუქმება" რომ შეკვეთა უკეთესად იყოს ტრეკინგი და მომხმარებელმა იცოდეს რა მოხდა.
+                        ისტორიისა და სტატისტიკის შესანარჩუნებლად, გირჩევთ
+                        გამოიყენოთ "გაუქმება". წაშლის ფუნქცია გამოიყენეთ მხოლოდ
+                        სატესტო ან მცდარი ჩანაწერებისთვის.
                       </p>
                       <p className="text-sm text-gray-500 mt-2">
                         გაგრძელება მხოლოდ სატესტო ან ნაგვისთვისაა.

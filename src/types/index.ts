@@ -159,7 +159,7 @@ export interface User {
   id: string;
   email: string;
   displayName?: string;
-  role: "admin" | "customer";
+  role: "admin" | "manager" | "customer";
   createdAt: Date;
 }
 

@@ -20,6 +20,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
 import OrderFailedPage from "./pages/OrderFailedPage";
 import OrderHistoryPage from "./pages/OrderHistoryPage";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import LoadingScreen from "./components/LoadingScreen";
 import ScrollToTop from "./components/ScrollToTop";
@@ -153,9 +154,11 @@ const AnimatedRoutes: React.FC = () => {
         <Route
           path="/admin"
           element={
-            <PageTransition>
-              <AdminPage />
-            </PageTransition>
+            <ProtectedRoute allowedRoles={["admin", "manager"]}>
+              <PageTransition>
+                <AdminPage />
+              </PageTransition>
+            </ProtectedRoute>
           }
         />
       </Routes>
