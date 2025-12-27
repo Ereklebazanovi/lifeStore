@@ -106,11 +106,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Debug Info */}
-      <div className="fixed top-2 right-2 z-50 bg-red-600 text-white p-2 text-xs rounded">
-        Screen: {typeof window !== "undefined" ? window.innerWidth : "SSR"}px |
-        Desktop: {isDesktop ? "Yes" : "No"} | Mobile Menu:{" "}
-        {isMobileMenuOpen ? "Open" : "Closed"}
-      </div>
+     
       {/* Mobile Menu Overlay */}
       {!isDesktop && isMobileMenuOpen && (
         <div
