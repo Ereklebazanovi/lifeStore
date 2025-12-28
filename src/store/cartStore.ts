@@ -209,7 +209,16 @@ export const useCartStore = create<CartStoreState & CartActions>()(
           // Extract variant info if product has variant data
           const variantId = product.variantId || null;
           const variantName = product.variantName || null;
-          const currentStock = product.stock || 0;
+
+          // Get correct stock value - variant stock takes priority over product stock
+          let currentStock = 0;
+          if (variantId && product.variants) {
+            const variant = product.variants.find((v: any) => v.id === variantId);
+            currentStock = variant ? variant.stock : 0;
+          } else {
+            currentStock = product.stock || 0;
+          }
+
           const currentPrice = product.price || 0;
 
           // Remove variant-specific fields from product object for storage
@@ -358,8 +367,14 @@ export const useCartStore = create<CartStoreState & CartActions>()(
 
           if (!item) return;
 
-          // Get the correct stock value (could be variant stock)
-          const availableStock = item.product.stock || 0;
+          // Get the correct stock value (prioritize variant stock)
+          let availableStock = 0;
+          if (item.variantId && item.product.variants) {
+            const variant = item.product.variants.find((v: any) => v.id === item.variantId);
+            availableStock = variant ? variant.stock : 0;
+          } else {
+            availableStock = item.product.stock || 0;
+          }
 
           // 3. შემოწმება გაზრდისას
           if (quantity > availableStock) {

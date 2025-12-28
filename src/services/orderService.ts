@@ -105,7 +105,7 @@ export class OrderService {
    * გამოიყენება როგორც website orders-ისთვის, ასევე manual orders-ისთვის
    */
   private static async updateProductInventory(
-    items: { productId: string; quantity: number }[]
+    items: { productId: string; quantity: number; variantId?: string }[]
   ): Promise<void> {
     // ვაგზავნით batch transaction-ს მხოლოდ ნამდვილი productId-ებისთვის
     const realProducts = items.filter(
@@ -141,20 +141,54 @@ export class OrderService {
           }
 
           const productData = productDoc.data();
-          const currentStock = productData.stock || 0;
-          const newStock = currentStock - item.quantity;
 
-          if (newStock < 0) {
-            throw new Error(
-              `არასაკმარისი რაოდენობა: "${productData.name}" (მოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${currentStock})`
-            );
+          // Handle variants vs simple products
+          if (item.variantId) {
+            // Variant product: update specific variant stock
+            const variants = productData.variants || [];
+            const variantIndex = variants.findIndex((v: any) => v.id === item.variantId);
+
+            if (variantIndex === -1) {
+              throw new Error(`ვარიანტი ვერ მოიძებნა: ${item.variantId}`);
+            }
+
+            const currentVariantStock = variants[variantIndex].stock || 0;
+            const newVariantStock = currentVariantStock - item.quantity;
+
+            if (newVariantStock < 0) {
+              throw new Error(
+                `არასაკმარისი რაოდენობა: "${productData.name}" (${variants[variantIndex].name}) (მოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${currentVariantStock})`
+              );
+            }
+
+            // Update variant stock within variants array
+            const updatedVariants = [...variants];
+            updatedVariants[variantIndex] = {
+              ...updatedVariants[variantIndex],
+              stock: newVariantStock,
+              updatedAt: Timestamp.now(),
+            };
+
+            transaction.update(productRefs[i], {
+              variants: updatedVariants,
+              updatedAt: Timestamp.now(),
+            });
+          } else {
+            // Simple product: update main product stock
+            const currentStock = productData.stock || 0;
+            const newStock = currentStock - item.quantity;
+
+            if (newStock < 0) {
+              throw new Error(
+                `არასაკმარისი რაოდენობა: "${productData.name}" (მოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${currentStock})`
+              );
+            }
+
+            transaction.update(productRefs[i], {
+              stock: newStock,
+              updatedAt: Timestamp.now(),
+            });
           }
-
-          // განვაახლოთ stock transaction-ში
-          transaction.update(productRefs[i], {
-            stock: newStock,
-            updatedAt: Timestamp.now(),
-          });
         }
 
         console.log("📦 Product inventory updated successfully in transaction");
@@ -288,10 +322,19 @@ export class OrderService {
   static async createOrder(orderData: CreateOrderRequest): Promise<Order> {
     // ვამზადებთ აიტემებს inventory-სთვის
     const orderItems = this.convertCartItemsToOrderItems(orderData.items);
-    const inventoryItems = orderItems.map((item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-    }));
+    const inventoryItems = orderItems.map((item) => {
+      const inventoryItem: any = {
+        productId: item.productId,
+        quantity: item.quantity,
+      };
+
+      // Include variantId if it exists
+      if (item.variantId) {
+        inventoryItem.variantId = item.variantId;
+      }
+
+      return inventoryItem;
+    });
 
     try {
       const orderNumber = this.generateOrderNumber();
@@ -377,10 +420,19 @@ export class OrderService {
     // ვფილტრავთ მხოლოდ რეალურ პროდუქტებს ინვენტარისთვის
     const inventoryItems = data.items
       .filter((item) => item.productId && !item.productId.startsWith("manual_"))
-      .map((item) => ({
-        productId: item.productId!,
-        quantity: item.quantity,
-      }));
+      .map((item) => {
+        const inventoryItem: any = {
+          productId: item.productId!,
+          quantity: item.quantity,
+        };
+
+        // Include variantId if it exists
+        if (item.variantId) {
+          inventoryItem.variantId = item.variantId;
+        }
+
+        return inventoryItem;
+      });
 
     try {
       const orderNumber = this.generateOrderNumber();
