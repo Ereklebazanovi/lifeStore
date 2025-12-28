@@ -31,14 +31,14 @@ const OrderFailedPage: React.FC = () => {
     let orderIdToUse = orderId;
     if (!orderIdToUse) {
       // Try to get from query parameters (Flitt callback format)
-      orderIdToUse = searchParams.get('order_id') || undefined;
+      orderIdToUse = searchParams.get("order_id") || undefined;
     }
 
     console.log("🔍 OrderFailedPage Debug:", {
       pathOrderId: orderId,
-      queryOrderId: searchParams.get('order_id'),
+      queryOrderId: searchParams.get("order_id"),
       finalOrderId: orderIdToUse,
-      allParams: Object.fromEntries(searchParams.entries())
+      allParams: Object.fromEntries(searchParams.entries()),
     });
 
     if (!orderIdToUse) {
@@ -56,7 +56,9 @@ const OrderFailedPage: React.FC = () => {
         let orderData = await OrderService.getOrderByNumber(orderIdToUse);
 
         if (!orderData) {
-          console.log("🔄 Order not found by orderNumber, trying by document ID...");
+          console.log(
+            "🔄 Order not found by orderNumber, trying by document ID..."
+          );
           orderData = await OrderService.getOrderById(orderIdToUse);
         }
 
@@ -70,7 +72,7 @@ const OrderFailedPage: React.FC = () => {
         console.log("✅ Failed order loaded successfully:", {
           id: orderData.id,
           orderNumber: orderData.orderNumber,
-          paymentStatus: orderData.paymentStatus
+          paymentStatus: orderData.paymentStatus,
         });
       } catch (error) {
         console.error("Error fetching order:", error);
@@ -163,9 +165,7 @@ const OrderFailedPage: React.FC = () => {
                 </h3>
               </div>
               <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
-                <p className="text-red-800 font-medium">
-                  შესაძლო მიზეზები:
-                </p>
+                <p className="text-red-800 font-medium">შესაძლო მიზეზები:</p>
                 <ul className="text-red-700 mt-2 space-y-1 text-sm">
                   <li>• არასაკმარისი ნაშთი ბარათზე</li>
                   <li>• ინტერნეტ კავშირის პრობლემა</li>

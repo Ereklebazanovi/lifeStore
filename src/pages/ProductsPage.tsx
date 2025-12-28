@@ -13,6 +13,7 @@ import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
 import { hasDiscount, getDiscountText } from "../utils/discount";
 import { getStockText, getStockColorClassesCompact, getStockStatus, getStockMessage } from "../utils/stock";
+import { getProductDisplayPrice, getProductOriginalDisplayPrice, hasDiscount as hasProductDiscount } from "../utils/productHelpers";
 import SEOHead from "../components/SEOHead";
 
 const ProductsPage: React.FC = () => {
@@ -272,18 +273,18 @@ const ProductsPage: React.FC = () => {
 
                     <div className="flex items-center justify-between pt-2">
                       <div className="flex flex-col">
-                        {hasDiscount(product) ? (
+                        {hasProductDiscount(product) ? (
                           <>
                             <span className="text-sm text-stone-400 line-through">
-                              ₾{product.originalPrice?.toFixed(2)}
+                              {getProductOriginalDisplayPrice(product)}
                             </span>
                             <span className="text-xl text-red-600 font-bold tracking-tight">
-                              ₾{product.price.toFixed(2)}
+                              {getProductDisplayPrice(product)}
                             </span>
                           </>
                         ) : (
                           <span className="text-xl text-emerald-700 tracking-tight">
-                            ₾{product.price.toFixed(2)}
+                            {getProductDisplayPrice(product)}
                           </span>
                         )}
                       </div>

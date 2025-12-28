@@ -9,15 +9,40 @@ export type OrderSource =
   | "personal"
   | "other";
 
+// Variant represents a specific variation of a product (e.g., "Round 500ml", "Square 850ml")
+export interface ProductVariant {
+  id: string; // Unique ID for each variant (e.g., "var_123abc")
+  name: string; // User-defined name (e.g., "Round 500ml", "Bamboo Lid", "3-Piece Set")
+  price: number; // Variant-specific price
+  stock: number; // Variant-specific stock
+  isActive: boolean; // Can be disabled without deleting
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Main Product acts as a container for variants or standalone item
 export interface Product {
   id: string;
-  name: string;
+  name: string; // Base product name (e.g., "Lunchbox", "Glass Container Set")
   description: string;
-  price: number;
-  originalPrice?: number;
   images: string[];
   category: string;
-  stock: number;
+
+  // Variant System
+  hasVariants?: boolean; // If true, this product has multiple variations (default: false)
+  variants?: ProductVariant[]; // Array of variants (only if hasVariants=true)
+
+  // For non-variant products (simple products) - Backward compatible
+  price: number; // Always present for backward compatibility
+  originalPrice?: number;
+  stock: number; // Always present for backward compatibility
+
+  // Computed fields (read-only)
+  totalStock?: number; // Sum of all variant stocks (auto-calculated)
+  minPrice?: number; // Lowest price among variants (auto-calculated)
+  maxPrice?: number; // Highest price among variants (auto-calculated)
+
+  // Meta
   featured?: boolean;
   priority?: number;
   createdAt: Date;
@@ -34,7 +59,9 @@ export interface Category {
 
 export interface CartItem {
   productId: string;
+  variantId?: string; // If product has variants, this specifies which one
   product: Product;
+  variant?: ProductVariant; // The specific variant selected (if applicable)
   quantity: number;
 }
 
@@ -69,7 +96,7 @@ export interface Order {
     | "bank_transfer"
     | "other";
   paymentStatus: "pending" | "paid" | "failed";
-  orderStatus: "pending" | "confirmed" | "delivered" | "cancelled";
+  orderStatus: "pending" | "shipped" | "delivered" | "cancelled";
   createdAt: Date;
   updatedAt: Date;
   paidAt?: Date; // ✅ Added for payment completion timestamp
@@ -80,15 +107,18 @@ export interface Order {
 
 export interface OrderItem {
   productId: string;
+  variantId?: string; // If product has variants, this specifies which one
   product: Product;
+  variant?: ProductVariant; // The specific variant ordered (if applicable)
   quantity: number;
-  price: number;
+  price: number; // Price at time of order (from variant or product)
   total: number;
 }
 
 export interface ManualOrderItem {
   productId?: string;
-  name: string;
+  variantId?: string; // For variant-based products
+  name: string; // Display name (product + variant name if applicable)
   price: number;
   quantity: number;
 }
@@ -147,11 +177,11 @@ export interface CreateManualOrderRequest {
     comment?: string;
   };
   shippingCost: number;
-  status: "pending" | "confirmed" | "delivered";
+  status: "pending" | "shipped" | "delivered";
   paymentMethod: Order["paymentMethod"];
 }
 
-export type OrderStatus = "pending" | "confirmed" | "delivered" | "cancelled";
+export type OrderStatus = "pending" | "shipped" | "delivered" | "cancelled";
 // ეს რჩება როგორც არის (სტრინგების ტიპი)
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 

@@ -10,6 +10,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
+import { getCartItemDisplayName, getVariantDisplayName } from "../utils/displayHelpers";
 
 const CartPage: React.FC = () => {
   const {
@@ -98,14 +99,14 @@ const CartPage: React.FC = () => {
                     <div className="flex justify-between items-start gap-2 mb-2">
                       <div>
                         <h3 className="text-lg font-bold text-stone-900 line-clamp-1">
-                          {item.product.name}
+                          {getCartItemDisplayName(item)}
                         </h3>
                         <p className="text-xs text-stone-500 line-clamp-1">
                           {item.product.category}
                         </p>
                       </div>
                       <button
-                        onClick={() => removeItem(item.productId)}
+                        onClick={() => removeItem(item.productId, item.variantId)}
                         className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         aria-label="Remove"
                       >
@@ -125,7 +126,8 @@ const CartPage: React.FC = () => {
                             onClick={() =>
                               updateQuantity(
                                 item.productId,
-                                Math.max(1, item.quantity - 1)
+                                Math.max(1, item.quantity - 1),
+                                item.variantId
                               )
                             }
                             disabled={item.quantity <= 1}
@@ -138,7 +140,7 @@ const CartPage: React.FC = () => {
                           </span>
                           <button
                             onClick={() =>
-                              updateQuantity(item.productId, item.quantity + 1)
+                              updateQuantity(item.productId, item.quantity + 1, item.variantId)
                             }
                             disabled={item.quantity >= item.product.stock}
                             className="w-10 h-full flex items-center justify-center text-stone-500 hover:text-stone-900 disabled:opacity-30 transition-colors"

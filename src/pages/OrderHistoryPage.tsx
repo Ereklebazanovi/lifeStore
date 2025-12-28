@@ -4,6 +4,7 @@ import { OrderService } from "../services/orderService";
 import { useAuthStore } from "../store/authStore";
 import { showToast } from "../components/ui/Toast";
 import type { Order } from "../types";
+import { getOrderItemDisplayName } from "../utils/displayHelpers";
 import {
   Package,
   Calendar,
@@ -58,7 +59,7 @@ const OrderHistoryPage: React.FC = () => {
     const matchesSearch =
       order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.items.some((item) =>
-        item.product.name.toLowerCase().includes(searchTerm.toLowerCase())
+        getOrderItemDisplayName(item).toLowerCase().includes(searchTerm.toLowerCase())
       );
 
     const matchesStatus =
@@ -71,7 +72,7 @@ const OrderHistoryPage: React.FC = () => {
     switch (status) {
       case "pending":
         return <Clock className="w-4 h-4" />;
-      case "confirmed":
+      case "shipped":
         return <CheckCircle className="w-4 h-4" />;
       case "delivered":
         return <Package className="w-4 h-4" />;
@@ -86,7 +87,7 @@ const OrderHistoryPage: React.FC = () => {
     switch (status) {
       case "pending":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "confirmed":
+      case "shipped":
         return "bg-blue-100 text-blue-800 border-blue-200";
       case "delivered":
         return "bg-green-100 text-green-800 border-green-200";
@@ -101,7 +102,7 @@ const OrderHistoryPage: React.FC = () => {
     switch (status) {
       case "pending":
         return "მუშავდება";
-      case "confirmed":
+      case "shipped":
         return "მიღებულია";
       case "delivered":
         return "მიტანილია";
@@ -264,7 +265,7 @@ const OrderHistoryPage: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h5 className="font-medium text-stone-900 text-sm truncate">
-                            {item.product.name}
+                            {getOrderItemDisplayName(item)}
                           </h5>
                           <p className="text-xs text-stone-500">
                             {item.quantity}x • ₾{item.price.toFixed(2)}

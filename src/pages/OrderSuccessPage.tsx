@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { OrderService } from "../services/orderService";
 import { showToast } from "../components/ui/Toast";
+import { getOrderItemDisplayName } from "../utils/displayHelpers";
 import type { Order } from "../types";
 
 const OrderSuccessPage: React.FC = () => {
@@ -126,8 +127,6 @@ const OrderSuccessPage: React.FC = () => {
     switch (status) {
       case "pending":
         return "მიღებულია";
-      case "confirmed":
-        return "დადასტურებულია";
       case "shipped":
         return "გზაშია";
       case "delivered":
@@ -143,10 +142,8 @@ const OrderSuccessPage: React.FC = () => {
     switch (status) {
       case "pending":
         return "bg-emerald-100 text-emerald-800 border-emerald-200";
-      case "confirmed":
-        return "bg-blue-100 text-blue-800 border-blue-200";
       case "shipped":
-        return "bg-purple-100 text-purple-800 border-purple-200";
+        return "bg-blue-100 text-blue-800 border-blue-200";
       case "delivered":
         return "bg-green-100 text-green-800 border-green-200";
       case "cancelled":
@@ -342,7 +339,7 @@ const OrderSuccessPage: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-bold text-stone-900 text-lg line-clamp-2 print:text-sm">
-                        {item.product.name}
+                        {getOrderItemDisplayName(item)}
                       </h4>
                       <div className="flex justify-between items-end mt-2 print:mt-1">
                         <div className="text-stone-500 font-medium print:text-xs">

@@ -30,8 +30,8 @@ const initialGuestState = loadGuestCartOnInit();
 
 interface CartActions {
   addItem: (product: Product, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeItem: (productId: string, variantId?: string) => void;
+  updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
   clearCart: () => void;
   loadUserCart: (userId: string | null) => void;
   getCartTotal: () => number;
@@ -203,37 +203,67 @@ export const useCartStore = create<CartStoreState & CartActions>()(
         },
 
         // --- ADD ITEM LOGIC ---
-        addItem: async (product: Product, quantity = 1) => {
+        addItem: async (product: any, quantity = 1) => {
           const state = get();
 
+          // Extract variant info if product has variant data
+          const variantId = product.variantId || null;
+          const variantName = product.variantName || null;
+          const currentStock = product.stock || 0;
+          const currentPrice = product.price || 0;
+
+          // Remove variant-specific fields from product object for storage
+          const cleanProduct = {
+            ...product,
+            variantId: undefined,
+            variantName: undefined,
+          };
+
           // 1. მარაგი მთლიანად ამოწურულია?
-          if (product.stock === 0) {
+          if (currentStock === 0) {
             showToast("სამწუხაროდ, პროდუქტი მარაგში არ არის", "error");
             return;
           }
 
+          // 2. Create unique item key (product + variant combination)
+          const itemKey = variantId ? `${product.id}:${variantId}` : product.id;
+
           const existingItem = state.items.find(
-            (item) => item.productId === product.id
+            (item) => {
+              const existingKey = item.variantId
+                ? `${item.productId}:${item.variantId}`
+                : item.productId;
+              return existingKey === itemKey;
+            }
           );
 
-          // 2. ლიმიტის შემოწმება (არსებულს + ახალი)
+          // 3. ლიმიტის შემოწმება (არსებულს + ახალი)
           const currentQty = existingItem ? existingItem.quantity : 0;
-          if (currentQty + quantity > product.stock) {
-            showToast(`მარაგში მხოლოდ ${product.stock} ერთეულია`, "error");
+          if (currentQty + quantity > currentStock) {
+            showToast(`მარაგში მხოლოდ ${currentStock} ერთეულია`, "error");
             return;
           }
 
           let newItems;
           if (existingItem) {
-            newItems = state.items.map((item) =>
-              item.productId === product.id
+            newItems = state.items.map((item) => {
+              const existingKey = item.variantId
+                ? `${item.productId}:${item.variantId}`
+                : item.productId;
+
+              return existingKey === itemKey
                 ? { ...item, quantity: item.quantity + quantity }
-                : item
-            );
+                : item;
+            });
           } else {
             newItems = [
               ...state.items,
-              { productId: product.id, product, quantity },
+              {
+                productId: product.id,
+                variantId,
+                product: cleanProduct,
+                quantity
+              },
             ];
           }
 
@@ -270,11 +300,16 @@ export const useCartStore = create<CartStoreState & CartActions>()(
           }
         },
 
-        removeItem: async (productId: string) => {
+        removeItem: async (productId: string, variantId?: string) => {
           const state = get();
-          const newItems = state.items.filter(
-            (item) => item.productId !== productId
-          );
+          const itemKey = variantId ? `${productId}:${variantId}` : productId;
+
+          const newItems = state.items.filter((item) => {
+            const existingKey = item.variantId
+              ? `${item.productId}:${item.variantId}`
+              : item.productId;
+            return existingKey !== itemKey;
+          });
           const newTotalItems = newItems.reduce(
             (sum, item) => sum + item.quantity,
             0
@@ -309,26 +344,40 @@ export const useCartStore = create<CartStoreState & CartActions>()(
         },
 
         // --- UPDATE QUANTITY LOGIC ---
-        updateQuantity: async (productId: string, quantity: number) => {
+        updateQuantity: async (productId: string, quantity: number, variantId?: string) => {
           const state = get();
-          const item = state.items.find((i) => i.productId === productId);
+          const itemKey = variantId ? `${productId}:${variantId}` : productId;
+
+          const item = state.items.find((i) => {
+            const existingKey = i.variantId
+              ? `${i.productId}:${i.variantId}`
+              : i.productId;
+            return existingKey === itemKey;
+          });
 
           if (!item) return;
 
+          // Get the correct stock value (could be variant stock)
+          const availableStock = item.product.stock || 0;
+
           // 3. შემოწმება გაზრდისას
-          if (quantity > item.product.stock) {
-            showToast(`მაქსიმალური მარაგი: ${item.product.stock}`, "error");
+          if (quantity > availableStock) {
+            showToast(`მაქსიმალური მარაგი: ${availableStock}`, "error");
             return;
           }
 
           if (quantity <= 0) {
-            get().removeItem(productId);
+            get().removeItem(productId, variantId);
             return;
           }
 
-          const newItems = state.items.map((item) =>
-            item.productId === productId ? { ...item, quantity } : item
-          );
+          const newItems = state.items.map((item) => {
+            const existingKey = item.variantId
+              ? `${item.productId}:${item.variantId}`
+              : item.productId;
+
+            return existingKey === itemKey ? { ...item, quantity } : item;
+          });
 
           const newTotalItems = newItems.reduce(
             (sum, item) => sum + item.quantity,

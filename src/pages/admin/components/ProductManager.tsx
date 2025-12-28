@@ -12,13 +12,14 @@ import {
   Star,
   DollarSign,
 } from "lucide-react";
-import AddProductModal from "./AddProductModal";
-import EditProductModal from "./EditProductModal";
+import AddProductDrawer from "./AddProductDrawer";
+import EditProductModalVariants from "./EditProductModalVariants";
 import type { Product } from "../../../types";
 import { getPriorityEmoji } from "../../../utils/priority";
 
 const ProductManager: React.FC = () => {
-  const { products, isLoading, deleteProduct, toggleProductStatus } = useProductStore();
+  const { products, isLoading, deleteProduct, toggleProductStatus } =
+    useProductStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -29,7 +30,9 @@ const ProductManager: React.FC = () => {
   };
 
   const handleDeleteProduct = async (id: string, name: string) => {
-    if (window.confirm(`დარწმუნებული ხართ, რომ გსურთ "${name}" პროდუქტის წაშლა?`)) {
+    if (
+      window.confirm(`დარწმუნებული ხართ, რომ გსურთ "${name}" პროდუქტის წაშლა?`)
+    ) {
       await deleteProduct(id);
     }
   };
@@ -67,13 +70,19 @@ const ProductManager: React.FC = () => {
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">პროდუქტების მართვა</h2>
-            <p className="text-gray-600 text-sm mt-1">მართეთ მაღაზიის ასორტიმენტი და ფასები</p>
+            <h2 className="text-xl font-semibold text-gray-900">
+              პროდუქტების მართვა
+            </h2>
+            <p className="text-gray-600 text-sm mt-1">
+              მართეთ მაღაზიის ასორტიმენტი და ფასები
+            </p>
           </div>
           <div className="flex items-center space-x-4 mt-4 sm:mt-0">
             <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm">
               <span className="text-gray-600">სულ: </span>
-              <span className="font-semibold text-gray-900">{products.length} პროდუქტი</span>
+              <span className="font-semibold text-gray-900">
+                {products.length} პროდუქტი
+              </span>
             </div>
             <button
               onClick={() => setIsAddModalOpen(true)}
@@ -90,8 +99,12 @@ const ProductManager: React.FC = () => {
       {products.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-lg p-12 text-center shadow-sm">
           <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">პროდუქტები არ არის</h3>
-          <p className="text-gray-600 mb-6">დაამატეთ თქვენი პირველი პროდუქტი რომ დაიწყოთ გაყიდვები</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            პროდუქტები არ არის
+          </h3>
+          <p className="text-gray-600 mb-6">
+            დაამატეთ თქვენი პირველი პროდუქტი რომ დაიწყოთ გაყიდვები
+          </p>
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 mx-auto"
@@ -150,13 +163,14 @@ const ProductManager: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div className="text-sm text-gray-500">{product.category}</div>
+                          <div className="text-sm text-gray-500">
+                            {product.category}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <DollarSign className="w-4 h-4 text-gray-400 mr-1" />
                         <span className="text-sm font-semibold text-gray-900">
                           ₾{product.price.toFixed(2)}
                         </span>
@@ -164,7 +178,9 @@ const ProductManager: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-900">{product.stock}</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {product.stock}
+                        </span>
                         <span
                           className={`px-2 py-1 text-xs font-medium rounded-full ${getStockStatusColor(
                             product.stock
@@ -182,12 +198,16 @@ const ProductManager: React.FC = () => {
                         {product.isActive ? (
                           <>
                             <ToggleRight className="w-5 h-5 text-emerald-600 group-hover:text-emerald-700" />
-                            <span className="text-sm text-emerald-600">აქტიური</span>
+                            <span className="text-sm text-emerald-600">
+                              აქტიური
+                            </span>
                           </>
                         ) : (
                           <>
                             <ToggleLeft className="w-5 h-5 text-gray-400 group-hover:text-gray-500" />
-                            <span className="text-sm text-gray-500">გამორთული</span>
+                            <span className="text-sm text-gray-500">
+                              გამორთული
+                            </span>
                           </>
                         )}
                       </button>
@@ -202,7 +222,9 @@ const ProductManager: React.FC = () => {
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteProduct(product.id, product.name)}
+                          onClick={() =>
+                            handleDeleteProduct(product.id, product.name)
+                          }
                           className="text-red-600 hover:text-red-700 p-1 rounded hover:bg-red-50"
                           title="წაშლა"
                         >
@@ -220,7 +242,7 @@ const ProductManager: React.FC = () => {
 
       {/* Modals */}
       {isAddModalOpen && (
-        <AddProductModal
+        <AddProductDrawer
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
           onProductAdded={() => {
@@ -230,7 +252,7 @@ const ProductManager: React.FC = () => {
       )}
 
       {isEditModalOpen && selectedProduct && (
-        <EditProductModal
+        <EditProductModalVariants
           isOpen={isEditModalOpen}
           onClose={() => {
             setIsEditModalOpen(false);

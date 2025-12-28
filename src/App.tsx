@@ -32,6 +32,25 @@ import { useAuthStore } from "./store/authStore";
 import { useCartStore } from "./store/cartStore";
 import { ToastContainer } from "./components/ui/Toast";
 
+const CheckAndRenderLayout: React.FC = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  if (isAdminRoute) {
+    return <AnimatedRoutes />;
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-stone-50">
+      <Navbar />
+      <main className="grow">
+        <AnimatedRoutes />
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
 const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
 
@@ -207,16 +226,7 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
-      <div className="min-h-screen flex flex-col bg-stone-50">
-        <Navbar />
-
-        <main className="grow">
-          <AnimatedRoutes />
-        </main>
-
-        <Footer />
-      </div>
-
+      <CheckAndRenderLayout />
       {/* Toast Notifications */}
       <ToastContainer />
     </Router>

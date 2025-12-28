@@ -18,6 +18,11 @@ import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
 import { hasDiscount, getDiscountText } from "../utils/discount";
 import {
+  getProductDisplayPrice,
+  getProductOriginalDisplayPrice,
+  hasDiscount as hasProductDiscount,
+} from "../utils/productHelpers";
+import {
   getStockText,
   getStockColorClassesCompact,
   getStockStatus,
@@ -504,18 +509,18 @@ const HomePage: React.FC = () => {
 
                         <div className="mt-auto flex items-center justify-between">
                           <div className="flex flex-col">
-                            {hasDiscount(product) ? (
+                            {hasProductDiscount(product) ? (
                               <>
                                 <span className="text-sm text-stone-400 line-through">
-                                  ₾{product.originalPrice}
+                                  {getProductOriginalDisplayPrice(product)}
                                 </span>
                                 <span className="text-lg font-bold text-red-600">
-                                  ₾{product.price}
+                                  {getProductDisplayPrice(product)}
                                 </span>
                               </>
                             ) : (
                               <span className="text-lg font-bold text-emerald-700">
-                                ₾{product.price}
+                                {getProductDisplayPrice(product)}
                               </span>
                             )}
                           </div>

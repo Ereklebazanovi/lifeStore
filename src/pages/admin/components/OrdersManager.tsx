@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
+import { getOrderItemDisplayName } from "../../../utils/displayHelpers";
 import CreateManualOrderModal from "./CreateManualOrderModal";
 import {
   Package,
@@ -117,7 +118,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             .map(
               (item) => `
             <div class="product-item">
-              <span>${item.product.name} - ${
+              <span>${getOrderItemDisplayName(item)} - ${
                 item.quantity
               } ცალი × ₾${item.price.toFixed(2)}</span>
               <span>₾${item.total.toFixed(2)}</span>
@@ -277,7 +278,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     switch (status) {
       case "pending":
         return "bg-yellow-100 text-yellow-800";
-      case "confirmed":
+      case "shipped":
         return "bg-blue-100 text-blue-800";
       case "delivered":
         return "bg-emerald-100 text-emerald-800";
@@ -292,8 +293,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     switch (status) {
       case "pending":
         return "მოლოდინში";
-      case "confirmed":
-        return "დადასტურებული";
+      case "shipped":
+        return "გაგზავნილი";
       case "delivered":
         return "მიტანილი";
       case "cancelled":
@@ -308,7 +309,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     switch (status) {
       case "pending":
         return <Clock className="w-4 h-4" />;
-      case "confirmed":
+      case "shipped":
         return <CheckCircle className="w-4 h-4" />;
       case "delivered":
         return <Package className="w-4 h-4" />;
@@ -533,7 +534,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             >
               <option value="all">ყველა სტატუსი</option>
               <option value="pending">მოლოდინში</option>
-              <option value="confirmed">დადასტურებული</option>
+              <option value="shipped">გაგზავნილი</option>
               <option value="delivered">მიტანილი</option>
               <option value="cancelled">გაუქმებული</option>
             </select>
@@ -648,7 +649,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         )}`}
                       >
                         <option value="pending">მოლოდინში</option>
-                        <option value="confirmed">დადასტურებული</option>
+                        <option value="shipped">გაგზავნილი</option>
                         <option value="delivered">მიტანილი</option>
                         <option value="cancelled">გაუქმებული</option>
                       </select>
@@ -751,7 +752,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       className={`px-2 py-1 text-xs font-medium rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(order.orderStatus)}`}
                     >
                       <option value="pending">მოლოდინში</option>
-                      <option value="confirmed">დადასტურებული</option>
+                      <option value="shipped">გაგზავნილი</option>
                       <option value="delivered">მიტანილი</option>
                       <option value="cancelled">გაუქმებული</option>
                     </select>
@@ -1021,7 +1022,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                                 </div>
                                 <div>
                                   <h5 className="font-medium text-gray-900">
-                                    {item.product.name}
+                                    {getOrderItemDisplayName(item)}
                                   </h5>
                                   <p className="text-sm text-gray-500">
                                     ₾{item.price.toFixed(2)} × {item.quantity}{" "}
@@ -1057,7 +1058,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="pending">მოლოდინში</option>
-                          <option value="confirmed">დადასტურებული</option>
+                          <option value="shipped">გაგზავნილი</option>
                           <option value="delivered">მიტანილი</option>
                           <option value="cancelled">გაუქმებული</option>
                         </select>

@@ -47,6 +47,7 @@ export class OrderService {
   ): OrderItem[] {
     return cartItems.map((item) => ({
       productId: item.productId,
+      variantId: item.variantId, // Preserve variant ID
       product: item.product,
       quantity: item.quantity,
       price: item.product.price,
@@ -73,6 +74,7 @@ export class OrderService {
         images: [], // სურათის გარეშე (PDF-ში გამოჩნდება პაკეტის აიკონი)
         category: "manual",
         stock: 0,
+        hasVariants: false, // Manual entries are simple products
         createdAt: new Date(),
         updatedAt: new Date(),
         isActive: true,
@@ -404,7 +406,7 @@ export class OrderService {
         deliveryInfo: data.deliveryInfo,
         paymentMethod: data.paymentMethod,
         paymentStatus:
-          data.status === "delivered" || data.paymentMethod === "cash"
+          data.status === "delivered" || data.status === "shipped" || data.paymentMethod === "cash"
             ? "paid"
             : "pending",
         orderStatus: data.status,

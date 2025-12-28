@@ -58,8 +58,8 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   ]);
 
   const [source, setSource] = useState<OrderSource>("instagram");
-  const [status, setStatus] = useState<"pending" | "confirmed" | "delivered">(
-    "confirmed"
+  const [status, setStatus] = useState<"pending" | "shipped" | "delivered">(
+    "shipped"
   );
   const [paymentMethod, setPaymentMethod] = useState<
     "cash" | "other" | "bank_transfer"
@@ -79,7 +79,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       setDeliveryInfo({ city: "თბილისი", address: "", comment: "" });
       setItems([{ name: "", price: 0, quantity: 1 }]);
       setSource("instagram");
-      setStatus("confirmed");
+      setStatus("shipped");
       setPaymentMethod("cash");
       setShippingCost(0);
     }
@@ -245,7 +245,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                   className="w-full px-2 py-1.5 text-sm border border-stone-200 rounded-md focus:ring-1 focus:ring-emerald-500 outline-none bg-white"
                 >
                   <option value="pending">მუშავდება</option>
-                  <option value="confirmed">დადასტურებული</option>
+                  <option value="shipped">გაგზავნილი</option>
                   <option value="delivered">მიტანილი</option>
                 </select>
               </div>

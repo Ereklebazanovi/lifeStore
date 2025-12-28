@@ -8,10 +8,12 @@ import ProductManager from "./components/ProductManager";
 import OrdersManager from "./components/OrdersManager";
 import AdminStats from "./components/AdminStats";
 import LoadingSpinner from "./components/LoadingSpinner";
-import AddProductModal from "./components/AddProductModal";
+import AddProductDrawer from "./components/AddProductDrawer";
 import CreateManualOrderModal from "./components/CreateManualOrderModal";
-import InventoryAlerts from "../../components/admin/InventoryAlerts";
+import InventoryManagerVariants from "./components/InventoryManagerVariants";
+
 import { showToast } from "../../components/ui/Toast";
+
 import {
   Plus,
   RefreshCw,
@@ -203,106 +205,8 @@ const AdminPage: React.FC = () => {
         );
 
       case "inventory":
-        // Inventory management is admin-only
-        if (user?.role !== "admin") {
-          return (
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm text-center">
-              <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                წვდომა შეზღუდულია
-              </h3>
-              <p className="text-gray-600">
-                მარაგის მართვა მხოლოდ ადმინისტრატორისთვისაა ხელმისაწვდომი.
-              </p>
-            </div>
-          );
-        }
-
-        return (
-          <div className="space-y-6">
-            {/* Inventory Overview */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                მარაგის მართვა
-              </h2>
-              <p className="text-gray-600 text-sm mb-4">
-                პროდუქტების მარაგის მონიტორინგი და შეტყობინებები
-              </p>
-
-              {/* Stats Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <Package className="w-8 h-8 text-blue-600" />
-                    <div>
-                      <p className="text-xs text-blue-600 font-medium">
-                        სულ პროდუქტი
-                      </p>
-                      <p className="text-lg font-bold text-blue-900">
-                        {products.filter((p) => p.isActive).length}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <AlertTriangle className="w-8 h-8 text-red-600" />
-                    <div>
-                      <p className="text-xs text-red-600 font-medium">
-                        ამოიწურა
-                      </p>
-                      <p className="text-lg font-bold text-red-900">
-                        {
-                          products.filter((p) => p.isActive && p.stock <= 0)
-                            .length
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <AlertTriangle className="w-8 h-8 text-amber-600" />
-                    <div>
-                      <p className="text-xs text-amber-600 font-medium">
-                        კრიტიკული
-                      </p>
-                      <p className="text-lg font-bold text-amber-900">
-                        {
-                          products.filter(
-                            (p) => p.isActive && p.stock > 0 && p.stock <= 3
-                          ).length
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <TrendingDown className="w-8 h-8 text-yellow-600" />
-                    <div>
-                      <p className="text-xs text-yellow-600 font-medium">
-                        დაბალი მარაგი
-                      </p>
-                      <p className="text-lg font-bold text-yellow-900">
-                        {
-                          products.filter(
-                            (p) => p.isActive && p.stock > 3 && p.stock <= 10
-                          ).length
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Inventory Alerts - Show ALL alerts */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-              <InventoryAlerts maxAlerts={50} showTitle={true} />
-            </div>
-          </div>
-        );
+        // New warehouse management - accessible by both admin and manager
+        return <InventoryManagerVariants />;
 
       case "analytics": {
         // Analytics is admin-only
@@ -474,7 +378,7 @@ const AdminPage: React.FC = () => {
 
       {/* Add Product Modal - Admin Only */}
       {isAddModalOpen && user?.role === "admin" && (
-        <AddProductModal
+        <AddProductDrawer
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
           onProductAdded={fetchProducts}

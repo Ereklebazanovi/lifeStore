@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
 import { useAuthStore } from "../store/authStore";
 import { showToast } from "../components/ui/Toast";
+import { getCartItemDisplayName } from "../utils/displayHelpers";
 import { OrderService } from "../services/orderService";
 import { PaymentService } from "../services/paymentService";
 import PhoneInput from "../components/ui/PhoneInput";
@@ -440,7 +441,7 @@ const CheckoutPage: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <h4 className="text-sm font-bold text-stone-900 line-clamp-2">
-                        {item.product.name}
+                        {getCartItemDisplayName(item)}
                       </h4>
                       <div className="flex justify-between mt-1">
                         <span className="text-xs text-stone-500">

@@ -22,6 +22,11 @@ import {
   canAddToCart,
   getStockMessage,
 } from "../utils/stock";
+import {
+  getProductDisplayPrice,
+  getProductOriginalDisplayPrice,
+  hasDiscount as hasProductDiscount,
+} from "../utils/productHelpers";
 import SEOHead from "../components/SEOHead";
 import type { Product } from "../types";
 
@@ -35,6 +40,9 @@ const ProductDetailsPage: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [isFetching, setIsFetching] = useState(true);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -46,6 +54,19 @@ const ProductDetailsPage: React.FC = () => {
         if (data.images && data.images.length > 0) {
           setSelectedImage(data.images[0]);
         }
+
+        // Auto-select first available variant if product has variants
+        if (data.hasVariants && data.variants && data.variants.length > 0) {
+          const firstAvailableVariant = data.variants.find(
+            (v) => v.isActive && v.stock > 0
+          );
+          if (firstAvailableVariant) {
+            setSelectedVariantId(firstAvailableVariant.id);
+          } else {
+            // If no available variants, select the first one anyway
+            setSelectedVariantId(data.variants[0].id);
+          }
+        }
       }
       setIsFetching(false);
     };
@@ -53,26 +74,80 @@ const ProductDetailsPage: React.FC = () => {
     loadProduct();
   }, [id, getProductById]);
 
+  // Helper functions for variant support
+  const getSelectedVariant = () => {
+    if (!product?.hasVariants || !product.variants || !selectedVariantId) {
+      return null;
+    }
+    return product.variants.find((v) => v.id === selectedVariantId) || null;
+  };
+
+  const getCurrentPrice = () => {
+    const variant = getSelectedVariant();
+    if (variant) {
+      return variant.price;
+    }
+    return product?.price || 0;
+  };
+
+  const getCurrentStock = () => {
+    const variant = getSelectedVariant();
+    if (variant) {
+      return variant.stock;
+    }
+    return product?.stock || 0;
+  };
+
+  const isOutOfStock = () => {
+    return getCurrentStock() <= 0;
+  };
+
   const handleAddToCart = () => {
     if (!product) return;
 
-    // შევამოწმოთ მარაგი
-    const stockMessage = getStockMessage(product, quantity, 0);
-    if (stockMessage) {
-      showToast(stockMessage, "error");
+    const currentStock = getCurrentStock();
+    const selectedVariant = getSelectedVariant();
+
+    // Check if variant is required but not selected
+    if (product.hasVariants && !selectedVariant) {
+      showToast("გთხოვთ აირჩიოთ ვარიანტი", "error");
       return;
     }
 
-    addItem(product, quantity);
-    if (product.stock > 0) {
-      showToast(`${quantity} x ${product.name} კალათაში დაემატა!`, "success");
+    // Check stock
+    if (currentStock <= 0) {
+      showToast("პროდუქტი მარაგში არ არის", "error");
+      return;
     }
+
+    if (quantity > currentStock) {
+      showToast(`მარაგში მხოლოდ ${currentStock} ცალია`, "error");
+      return;
+    }
+
+    // Create cart item with variant info
+    const cartItem = {
+      ...product,
+      variantId: selectedVariant?.id || null,
+      variantName: selectedVariant?.name || null,
+      price: getCurrentPrice(),
+      stock: currentStock,
+    };
+
+    addItem(cartItem, quantity);
+
+    const itemName = selectedVariant
+      ? `${product.name} (${selectedVariant.name})`
+      : product.name;
+
+    showToast(`${quantity} x ${itemName} კალათაში დაემატა!`, "success");
   };
 
   const handleQuantityChange = (delta: number) => {
     if (!product) return;
+    const currentStock = getCurrentStock();
     const newQuantity = quantity + delta;
-    if (newQuantity >= 1 && newQuantity <= product.stock) {
+    if (newQuantity >= 1 && newQuantity <= currentStock) {
       setQuantity(newQuantity);
     }
   };
@@ -102,8 +177,8 @@ const ProductDetailsPage: React.FC = () => {
     );
   }
 
-  const isOutOfStock = product.stock === 0;
-  const totalPrice = product.price * quantity;
+  const outOfStock = isOutOfStock();
+  const totalPrice = getCurrentPrice() * quantity;
 
   // SEO data for product
   const productStructuredData = {
@@ -121,7 +196,7 @@ const ProductDetailsPage: React.FC = () => {
       "@type": "Offer",
       price: product.price,
       priceCurrency: "GEL",
-      availability: isOutOfStock
+      availability: isOutOfStock()
         ? "https://schema.org/OutOfStock"
         : "https://schema.org/InStock",
       seller: {
@@ -185,7 +260,7 @@ const ProductDetailsPage: React.FC = () => {
                 {/* Main Image Wrapper */}
                 <div className="relative w-full aspect-square md:aspect-auto md:h-[500px] flex items-center justify-center bg-stone-50/50">
                   {/* Badges */}
-                  {isOutOfStock ? (
+                  {isOutOfStock() ? (
                     <div className="absolute top-4 left-4 z-10 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">
                       მარაგში არ არის
                     </div>
@@ -249,22 +324,63 @@ const ProductDetailsPage: React.FC = () => {
                     {product.name}
                   </h1>
 
+                  {/* Variant Selector */}
+                  {product.hasVariants &&
+                    product.variants &&
+                    product.variants.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                          აირჩიეთ ვარიანტი:
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {product.variants
+                            .filter((variant) => variant.isActive)
+                            .map((variant) => (
+                              <button
+                                key={variant.id}
+                                onClick={() => {
+                                  setSelectedVariantId(variant.id);
+                                  setQuantity(1); // Reset quantity when variant changes
+                                }}
+                                disabled={variant.stock <= 0}
+                                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                                  selectedVariantId === variant.id
+                                    ? "bg-emerald-600 text-white border-emerald-600"
+                                    : variant.stock <= 0
+                                    ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                    : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:text-emerald-600"
+                                }`}
+                              >
+                                <div className="text-center">
+                                  <div>{variant.name}</div>
+                                  <div className="text-xs opacity-75">
+                                    {variant.stock <= 0
+                                      ? "არ არის"
+                                      : `₾${variant.price.toFixed(2)}`}
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
                   {/* Desktop Price View */}
                   <div className="hidden md:block mb-6">
                     <div className="flex items-baseline gap-3">
-                      {hasDiscount(product) ? (
+                      {hasProductDiscount(product) ? (
                         <div className="flex flex-col">
                           <span className="text-lg text-stone-400 line-through">
-                            ₾{product.originalPrice}
+                            {getProductOriginalDisplayPrice(product)}
                           </span>
                           <div className="flex items-baseline gap-2">
                             <span className="text-4xl font-bold text-red-600">
-                              ₾{product.price}
+                              ₾{getCurrentPrice().toFixed(2)}
                             </span>
                             <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded">
                               -
                               {Math.round(
-                                ((product.originalPrice! - product.price) /
+                                ((product.originalPrice! - getCurrentPrice()) /
                                   product.originalPrice!) *
                                   100
                               )}
@@ -274,7 +390,7 @@ const ProductDetailsPage: React.FC = () => {
                         </div>
                       ) : (
                         <span className="text-4xl font-bold text-emerald-700">
-                          ₾{product.price}
+                          ₾{getCurrentPrice().toFixed(2)}
                         </span>
                       )}
                       {quantity > 1 && (
@@ -289,22 +405,22 @@ const ProductDetailsPage: React.FC = () => {
                   <div className="md:hidden mb-6 flex items-center justify-between">
                     <div>
                       <p className="text-sm text-stone-500">ერთეულის ფასი</p>
-                      {hasDiscount(product) ? (
+                      {hasProductDiscount(product) ? (
                         <div className="flex items-baseline gap-2">
                           <span className="text-sm text-stone-400 line-through">
-                            ₾{product.originalPrice}
+                            {getProductOriginalDisplayPrice(product)}
                           </span>
                           <span className="text-2xl font-bold text-red-600">
-                            ₾{product.price}
+                            ₾{getCurrentPrice().toFixed(2)}
                           </span>
                         </div>
                       ) : (
                         <span className="text-2xl font-bold text-emerald-700">
-                          ₾{product.price}
+                          ₾{getCurrentPrice().toFixed(2)}
                         </span>
                       )}
                     </div>
-                    {!isOutOfStock && (
+                    {!outOfStock && (
                       <div className="flex items-center bg-stone-100 rounded-xl p-1">
                         <button
                           onClick={() => handleQuantityChange(-1)}
@@ -396,10 +512,10 @@ const ProductDetailsPage: React.FC = () => {
 
                   <button
                     onClick={handleAddToCart}
-                    disabled={isOutOfStock}
+                    disabled={outOfStock}
                     className="flex-1 bg-stone-900 hover:bg-emerald-600 text-white font-bold h-14 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg hover:shadow-xl active:scale-95 disabled:bg-stone-300 disabled:cursor-not-allowed disabled:shadow-none"
                   >
-                    {isOutOfStock ? (
+                    {outOfStock ? (
                       <span>მარაგი ამოწურულია</span>
                     ) : (
                       <>
@@ -428,10 +544,10 @@ const ProductDetailsPage: React.FC = () => {
 
             <button
               onClick={handleAddToCart}
-              disabled={isOutOfStock}
+              disabled={isOutOfStock()}
               className="flex-1 bg-stone-900 active:bg-emerald-700 text-white font-bold h-12 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:bg-stone-300"
             >
-              {isOutOfStock ? (
+              {isOutOfStock() ? (
                 <span className="text-sm">ამოწურულია</span>
               ) : (
                 <>
