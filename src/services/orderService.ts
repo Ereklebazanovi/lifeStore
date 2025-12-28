@@ -45,14 +45,22 @@ export class OrderService {
   private static convertCartItemsToOrderItems(
     cartItems: CartItem[]
   ): OrderItem[] {
-    return cartItems.map((item) => ({
-      productId: item.productId,
-      variantId: item.variantId, // Preserve variant ID
-      product: item.product,
-      quantity: item.quantity,
-      price: item.product.price,
-      total: item.quantity * item.product.price,
-    }));
+    return cartItems.map((item) => {
+      const orderItem: any = {
+        productId: item.productId,
+        product: item.product,
+        quantity: item.quantity,
+        price: item.product.price,
+        total: item.quantity * item.product.price,
+      };
+
+      // Only add variantId if it exists (avoid undefined)
+      if (item.variantId) {
+        orderItem.variantId = item.variantId;
+      }
+
+      return orderItem;
+    });
   }
 
   /**
