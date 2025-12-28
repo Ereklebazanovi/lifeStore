@@ -213,11 +213,9 @@ export const useCartStore = create<CartStoreState & CartActions>()(
           const currentPrice = product.price || 0;
 
           // Remove variant-specific fields from product object for storage
-          const cleanProduct = {
-            ...product,
-            variantId: undefined,
-            variantName: undefined,
-          };
+          const cleanProduct = { ...product };
+          delete cleanProduct.variantId;
+          delete cleanProduct.variantName;
 
           // 1. მარაგი მთლიანად ამოწურულია?
           if (currentStock === 0) {
@@ -256,15 +254,18 @@ export const useCartStore = create<CartStoreState & CartActions>()(
                 : item;
             });
           } else {
-            newItems = [
-              ...state.items,
-              {
-                productId: product.id,
-                variantId,
-                product: cleanProduct,
-                quantity
-              },
-            ];
+            const cartItem: any = {
+              productId: product.id,
+              product: cleanProduct,
+              quantity
+            };
+
+            // Only add variantId if it exists (avoid undefined)
+            if (variantId) {
+              cartItem.variantId = variantId;
+            }
+
+            newItems = [...state.items, cartItem];
           }
 
           const newTotalItems = newItems.reduce(
