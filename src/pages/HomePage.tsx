@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Leaf,
-  ShoppingCart,
   Truck,
   ShieldCheck,
   ArrowRight,
@@ -14,7 +13,7 @@ import {
   Search,
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
-import { useCartStore } from "../store/cartStore";
+// Removed useCartStore import - Quick Add functionality removed
 import { showToast } from "../components/ui/Toast";
 import { hasDiscount, getDiscountText } from "../utils/discount";
 import {
@@ -51,7 +50,7 @@ const HERO_IMAGES = [
 
 const HomePage: React.FC = () => {
   const { products, fetchProducts, isLoading } = useProductStore();
-  const { addItem } = useCartStore();
+  // Removed useCartStore as Quick Add is no longer needed
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -72,17 +71,7 @@ const HomePage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const handleAddToCart = (product: any) => {
-    // შევამოწმოთ მარაგი
-    const stockMessage = getStockMessage(product, 1, 0);
-    if (stockMessage) {
-      showToast(stockMessage, "error");
-      return;
-    }
-
-    addItem(product);
-    showToast(`${product.name} კალათაში დაემატა!`, "success");
-  };
+  // Removed handleAddToCart - Quick Add functionality removed
 
   // ფილტრაცია და ძებნა
   const getFilteredProducts = () => {
@@ -473,19 +462,7 @@ const HomePage: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Quick Add Button */}
-                        {!isOutOfStock && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleAddToCart(product);
-                            }}
-                            className="absolute bottom-4 right-4 w-11 h-11 bg-white text-stone-900 rounded-full shadow-lg flex items-center justify-center translate-y-20 group-hover:translate-y-0 transition-transform duration-300 hover:bg-emerald-600 hover:text-white"
-                            title="კალათაში დამატება"
-                          >
-                            <ShoppingCart className="w-5 h-5" />
-                          </button>
-                        )}
+                        {/* Quick Add removed - users should go to detail page to select variants */}
                       </Link>
 
                       {/* Content */}

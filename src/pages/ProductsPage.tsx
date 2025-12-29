@@ -2,17 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Leaf,
-  ShoppingCart,
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
   Search,
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
-import { useCartStore } from "../store/cartStore";
-import { showToast } from "../components/ui/Toast";
 import { hasDiscount, getDiscountText } from "../utils/discount";
-import { getStockText, getStockColorClassesCompact, getStockStatus, getStockMessage } from "../utils/stock";
+import { getStockText, getStockColorClassesCompact } from "../utils/stock";
 import { getProductDisplayPrice, getProductOriginalDisplayPrice, hasDiscount as hasProductDiscount } from "../utils/productHelpers";
 import SEOHead from "../components/SEOHead";
 
@@ -21,23 +18,10 @@ const ProductsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const { products, fetchProducts, isLoading } = useProductStore();
-  const { addItem } = useCartStore();
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
-
-  const handleAddToCart = (product: any) => {
-    // შევამოწმოთ მარაგი
-    const stockMessage = getStockMessage(product, 1, 0);
-    if (stockMessage) {
-      showToast(stockMessage, "error");
-      return;
-    }
-
-    addItem(product);
-    showToast(`${product.name} კალათაში დაემატა!`, "success");
-  };
 
   const getFilteredProducts = () => {
     let filtered = products.filter(product => product.isActive !== false);
@@ -289,20 +273,6 @@ const ProductsPage: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Add to Cart Button (Not a Link) */}
-                      <button
-                        onClick={() => handleAddToCart(product)}
-                        disabled={isOutOfStock}
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-200 
-                            ${
-                              isOutOfStock
-                                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                : "bg-stone-900 hover:bg-emerald-600 text-white group-hover:scale-110"
-                            }`}
-                        aria-label="Add to cart"
-                      >
-                        <ShoppingCart className="w-5 h-5" />
-                      </button>
                     </div>
                   </div>
                 </div>
