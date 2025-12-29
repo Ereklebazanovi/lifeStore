@@ -306,7 +306,7 @@ export class OrderService {
    * გამოიყენება თუ order creation-ის შემდეგ რაიმე შეცდომა მოხდება
    */
   private static async rollbackProductInventory(
-    items: { productId: string; quantity: number }[]
+    items: { productId: string; quantity: number; variantId?: string }[]
   ): Promise<void> {
     const realProducts = items.filter(
       (item) =>
@@ -322,17 +322,57 @@ export class OrderService {
     try {
       const batch = writeBatch(db);
 
-      for (const item of realProducts) {
-        const productRef = doc(db, "products", item.productId);
+      // Group items by productId for efficient rollback
+      const groupedByProduct = new Map<string, typeof realProducts>();
+      realProducts.forEach((item) => {
+        if (!groupedByProduct.has(item.productId)) {
+          groupedByProduct.set(item.productId, []);
+        }
+        groupedByProduct.get(item.productId)!.push(item);
+      });
+
+      for (const [productId, itemsForProduct] of groupedByProduct) {
+        const productRef = doc(db, "products", productId);
 
         // დავაბრუნოთ უკან stock (დავამატოთ რაოდენობა)
         const productDoc = await getDoc(productRef);
         if (productDoc.exists()) {
-          const currentStock = productDoc.data().stock || 0;
-          batch.update(productRef, {
-            stock: currentStock + item.quantity,
-            updatedAt: Timestamp.now(),
-          });
+          const productData = productDoc.data();
+          let updateData: any = { updatedAt: Timestamp.now() };
+
+          // Handle variants and simple products
+          const variantItems = itemsForProduct.filter((item) => item.variantId);
+          const simpleItems = itemsForProduct.filter((item) => !item.variantId);
+
+          // Rollback variant stocks
+          if (variantItems.length > 0) {
+            const variants = [...(productData.variants || [])];
+            variantItems.forEach((item) => {
+              const variantIndex = variants.findIndex(
+                (v) => v.id === item.variantId
+              );
+              if (variantIndex !== -1) {
+                variants[variantIndex] = {
+                  ...variants[variantIndex],
+                  stock: (variants[variantIndex].stock || 0) + item.quantity,
+                  updatedAt: Timestamp.now(),
+                };
+              }
+            });
+            updateData.variants = variants;
+          }
+
+          // Rollback simple product stock
+          if (simpleItems.length > 0) {
+            const totalQuantityToRestore = simpleItems.reduce(
+              (sum, item) => sum + item.quantity,
+              0
+            );
+            const currentStock = productData.stock || 0;
+            updateData.stock = currentStock + totalQuantityToRestore;
+          }
+
+          batch.update(productRef, updateData);
         }
       }
 
@@ -439,6 +479,7 @@ export class OrderService {
    * ✅ CREATE MANUAL ORDER (FROM ADMIN PANEL) - With Inventory Management
    * ეს ფუნქცია გამოიძახება მენეჯერის მიერ ხელით დამატებისას
    */
+  
   static async createManualOrder(
     data: CreateManualOrderRequest
   ): Promise<Order> {

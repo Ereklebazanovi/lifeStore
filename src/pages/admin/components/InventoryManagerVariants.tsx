@@ -210,7 +210,7 @@ const ExpandableProductRow: React.FC<ExpandableProductRowProps> = ({
     if (product.hasVariants && product.variants) {
       // Calculate real-time total stock from all active variants
       return product.variants
-        .filter(variant => variant.isActive)
+        .filter((variant) => variant.isActive)
         .reduce((total, variant) => total + (variant.stock || 0), 0);
     }
     return product.stock || 0;

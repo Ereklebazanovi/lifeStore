@@ -3,6 +3,10 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartState, Product } from "../types";
 import { CartService } from "../services/cartService";
+import {
+  CartValidationService,
+  type CartValidationResult,
+} from "../services/cartValidationService";
 import { showToast } from "../components/ui/Toast";
 
 const loadGuestCartOnInit = () => {
@@ -40,6 +44,7 @@ interface CartActions {
   loadUserCart: (userId: string | null) => void;
   getCartTotal: () => number;
   getCartItemsCount: () => number;
+  validateAndCleanCart: () => Promise<CartValidationResult | null>;
 }
 
 type CartUnsubscribe = () => void;
@@ -474,6 +479,72 @@ export const useCartStore = create<CartStoreState & CartActions>()(
         getCartItemsCount: () => {
           return get().items.reduce((sum, item) => sum + item.quantity, 0);
         },
+
+        // --- CART VALIDATION ---
+        validateAndCleanCart:
+          async (): Promise<CartValidationResult | null> => {
+            const state = get();
+
+            if (!CartValidationService.shouldValidateCart(state.items)) {
+              return null;
+            }
+
+            console.log("🔍 Starting cart validation...");
+            const result = await CartValidationService.validateCart(
+              state.items
+            );
+
+            if (result.hasChanges) {
+              console.log("📝 Applying cart changes...");
+
+              // Update cart with validated items
+              const newTotalItems = result.validItems.reduce(
+                (sum, item) => sum + item.quantity,
+                0
+              );
+              const newTotalPrice = result.validItems.reduce(
+                (sum, item) => sum + item.product.price * item.quantity,
+                0
+              );
+
+              const newState = {
+                items: result.validItems,
+                totalItems: newTotalItems,
+                totalPrice: newTotalPrice,
+                currentUserId: state.currentUserId,
+              };
+
+              set(newState);
+
+              // Save to storage/firestore
+              if (state.currentUserId) {
+                try {
+                  await CartService.saveUserCart(state.currentUserId, {
+                    items: result.validItems,
+                    totalItems: newTotalItems,
+                    totalPrice: newTotalPrice,
+                  });
+                } catch (error) {
+                  console.error(
+                    "Failed to save validated cart to Firestore:",
+                    error
+                  );
+                }
+              } else {
+                const dataToSave = {
+                  items: result.validItems,
+                  totalItems: newTotalItems,
+                  totalPrice: newTotalPrice,
+                };
+                localStorage.setItem("cart-guest", JSON.stringify(dataToSave));
+              }
+
+              // Show notifications to user
+              CartValidationService.showCartChangeNotifications(result);
+            }
+
+            return result;
+          },
       };
     },
     {

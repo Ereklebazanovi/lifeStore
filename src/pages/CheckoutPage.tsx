@@ -36,7 +36,8 @@ interface CheckoutFormData {
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
-  const { items, getCartTotal, clearCart } = useCartStore();
+  const { items, getCartTotal, clearCart, validateAndCleanCart } =
+    useCartStore();
   const { user } = useAuthStore();
 
   const subtotal = getCartTotal();
@@ -73,6 +74,21 @@ const CheckoutPage: React.FC = () => {
       }));
     }
   }, [user]);
+
+  // Cart validation on page load
+  useEffect(() => {
+    const validateCart = async () => {
+      if (items.length === 0) return;
+
+      try {
+        await validateAndCleanCart();
+      } catch (error) {
+        console.error("Checkout cart validation failed:", error);
+      }
+    };
+
+    validateCart();
+  }, [validateAndCleanCart]); // Run once when component mounts
 
   // ცარიელი კალათის შემოწმება
   useEffect(() => {

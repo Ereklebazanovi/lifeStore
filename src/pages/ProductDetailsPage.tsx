@@ -343,20 +343,24 @@ const ProductDetailsPage: React.FC = () => {
                                   setQuantity(1); // Reset quantity when variant changes
                                 }}
                                 disabled={variant.stock <= 0}
-                                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                                className={`px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
                                   selectedVariantId === variant.id
-                                    ? "bg-emerald-600 text-white border-emerald-600"
+                                    ? "bg-emerald-600 text-white border-emerald-600 shadow-lg ring-2 ring-emerald-200"
                                     : variant.stock <= 0
-                                    ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                                    : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:text-emerald-600"
+                                    ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50"
+                                    : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50"
                                 }`}
                               >
                                 <div className="text-center">
-                                  <div>{variant.name}</div>
-                                  <div className="text-xs opacity-75">
-                                    {variant.stock <= 0
-                                      ? "არ არის"
-                                      : `₾${variant.price.toFixed(2)}`}
+                                  <div className="font-semibold">{variant.name}</div>
+                                  <div className="text-xs mt-1">
+                                    {variant.stock <= 0 ? (
+                                      <div className={selectedVariantId === variant.id ? "text-red-200" : "text-red-500"}>\u10d0\u10e0 \u10d0\u10e0\u10d8\u10e1</div>
+                                    ) : (
+                                      <div className={selectedVariantId === variant.id ? "text-emerald-100" : "text-emerald-600"}>
+                                        ₾{variant.price.toFixed(2)}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </button>
@@ -367,7 +371,7 @@ const ProductDetailsPage: React.FC = () => {
 
                   {/* Desktop Price View */}
                   <div className="hidden md:block mb-6">
-                    <div className="flex items-baseline gap-3">
+                    <div className="flex items-baseline gap-3 mb-3">
                       {hasProductDiscount(product) ? (
                         <div className="flex flex-col">
                           <span className="text-lg text-stone-400 line-through">
@@ -399,6 +403,18 @@ const ProductDetailsPage: React.FC = () => {
                         </span>
                       )}
                     </div>
+
+                    {/* Desktop Stock Information */}
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className={`flex items-center gap-1 ${
+                        getCurrentStock() <= 0 ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        <span className={`w-2 h-2 rounded-full ${
+                          getCurrentStock() <= 0 ? 'bg-red-500' : 'bg-emerald-500'
+                        }`}></span>
+                        {getCurrentStock() <= 0 ? 'მარაგში არ არის' : `მარაგშია ${getCurrentStock()} ცალი`}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Mobile Price View */}
@@ -420,6 +436,8 @@ const ProductDetailsPage: React.FC = () => {
                         </span>
                       )}
                     </div>
+
+
                     {!outOfStock && (
                       <div className="flex items-center bg-stone-100 rounded-xl p-1">
                         <button
@@ -434,7 +452,7 @@ const ProductDetailsPage: React.FC = () => {
                         </span>
                         <button
                           onClick={() => handleQuantityChange(1)}
-                          disabled={quantity >= product.stock}
+                          disabled={quantity >= getCurrentStock()}
                           className="w-10 h-10 flex items-center justify-center text-stone-600 disabled:opacity-30"
                         >
                           <Plus className="w-4 h-4" />
@@ -502,7 +520,7 @@ const ProductDetailsPage: React.FC = () => {
                       </span>
                       <button
                         onClick={() => handleQuantityChange(1)}
-                        disabled={quantity >= product.stock}
+                        disabled={quantity >= getCurrentStock()}
                         className="w-12 h-full flex items-center justify-center hover:bg-white rounded-lg transition-colors disabled:opacity-30"
                       >
                         <Plus className="w-5 h-5 text-stone-600" />
@@ -534,9 +552,11 @@ const ProductDetailsPage: React.FC = () => {
         <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-stone-200 p-4 safe-area-bottom z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
           <div className="flex gap-4">
             <div className="flex flex-col justify-center">
-              <span className="text-xs text-stone-500 font-medium">
-                ჯამური ფასი
-              </span>
+              <div className="flex items-center gap-2 text-xs text-stone-500 font-medium mb-1">
+                <span>ჯამური ფასი</span>
+                <span className="w-1 h-1 bg-stone-400 rounded-full"></span>
+                <span>მარაგი: {getCurrentStock()} ცალი</span>
+              </div>
               <span className="text-xl font-bold text-emerald-700">
                 ₾{totalPrice.toFixed(2)}
               </span>

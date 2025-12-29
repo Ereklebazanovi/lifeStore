@@ -1,5 +1,5 @@
 // CartPage.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ShoppingCart,
@@ -10,7 +10,10 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
-import { getCartItemDisplayName, getVariantDisplayName } from "../utils/displayHelpers";
+import {
+  getCartItemDisplayName,
+  getVariantDisplayName,
+} from "../utils/displayHelpers";
 
 const CartPage: React.FC = () => {
   const {
@@ -20,7 +23,28 @@ const CartPage: React.FC = () => {
     updateQuantity,
     removeItem,
     clearCart,
+    validateAndCleanCart,
   } = useCartStore();
+
+  const [isValidating, setIsValidating] = useState(false);
+
+  // Validate cart when page loads
+  useEffect(() => {
+    const validateCart = async () => {
+      if (items.length === 0) return;
+
+      setIsValidating(true);
+      try {
+        await validateAndCleanCart();
+      } catch (error) {
+        console.error("Cart validation failed:", error);
+      } finally {
+        setIsValidating(false);
+      }
+    };
+
+    validateCart();
+  }, [validateAndCleanCart]); // Run once when component mounts
 
   if (items.length === 0) {
     return (
@@ -106,7 +130,9 @@ const CartPage: React.FC = () => {
                         </p>
                       </div>
                       <button
-                        onClick={() => removeItem(item.productId, item.variantId)}
+                        onClick={() =>
+                          removeItem(item.productId, item.variantId)
+                        }
                         className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         aria-label="Remove"
                       >
@@ -140,7 +166,11 @@ const CartPage: React.FC = () => {
                           </span>
                           <button
                             onClick={() =>
-                              updateQuantity(item.productId, item.quantity + 1, item.variantId)
+                              updateQuantity(
+                                item.productId,
+                                item.quantity + 1,
+                                item.variantId
+                              )
                             }
                             disabled={item.quantity >= item.product.stock}
                             className="w-10 h-full flex items-center justify-center text-stone-500 hover:text-stone-900 disabled:opacity-30 transition-colors"

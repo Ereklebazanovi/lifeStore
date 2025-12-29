@@ -8,27 +8,41 @@ import type { Product } from '../types';
 export type StockStatus = 'in_stock' | 'low_stock' | 'out_of_stock';
 
 /**
+ * მარაგის რაოდენობის გამოთვლა (variant support)
+ */
+const getTotalStock = (product: Product): number => {
+  if (product.hasVariants && product.variants) {
+    return product.variants
+      .filter(variant => variant.isActive)
+      .reduce((total, variant) => total + (variant.stock || 0), 0);
+  }
+  return product.stock || 0;
+};
+
+/**
  * მარაგის სტატუსის გამოთვლა
  */
 export const getStockStatus = (product: Product): StockStatus => {
-  if (product.stock === 0) return 'out_of_stock';
-  if (product.stock <= 5) return 'low_stock';
+  const totalStock = getTotalStock(product);
+  if (totalStock === 0) return 'out_of_stock';
+  if (totalStock <= 5) return 'low_stock';
   return 'in_stock';
 };
 
 /**
- * მარაგის ტექსტის გენერაცია
+ * მარაგის ტექსტის გენერაცია (variant-aware)
  */
 export const getStockText = (product: Product): string => {
   const status = getStockStatus(product);
+  const totalStock = getTotalStock(product);
 
   switch (status) {
     case 'out_of_stock':
       return 'მარაგში არ არის';
     case 'low_stock':
-      return `მარაგშია ${product.stock} ცალი `;
+      return `სულ: ${totalStock} ცალი`;
     case 'in_stock':
-      return product.stock > 20 ? 'მარაგშია' : `${product.stock} ცალი`;
+      return totalStock > 20 ? 'მარაგშია' : `სულ: ${totalStock} ცალი`;
   }
 };
 
