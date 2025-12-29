@@ -355,7 +355,7 @@ const ProductDetailsPage: React.FC = () => {
                                   <div className="font-semibold">{variant.name}</div>
                                   <div className="text-xs mt-1">
                                     {variant.stock <= 0 ? (
-                                      <div className={selectedVariantId === variant.id ? "text-red-200" : "text-red-500"}>\u10d0\u10e0 \u10d0\u10e0\u10d8\u10e1</div>
+                                      <div className={selectedVariantId === variant.id ? "text-red-200" : "text-red-500"}>არ არის</div>
                                     ) : (
                                       <div className={selectedVariantId === variant.id ? "text-emerald-100" : "text-emerald-600"}>
                                         ₾{variant.price.toFixed(2)}
