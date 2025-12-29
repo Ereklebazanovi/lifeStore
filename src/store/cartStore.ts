@@ -31,7 +31,11 @@ const initialGuestState = loadGuestCartOnInit();
 interface CartActions {
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: string, variantId?: string) => void;
-  updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
+  updateQuantity: (
+    productId: string,
+    quantity: number,
+    variantId?: string
+  ) => void;
   clearCart: () => void;
   loadUserCart: (userId: string | null) => void;
   getCartTotal: () => number;
@@ -213,7 +217,9 @@ export const useCartStore = create<CartStoreState & CartActions>()(
           // Get correct stock value - variant stock takes priority over product stock
           let currentStock = 0;
           if (variantId && product.variants) {
-            const variant = product.variants.find((v: any) => v.id === variantId);
+            const variant = product.variants.find(
+              (v: any) => v.id === variantId
+            );
             currentStock = variant ? variant.stock : 0;
           } else {
             currentStock = product.stock || 0;
@@ -235,14 +241,12 @@ export const useCartStore = create<CartStoreState & CartActions>()(
           // 2. Create unique item key (product + variant combination)
           const itemKey = variantId ? `${product.id}:${variantId}` : product.id;
 
-          const existingItem = state.items.find(
-            (item) => {
-              const existingKey = item.variantId
-                ? `${item.productId}:${item.variantId}`
-                : item.productId;
-              return existingKey === itemKey;
-            }
-          );
+          const existingItem = state.items.find((item) => {
+            const existingKey = item.variantId
+              ? `${item.productId}:${item.variantId}`
+              : item.productId;
+            return existingKey === itemKey;
+          });
 
           // 3. ლიმიტის შემოწმება (არსებულს + ახალი)
           const currentQty = existingItem ? existingItem.quantity : 0;
@@ -266,7 +270,7 @@ export const useCartStore = create<CartStoreState & CartActions>()(
             const cartItem: any = {
               productId: product.id,
               product: cleanProduct,
-              quantity
+              quantity,
             };
 
             // Only add variantId if it exists (avoid undefined)
@@ -354,7 +358,11 @@ export const useCartStore = create<CartStoreState & CartActions>()(
         },
 
         // --- UPDATE QUANTITY LOGIC ---
-        updateQuantity: async (productId: string, quantity: number, variantId?: string) => {
+        updateQuantity: async (
+          productId: string,
+          quantity: number,
+          variantId?: string
+        ) => {
           const state = get();
           const itemKey = variantId ? `${productId}:${variantId}` : productId;
 
@@ -370,7 +378,9 @@ export const useCartStore = create<CartStoreState & CartActions>()(
           // Get the correct stock value (prioritize variant stock)
           let availableStock = 0;
           if (item.variantId && item.product.variants) {
-            const variant = item.product.variants.find((v: any) => v.id === item.variantId);
+            const variant = item.product.variants.find(
+              (v: any) => v.id === item.variantId
+            );
             availableStock = variant ? variant.stock : 0;
           } else {
             availableStock = item.product.stock || 0;

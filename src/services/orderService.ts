@@ -122,73 +122,101 @@ export class OrderService {
 
     try {
       await runTransaction(db, async (transaction) => {
-        // 1. წავიკითხოთ ყველა პროდუქტის მიმდინარე მონაცემი
-        const productRefs = realProducts.map((item) =>
-          doc(db, "products", item.productId)
+        // 1. დავაჯგუფოთ items productId-ით (ერთ პროდუქტში შესაძლოა მრავალი ვარიანტი იყოს)
+        const groupedByProduct = new Map<string, typeof realProducts>();
+
+        realProducts.forEach((item) => {
+          if (!groupedByProduct.has(item.productId)) {
+            groupedByProduct.set(item.productId, []);
+          }
+          groupedByProduct.get(item.productId)!.push(item);
+        });
+
+        // 2. წავიკითხოთ თითოეული unique product-ის მონაცემები
+        const uniqueProductIds = Array.from(groupedByProduct.keys());
+        const productRefs = uniqueProductIds.map((productId) =>
+          doc(db, "products", productId)
         );
 
         const productDocs = await Promise.all(
           productRefs.map((ref) => transaction.get(ref))
         );
 
-        // 2. შევამოწმოთ stock availability და განვაახლოთ
+        // 3. თითოეული პროდუქტისთვის ავამუშაოთ ყველა ვარიანტი ერთდროულად
         for (let i = 0; i < productDocs.length; i++) {
           const productDoc = productDocs[i];
-          const item = realProducts[i];
+          const productId = uniqueProductIds[i];
+          const itemsForThisProduct = groupedByProduct.get(productId)!;
 
           if (!productDoc.exists()) {
-            throw new Error(`პროდუქტი ვერ მოიძებნა: ${item.productId}`);
+            throw new Error(`პროდუქტი ვერ მოიძებნა: ${productId}`);
           }
 
           const productData = productDoc.data();
 
-          // Handle variants vs simple products
-          if (item.variantId) {
-            // Variant product: update specific variant stock
-            const variants = productData.variants || [];
-            const variantIndex = variants.findIndex((v: any) => v.id === item.variantId);
+          // ავამუშაოთ ვარიანტები და სიმპლური პროდუქტები ცალ-ცალკე
+          const variantItems = itemsForThisProduct.filter(
+            (item) => item.variantId
+          );
+          const simpleItems = itemsForThisProduct.filter(
+            (item) => !item.variantId
+          );
 
-            if (variantIndex === -1) {
-              throw new Error(`ვარიანტი ვერ მოიძებნა: ${item.variantId}`);
-            }
+          let updateData: any = { updatedAt: Timestamp.now() };
 
-            const currentVariantStock = variants[variantIndex].stock || 0;
-            const newVariantStock = currentVariantStock - item.quantity;
+          // ვარიანტების დამუშავება
+          if (variantItems.length > 0) {
+            const variants = [...(productData.variants || [])];
 
-            if (newVariantStock < 0) {
-              throw new Error(
-                `არასაკმარისი რაოდენობა: "${productData.name}" (${variants[variantIndex].name}) (მოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${currentVariantStock})`
+            variantItems.forEach((item) => {
+              const variantIndex = variants.findIndex(
+                (v) => v.id === item.variantId
               );
-            }
 
-            // Update variant stock within variants array
-            const updatedVariants = [...variants];
-            updatedVariants[variantIndex] = {
-              ...updatedVariants[variantIndex],
-              stock: newVariantStock,
-              updatedAt: Timestamp.now(),
-            };
+              if (variantIndex === -1) {
+                throw new Error(`ვარიანტი ვერ მოიძებნა: ${item.variantId}`);
+              }
 
-            transaction.update(productRefs[i], {
-              variants: updatedVariants,
-              updatedAt: Timestamp.now(),
+              const currentVariantStock = variants[variantIndex].stock || 0;
+              const newVariantStock = currentVariantStock - item.quantity;
+
+              if (newVariantStock < 0) {
+                throw new Error(
+                  `არასაკმარისი რაოდენობა: "${productData.name}" (${variants[variantIndex].name}) (მოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${currentVariantStock})`
+                );
+              }
+
+              // განვაახლოთ ვარიანტის stock
+              variants[variantIndex] = {
+                ...variants[variantIndex],
+                stock: newVariantStock,
+                updatedAt: Timestamp.now(),
+              };
             });
-          } else {
-            // Simple product: update main product stock
+
+            updateData.variants = variants;
+          }
+
+          // სიმპლური პროდუქტების დამუშავება
+          if (simpleItems.length > 0) {
+            const totalQuantityToDeduct = simpleItems.reduce(
+              (sum, item) => sum + item.quantity,
+              0
+            );
             const currentStock = productData.stock || 0;
-            const newStock = currentStock - item.quantity;
+            const newStock = currentStock - totalQuantityToDeduct;
 
             if (newStock < 0) {
               throw new Error(
-                `არასაკმარისი რაოდენობა: "${productData.name}" (მოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${currentStock})`
+                `არასაკმარისი რაოდენობა: "${productData.name}" (მოთხოვნილია: ${totalQuantityToDeduct}, ხელმისაწვდომია: ${currentStock})`
               );
             }
 
-            transaction.update(productRefs[i], {
-              stock: newStock,
-              updatedAt: Timestamp.now(),
-            });
+            updateData.stock = newStock;
           }
+
+          // ერთიანი update ამ პროდუქტისთვის
+          transaction.update(productRefs[i], updateData);
         }
 
         console.log("📦 Product inventory updated successfully in transaction");
@@ -466,7 +494,9 @@ export class OrderService {
         deliveryInfo: data.deliveryInfo,
         paymentMethod: data.paymentMethod,
         paymentStatus:
-          data.status === "delivered" || data.status === "shipped" || data.paymentMethod === "cash"
+          data.status === "delivered" ||
+          data.status === "shipped" ||
+          data.paymentMethod === "cash"
             ? "paid"
             : "pending",
         orderStatus: data.status,
@@ -540,7 +570,9 @@ export class OrderService {
       console.log("🔍 Searching for order by number:", orderNumber);
 
       // Use server-side API to bypass Firestore security rules
-      const response = await fetch(`/api/order/getByNumber?orderNumber=${encodeURIComponent(orderNumber)}`);
+      const response = await fetch(
+        `/api/order/getByNumber?orderNumber=${encodeURIComponent(orderNumber)}`
+      );
 
       if (response.status === 404) {
         console.log("❌ No order found with number:", orderNumber);
@@ -555,16 +587,22 @@ export class OrderService {
 
       const order: Order = {
         ...orderData,
-        createdAt: orderData.createdAt ? new Date(orderData.createdAt) : new Date(),
-        updatedAt: orderData.updatedAt ? new Date(orderData.updatedAt) : new Date(),
-        deliveredAt: orderData.deliveredAt ? new Date(orderData.deliveredAt) : undefined,
+        createdAt: orderData.createdAt
+          ? new Date(orderData.createdAt)
+          : new Date(),
+        updatedAt: orderData.updatedAt
+          ? new Date(orderData.updatedAt)
+          : new Date(),
+        deliveredAt: orderData.deliveredAt
+          ? new Date(orderData.deliveredAt)
+          : undefined,
         paidAt: orderData.paidAt ? new Date(orderData.paidAt) : undefined,
       };
 
       console.log("✅ Order found via server-side:", {
         id: order.id,
         orderNumber: order.orderNumber,
-        paymentStatus: order.paymentStatus
+        paymentStatus: order.paymentStatus,
       });
 
       return order;
@@ -673,7 +711,10 @@ export class OrderService {
     }
   }
 
-  static async cancelOrder(orderId: string, cancelReason: string): Promise<void> {
+  static async cancelOrder(
+    orderId: string,
+    cancelReason: string
+  ): Promise<void> {
     try {
       const orderRef = doc(db, this.COLLECTION_NAME, orderId);
       const orderDoc = await getDoc(orderRef);
@@ -694,7 +735,7 @@ export class OrderService {
             const currentStock = productDoc.data().stock || 0;
             await updateDoc(productRef, {
               stock: currentStock + item.quantity,
-              updatedAt: Timestamp.now()
+              updatedAt: Timestamp.now(),
             });
           }
         });
