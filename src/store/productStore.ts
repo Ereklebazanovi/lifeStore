@@ -121,8 +121,19 @@ export const useProductStore = create<ProductState & ProductActions>(
         set({ isLoading: true });
         const productsRef = collection(db, "products");
 
+        // Calculate stock fields for variant products
+        let calculatedStock = productData.stock || 0;
+        let calculatedTotalStock = productData.stock || 0;
+
+        if (productData.hasVariants && productData.variants) {
+          calculatedStock = productData.variants.reduce((sum, variant) => sum + (variant.stock || 0), 0);
+          calculatedTotalStock = calculatedStock;
+        }
+
         const newProduct = {
           ...productData,
+          stock: calculatedStock,
+          totalStock: calculatedTotalStock,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
