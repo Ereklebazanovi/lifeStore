@@ -16,6 +16,7 @@ import AddProductDrawer from "./AddProductDrawer";
 import EditProductModalVariants from "./EditProductModalVariants";
 import type { Product } from "../../../types";
 import { getPriorityEmoji } from "../../../utils/priority";
+import { getTotalStock } from "../../../utils/stock";
 
 const ProductManager: React.FC = () => {
   const { products, isLoading, deleteProduct, toggleProductStatus } =
@@ -55,6 +56,11 @@ const ProductManager: React.FC = () => {
     return "კარგია";
   };
 
+  // ჯამური მარაგების გამოთვლა ყველა პროდუქტისთვის
+  const totalStock = products.reduce((sum, product) => {
+    return sum + getTotalStock(product);
+  }, 0);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -78,6 +84,12 @@ const ProductManager: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center space-x-4 mt-4 sm:mt-0">
+            <div className="bg-blue-50 rounded-lg px-4 py-2 text-sm border border-blue-200">
+              <span className="text-blue-600">სულ მარაგში: </span>
+              <span className="font-bold text-blue-800">
+                {totalStock} ცალი
+              </span>
+            </div>
             <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm">
               <span className="text-gray-600">სულ: </span>
               <span className="font-semibold text-gray-900">
@@ -179,14 +191,14 @@ const ProductManager: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
                         <span className="text-sm font-medium text-gray-900">
-                          {product.stock}
+                          {getTotalStock(product)}
                         </span>
                         <span
                           className={`px-2 py-1 text-xs font-medium rounded-full ${getStockStatusColor(
-                            product.stock
+                            getTotalStock(product)
                           )}`}
                         >
-                          {getStockStatusText(product.stock)}
+                          {getStockStatusText(getTotalStock(product))}
                         </span>
                       </div>
                     </td>

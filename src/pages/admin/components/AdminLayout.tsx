@@ -1,3 +1,4 @@
+// src/pages/admin/components/AdminLayout.tsx
 import React, { useState, useEffect } from "react";
 import { useAuthStore } from "../../../store/authStore";
 import {
@@ -61,12 +62,25 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     { id: "analytics", icon: BarChart3, label: "ანალიტიკა" },
   ];
 
-  // Role-based navigation: managers can see warehouse but not analytics
+  // Enhanced Role-based navigation
   const navigationItems = allNavItems.filter((item) => {
-    if (user?.role === "manager") {
-      return !["analytics"].includes(item.id); // Only hide analytics from managers
+    const userRole = user?.role;
+
+    switch (userRole) {
+      case "admin":
+        return true; // Admin sees everything
+
+      case "manager":
+        // Managers can access: dashboard, orders, inventory (view only)
+        return ["dashboard", "orders", "inventory"].includes(item.id);
+
+      case "warehouse":
+        // Warehouse staff can access: dashboard, inventory (full control), products (view only)
+        return ["dashboard", "inventory", "products"].includes(item.id);
+
+      default:
+        return ["dashboard"].includes(item.id); // Safe default
     }
-    return true; // Admin sees everything
   });
 
   // კომპონენტი ღილაკისთვის (კოდის დუბლირების თავიდან ასაცილებლად)
@@ -129,7 +143,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
             <div>
               <h1 className="text-lg font-bold text-gray-900">LifeStore</h1>
               <p className="text-xs text-gray-500">
-                {user?.role === "manager" ? "მენეჯერი" : "ადმინისტრატორი"}
+                {user?.role === "admin"
+                  ? "ადმინისტრატორი"
+                  : user?.role === "manager"
+                  ? "მენეჯერი"
+                  : user?.role === "warehouse"
+                  ? "საწყობი"
+                  : "სისტემა"}
               </p>
             </div>
             <button
@@ -171,7 +191,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
               <div className="w-full">
                 <h1 className="text-lg font-bold text-gray-900">LifeStore</h1>
                 <p className="text-xs text-gray-500 truncate">
-                  {user?.role === "manager" ? "POS სისტემა" : "ადმინ პანელი"}
+                  {user?.role === "admin"
+                    ? "ადმინ პანელი"
+                    : user?.role === "manager"
+                    ? "მენეჯერი (POS)"
+                    : user?.role === "warehouse"
+                    ? "საწყობი"
+                    : "სისტემა"}
                 </p>
               </div>
             ) : (
@@ -207,7 +233,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                       {user?.email}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
-                      {user?.role === "manager" ? "მენეჯერი" : "ადმინი"}
+                      {user?.role === "admin"
+                        ? "ადმინი"
+                        : user?.role === "manager"
+                        ? "მენეჯერი"
+                        : user?.role === "warehouse"
+                        ? "საწყობი"
+                        : "მომხმარებელი"}
                     </p>
                   </div>
                 </div>
@@ -280,9 +312,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         </header>
 
         <main className="flex-1 p-6 overflow-hidden flex flex-col">
-          <div className="flex-1 overflow-y-auto">
-            {children}
-          </div>
+          <div className="flex-1 overflow-y-auto">{children}</div>
         </main>
       </div>
     </div>

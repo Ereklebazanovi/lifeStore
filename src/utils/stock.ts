@@ -10,7 +10,7 @@ export type StockStatus = 'in_stock' | 'low_stock' | 'out_of_stock';
 /**
  * მარაგის რაოდენობის გამოთვლა (variant support)
  */
-const getTotalStock = (product: Product): number => {
+export const getTotalStock = (product: Product): number => {
   if (product.hasVariants && product.variants) {
     return product.variants
       .filter(variant => variant.isActive)

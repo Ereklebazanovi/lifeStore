@@ -6,14 +6,16 @@ import {
   Plus,
   AlertCircle,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
 } from "lucide-react";
 import { useProductStore } from "../../store/productStore";
-import type { Product } from "../../types";
+import type { Product, ProductVariant } from "../../types";
+import { getTotalStock } from "../../utils/stock";
 
 export interface ProductSelection {
   type: "existing" | "manual";
   product?: Product;
+  variantId?: string;
   name: string;
   price: number;
   stock?: number;
@@ -29,6 +31,16 @@ interface ProductAutocompleteProps {
   requestedQuantity?: number;
 }
 
+// Enhanced search item type to include variants
+interface SearchItem {
+  type: "product" | "variant";
+  product: Product;
+  variant?: ProductVariant;
+  searchDisplay: string;
+  stock: number;
+  price: number;
+}
+
 const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
   value,
   onChange,
@@ -39,23 +51,59 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
 }) => {
   const { products } = useProductStore();
   const [isOpen, setIsOpen] = useState(false);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [filteredItems, setFilteredItems] = useState<SearchItem[]>([]);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!value.trim()) {
-      setFilteredProducts([]);
+      setFilteredItems([]);
       return;
     }
-    
+
     const searchTerm = value.toLowerCase().trim();
-    const filtered = products
-      .filter(p => p.isActive && p.name.toLowerCase().includes(searchTerm))
-      .slice(0, 5);
-    setFilteredProducts(filtered);
+    const items: SearchItem[] = [];
+
+    // Search through active products
+    products
+      .filter((p) => p.isActive && p.name.toLowerCase().includes(searchTerm))
+      .forEach((product) => {
+        if (product.hasVariants && product.variants) {
+          // Add each active variant as separate item
+          product.variants
+            .filter((variant) => variant.isActive)
+            .forEach((variant) => {
+              items.push({
+                type: "variant",
+                product,
+                variant,
+                searchDisplay: `${product.name} - ${variant.name}`,
+                stock: variant.stock || 0,
+                price: variant.price,
+              });
+            });
+        } else {
+          // Add simple product
+          items.push({
+            type: "product",
+            product,
+            searchDisplay: product.name,
+            stock: product.stock || 0,
+            price: product.price,
+          });
+        }
+      });
+
+    // Sort by stock status (available first, then low stock, then out of stock)
+    items.sort((a, b) => {
+      if (a.stock <= 0 && b.stock > 0) return 1;
+      if (a.stock > 0 && b.stock <= 0) return -1;
+      return 0;
+    });
+
+    setFilteredItems(items.slice(0, 8)); // Show up to 8 items
   }, [value, products]);
 
   // ✅ განახლებული პოზიციონირების ლოგიკა
@@ -69,15 +117,15 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
           width: 400, // ფიქსირებული სიგანე
         });
       };
-      
+
       updatePosition();
       // სქროლზე და რისაიზზე განახლება
-      window.addEventListener('scroll', updatePosition, true);
-      window.addEventListener('resize', updatePosition);
-      
+      window.addEventListener("scroll", updatePosition, true);
+      window.addEventListener("resize", updatePosition);
+
       return () => {
-        window.removeEventListener('scroll', updatePosition, true);
-        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener("scroll", updatePosition, true);
+        window.removeEventListener("resize", updatePosition);
       };
     }
   }, [isOpen]);
@@ -86,7 +134,7 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        inputRef.current && 
+        inputRef.current &&
         !inputRef.current.contains(event.target as Node) &&
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
@@ -103,20 +151,26 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
     setIsOpen(e.target.value.length > 0);
   };
 
-  const handleProductSelect = (product: Product) => {
-    onChange(product.name);
+  const handleItemSelect = (item: SearchItem) => {
+    onChange(item.searchDisplay);
     setIsOpen(false);
+
     const stockStatus =
-      product.stock <= 0 ? "out_of_stock" :
-      product.stock < requestedQuantity ? "low" :
-      product.stock <= 10 ? "low" : "available";
+      item.stock <= 0
+        ? "out_of_stock"
+        : item.stock < requestedQuantity
+        ? "low"
+        : item.stock <= 10
+        ? "low"
+        : "available";
 
     onProductSelect({
       type: "existing",
-      product,
-      name: product.name,
-      price: product.price,
-      stock: product.stock,
+      product: item.product,
+      variantId: item.variant?.id,
+      name: item.searchDisplay,
+      price: item.price,
+      stock: item.stock,
       stockStatus,
     });
   };
@@ -126,7 +180,7 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
     onProductSelect({ type: "manual", name: value, price: 0 });
   };
 
-  const showDropdown = isOpen && (filteredProducts.length > 0 || value.length > 0);
+  const showDropdown = isOpen && (filteredItems.length > 0 || value.length > 0);
 
   return (
     <div className="relative group">
@@ -147,7 +201,7 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
         <div
           ref={dropdownRef}
           style={{
-            position: 'fixed', // ✅ FIXED პოზიცია
+            position: "fixed", // ✅ FIXED პოზიცია
             top: position.top,
             left: position.left,
             width: position.width,
@@ -155,39 +209,66 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
           }}
           className="bg-white border border-stone-200 rounded-xl shadow-2xl max-h-[300px] overflow-y-auto animate-in fade-in zoom-in-95 duration-75"
         >
-          {filteredProducts.length > 0 && (
+          {filteredItems.length > 0 && (
             <div>
               <div className="px-4 py-2 bg-stone-50 text-xs font-bold text-stone-500 uppercase border-b border-stone-100">
-                ნაპოვნია {filteredProducts.length} პროდუქტი
+                ნაპოვნია {filteredItems.length} შედეგი
               </div>
-              {filteredProducts.map((product) => (
+              {filteredItems.map((item, index) => (
                 <button
-                  key={product.id}
+                  key={`${item.product.id}-${
+                    item.variant?.id || "simple"
+                  }-${index}`}
                   type="button"
-                  onClick={() => handleProductSelect(product)}
-                  disabled={product.stock <= 0}
+                  onClick={() => handleItemSelect(item)}
+                  disabled={item.stock <= 0}
                   className={`w-full px-4 py-3 text-left flex items-center gap-3 border-b border-stone-50 last:border-0 transition-colors ${
-                     product.stock <= 0 ? 'bg-red-50/50 opacity-60' : 'hover:bg-emerald-50'
+                    item.stock <= 0
+                      ? "bg-red-50/50 opacity-60 cursor-not-allowed"
+                      : "hover:bg-emerald-50"
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded flex items-center justify-center flex-shrink-0 ${
-                    product.stock <= 0 ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-600'
-                  }`}>
+                  <div
+                    className={`w-10 h-10 rounded flex items-center justify-center flex-shrink-0 ${
+                      item.stock <= 0
+                        ? "bg-red-100 text-red-500"
+                        : item.type === "variant"
+                        ? "bg-blue-100 text-blue-600"
+                        : "bg-emerald-100 text-emerald-600"
+                    }`}
+                  >
                     <Package className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium text-stone-900 truncate">{product.name}</span>
+                      <span className="font-medium text-stone-900 truncate">
+                        {item.searchDisplay}
+                      </span>
                       <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
-                        ₾{product.price}
+                        ₾{item.price.toFixed(2)}
                       </span>
                     </div>
                     <div className="text-xs text-stone-500 mt-1 flex items-center gap-2">
-                       {product.stock <= 0 ? (
-                         <span className="text-red-600 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> ამოიწურა</span>
-                       ) : (
-                         <span className="text-stone-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> {product.stock} მარაგში</span>
-                       )}
+                      {item.type === "variant" && (
+                        <span className="text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded text-xs">
+                          ვარიანტი
+                        </span>
+                      )}
+                      {item.stock <= 0 ? (
+                        <span className="text-red-600 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> ამოიწურა
+                        </span>
+                      ) : item.stock <= 3 ? (
+                        <span className="text-orange-600 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" /> {item.stock}{" "}
+                          მარაგში (დაბალი)
+                        </span>
+                      ) : (
+                        <span className="text-emerald-600 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> {item.stock}{" "}
+                          მარაგში
+                        </span>
+                      )}
                     </div>
                   </div>
                 </button>

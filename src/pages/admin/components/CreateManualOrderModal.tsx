@@ -105,7 +105,8 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     const newItems = [...items];
     newItems[index] = {
       ...newItems[index],
-      productId: selection.product?.id, // 👈 აი, აქ ვინახავთ ID-ს!
+      productId: selection.product?.id,
+      variantId: selection.variantId, // 👈 ვამატებთ variant ID-ს
       name: selection.name,
       price: selection.price,
     };
@@ -141,18 +142,38 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       return;
     }
 
-    // ✅ Stock Validation - Check if any items have stock issues
+    // ✅ Enhanced Stock Validation - Support variants
     const itemsWithProductId = items.filter(
       (item) => item.productId && !item.productId.startsWith("manual_")
     );
+
     for (const item of itemsWithProductId) {
       if (item.productId) {
-        // Get current product data for real-time validation
         const currentProduct = products.find((p) => p.id === item.productId);
         if (currentProduct) {
-          if (currentProduct.stock < item.quantity) {
+          let availableStock = 0;
+          let stockSource = "";
+
+          // Check if this is a variant or simple product
+          if (item.variantId && currentProduct.hasVariants) {
+            const variant = currentProduct.variants?.find(
+              (v) => v.id === item.variantId
+            );
+            if (variant) {
+              availableStock = variant.stock || 0;
+              stockSource = `ვარიანტი: ${variant.name}`;
+            } else {
+              showToast(`ვარიანტი არ მოიძებნა: "${item.name}"`, "error");
+              return;
+            }
+          } else {
+            availableStock = currentProduct.stock || 0;
+            stockSource = "მთავარი პროდუქტი";
+          }
+
+          if (availableStock < item.quantity) {
             showToast(
-              `არასაკმარისი რაოდენობა: "${item.name}" (მოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${currentProduct.stock})`,
+              `არასაკმარისი მარაგი: "${item.name}" (${stockSource})\nმოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${availableStock}`,
               "error"
             );
             return;
@@ -412,6 +433,58 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                               className="px-2 py-1 text-sm !border-stone-200 !rounded focus:!ring-1 focus:!ring-emerald-500 !outline-none"
                               requestedQuantity={item.quantity}
                             />
+                            {/* Stock Status Indicator */}
+                            {item.productId && (
+                              <div className="mt-1">
+                                {(() => {
+                                  const currentProduct = products.find(
+                                    (p) => p.id === item.productId
+                                  );
+                                  if (!currentProduct) return null;
+
+                                  let availableStock = 0;
+                                  if (
+                                    item.variantId &&
+                                    currentProduct.hasVariants
+                                  ) {
+                                    const variant =
+                                      currentProduct.variants?.find(
+                                        (v) => v.id === item.variantId
+                                      );
+                                    availableStock = variant?.stock || 0;
+                                  } else {
+                                    availableStock = currentProduct.stock || 0;
+                                  }
+
+                                  if (availableStock <= 0) {
+                                    return (
+                                      <span className="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                                        ❌ ამოიწურა
+                                      </span>
+                                    );
+                                  } else if (availableStock < item.quantity) {
+                                    return (
+                                      <span className="text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
+                                        ⚠️ არასაკმარისია ({availableStock} ცალი)
+                                      </span>
+                                    );
+                                  } else if (availableStock <= 5) {
+                                    return (
+                                      <span className="text-xs text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded border border-yellow-200">
+                                        ⚡ დაბალი მარაგი ({availableStock} ცალი)
+                                      </span>
+                                    );
+                                  } else {
+                                    return (
+                                      <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                        ✅ ხელმისაწვდომია ({availableStock}{" "}
+                                        ცალი)
+                                      </span>
+                                    );
+                                  }
+                                })()}
+                              </div>
+                            )}
                           </td>
                           <td className="p-2">
                             <input

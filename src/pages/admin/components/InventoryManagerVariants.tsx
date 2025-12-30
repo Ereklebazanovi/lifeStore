@@ -133,21 +133,35 @@ const VariantStockModal: React.FC<VariantStockModalProps> = ({
             />
           </div>
 
-          <div className="bg-gray-50 p-3 rounded-md">
-            <div className="flex justify-between text-sm">
-              <span>მიმდინარე მარაგი:</span>
-              <span className="font-medium">{variant.stock} ცალი</span>
-            </div>
-            <div className="flex justify-between text-sm mt-1">
-              <span>ახალი მარაგი:</span>
-              <span
-                className={`font-bold ${
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-md border border-blue-200">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">მიმდინარე მარაგი</div>
+                <div className="text-2xl font-bold text-gray-800 mt-1">{variant.stock}</div>
+                <div className="text-xs text-gray-500">ცალი</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">ახალი მარაგი</div>
+                <div className={`text-2xl font-bold mt-1 ${
                   newStock >= 0 ? "text-emerald-600" : "text-red-600"
-                }`}
-              >
-                {newStock} ცალი
-              </span>
+                }`}>
+                  {newStock}
+                </div>
+                <div className="text-xs text-gray-500">ცალი</div>
+              </div>
             </div>
+            {isAdd && (
+              <div className="mt-3 flex items-center justify-center gap-2 text-sm text-emerald-700">
+                <Plus className="w-4 h-4" />
+                <span>+{quantity} ცალი ემატება</span>
+              </div>
+            )}
+            {!isAdd && (
+              <div className="mt-3 flex items-center justify-center gap-2 text-sm text-red-700">
+                <Minus className="w-4 h-4" />
+                <span>-{quantity} ცალი აკლდება</span>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -238,14 +252,20 @@ const ExpandableProductRow: React.FC<ExpandableProductRowProps> = ({
             {product.hasVariants && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="p-1 rounded hover:bg-gray-200 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-md bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all duration-200 hover:scale-105"
+                title={isExpanded ? "ვარიანტების დამალვა" : "ვარიანტების ნახვა"}
               >
                 {isExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-gray-600" />
+                  <ChevronDown className="w-5 h-5 text-blue-700" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-gray-600" />
+                  <ChevronRight className="w-5 h-5 text-blue-700" />
                 )}
               </button>
+            )}
+            {!product.hasVariants && (
+              <div className="w-8 h-8 flex items-center justify-center rounded-md bg-gray-50 border border-gray-200">
+                <Package className="w-4 h-4 text-gray-400" />
+              </div>
             )}
 
             {/* Product Image */}
@@ -301,7 +321,7 @@ const ExpandableProductRow: React.FC<ExpandableProductRowProps> = ({
 
         <td className="px-4 py-3 text-center">
           {!product.hasVariants && (
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-1">
               <button
                 onClick={() =>
                   onSimpleStockAdjustment(
@@ -312,11 +332,14 @@ const ExpandableProductRow: React.FC<ExpandableProductRowProps> = ({
                   )
                 }
                 disabled={(product.stock || 0) <= 0}
-                className="p-1.5 rounded-md text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="წაშლა"
+                className="w-8 h-8 flex items-center justify-center rounded-md bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100"
+                title="მარაგის წაშლა"
               >
                 <Minus className="w-4 h-4" />
               </button>
+              <span className="mx-2 text-sm font-medium text-gray-600 min-w-[50px]">
+                {product.stock || 0} ცალი
+              </span>
               <button
                 onClick={() =>
                   onSimpleStockAdjustment(
@@ -326,17 +349,25 @@ const ExpandableProductRow: React.FC<ExpandableProductRowProps> = ({
                     "add"
                   )
                 }
-                className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors"
-                title="დამატება"
+                className="w-8 h-8 flex items-center justify-center rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:scale-105"
+                title="მარაგის დამატება"
               >
                 <Plus className="w-4 h-4" />
               </button>
             </div>
           )}
           {product.hasVariants && (
-            <span className="text-xs text-gray-500">
-              სულ {product.variants?.length || 0} ვარიანტი
-            </span>
+            <div className="flex flex-col items-center gap-1">
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {product.variants?.length || 0} ვარიანტი
+              </span>
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-xs text-blue-600 hover:text-blue-700 underline"
+              >
+                {isExpanded ? "ვარიანტების დამალვა" : "ვარიანტების ნახვა"}
+              </button>
+            </div>
           )}
         </td>
       </tr>
@@ -380,7 +411,7 @@ const ExpandableProductRow: React.FC<ExpandableProductRowProps> = ({
             </td>
 
             <td className="px-4 py-2 text-center">
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-1">
                 <button
                   onClick={() =>
                     onVariantStockAdjustment(
@@ -391,11 +422,14 @@ const ExpandableProductRow: React.FC<ExpandableProductRowProps> = ({
                     )
                   }
                   disabled={variant.stock <= 0}
-                  className="p-1.5 rounded-md text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="წაშლა"
+                  className="w-7 h-7 flex items-center justify-center rounded-md bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100"
+                  title="ვარიანტის მარაგის წაშლა"
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-3 h-3" />
                 </button>
+                <span className="mx-1 text-sm font-medium text-gray-700 min-w-[45px] text-center">
+                  {variant.stock}
+                </span>
                 <button
                   onClick={() =>
                     onVariantStockAdjustment(
@@ -405,10 +439,10 @@ const ExpandableProductRow: React.FC<ExpandableProductRowProps> = ({
                       "add"
                     )
                   }
-                  className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors"
-                  title="დამატება"
+                  className="w-7 h-7 flex items-center justify-center rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:scale-105"
+                  title="ვარიანტის მარაგის დამატება"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3 h-3" />
                 </button>
               </div>
             </td>
@@ -537,21 +571,35 @@ const SimpleStockModal: React.FC<SimpleStockModalProps> = ({
             />
           </div>
 
-          <div className="bg-gray-50 p-3 rounded-md">
-            <div className="flex justify-between text-sm">
-              <span>მიმდინარე მარაგი:</span>
-              <span className="font-medium">{currentStock} ცალი</span>
-            </div>
-            <div className="flex justify-between text-sm mt-1">
-              <span>ახალი მარაგი:</span>
-              <span
-                className={`font-bold ${
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-md border border-blue-200">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">მიმდინარე მარაგი</div>
+                <div className="text-2xl font-bold text-gray-800 mt-1">{currentStock}</div>
+                <div className="text-xs text-gray-500">ცალი</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">ახალი მარაგი</div>
+                <div className={`text-2xl font-bold mt-1 ${
                   newStock >= 0 ? "text-emerald-600" : "text-red-600"
-                }`}
-              >
-                {newStock} ცალი
-              </span>
+                }`}>
+                  {newStock}
+                </div>
+                <div className="text-xs text-gray-500">ცალი</div>
+              </div>
             </div>
+            {isAdd && (
+              <div className="mt-3 flex items-center justify-center gap-2 text-sm text-emerald-700">
+                <Plus className="w-4 h-4" />
+                <span>+{quantity} ცალი ემატება</span>
+              </div>
+            )}
+            {!isAdd && (
+              <div className="mt-3 flex items-center justify-center gap-2 text-sm text-red-700">
+                <Minus className="w-4 h-4" />
+                <span>-{quantity} ცალი იხსნება</span>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -632,6 +680,30 @@ const InventoryManagerVariants: React.FC = () => {
   // Get unique categories
   const categories = [...new Set(products.map((p) => p.category))];
 
+  // Professional warehouse statistics
+  const warehouseStats = {
+    totalProducts: filteredProducts.length,
+    lowStockCount: filteredProducts.filter(p => {
+      const stock = p.hasVariants && p.variants
+        ? p.variants.filter(v => v.isActive).reduce((sum, v) => sum + (v.stock || 0), 0)
+        : p.stock || 0;
+      return stock <= 3 && stock > 0;
+    }).length,
+    outOfStockCount: filteredProducts.filter(p => {
+      const stock = p.hasVariants && p.variants
+        ? p.variants.filter(v => v.isActive).reduce((sum, v) => sum + (v.stock || 0), 0)
+        : p.stock || 0;
+      return stock <= 0;
+    }).length,
+    totalUnits: filteredProducts.reduce((sum, p) => {
+      const stock = p.hasVariants && p.variants
+        ? p.variants.filter(v => v.isActive).reduce((sum, v) => sum + (v.stock || 0), 0)
+        : p.stock || 0;
+      return sum + stock;
+    }, 0),
+    variantProductsCount: filteredProducts.filter(p => p.hasVariants).length,
+  };
+
   const handleVariantStockAdjustment = (
     productId: string,
     productName: string,
@@ -700,6 +772,30 @@ const InventoryManagerVariants: React.FC = () => {
           </button>
         </div>
 
+        {/* Professional Warehouse Statistics */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-blue-700">{warehouseStats.totalProducts}</div>
+            <div className="text-xs text-blue-600 font-medium">პროდუქტი</div>
+          </div>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-emerald-700">{warehouseStats.totalUnits}</div>
+            <div className="text-xs text-emerald-600 font-medium">ერთეული</div>
+          </div>
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-orange-700">{warehouseStats.lowStockCount}</div>
+            <div className="text-xs text-orange-600 font-medium">დაბალი მარაგი</div>
+          </div>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-red-700">{warehouseStats.outOfStockCount}</div>
+            <div className="text-xs text-red-600 font-medium">ამოწურული</div>
+          </div>
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-purple-700">{warehouseStats.variantProductsCount}</div>
+            <div className="text-xs text-purple-600 font-medium">ვარიანტებიანი</div>
+          </div>
+        </div>
+
         {/* Filters */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
@@ -728,10 +824,10 @@ const InventoryManagerVariants: React.FC = () => {
       </div>
 
       {/* Main Inventory Table */}
-      <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto h-full">
-          <table className="w-full h-full">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   პროდუქტი
