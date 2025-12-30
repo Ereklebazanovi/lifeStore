@@ -375,17 +375,33 @@ const ExpandableProductRow: React.FC<ExpandableProductRowProps> = ({
       {/* Expanded Variant Rows */}
       {product.hasVariants &&
         isExpanded &&
-        product.variants?.map((variant) => (
+        (() => {
+          console.log(`[DEBUG] პროდუქტი: ${product.name}, ვარიანტების რაოდენობა: ${product.variants?.length || 0}`, product.variants?.map(v => ({ name: v.name, isActive: v.isActive, stock: v.stock })));
+          return product.variants?.map((variant) => (
           <tr
             key={variant.id}
-            className="bg-blue-50/30 hover:bg-blue-50/50 border-b border-blue-100"
+            className={`border-b border-blue-100 ${
+              variant.isActive
+                ? 'bg-blue-50/30 hover:bg-blue-50/50'
+                : 'bg-gray-100/50 hover:bg-gray-100/70 opacity-70'
+            }`}
           >
             <td className="px-4 py-2 pl-12">
               <div className="flex items-center gap-2">
                 <Box className="w-4 h-4 text-blue-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-gray-900 flex items-center gap-2">
                     {variant.name}
+                    {!variant.isActive && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-600">
+                        არააქტიური
+                      </span>
+                    )}
+                    {variant.isActive && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                        აქტიური
+                      </span>
+                    )}
                   </p>
                   <p className="text-xs text-gray-500">
                     ₾{variant.price.toFixed(2)}
@@ -447,7 +463,8 @@ const ExpandableProductRow: React.FC<ExpandableProductRowProps> = ({
               </div>
             </td>
           </tr>
-        ))}
+        ));
+        })()}
     </>
   );
 };
