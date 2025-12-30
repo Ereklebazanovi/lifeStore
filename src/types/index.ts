@@ -189,7 +189,7 @@ export interface User {
   id: string;
   email: string;
   displayName?: string;
-  role: "admin" | "manager" | "customer";
+  role: "admin" | "manager" | "warehouse" | "customer";
   createdAt: Date;
 }
 
