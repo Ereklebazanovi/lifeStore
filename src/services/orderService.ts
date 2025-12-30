@@ -221,6 +221,7 @@ export class OrderService {
             }
 
             updateData.stock = newStock;
+            updateData.totalStock = newStock; // Keep consistency for simple products
           }
 
           // ერთიანი update ამ პროდუქტისთვის
@@ -386,6 +387,7 @@ export class OrderService {
             );
             const currentStock = productData.stock || 0;
             updateData.stock = currentStock + totalQuantityToRestore;
+            updateData.totalStock = currentStock + totalQuantityToRestore; // Keep consistency for simple products
           }
 
           batch.update(productRef, updateData);
