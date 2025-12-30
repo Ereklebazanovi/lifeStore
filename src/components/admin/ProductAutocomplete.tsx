@@ -45,7 +45,7 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
   value,
   onChange,
   onProductSelect,
-  placeholder = "მაგ: წითელი ჩანთა",
+  placeholder = "მაგ: ლანჩბოქსი",
   className = "",
   requestedQuantity = 1,
 }) => {
