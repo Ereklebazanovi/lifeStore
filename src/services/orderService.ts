@@ -195,6 +195,14 @@ export class OrderService {
             });
 
             updateData.variants = variants;
+
+            // Calculate and update parent stock fields for consistency
+            const totalStock = variants.reduce(
+              (sum, variant) => sum + (variant.stock || 0),
+              0
+            );
+            updateData.stock = totalStock;
+            updateData.totalStock = totalStock;
           }
 
           // სიმპლური პროდუქტების დამუშავება
@@ -360,6 +368,14 @@ export class OrderService {
               }
             });
             updateData.variants = variants;
+
+            // Calculate and update parent stock fields for consistency
+            const totalStock = variants.reduce(
+              (sum, variant) => sum + (variant.stock || 0),
+              0
+            );
+            updateData.stock = totalStock;
+            updateData.totalStock = totalStock;
           }
 
           // Rollback simple product stock
@@ -479,7 +495,7 @@ export class OrderService {
    * ✅ CREATE MANUAL ORDER (FROM ADMIN PANEL) - With Inventory Management
    * ეს ფუნქცია გამოიძახება მენეჯერის მიერ ხელით დამატებისას
    */
-  
+
   static async createManualOrder(
     data: CreateManualOrderRequest
   ): Promise<Order> {
