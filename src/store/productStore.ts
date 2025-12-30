@@ -248,6 +248,7 @@ export const useProductStore = create<ProductState & ProductActions>(
         await updateDoc(productRef, {
           variants: updatedVariants,
           totalStock,
+          stock: totalStock, // Keep legacy stock field synchronized
           updatedAt: new Date(),
           ...(reason && { lastStockReason: reason }),
         });
@@ -260,6 +261,7 @@ export const useProductStore = create<ProductState & ProductActions>(
                   ...product,
                   variants: updatedVariants,
                   totalStock,
+                  stock: totalStock, // Keep legacy stock field synchronized
                   updatedAt: new Date()
                 }
               : product
@@ -304,6 +306,7 @@ export const useProductStore = create<ProductState & ProductActions>(
           hasVariants: true,
           variants: updatedVariants,
           totalStock,
+          stock: totalStock, // Keep legacy stock field synchronized
           minPrice,
           maxPrice,
           updatedAt: new Date(),
@@ -318,6 +321,7 @@ export const useProductStore = create<ProductState & ProductActions>(
                   hasVariants: true,
                   variants: updatedVariants,
                   totalStock,
+                  stock: totalStock, // Keep legacy stock field synchronized
                   minPrice,
                   maxPrice,
                   updatedAt: new Date()
