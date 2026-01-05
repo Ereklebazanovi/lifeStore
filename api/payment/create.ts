@@ -47,8 +47,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Invalid amount range" });
     }
 
-    // Validate orderId format (should be like LS-YYYYMMDD-XXXX)
-    if (typeof orderId !== 'string' || !orderId.match(/^LS-\d{8}-\d+$/)) {
+    // Validate orderId format (should be like LS-YYYY-XXXXXX)
+    if (typeof orderId !== 'string' || !orderId.match(/^LS-\d{4}-\d+$/)) {
       return res.status(400).json({ error: "Invalid order ID format" });
     }
 
