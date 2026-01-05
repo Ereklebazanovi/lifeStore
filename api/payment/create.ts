@@ -17,11 +17,21 @@ if (!FLITT_SECRET_KEY || !FLITT_MERCHANT_ID) {
 } 
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS
+  // ✅ IMPROVED CORS - More restrictive for security
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*'); 
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  // Only allow requests from your domains
+  const allowedOrigins = [
+    'https://lifestore.ge',
+    'https://www.lifestore.ge',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ];
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -29,11 +39,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { orderId, amount, description } = req.body; // email ამოვიღეთ აქედანაც
 
+    // ✅ ENHANCED VALIDATION
     if (!orderId || !amount) return res.status(400).json({ error: "Missing required fields" });
 
+    // Validate amount range (0.01 to 10,000 GEL)
+    if (typeof amount !== 'number' || amount < 0.01 || amount > 10000) {
+      return res.status(400).json({ error: "Invalid amount range" });
+    }
+
+    // Validate orderId format (should be like LS-YYYYMMDD-XXXX)
+    if (typeof orderId !== 'string' || !orderId.match(/^LS-\d{8}-\d+$/)) {
+      return res.status(400).json({ error: "Invalid order ID format" });
+    }
+
     const amountInKopecks = Math.round(amount * 100);
-    // Description-ს ვასუფთავებთ სფეისებისგან, როგორც ლოკალურ ტესტში
-    const cleanDesc = (description || "Order").replace(/[^a-zA-Z0-9]/g, "") || "Order";
+    // Sanitize description for Flitt API
+    const cleanDesc = sanitizedDescription.replace(/[^a-zA-Z0-9]/g, "") || "Order";
 
     // 1. სტრიქონის აწყობა (ზუსტად ისე, როგორც test-flitt.cjs-ში!)
     // თანმიმდევრობა: Secret | Amount | Currency | MerchID | Desc | OrderID | Callback

@@ -192,8 +192,8 @@ const CheckoutPage: React.FC = () => {
         try {
           // Process Flitt payment (will redirect to Flitt)
           await PaymentService.processPayment(paymentRequest);
-          // Note: User will be redirected, so clear cart here
-          clearCart();
+          // ✅ Cart will be cleared only after payment confirmation on success page
+          // Removed: clearCart();
         } catch (paymentError) {
           console.error("Flitt payment error:", paymentError);
           showToast("ონლაინ გადახდის შეცდომა. სცადეთ თავიდან.", "error");

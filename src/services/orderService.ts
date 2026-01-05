@@ -14,6 +14,7 @@ import {
   Timestamp,
   runTransaction,
   writeBatch,
+  limit,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { ADMIN_CONFIG, SITE_CONFIG } from "../config/constants";
@@ -237,9 +238,57 @@ export class OrderService {
   }
 
   /**
-   * Send Email Notification
+   * Get order by order number (needed for payment callback)
    */
-  private static async sendEmailNotification(order: Order): Promise<void> {
+  public static async getOrderByNumber(
+    orderNumber: string
+  ): Promise<Order | null> {
+    try {
+      const ordersQuery = query(
+        collection(db, "orders"),
+        where("orderNumber", "==", orderNumber),
+        limit(1)
+      );
+
+      const querySnapshot = await getDocs(ordersQuery);
+
+      if (querySnapshot.empty) {
+        console.log(`Order not found: ${orderNumber}`);
+        return null;
+      }
+
+      const orderDoc = querySnapshot.docs[0];
+      const data = orderDoc.data();
+
+      return {
+        id: orderDoc.id,
+        userId: data.userId,
+        orderNumber: data.orderNumber,
+        source: data.source,
+        items: data.items,
+        subtotal: data.subtotal,
+        shippingCost: data.shippingCost,
+        totalAmount: data.totalAmount,
+        customerInfo: data.customerInfo,
+        deliveryInfo: data.deliveryInfo,
+        orderStatus: data.orderStatus,
+        paymentMethod: data.paymentMethod,
+        paymentStatus: data.paymentStatus,
+        createdAt: data.createdAt.toDate(),
+        updatedAt: data.updatedAt.toDate(),
+        paidAt: data.paidAt?.toDate(),
+      } as Order;
+    } catch (error) {
+      console.error("Error getting order by number:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Send Email Notification
+   * Made public to be called from payment callback
+   */
+  public static async sendEmailNotification(order: Order): Promise<void> {
     // თუ მეილი არ არის მითითებული (მაგ: manual order-ის დროს), არ ვაგზავნით
     if (!order.customerInfo.email || order.customerInfo.email.trim() === "") {
       return;
@@ -467,7 +516,8 @@ export class OrderService {
       await setDoc(orderRef, firestorePayload);
 
       console.log("✅ Order created successfully:", orderNumber);
-      this.sendEmailNotification(order);
+      // ✅ Email will be sent only after payment confirmation in payment callback
+      // Removed: this.sendEmailNotification(order);
 
       return order;
     } catch (error) {
@@ -620,56 +670,7 @@ export class OrderService {
     }
   }
 
-  /**
-   * Get order by order number (for payment callbacks)
-   * ✅ ახალი მეთოდი: orderNumber-ით მოძიება Flitt callback-ისთვის
-   */
-  static async getOrderByNumber(orderNumber: string): Promise<Order | null> {
-    try {
-      console.log("🔍 Searching for order by number:", orderNumber);
-
-      // Use server-side API to bypass Firestore security rules
-      const response = await fetch(
-        `/api/order/getByNumber?orderNumber=${encodeURIComponent(orderNumber)}`
-      );
-
-      if (response.status === 404) {
-        console.log("❌ No order found with number:", orderNumber);
-        return null;
-      }
-
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
-
-      const { order: orderData } = await response.json();
-
-      const order: Order = {
-        ...orderData,
-        createdAt: orderData.createdAt
-          ? new Date(orderData.createdAt)
-          : new Date(),
-        updatedAt: orderData.updatedAt
-          ? new Date(orderData.updatedAt)
-          : new Date(),
-        deliveredAt: orderData.deliveredAt
-          ? new Date(orderData.deliveredAt)
-          : undefined,
-        paidAt: orderData.paidAt ? new Date(orderData.paidAt) : undefined,
-      };
-
-      console.log("✅ Order found via server-side:", {
-        id: order.id,
-        orderNumber: order.orderNumber,
-        paymentStatus: order.paymentStatus,
-      });
-
-      return order;
-    } catch (error) {
-      console.error("❌ Error getting order by number:", error);
-      throw new Error("შეკვეთის მოძიება ვერ მოხერხდა");
-    }
-  }
+  // Removed duplicate getOrderByNumber method - using the one above instead
 
   static async getUserOrders(userId: string): Promise<Order[]> {
     try {

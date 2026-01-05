@@ -2,6 +2,7 @@
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminDb } from "../lib/firebase-admin";
+import { OrderService } from "../../src/services/orderService";
 
 // Flitt Configuration - Environment variables only for security
 const FLITT_SECRET_KEY = process.env.FLITT_SECRET_KEY;
@@ -70,7 +71,7 @@ function verifyFlittSignature(responseData: any, secretKey: string): boolean {
 }
 
 /**
- * Update order status in Firestore
+ * Update order status in Firestore and send confirmation email if payment successful
  */
 async function updateOrderStatus(
   orderId: string,
@@ -87,6 +88,14 @@ async function updateOrderStatus(
       return;
     }
 
+    const orderData = orderDoc.data();
+
+    // ✅ IDEMPOTENCY CHECK: Prevent duplicate payment processing
+    if (isPaymentSuccessful && orderData?.paymentStatus === "paid") {
+      console.log(`⚠️ Order ${orderId} already marked as paid. Skipping duplicate processing.`);
+      return;
+    }
+
     const updateData: any = {
       updatedAt: new Date(),
     };
@@ -96,6 +105,40 @@ async function updateOrderStatus(
       updateData.orderStatus = "confirmed";
       updateData.paidAt = new Date();
       console.log(`✅ Order ${orderId} marked as PAID and CONFIRMED`);
+
+      // ✅ NOW SEND EMAIL NOTIFICATION AFTER PAYMENT SUCCESS
+      try {
+        // Get order details to send email
+        const orderData = orderDoc.data();
+        if (orderData) {
+          // Convert Firestore data to Order object
+          const order = {
+            id: orderId,
+            userId: orderData.userId,
+            orderNumber: orderData.orderNumber,
+            source: orderData.source,
+            items: orderData.items,
+            subtotal: orderData.subtotal,
+            shippingCost: orderData.shippingCost,
+            totalAmount: orderData.totalAmount,
+            customerInfo: orderData.customerInfo,
+            deliveryInfo: orderData.deliveryInfo,
+            orderStatus: "confirmed", // Updated status
+            paymentMethod: orderData.paymentMethod,
+            paymentStatus: "paid", // Updated status
+            createdAt: orderData.createdAt.toDate(),
+            updatedAt: new Date(),
+            paidAt: new Date(),
+          };
+
+          console.log(`📧 Sending order confirmation email for ${orderId}`);
+          await OrderService.sendEmailNotification(order);
+          console.log(`✅ Email sent successfully for order ${orderId}`);
+        }
+      } catch (emailError) {
+        console.error(`❌ Failed to send email for order ${orderId}:`, emailError);
+        // Don't fail the payment process if email fails
+      }
     } else {
       updateData.paymentStatus = "failed";
       console.log(`❌ Order ${orderId} marked as PAYMENT FAILED`);

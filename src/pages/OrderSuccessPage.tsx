@@ -17,6 +17,7 @@ import {
   Mail,
 } from "lucide-react";
 import { OrderService } from "../services/orderService";
+import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
 import { getOrderItemDisplayName } from "../utils/displayHelpers";
 import type { Order } from "../types";
@@ -25,6 +26,7 @@ const OrderSuccessPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { clearCart } = useCartStore();
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -75,6 +77,14 @@ const OrderSuccessPage: React.FC = () => {
           orderNumber: orderData.orderNumber,
           paymentStatus: orderData.paymentStatus
         });
+
+        // ✅ Clear cart only if order is confirmed and paid (successful payment)
+        if (orderData.paymentStatus === "paid" && orderData.orderStatus === "confirmed") {
+          console.log("✅ Payment confirmed - clearing cart");
+          clearCart();
+        } else {
+          console.log(`⏳ Payment status: ${orderData.paymentStatus}, order status: ${orderData.orderStatus} - cart not cleared`);
+        }
       } catch (error) {
         console.error("Error fetching order:", error);
         showToast("მონაცემების ჩატვირთვა ვერ მოხერხდა", "error");

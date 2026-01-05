@@ -98,7 +98,7 @@ export interface Order {
     | "bank_transfer"
     | "other";
   paymentStatus: "pending" | "paid" | "failed";
-  orderStatus: "pending" | "shipped" | "delivered" | "cancelled";
+  orderStatus: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   createdAt: Date;
   updatedAt: Date;
   paidAt?: Date; // ✅ Added for payment completion timestamp
