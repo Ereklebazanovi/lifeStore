@@ -24,6 +24,7 @@ const CartPage: React.FC = () => {
     removeItem,
     clearCart,
     validateAndCleanCart,
+    getItemPrice,
   } = useCartStore();
 
   const [isValidating, setIsValidating] = useState(false);
@@ -183,11 +184,11 @@ const CartPage: React.FC = () => {
                       {/* Price */}
                       <div className="text-right">
                         <div className="text-lg sm:text-xl font-bold text-emerald-700">
-                          ₾{(item.product.price * item.quantity).toFixed(2)}
+                          ₾{(getItemPrice(item) * item.quantity).toFixed(2)}
                         </div>
                         {item.quantity > 1 && (
                           <div className="text-xs text-stone-400 font-medium">
-                            ₾{item.product.price} / ცალი
+                            ₾{getItemPrice(item).toFixed(2)} / ცალი
                           </div>
                         )}
                       </div>

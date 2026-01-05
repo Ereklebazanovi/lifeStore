@@ -17,6 +17,7 @@ interface SimpleVariant {
   id?: string;
   name: string;
   price: number;
+  salePrice?: number;
   stock: number;
   isActive: boolean;
 }
@@ -46,6 +47,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
   // ვარიანტების მასივი
   const [variants, setVariants] = useState<SimpleVariant[]>([]);
+  const [bulkDiscountPercent, setBulkDiscountPercent] = useState<number>(0);
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -71,6 +73,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
             id: v.id,
             name: v.name,
             price: v.price,
+            salePrice: v.salePrice,
             stock: v.stock,
             isActive: v.isActive,
           }))
@@ -81,7 +84,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
         setHasVariants(false);
         setSimplePrice(product.price || 0);
         setSimpleStock(product.stock || 0);
-        setVariants([{ name: "", price: 0, stock: 0, isActive: true }]);
+        setVariants([{ name: "", price: 0, salePrice: undefined, stock: 0, isActive: true }]);
       }
 
       setErrors({});
@@ -144,7 +147,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
   const addVariant = () => {
     setVariants([
       ...variants,
-      { name: "", price: 0, stock: 0, isActive: true },
+      { name: "", price: 0, salePrice: undefined, stock: 0, isActive: true },
     ]);
   };
 
@@ -158,11 +161,37 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
   const updateVariant = (
     index: number,
     field: keyof SimpleVariant,
-    value: string | number | boolean
+    value: string | number | boolean | undefined
   ) => {
     const newVariants = [...variants];
     newVariants[index] = { ...newVariants[index], [field]: value };
     setVariants(newVariants);
+  };
+
+  // Bulk discount application
+  const applyBulkDiscount = () => {
+    if (bulkDiscountPercent <= 0 || bulkDiscountPercent >= 100) {
+      showToast("ფასდაკლება უნდა იყოს 1-99% შორის", "error");
+      return;
+    }
+
+    const newVariants = variants.map(variant => ({
+      ...variant,
+      salePrice: variant.price > 0 ? Math.round(variant.price * (1 - bulkDiscountPercent / 100) * 100) / 100 : undefined
+    }));
+
+    setVariants(newVariants);
+    showToast(`${bulkDiscountPercent}% ფასდაკლება გამოყენებულია ყველა ვარიანტზე`, "success");
+  };
+
+  // Clear all sale prices
+  const clearAllSalePrices = () => {
+    const newVariants = variants.map(variant => ({
+      ...variant,
+      salePrice: undefined
+    }));
+    setVariants(newVariants);
+    showToast("ყველა ფასდაკლება მოხსნილია", "success");
   };
 
   // სტატისტიკის გამოთვლა
@@ -227,6 +256,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                 `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               name: variant.name.trim(),
               price: variant.price,
+              salePrice: variant.salePrice,
               stock: variant.stock,
               isActive: variant.isActive,
               createdAt:
@@ -260,6 +290,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
           {
             name: "ძირითადი",
             price: simplePrice,
+            salePrice: undefined,
             stock: simpleStock,
             isActive: true,
           },
@@ -275,15 +306,15 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
   };
 
   return (
-    <>
-      {/* Background Overlay */}
+    <div
+      className="fixed inset-0 bg-black bg-opacity-60 z-[9999] flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      {/* Centered Modal */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40"
-        onClick={onClose}
-      />
-
-      {/* Slide-out Drawer */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-3xl bg-white shadow-2xl z-50 flex flex-col">
+        className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-blue-600 text-white px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -559,6 +590,41 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                     </button>
                   </div>
 
+                  {/* Bulk Discount Tool */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h5 className="font-medium text-blue-900 mb-3">🏷️ სწრაფი ფასდაკლება</h5>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <input
+                          type="number"
+                          min="1"
+                          max="99"
+                          value={bulkDiscountPercent}
+                          onChange={(e) => setBulkDiscountPercent(parseInt(e.target.value) || 0)}
+                          className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="ფასდაკლების %"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={applyBulkDiscount}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      >
+                        გამოყენება
+                      </button>
+                      <button
+                        type="button"
+                        onClick={clearAllSalePrices}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                      >
+                        გაწმენდა
+                      </button>
+                    </div>
+                    <p className="text-xs text-blue-700 mt-2">
+                      ყველა ვარიანტზე ერთდროულად ფასდაკლების გამოყენება
+                    </p>
+                  </div>
+
                   {errors.variants && (
                     <p className="text-red-500 text-sm">{errors.variants}</p>
                   )}
@@ -612,7 +678,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           {/* Variant Name */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -667,6 +733,34 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                             {errors[`variant_${index}_price`] && (
                               <p className="text-red-500 text-xs mt-1">
                                 {errors[`variant_${index}_price`]}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Sale Price */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              🏷️ ფასდაკლებული ფასი (₾)
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={variant.salePrice || ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                updateVariant(
+                                  index,
+                                  "salePrice",
+                                  value === "" ? undefined : parseFloat(value) || 0
+                                );
+                              }}
+                              className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                              placeholder="არასავალდებულო"
+                            />
+                            {variant.salePrice && variant.salePrice >= variant.price && (
+                              <p className="text-orange-600 text-xs mt-1">
+                                ფასდაკლებული ფასი ნაკლები უნდა იყოს ძირითადზე
                               </p>
                             )}
                           </div>
@@ -737,7 +831,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

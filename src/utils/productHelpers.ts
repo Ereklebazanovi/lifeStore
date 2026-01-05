@@ -23,13 +23,24 @@ export function getProductStock(product: Product): number {
 }
 
 export function getProductDisplayPrice(product: Product): string {
-  if (product.hasVariants) {
-    if (product.minPrice === product.maxPrice) {
-      return `₾${product.minPrice?.toFixed(2) || "0.00"}`;
+  if (product.hasVariants && product.variants) {
+    // Calculate price ranges considering sale prices
+    const activeVariants = product.variants.filter(v => v.isActive);
+    const prices = activeVariants.map(v =>
+      v.salePrice && v.salePrice < v.price ? v.salePrice : v.price
+    );
+
+    if (prices.length === 0) {
+      return "₾0.00";
     }
-    return `₾${product.minPrice?.toFixed(2) || "0.00"} - ₾${
-      product.maxPrice?.toFixed(2) || "0.00"
-    }`;
+
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
+    if (minPrice === maxPrice) {
+      return `₾${minPrice.toFixed(2)}`;
+    }
+    return `₾${minPrice.toFixed(2)} - ₾${maxPrice.toFixed(2)}`;
   }
   return `₾${(product.price || 0).toFixed(2)}`;
 }
@@ -63,8 +74,11 @@ export function isProductOutOfStock(product: Product): boolean {
 }
 
 export function hasDiscount(product: Product): boolean {
-  if (product.hasVariants) {
-    return false; // Variants don't support original price discount system
+  if (product.hasVariants && product.variants) {
+    // Check if any variant has sale price
+    return product.variants.some(variant =>
+      variant.isActive && variant.salePrice && variant.salePrice < variant.price
+    );
   }
 
   return !!(

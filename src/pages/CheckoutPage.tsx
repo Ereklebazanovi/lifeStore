@@ -36,7 +36,7 @@ interface CheckoutFormData {
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
-  const { items, getCartTotal, clearCart, validateAndCleanCart } =
+  const { items, getCartTotal, clearCart, validateAndCleanCart, getItemPrice } =
     useCartStore();
   const { user } = useAuthStore();
 
@@ -461,10 +461,10 @@ const CheckoutPage: React.FC = () => {
                       </h4>
                       <div className="flex justify-between mt-1">
                         <span className="text-xs text-stone-500">
-                          {item.quantity} x ₾{item.product.price}
+                          {item.quantity} x ₾{getItemPrice(item).toFixed(2)}
                         </span>
                         <span className="text-sm font-semibold text-stone-700">
-                          ₾{(item.quantity * item.product.price).toFixed(2)}
+                          ₾{(item.quantity * getItemPrice(item)).toFixed(2)}
                         </span>
                       </div>
                     </div>

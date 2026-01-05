@@ -85,9 +85,28 @@ const ProductDetailsPage: React.FC = () => {
   const getCurrentPrice = () => {
     const variant = getSelectedVariant();
     if (variant) {
+      // Return sale price if available and less than regular price, otherwise regular price
+      return variant.salePrice && variant.salePrice < variant.price
+        ? variant.salePrice
+        : variant.price;
+    }
+    return product?.price || 0;
+  };
+
+  const getOriginalPrice = () => {
+    const variant = getSelectedVariant();
+    if (variant) {
       return variant.price;
     }
     return product?.price || 0;
+  };
+
+  const hasCurrentDiscount = () => {
+    const variant = getSelectedVariant();
+    if (variant) {
+      return variant.salePrice && variant.salePrice < variant.price;
+    }
+    return false;
   };
 
   const getCurrentStock = () => {
@@ -264,9 +283,15 @@ const ProductDetailsPage: React.FC = () => {
                     <div className="absolute top-4 left-4 z-10 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">
                       მარაგში არ არის
                     </div>
-                  ) : hasDiscount(product) ? (
+                  ) : hasCurrentDiscount() ? (
                     <div className="absolute top-4 left-4 z-10 bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-sm">
-                      {getDiscountText(product)}
+                      -
+                      {Math.round(
+                        ((getOriginalPrice() - getCurrentPrice()) /
+                          getOriginalPrice()) *
+                          100
+                      )}
+                      % ფასდაკლება
                     </div>
                   ) : null}
                   {product.images && product.images.length > 0 ? (
@@ -352,12 +377,50 @@ const ProductDetailsPage: React.FC = () => {
                                 }`}
                               >
                                 <div className="text-center">
-                                  <div className="font-semibold">{variant.name}</div>
+                                  <div className="font-semibold">
+                                    {variant.name}
+                                  </div>
                                   <div className="text-xs mt-1">
                                     {variant.stock <= 0 ? (
-                                      <div className={selectedVariantId === variant.id ? "text-red-200" : "text-red-500"}>არ არის</div>
+                                      <div
+                                        className={
+                                          selectedVariantId === variant.id
+                                            ? "text-red-200"
+                                            : "text-red-500"
+                                        }
+                                      >
+                                        არ არის
+                                      </div>
+                                    ) : variant.salePrice &&
+                                      variant.salePrice < variant.price ? (
+                                      <div className="flex flex-col items-center gap-1">
+                                        <div
+                                          className={`line-through ${
+                                            selectedVariantId === variant.id
+                                              ? "text-gray-300"
+                                              : "text-gray-400"
+                                          } text-[10px]`}
+                                        >
+                                          ₾{variant.price.toFixed(2)}
+                                        </div>
+                                        <div
+                                          className={`font-bold ${
+                                            selectedVariantId === variant.id
+                                              ? "text-red-200"
+                                              : "text-red-600"
+                                          }`}
+                                        >
+                                          ₾{variant.salePrice.toFixed(2)}
+                                        </div>
+                                      </div>
                                     ) : (
-                                      <div className={selectedVariantId === variant.id ? "text-emerald-100" : "text-emerald-600"}>
+                                      <div
+                                        className={
+                                          selectedVariantId === variant.id
+                                            ? "text-emerald-100"
+                                            : "text-emerald-600"
+                                        }
+                                      >
                                         ₾{variant.price.toFixed(2)}
                                       </div>
                                     )}
@@ -372,10 +435,10 @@ const ProductDetailsPage: React.FC = () => {
                   {/* Desktop Price View */}
                   <div className="hidden md:block mb-6">
                     <div className="flex items-baseline gap-3 mb-3">
-                      {hasProductDiscount(product) ? (
+                      {hasCurrentDiscount() ? (
                         <div className="flex flex-col">
                           <span className="text-lg text-stone-400 line-through">
-                            {getProductOriginalDisplayPrice(product)}
+                            ₾{getOriginalPrice().toFixed(2)}
                           </span>
                           <div className="flex items-baseline gap-2">
                             <span className="text-4xl font-bold text-red-600">
@@ -384,8 +447,8 @@ const ProductDetailsPage: React.FC = () => {
                             <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded">
                               -
                               {Math.round(
-                                ((product.originalPrice! - getCurrentPrice()) /
-                                  product.originalPrice!) *
+                                ((getOriginalPrice() - getCurrentPrice()) /
+                                  getOriginalPrice()) *
                                   100
                               )}
                               % დანაზოგი
@@ -406,13 +469,23 @@ const ProductDetailsPage: React.FC = () => {
 
                     {/* Desktop Stock Information */}
                     <div className="flex items-center gap-2 text-sm">
-                      <span className={`flex items-center gap-1 ${
-                        getCurrentStock() <= 0 ? 'text-red-600' : 'text-gray-600'
-                      }`}>
-                        <span className={`w-2 h-2 rounded-full ${
-                          getCurrentStock() <= 0 ? 'bg-red-500' : 'bg-emerald-500'
-                        }`}></span>
-                        {getCurrentStock() <= 0 ? 'მარაგში არ არის' : `მარაგშია ${getCurrentStock()} ცალი`}
+                      <span
+                        className={`flex items-center gap-1 ${
+                          getCurrentStock() <= 0
+                            ? "text-red-600"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            getCurrentStock() <= 0
+                              ? "bg-red-500"
+                              : "bg-emerald-500"
+                          }`}
+                        ></span>
+                        {getCurrentStock() <= 0
+                          ? "მარაგში არ არის"
+                          : `მარაგშია ${getCurrentStock()} ცალი`}
                       </span>
                     </div>
                   </div>
@@ -421,10 +494,10 @@ const ProductDetailsPage: React.FC = () => {
                   <div className="md:hidden mb-6 flex items-center justify-between">
                     <div>
                       <p className="text-sm text-stone-500">ერთეულის ფასი</p>
-                      {hasProductDiscount(product) ? (
+                      {hasCurrentDiscount() ? (
                         <div className="flex items-baseline gap-2">
                           <span className="text-sm text-stone-400 line-through">
-                            {getProductOriginalDisplayPrice(product)}
+                            ₾{getOriginalPrice().toFixed(2)}
                           </span>
                           <span className="text-2xl font-bold text-red-600">
                             ₾{getCurrentPrice().toFixed(2)}
@@ -436,7 +509,6 @@ const ProductDetailsPage: React.FC = () => {
                         </span>
                       )}
                     </div>
-
 
                     {!outOfStock && (
                       <div className="flex items-center bg-stone-100 rounded-xl p-1">

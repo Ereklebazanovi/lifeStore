@@ -15,6 +15,7 @@ interface AddProductDrawerProps {
 interface SimpleVariant {
   name: string;
   price: number;
+  salePrice?: number;
   stock: number;
 }
 
@@ -41,8 +42,9 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
   // ვარიანტების მასივი
   const [variants, setVariants] = useState<SimpleVariant[]>([
-    { name: "", price: 0, stock: 0 }
+    { name: "", price: 0, salePrice: undefined, stock: 0 },
   ]);
+  const [bulkDiscountPercent, setBulkDiscountPercent] = useState<number>(0);
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -71,12 +73,15 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
           newErrors[`variant_${index}_price`] = "ფასი დადებითი უნდა იყოს";
         }
         if (variant.stock < 0) {
-          newErrors[`variant_${index}_stock`] = "მარაგი 0-ზე ნაკლები ვერ იქნება";
+          newErrors[`variant_${index}_stock`] =
+            "მარაგი 0-ზე ნაკლები ვერ იქნება";
         }
       });
 
       // შეამოწმებს ვარიანტების სახელები განსხვავებულია თუ არა
-      const variantNames = variants.map(v => v.name.trim()).filter(name => name);
+      const variantNames = variants
+        .map((v) => v.name.trim())
+        .filter((name) => name);
       const uniqueNames = new Set(variantNames);
       if (variantNames.length !== uniqueNames.size) {
         newErrors.variantNames = "ვარიანტების სახელები უნიკალური უნდა იყოს";
@@ -97,7 +102,10 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
   // ვარიანტების მართვა
   const addVariant = () => {
-    setVariants([...variants, { name: "", price: 0, stock: 0 }]);
+    setVariants([
+      ...variants,
+      { name: "", price: 0, salePrice: undefined, stock: 0 },
+    ]);
   };
 
   const removeVariant = (index: number) => {
@@ -107,10 +115,47 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
     }
   };
 
-  const updateVariant = (index: number, field: keyof SimpleVariant, value: string | number) => {
+  const updateVariant = (
+    index: number,
+    field: keyof SimpleVariant,
+    value: string | number | boolean | undefined
+  ) => {
     const newVariants = [...variants];
     newVariants[index] = { ...newVariants[index], [field]: value };
     setVariants(newVariants);
+  };
+
+  // Bulk discount application
+  const applyBulkDiscount = () => {
+    if (bulkDiscountPercent <= 0 || bulkDiscountPercent >= 100) {
+      showToast("ფასდაკლება უნდა იყოს 1-99% შორის", "error");
+      return;
+    }
+
+    const newVariants = variants.map((variant) => ({
+      ...variant,
+      salePrice:
+        variant.price > 0
+          ? Math.round(variant.price * (1 - bulkDiscountPercent / 100) * 100) /
+            100
+          : undefined,
+    }));
+
+    setVariants(newVariants);
+    showToast(
+      `${bulkDiscountPercent}% ფასდაკლება გამოყენებულია ყველა ვარიანტზე`,
+      "success"
+    );
+  };
+
+  // Clear all sale prices
+  const clearAllSalePrices = () => {
+    const newVariants = variants.map((variant) => ({
+      ...variant,
+      salePrice: undefined,
+    }));
+    setVariants(newVariants);
+    showToast("ყველა ფასდაკლება მოხსნილია", "success");
   };
 
   // სტატისტიკის გამოთვლა
@@ -123,8 +168,8 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
       };
     }
 
-    const prices = variants.filter(v => v.price > 0).map(v => v.price);
-    const stocks = variants.map(v => v.stock);
+    const prices = variants.filter((v) => v.price > 0).map((v) => v.price);
+    const stocks = variants.map((v) => v.stock);
 
     return {
       minPrice: prices.length > 0 ? Math.min(...prices) : 0,
@@ -165,15 +210,18 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
         totalStock: stats.totalStock,
 
         // ვარიანტები
-        variants: hasVariants ? variants.map((variant, index) => ({
-          id: `var_${Date.now()}_${index}`,
-          name: variant.name.trim(),
-          price: variant.price,
-          stock: variant.stock,
-          isActive: true,
-          createdAt: now,
-          updatedAt: now,
-        })) : undefined,
+        variants: hasVariants
+          ? variants.map((variant, index) => ({
+              id: `var_${Date.now()}_${index}`,
+              name: variant.name.trim(),
+              price: variant.price,
+              salePrice: variant.salePrice,
+              stock: variant.stock,
+              isActive: true,
+              createdAt: now,
+              updatedAt: now,
+            }))
+          : undefined,
 
         createdAt: now,
         updatedAt: now,
@@ -191,7 +239,8 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
       setHasVariants(false);
       setSimplePrice(0);
       setSimpleStock(0);
-      setVariants([{ name: "", price: 0, stock: 0 }]);
+      setVariants([{ name: "", price: 0, salePrice: undefined, stock: 0 }]);
+      setBulkDiscountPercent(0);
       setErrors({});
 
       onProductAdded?.();
@@ -203,15 +252,15 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
   };
 
   return (
-    <>
-      {/* Background Overlay */}
+    <div
+      className="fixed inset-0 bg-black bg-opacity-60 z-[9999] flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      {/* Centered Modal */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40"
-        onClick={onClose}
-      />
-
-      {/* Slide-out Drawer */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-3xl bg-white shadow-2xl z-50 flex flex-col">
+        className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-emerald-600 text-white px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -229,12 +278,15 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <form onSubmit={handleSubmit} className="p-6 space-y-8">
-
             {/* ძირითადი ინფორმაცია */}
             <div className="space-y-5">
               <div className="border-b border-gray-200 pb-3">
-                <h3 className="text-lg font-semibold text-gray-900">ძირითადი ინფორმაცია</h3>
-                <p className="text-sm text-gray-600 mt-1">შეავსეთ პროდუქტის მთავარი მონაცემები</p>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  ძირითადი ინფორმაცია
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  შეავსეთ პროდუქტის მთავარი მონაცემები
+                </p>
               </div>
 
               {/* Product Name */}
@@ -251,7 +303,11 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                   }`}
                   placeholder="მაგ: ლანჩბოქსი"
                 />
-                {errors.productName && <p className="text-red-500 text-sm mt-1">{errors.productName}</p>}
+                {errors.productName && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.productName}
+                  </p>
+                )}
               </div>
 
               {/* Description */}
@@ -315,7 +371,9 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                         <span>{getPriorityEmoji(preset.value)}</span>
                         <span className="font-medium">{preset.label}</span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">{preset.description}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {preset.description}
+                      </p>
                     </button>
                   ))}
                 </div>
@@ -327,13 +385,22 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
               <div className="border-t border-gray-200 pt-6">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">ფასი და მარაგი</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      ფასი და მარაგი
+                    </h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      აქვს თუ არა ამ პროდუქტს სხვადასხვა ვარიანტები? (ზომა, ტიპი, ფერი)
+                      აქვს თუ არა ამ პროდუქტს სხვადასხვა ვარიანტები? (ზომა,
+                      ტიპი, ფერი)
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-sm ${hasVariants ? "text-gray-500" : "text-emerald-600 font-medium"}`}>
+                    <span
+                      className={`text-sm ${
+                        hasVariants
+                          ? "text-gray-500"
+                          : "text-emerald-600 font-medium"
+                      }`}
+                    >
                       მარტივი
                     </span>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -345,7 +412,13 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
                     </label>
-                    <span className={`text-sm ${hasVariants ? "text-emerald-600 font-medium" : "text-gray-500"}`}>
+                    <span
+                      className={`text-sm ${
+                        hasVariants
+                          ? "text-emerald-600 font-medium"
+                          : "text-gray-500"
+                      }`}
+                    >
                       ვარიანტებით
                     </span>
                   </div>
@@ -358,7 +431,9 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                   <div className="flex items-start gap-3">
                     <Info className="w-5 h-5 text-blue-600 mt-0.5" />
                     <div className="flex-1">
-                      <h4 className="font-medium text-blue-900 mb-3">მარტივი პროდუქტი</h4>
+                      <h4 className="font-medium text-blue-900 mb-3">
+                        მარტივი პროდუქტი
+                      </h4>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-blue-800 mb-2">
@@ -371,14 +446,22 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                             value={simplePrice}
                             onChange={(e) => {
                               const value = e.target.value;
-                              setSimplePrice(value === '' ? 0 : parseFloat(value) || 0);
+                              setSimplePrice(
+                                value === "" ? 0 : parseFloat(value) || 0
+                              );
                             }}
                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              errors.simplePrice ? "border-red-300" : "border-blue-300"
+                              errors.simplePrice
+                                ? "border-red-300"
+                                : "border-blue-300"
                             }`}
                             placeholder="0.00"
                           />
-                          {errors.simplePrice && <p className="text-red-500 text-sm mt-1">{errors.simplePrice}</p>}
+                          {errors.simplePrice && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {errors.simplePrice}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-blue-800 mb-2">
@@ -390,14 +473,22 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                             value={simpleStock}
                             onChange={(e) => {
                               const value = e.target.value;
-                              setSimpleStock(value === '' ? 0 : parseInt(value) || 0);
+                              setSimpleStock(
+                                value === "" ? 0 : parseInt(value) || 0
+                              );
                             }}
                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              errors.simpleStock ? "border-red-300" : "border-blue-300"
+                              errors.simpleStock
+                                ? "border-red-300"
+                                : "border-blue-300"
                             }`}
                             placeholder="0"
                           />
-                          {errors.simpleStock && <p className="text-red-500 text-sm mt-1">{errors.simpleStock}</p>}
+                          {errors.simpleStock && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {errors.simpleStock}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -410,8 +501,12 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-gray-900">პროდუქტის ვარიანტები</h4>
-                      <p className="text-sm text-gray-600">ვარიანტებისთვის განსხვავებული ფასები და მარაგი</p>
+                      <h4 className="font-medium text-gray-900">
+                        პროდუქტის ვარიანტები
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        ვარიანტებისთვის განსხვავებული ფასები და მარაგი
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -423,14 +518,74 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                     </button>
                   </div>
 
-                  {errors.variants && <p className="text-red-500 text-sm">{errors.variants}</p>}
-                  {errors.variantNames && <p className="text-red-500 text-sm">{errors.variantNames}</p>}
+                  {errors.variants && (
+                    <p className="text-red-500 text-sm">{errors.variants}</p>
+                  )}
+                  {errors.variantNames && (
+                    <p className="text-red-500 text-sm">
+                      {errors.variantNames}
+                    </p>
+                  )}
+
+                  {/* Bulk Discount Tool */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h5 className="font-medium text-blue-900">
+                          სწრაფი ფასდაკლება
+                        </h5>
+                        <p className="text-sm text-blue-700">
+                          ყველა ვარიანტზე ერთდროულად ფასდაკლების გამოყენება
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 max-w-xs">
+                        <input
+                          type="number"
+                          min="1"
+                          max="99"
+                          value={bulkDiscountPercent || ""}
+                          onChange={(e) =>
+                            setBulkDiscountPercent(Number(e.target.value))
+                          }
+                          placeholder="მაგ: 20"
+                          className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <p className="text-xs text-blue-600 mt-1">
+                          ფასდაკლება %-ში
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={applyBulkDiscount}
+                        disabled={
+                          !bulkDiscountPercent || bulkDiscountPercent <= 0
+                        }
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        გამოყენება
+                      </button>
+                      <button
+                        type="button"
+                        onClick={clearAllSalePrices}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                      >
+                        გასუფთავება
+                      </button>
+                    </div>
+                  </div>
 
                   <div className="space-y-4">
                     {variants.map((variant, index) => (
-                      <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div
+                        key={index}
+                        className="bg-gray-50 border border-gray-200 rounded-lg p-4"
+                      >
                         <div className="flex items-center justify-between mb-3">
-                          <h5 className="font-medium text-gray-800">ვარიანტი #{index + 1}</h5>
+                          <h5 className="font-medium text-gray-800">
+                            ვარიანტი #{index + 1}
+                          </h5>
                           {variants.length > 1 && (
                             <button
                               type="button"
@@ -446,19 +601,26 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                           {/* Variant Name */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              ვარიანტის სახელი <span className="text-red-500">*</span>
+                              ვარიანტის სახელი{" "}
+                              <span className="text-red-500">*</span>
                             </label>
                             <input
                               type="text"
                               value={variant.name}
-                              onChange={(e) => updateVariant(index, "name", e.target.value)}
+                              onChange={(e) =>
+                                updateVariant(index, "name", e.target.value)
+                              }
                               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
-                                errors[`variant_${index}_name`] ? "border-red-300" : "border-gray-300"
+                                errors[`variant_${index}_name`]
+                                  ? "border-red-300"
+                                  : "border-gray-300"
                               }`}
                               placeholder="მაგ: 500მლ"
                             />
                             {errors[`variant_${index}_name`] && (
-                              <p className="text-red-500 text-xs mt-1">{errors[`variant_${index}_name`]}</p>
+                              <p className="text-red-500 text-xs mt-1">
+                                {errors[`variant_${index}_name`]}
+                              </p>
                             )}
                           </div>
 
@@ -474,16 +636,72 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                               value={variant.price}
                               onChange={(e) => {
                                 const value = e.target.value;
-                                updateVariant(index, "price", value === '' ? 0 : parseFloat(value) || 0);
+                                updateVariant(
+                                  index,
+                                  "price",
+                                  value === "" ? 0 : parseFloat(value) || 0
+                                );
                               }}
                               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
-                                errors[`variant_${index}_price`] ? "border-red-300" : "border-gray-300"
+                                errors[`variant_${index}_price`]
+                                  ? "border-red-300"
+                                  : "border-gray-300"
                               }`}
                               placeholder="0.00"
                             />
                             {errors[`variant_${index}_price`] && (
-                              <p className="text-red-500 text-xs mt-1">{errors[`variant_${index}_price`]}</p>
+                              <p className="text-red-500 text-xs mt-1">
+                                {errors[`variant_${index}_price`]}
+                              </p>
                             )}
+                          </div>
+
+                          {/* Sale Price */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              ფასდაკლებული ფასი (₾)
+                              <span className="text-xs text-gray-500 ml-1">
+                                (არასავალდებულო)
+                              </span>
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={variant.salePrice || ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                updateVariant(
+                                  index,
+                                  "salePrice",
+                                  value === ""
+                                    ? undefined
+                                    : parseFloat(value) || undefined
+                                );
+                              }}
+                              className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                              placeholder="მაგ: 8.50"
+                            />
+                            {variant.salePrice &&
+                              variant.salePrice >= variant.price && (
+                                <p className="text-orange-600 text-xs mt-1">
+                                  ფასდაკლებული ფასი ძირითად ფაზე ნაკლები უნდა
+                                  იყოს
+                                </p>
+                              )}
+                            {variant.salePrice &&
+                              variant.price > 0 &&
+                              variant.salePrice < variant.price && (
+                                <p className="text-green-600 text-xs mt-1">
+                                  ფასდაკლება:{" "}
+                                  {Math.round(
+                                    ((variant.price - variant.salePrice) /
+                                      variant.price) *
+                                      100
+                                  )}
+                                  %
+                                </p>
+                              )}
                           </div>
 
                           {/* Stock */}
@@ -497,15 +715,23 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                               value={variant.stock}
                               onChange={(e) => {
                                 const value = e.target.value;
-                                updateVariant(index, "stock", value === '' ? 0 : parseInt(value) || 0);
+                                updateVariant(
+                                  index,
+                                  "stock",
+                                  value === "" ? 0 : parseInt(value) || 0
+                                );
                               }}
                               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
-                                errors[`variant_${index}_stock`] ? "border-red-300" : "border-gray-300"
+                                errors[`variant_${index}_stock`]
+                                  ? "border-red-300"
+                                  : "border-gray-300"
                               }`}
                               placeholder="0"
                             />
                             {errors[`variant_${index}_stock`] && (
-                              <p className="text-red-500 text-xs mt-1">{errors[`variant_${index}_stock`]}</p>
+                              <p className="text-red-500 text-xs mt-1">
+                                {errors[`variant_${index}_stock`]}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -544,7 +770,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -44,6 +44,7 @@ interface CartActions {
   loadUserCart: (userId: string | null) => void;
   getCartTotal: () => number;
   getCartItemsCount: () => number;
+  getItemPrice: (item: any) => number;
   validateAndCleanCart: () => Promise<CartValidationResult | null>;
 }
 
@@ -58,6 +59,23 @@ interface CartStoreState extends CartState {
 export const useCartStore = create<CartStoreState & CartActions>()(
   persist(
     (set, get) => {
+      // Helper function to get correct item price (with sale price support)
+      const getItemPrice = (item: any) => {
+        if (item.variantId && item.product.variants) {
+          const variant = item.product.variants.find((v: any) => v.id === item.variantId);
+          if (variant) {
+            return variant.salePrice && variant.salePrice < variant.price
+              ? variant.salePrice
+              : variant.price;
+          }
+        }
+        return item.product.price || 0;
+      };
+
+      const calculateTotalPrice = (items: any[]) => {
+        return items.reduce((sum, item) => sum + getItemPrice(item) * item.quantity, 0);
+      };
+
       const saveCartToStorage = (cartData: {
         items: CartState["items"];
         totalItems: number;
@@ -230,7 +248,16 @@ export const useCartStore = create<CartStoreState & CartActions>()(
             currentStock = product.stock || 0;
           }
 
-          const currentPrice = product.price || 0;
+          // Get current price considering sale price for variants
+          let currentPrice = product.price || 0;
+          if (variantId && product.variants) {
+            const variant = product.variants.find((v: any) => v.id === variantId);
+            if (variant) {
+              currentPrice = variant.salePrice && variant.salePrice < variant.price
+                ? variant.salePrice
+                : variant.price;
+            }
+          }
 
           // Remove variant-specific fields from product object for storage
           const cleanProduct = { ...product };
@@ -290,10 +317,7 @@ export const useCartStore = create<CartStoreState & CartActions>()(
             (sum, item) => sum + item.quantity,
             0
           );
-          const newTotalPrice = newItems.reduce(
-            (sum, item) => sum + item.product.price * item.quantity,
-            0
-          );
+          const newTotalPrice = calculateTotalPrice(newItems);
 
           const newState = {
             items: newItems,
@@ -333,10 +357,7 @@ export const useCartStore = create<CartStoreState & CartActions>()(
             (sum, item) => sum + item.quantity,
             0
           );
-          const newTotalPrice = newItems.reduce(
-            (sum, item) => sum + item.product.price * item.quantity,
-            0
-          );
+          const newTotalPrice = calculateTotalPrice(newItems);
 
           const newState = {
             items: newItems,
@@ -414,10 +435,7 @@ export const useCartStore = create<CartStoreState & CartActions>()(
             (sum, item) => sum + item.quantity,
             0
           );
-          const newTotalPrice = newItems.reduce(
-            (sum, item) => sum + item.product.price * item.quantity,
-            0
-          );
+          const newTotalPrice = calculateTotalPrice(newItems);
 
           const newState = {
             items: newItems,
@@ -470,14 +488,15 @@ export const useCartStore = create<CartStoreState & CartActions>()(
         },
 
         getCartTotal: () => {
-          return get().items.reduce(
-            (sum, item) => sum + item.product.price * item.quantity,
-            0
-          );
+          return calculateTotalPrice(get().items);
         },
 
         getCartItemsCount: () => {
           return get().items.reduce((sum, item) => sum + item.quantity, 0);
+        },
+
+        getItemPrice: (item: any) => {
+          return getItemPrice(item);
         },
 
         // --- CART VALIDATION ---
@@ -502,10 +521,7 @@ export const useCartStore = create<CartStoreState & CartActions>()(
                 (sum, item) => sum + item.quantity,
                 0
               );
-              const newTotalPrice = result.validItems.reduce(
-                (sum, item) => sum + item.product.price * item.quantity,
-                0
-              );
+              const newTotalPrice = calculateTotalPrice(result.validItems);
 
               const newState = {
                 items: result.validItems,

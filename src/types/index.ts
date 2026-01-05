@@ -13,7 +13,8 @@ export type OrderSource =
 export interface ProductVariant {
   id: string; // Unique ID for each variant (e.g., "var_123abc")
   name: string; // User-defined name (e.g., "Round 500ml", "Bamboo Lid", "3-Piece Set")
-  price: number; // Variant-specific price
+  price: number; // Variant-specific regular price
+  salePrice?: number; // Optional discounted price (when on sale)
   stock: number; // Variant-specific stock
   isActive: boolean; // Can be disabled without deleting
   createdAt: Date;
