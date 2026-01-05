@@ -13,7 +13,11 @@ export const hasDiscount = (product: Product): boolean => {
     );
   }
 
-  return !!(product.originalPrice && product.originalPrice > product.price);
+  // For simple products, check both salePrice and legacy originalPrice
+  return !!(
+    (product.salePrice && product.salePrice < product.price) ||
+    (product.originalPrice && product.originalPrice > product.price)
+  );
 };
 
 /**
@@ -22,8 +26,19 @@ export const hasDiscount = (product: Product): boolean => {
 export const calculateDiscountPercentage = (product: Product): number => {
   if (!hasDiscount(product)) return 0;
 
-  const discount = product.originalPrice! - product.price;
-  return Math.round((discount / product.originalPrice!) * 100);
+  // For simple products with sale price
+  if (product.salePrice && product.salePrice < product.price) {
+    const discount = product.price - product.salePrice;
+    return Math.round((discount / product.price) * 100);
+  }
+
+  // Legacy originalPrice logic
+  if (product.originalPrice && product.originalPrice > product.price) {
+    const discount = product.originalPrice - product.price;
+    return Math.round((discount / product.originalPrice) * 100);
+  }
+
+  return 0;
 };
 
 /**

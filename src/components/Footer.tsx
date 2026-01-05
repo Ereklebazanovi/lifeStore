@@ -14,12 +14,11 @@ const Footer: React.FC = () => {
     { to: "/about", label: "ჩვენ შესახებ" },
   ];
 
-  // 2. ✅ დახმარება & სამართლებრივი (სრული სია)
+  // 2. ✅ დახმარება & სამართლებრივი
   const supportLinks = [
-   
     { to: "/refund-policy", label: "დაბრუნების პოლიტიკა" },
     { to: "/terms", label: "წესები და პირობები" },
-    { to: "/privacy-policy", label: "კონფიდენციალურობა" }, // 👈 ეს დავამატე
+    { to: "/privacy-policy", label: "კონფიდენციალურობა" },
   ];
 
   const socialLinks = [
@@ -150,7 +149,7 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Section */}
+        {/* Bottom Section - განახლებული იურიდიული ინფორმაციით */}
         <motion.div
           className="border-t border-stone-200 py-8"
           initial={{ opacity: 0 }}
@@ -158,11 +157,23 @@ const Footer: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
           viewport={{ once: true }}
         >
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-stone-500 font-medium text-sm">
-              &copy; {currentYear} LifeStore. ყველა უფლება დაცულია.
-            </p>
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-4 lg:gap-0">
+            
+            {/* Copyright და იურიდიული ინფორმაცია */}
+            <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-stone-500 font-medium text-sm text-center md:text-left">
+              <p>&copy; {currentYear} LifeStore. ყველა უფლება დაცულია.</p>
+              
+              {/* გამყოფი ხაზი/წერტილი მხოლოდ დიდ ეკრანებზე */}
+              <span className="hidden md:block w-1 h-1 bg-stone-400 rounded-full"></span>
+              
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-4">
+                <span>შპს ლაიფ სთორი</span>
+                <span className="hidden sm:inline text-stone-300">|</span>
+                <span>ს/ნ 438125574</span>
+              </div>
+            </div>
 
+            {/* სოციალური ქსელები */}
             <div className="flex items-center space-x-4">
               {socialLinks.map((social, index) => {
                 const IconComponent = social.icon;

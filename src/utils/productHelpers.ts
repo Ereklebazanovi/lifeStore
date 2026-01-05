@@ -42,7 +42,13 @@ export function getProductDisplayPrice(product: Product): string {
     }
     return `₾${minPrice.toFixed(2)} - ₾${maxPrice.toFixed(2)}`;
   }
-  return `₾${(product.price || 0).toFixed(2)}`;
+
+  // For simple products, use sale price if available
+  const effectivePrice = product.salePrice && product.salePrice < product.price
+    ? product.salePrice
+    : product.price;
+
+  return `₾${(effectivePrice || 0).toFixed(2)}`;
 }
 
 export function getProductOriginalDisplayPrice(
@@ -51,6 +57,11 @@ export function getProductOriginalDisplayPrice(
   if (product.hasVariants) {
     // For variants, we don't show original price ranges - too complex
     return null;
+  }
+
+  // Check for sale price first, then legacy originalPrice
+  if (product.salePrice && product.salePrice < product.price) {
+    return `₾${product.price.toFixed(2)}`;
   }
 
   if (product.originalPrice && product.originalPrice > (product.price || 0)) {
@@ -81,7 +92,9 @@ export function hasDiscount(product: Product): boolean {
     );
   }
 
+  // For simple products, check both salePrice and legacy originalPrice
   return !!(
-    product.originalPrice && product.originalPrice > (product.price || 0)
+    (product.salePrice && product.salePrice < product.price) ||
+    (product.originalPrice && product.originalPrice > (product.price || 0))
   );
 }

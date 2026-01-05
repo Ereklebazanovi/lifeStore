@@ -35,6 +35,7 @@ export interface Product {
 
   // For non-variant products (simple products) - Backward compatible
   price: number; // Always present for backward compatibility
+  salePrice?: number; // Optional discounted price for simple products
   originalPrice?: number;
   stock: number; // Always present for backward compatibility
 

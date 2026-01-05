@@ -90,7 +90,15 @@ const ProductDetailsPage: React.FC = () => {
         ? variant.salePrice
         : variant.price;
     }
-    return product?.price || 0;
+
+    // For simple products, use sale price if available
+    if (product) {
+      return product.salePrice && product.salePrice < product.price
+        ? product.salePrice
+        : product.price || 0;
+    }
+
+    return 0;
   };
 
   const getOriginalPrice = () => {
@@ -98,6 +106,8 @@ const ProductDetailsPage: React.FC = () => {
     if (variant) {
       return variant.price;
     }
+
+    // For simple products, return regular price (before sale)
     return product?.price || 0;
   };
 
@@ -106,6 +116,12 @@ const ProductDetailsPage: React.FC = () => {
     if (variant) {
       return variant.salePrice && variant.salePrice < variant.price;
     }
+
+    // For simple products, check if it has sale price
+    if (product) {
+      return product.salePrice && product.salePrice < product.price;
+    }
+
     return false;
   };
 

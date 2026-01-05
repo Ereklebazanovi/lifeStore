@@ -43,6 +43,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
   // მარტივი პროდუქტი (ვარიანტების გარეშე)
   const [simplePrice, setSimplePrice] = useState<number>(0);
+  const [simpleSalePrice, setSimpleSalePrice] = useState<number | undefined>(undefined);
   const [simpleStock, setSimpleStock] = useState<number>(0);
 
   // ვარიანტების მასივი
@@ -83,6 +84,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
       } else {
         setHasVariants(false);
         setSimplePrice(product.price || 0);
+        setSimpleSalePrice(product.salePrice);
         setSimpleStock(product.stock || 0);
         setVariants([{ name: "", price: 0, salePrice: undefined, stock: 0, isActive: true }]);
       }
@@ -241,6 +243,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
         // ძველი ველები backward compatibility-სთვის
         price: hasVariants ? stats.minPrice : simplePrice,
+        salePrice: hasVariants ? undefined : simpleSalePrice,
         stock: hasVariants ? stats.totalStock : simpleStock,
 
         // ახალი ველები variant system-ისთვის
@@ -284,13 +287,13 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
     setHasVariants(newHasVariants);
 
     if (newHasVariants) {
-      // თუ variants mode-ზე გადავაკეთე, მაშინ ძველი price/stock-ს პირველ ვარიანტში ჩავსვამ
+      // თუ variants mode-ზე გადავაკეთე, მაშინ ძველი price/salePrice/stock-ს პირველ ვარიანტში ჩავსვამ
       if (simplePrice > 0 || simpleStock > 0) {
         setVariants([
           {
             name: "ძირითადი",
             price: simplePrice,
-            salePrice: undefined,
+            salePrice: simpleSalePrice,
             stock: simpleStock,
             isActive: true,
           },
@@ -300,6 +303,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
       // თუ simple mode-ზე გადავაკეთე, მაშინ პირველი ვარიანტის მონაცემები simple-ში ჩავსვამ
       if (variants.length > 0 && variants[0].name) {
         setSimplePrice(variants[0].price);
+        setSimpleSalePrice(variants[0].salePrice);
         setSimpleStock(variants[0].stock);
       }
     }
@@ -506,7 +510,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                       <h4 className="font-medium text-blue-900 mb-3">
                         მარტივი პროდუქტი
                       </h4>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-blue-800 mb-2">
                             ფასი (₾) <span className="text-red-500">*</span>
@@ -535,6 +539,32 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                             </p>
                           )}
                         </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">
+                            🏷️ ფასდაკლებული ფასი (₾)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={simpleSalePrice || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setSimpleSalePrice(
+                                value === "" ? undefined : parseFloat(value) || 0
+                              );
+                            }}
+                            className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                            placeholder="არასავალდებულო"
+                          />
+                          {simpleSalePrice && simpleSalePrice >= simplePrice && (
+                            <p className="text-orange-600 text-sm mt-1">
+                              ფასდაკლებული ფასი ნაკლები უნდა იყოს ძირითადზე
+                            </p>
+                          )}
+                        </div>
+
                         <div>
                           <label className="block text-sm font-medium text-blue-800 mb-2">
                             მარაგი <span className="text-red-500">*</span>

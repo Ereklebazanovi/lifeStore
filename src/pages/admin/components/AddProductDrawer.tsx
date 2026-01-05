@@ -38,6 +38,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
   // მარტივი პროდუქტი (ვარიანტების გარეშე)
   const [simplePrice, setSimplePrice] = useState<number>(0);
+  const [simpleSalePrice, setSimpleSalePrice] = useState<number | undefined>(undefined);
   const [simpleStock, setSimpleStock] = useState<number>(0);
 
   // ვარიანტების მასივი
@@ -202,6 +203,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
         // ძველი ველები backward compatibility-სთვის
         price: hasVariants ? stats.minPrice : simplePrice,
+        salePrice: hasVariants ? undefined : simpleSalePrice,
         stock: hasVariants ? stats.totalStock : simpleStock,
 
         // ახალი ველები variant system-ისთვის
@@ -209,19 +211,19 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
         maxPrice: stats.maxPrice,
         totalStock: stats.totalStock,
 
-        // ვარიანტები
-        variants: hasVariants
-          ? variants.map((variant, index) => ({
-              id: `var_${Date.now()}_${index}`,
-              name: variant.name.trim(),
-              price: variant.price,
-              salePrice: variant.salePrice,
-              stock: variant.stock,
-              isActive: true,
-              createdAt: now,
-              updatedAt: now,
-            }))
-          : undefined,
+        // ვარიანტები - only include if hasVariants is true
+        ...(hasVariants && {
+          variants: variants.map((variant, index) => ({
+            id: `var_${Date.now()}_${index}`,
+            name: variant.name.trim(),
+            price: variant.price,
+            salePrice: variant.salePrice,
+            stock: variant.stock,
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+          }))
+        }),
 
         createdAt: now,
         updatedAt: now,
@@ -238,6 +240,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
       setPriority(0);
       setHasVariants(false);
       setSimplePrice(0);
+      setSimpleSalePrice(undefined);
       setSimpleStock(0);
       setVariants([{ name: "", price: 0, salePrice: undefined, stock: 0 }]);
       setBulkDiscountPercent(0);
@@ -434,7 +437,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                       <h4 className="font-medium text-blue-900 mb-3">
                         მარტივი პროდუქტი
                       </h4>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-blue-800 mb-2">
                             ფასი (₾) <span className="text-red-500">*</span>
@@ -463,6 +466,32 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                             </p>
                           )}
                         </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">
+                            🏷️ ფასდაკლებული ფასი (₾)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={simpleSalePrice || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setSimpleSalePrice(
+                                value === "" ? undefined : parseFloat(value) || 0
+                              );
+                            }}
+                            className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                            placeholder="არასავალდებულო"
+                          />
+                          {simpleSalePrice && simpleSalePrice >= simplePrice && (
+                            <p className="text-orange-600 text-sm mt-1">
+                              ფასდაკლებული ფასი ნაკლები უნდა იყოს ძირითადზე
+                            </p>
+                          )}
+                        </div>
+
                         <div>
                           <label className="block text-sm font-medium text-blue-800 mb-2">
                             მარაგი <span className="text-red-500">*</span>
