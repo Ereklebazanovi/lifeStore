@@ -243,7 +243,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
         // ძველი ველები backward compatibility-სთვის
         price: hasVariants ? stats.minPrice : simplePrice,
-        salePrice: hasVariants ? undefined : simpleSalePrice,
+        ...((!hasVariants && simpleSalePrice !== undefined) && { salePrice: simpleSalePrice }),
         stock: hasVariants ? stats.totalStock : simpleStock,
 
         // ახალი ველები variant system-ისთვის
@@ -259,7 +259,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                 `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               name: variant.name.trim(),
               price: variant.price,
-              salePrice: variant.salePrice,
+              ...(variant.salePrice !== undefined && { salePrice: variant.salePrice }),
               stock: variant.stock,
               isActive: variant.isActive,
               createdAt:

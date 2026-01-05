@@ -53,7 +53,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const amountInKopecks = Math.round(amount * 100);
+
     // Sanitize description for Flitt API
+    const sanitizedDescription = description ? String(description).substring(0, 100) : `LifeStore Order ${orderId}`;
     const cleanDesc = sanitizedDescription.replace(/[^a-zA-Z0-9]/g, "") || "Order";
 
     // 1. სტრიქონის აწყობა (ზუსტად ისე, როგორც test-flitt.cjs-ში!)

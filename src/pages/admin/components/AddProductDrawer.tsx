@@ -203,7 +203,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
         // ძველი ველები backward compatibility-სთვის
         price: hasVariants ? stats.minPrice : simplePrice,
-        salePrice: hasVariants ? undefined : simpleSalePrice,
+        ...((!hasVariants && simpleSalePrice !== undefined) && { salePrice: simpleSalePrice }),
         stock: hasVariants ? stats.totalStock : simpleStock,
 
         // ახალი ველები variant system-ისთვის
@@ -217,7 +217,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
             id: `var_${Date.now()}_${index}`,
             name: variant.name.trim(),
             price: variant.price,
-            salePrice: variant.salePrice,
+            ...(variant.salePrice !== undefined && { salePrice: variant.salePrice }),
             stock: variant.stock,
             isActive: true,
             createdAt: now,
