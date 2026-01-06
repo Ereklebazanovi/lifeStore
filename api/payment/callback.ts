@@ -2,7 +2,6 @@
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminDb } from "../lib/firebase-admin";
-import { OrderService } from "../../src/services/orderService";
 
 // Flitt Configuration - Environment variables only for security
 const FLITT_SECRET_KEY = process.env.FLITT_SECRET_KEY;
@@ -132,7 +131,7 @@ async function updateOrderStatus(
           };
 
           console.log(`📧 Sending order confirmation email for ${orderId}`);
-          await OrderService.sendEmailNotification(order);
+          await sendEmailNotification(order);
           console.log(`✅ Email sent successfully for order ${orderId}`);
         }
       } catch (emailError) {
@@ -150,6 +149,105 @@ async function updateOrderStatus(
     console.log(`🔄 Order ${orderId} updated successfully:`, updateData);
   } catch (error) {
     console.error(`❌ Error updating order ${orderId}:`, error);
+  }
+}
+
+/**
+ * Send email notification using Firebase mail collection
+ */
+async function sendEmailNotification(order: any): Promise<void> {
+  // Skip if no email provided
+  if (!order.customerInfo.email || order.customerInfo.email.trim() === "") {
+    return;
+  }
+
+  try {
+    // Add customer email to Firebase mail collection
+    await adminDb.collection("mail").add({
+      to: [order.customerInfo.email],
+      message: {
+        subject: `✅ თქვენი შეკვეთა დადასტურებულია - #${order.orderNumber}`,
+        html: `
+          <div style="font-family: Georgian, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+            <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #2563eb; margin-bottom: 10px;">✅ შეკვეთა წარმატებით დადასტურდა!</h1>
+                <p style="color: #666; font-size: 16px;">მადლობა LifeStore-დან შესყიდვისთვის</p>
+              </div>
+
+              <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h2 style="color: #1d4ed8; margin-bottom: 15px;">📋 შეკვეთის დეტალები</h2>
+                <p><strong>შეკვეთის ნომერი:</strong> ${order.orderNumber}</p>
+                <p><strong>თარიღი:</strong> ${new Date(order.createdAt).toLocaleDateString('ka-GE')}</p>
+                <p><strong>მიწოდების მისამართი:</strong> ${order.deliveryInfo.city}, ${order.deliveryInfo.address}</p>
+                <p><strong>სულ ღირებულება:</strong> ₾${order.totalAmount.toFixed(2)}</p>
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <h3 style="color: #333; margin-bottom: 15px;">🛍️ შეკვეთილი პროდუქტები:</h3>
+                ${order.items.map((item: any) => `
+                  <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-bottom: 10px;">
+                    <p style="margin: 5px 0;"><strong>${item.product.name}</strong></p>
+                    ${item.variantId ? `<p style="margin: 5px 0; color: #666; font-size: 14px;">ვარიანტი: ${item.variantName || ''}</p>` : ''}
+                    <p style="margin: 5px 0;">რაოდენობა: ${item.quantity} ცალი</p>
+                    <p style="margin: 5px 0; color: #059669; font-weight: bold;">₾${(item.total || item.price * item.quantity).toFixed(2)}</p>
+                  </div>
+                `).join('')}
+              </div>
+
+              <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin-bottom: 20px;">
+                <p style="margin: 0; color: #065f46;"><strong>💡 მნიშვნელოვანი ინფორმაცია:</strong></p>
+                <p style="margin: 10px 0 0 0; color: #065f46;">თქვენი შეკვეთა გადაეცა მუშაობის რეჟიმში და მალე დაიწყება მისი დამუშავება. მიწოდების დროისა და დეტალების შესახებ დამატებით გაგიკავშირდებით.</p>
+              </div>
+
+              <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #666; margin-bottom: 5px;">კითხვების შემთხვევაში დაგვიკავშირდით:</p>
+                <p style="color: #2563eb; font-weight: bold; margin: 5px 0;">📞 მობ: 555 69 00 33</p>
+                <p style="color: #2563eb; font-weight: bold; margin: 5px 0;">✉️ ემაილი: info@lifestore.ge</p>
+
+                <div style="margin-top: 20px;">
+                  <p style="color: #999; font-size: 14px; margin: 0;">მადლობა LifeStore-ის არჩევისთვის! 🎉</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `,
+      },
+    });
+
+    // Add admin notification email
+    await adminDb.collection("mail").add({
+      to: ["info@lifestore.ge"],
+      message: {
+        subject: `🔔 ახალი შეკვეთა - #${order.orderNumber}`,
+        html: `
+          <div style="font-family: Georgian, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #dc2626;">🔔 ახალი შეკვეთა მიღებულია!</h2>
+            <p><strong>შეკვეთის ნომერი:</strong> ${order.orderNumber}</p>
+            <p><strong>კლიენტი:</strong> ${order.customerInfo.firstName} ${order.customerInfo.lastName}</p>
+            <p><strong>ტელეფონი:</strong> ${order.customerInfo.phone}</p>
+            <p><strong>ემაილი:</strong> ${order.customerInfo.email}</p>
+            <p><strong>მისამართი:</strong> ${order.deliveryInfo.city}, ${order.deliveryInfo.address}</p>
+            <p><strong>სულ ღირებულება:</strong> ₾${order.totalAmount.toFixed(2)}</p>
+
+            <h3>პროდუქტები:</h3>
+            ${order.items.map((item: any) => `
+              <div style="border: 1px solid #ccc; padding: 10px; margin: 5px 0;">
+                <p><strong>${item.product.name}</strong></p>
+                ${item.variantId ? `<p>ვარიანტი: ${item.variantName || ''}</p>` : ''}
+                <p>რაოდენობა: ${item.quantity} ცალი</p>
+                <p>ღირებულება: ₾${(item.total || item.price * item.quantity).toFixed(2)}</p>
+              </div>
+            `).join('')}
+          </div>
+        `,
+      },
+    });
+
+    console.log("✅ Email notifications added to Firebase mail collection");
+  } catch (error) {
+    console.error("❌ Error adding email to mail collection:", error);
+    throw error;
   }
 }
 
