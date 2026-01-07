@@ -72,25 +72,28 @@ function verifyFlittSignature(responseData: any, secretKey: string): boolean {
  * Update order status in Firestore and send confirmation email if payment successful
  */
 async function updateOrderStatus(
-  orderId: string,
+  orderNumber: string,
   isPaymentSuccessful: boolean,
   paymentData: any
 ): Promise<void> {
   try {
-    const orderRef = adminDb.collection("orders").doc(orderId);
+    // Find order by orderNumber first
+    const ordersRef = adminDb.collection("orders");
+    const snapshot = await ordersRef.where("orderNumber", "==", orderNumber).get();
 
-    // Check if order exists
-    const orderDoc = await orderRef.get();
-    if (!orderDoc.exists) {
-      console.error(`❌ Order ${orderId} not found in database`);
+    if (snapshot.empty) {
+      console.error(`❌ Order ${orderNumber} not found in database`);
       return;
     }
+
+    const orderDoc = snapshot.docs[0];
+    const orderRef = orderDoc.ref;
 
     const orderData = orderDoc.data();
 
     // ✅ IDEMPOTENCY CHECK: Prevent duplicate payment processing
     if (isPaymentSuccessful && orderData?.paymentStatus === "paid") {
-      console.log(`⚠️ Order ${orderId} already marked as paid. Skipping duplicate processing.`);
+      console.log(`⚠️ Order ${orderNumber} already marked as paid. Skipping duplicate processing.`);
       return;
     }
 
@@ -102,7 +105,7 @@ async function updateOrderStatus(
       updateData.paymentStatus = "paid";
       updateData.orderStatus = "confirmed";
       updateData.paidAt = new Date();
-      console.log(`✅ Order ${orderId} marked as PAID and CONFIRMED`);
+      console.log(`✅ Order ${orderNumber} marked as PAID and CONFIRMED`);
 
       // ✅ NOW SEND EMAIL NOTIFICATION AFTER PAYMENT SUCCESS
       try {
@@ -111,7 +114,7 @@ async function updateOrderStatus(
         if (orderData) {
           // Convert Firestore data to Order object
           const order = {
-            id: orderId,
+            id: orderDoc.id,
             userId: orderData.userId,
             orderNumber: orderData.orderNumber,
             source: orderData.source,
@@ -129,25 +132,25 @@ async function updateOrderStatus(
             paidAt: new Date(),
           };
 
-          console.log(`📧 Sending order confirmation email for ${orderId}`);
+          console.log(`📧 Sending order confirmation email for ${orderNumber}`);
           await sendEmailNotification(order);
-          console.log(`✅ Email sent successfully for order ${orderId}`);
+          console.log(`✅ Email sent successfully for order ${orderNumber}`);
         }
       } catch (emailError) {
-        console.error(`❌ Failed to send email for order ${orderId}:`, emailError);
+        console.error(`❌ Failed to send email for order ${orderNumber}:`, emailError);
         // Don't fail the payment process if email fails
       }
     } else {
       updateData.paymentStatus = "failed";
-      console.log(`❌ Order ${orderId} marked as PAYMENT FAILED`);
+      console.log(`❌ Order ${orderNumber} marked as PAYMENT FAILED`);
     }
 
     // Update the order in Firestore
     await orderRef.update(updateData);
 
-    console.log(`🔄 Order ${orderId} updated successfully:`, updateData);
+    console.log(`🔄 Order ${orderNumber} updated successfully:`, updateData);
   } catch (error) {
-    console.error(`❌ Error updating order ${orderId}:`, error);
+    console.error(`❌ Error updating order ${orderNumber}:`, error);
   }
 }
 
