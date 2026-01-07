@@ -63,9 +63,44 @@ const OrderSuccessPage: React.FC = () => {
 
         setOrder(orderData);
 
-        // Clear cart only when payment is confirmed
+        // Check if payment is confirmed from URL parameters (TBC redirect)
+        const hasPaymentData = searchParams.get('rrn') && searchParams.get('masked_card');
+
         if (orderData.paymentStatus === "paid" && orderData.orderStatus === "confirmed") {
           clearCart();
+        } else if (hasPaymentData && orderData.paymentStatus === "pending") {
+          // FALLBACK: If we have payment data in URL but order is still pending,
+          // this means server callback didn't work, so update order manually
+          try {
+            // Create payment data from URL parameters for manual update
+            const paymentData = {
+              order_id: orderData.orderNumber,
+              order_status: 'approved',
+              response_status: 'success',
+              rrn: searchParams.get('rrn'),
+              card: searchParams.get('masked_card'),
+              payment_id: searchParams.get('payment_id') || 'manual-update'
+            };
+
+            // Directly call our callback endpoint with the payment data
+            const callbackUrl = new URL('/api/payment/callback', window.location.origin);
+            Object.entries(paymentData).forEach(([key, value]) => {
+              if (value) callbackUrl.searchParams.set(key, value);
+            });
+
+            const response = await fetch(callbackUrl.toString());
+
+            if (response.ok) {
+              // Reload order data
+              const updatedOrder = await OrderService.getOrderByNumber(orderIdToUse);
+              if (updatedOrder?.paymentStatus === "paid") {
+                setOrder(updatedOrder);
+                clearCart();
+              }
+            }
+          } catch (error) {
+            console.error("Error updating order status:", error);
+          }
         }
       } catch (error) {
         console.error("Error fetching order:", error);

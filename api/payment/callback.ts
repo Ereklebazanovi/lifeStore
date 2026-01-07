@@ -255,6 +255,13 @@ module.exports = async function handler(
   res: VercelResponse
 ) {
   console.log("Payment callback received:", new Date().toISOString());
+  console.log("Method:", req.method);
+  console.log("Query params:", JSON.stringify(req.query, null, 2));
+  console.log("Headers:", JSON.stringify({
+    'content-type': req.headers['content-type'],
+    'user-agent': req.headers['user-agent'],
+    'x-forwarded-for': req.headers['x-forwarded-for']
+  }, null, 2));
 
   // Health check
   if (req.method === "GET" && Object.keys(req.query).length === 0) {
