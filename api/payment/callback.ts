@@ -255,6 +255,25 @@ module.exports = async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  // ✅ EXTENSIVE LOGGING - Log every request that hits this endpoint
+  console.log("🚨 PAYMENT CALLBACK ENDPOINT HIT!");
+  console.log("⏰ Timestamp:", new Date().toISOString());
+  console.log("🌐 URL:", req.url);
+  console.log("📋 Method:", req.method);
+  console.log("🏠 Headers:", JSON.stringify(req.headers, null, 2));
+  console.log("🔍 Query params:", JSON.stringify(req.query, null, 2));
+  console.log("📦 Body:", JSON.stringify(req.body, null, 2));
+
+  // ✅ HEALTH CHECK - Allow simple GET request to test endpoint
+  if (req.method === "GET" && Object.keys(req.query).length === 0) {
+    console.log("🏥 Health check request - endpoint is working");
+    return res.status(200).json({
+      status: "ok",
+      message: "Payment callback endpoint is working",
+      timestamp: new Date().toISOString()
+    });
+  }
+
   // Accept both GET and POST requests (TBC uses GET for callbacks)
   if (req.method !== "GET" && req.method !== "POST") {
     console.log(`❌ Invalid method: ${req.method}`);
@@ -262,11 +281,10 @@ module.exports = async function handler(
   }
 
   try {
-    console.log("📞 Flitt Payment Callback Received:");
+    console.log("📞 Processing Flitt Payment Callback:");
     console.log(`📋 Method: ${req.method}`);
     console.log("📋 Request body:", JSON.stringify(req.body, null, 2));
     console.log("📋 Query params:", JSON.stringify(req.query, null, 2));
-    console.log("📋 Request headers:", JSON.stringify(req.headers, null, 2));
 
     // Extract response data based on request method
     let responseData;
