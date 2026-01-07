@@ -39,15 +39,8 @@ const OrderSuccessPage: React.FC = () => {
       orderIdToUse = searchParams.get('order_id') || undefined;
     }
 
-    console.log("🔍 OrderSuccessPage Debug:", {
-      pathOrderId: orderId,
-      queryOrderId: searchParams.get('order_id'),
-      finalOrderId: orderIdToUse,
-      allParams: Object.fromEntries(searchParams.entries())
-    });
 
     if (!orderIdToUse) {
-      console.error("❌ No orderId found in path or query parameters");
       showToast("შეკვეთის ID არ მოიძებნა", "error");
       navigate("/");
       return;
@@ -55,13 +48,10 @@ const OrderSuccessPage: React.FC = () => {
 
     const fetchOrder = async () => {
       try {
-        console.log("📊 Fetching order:", orderIdToUse);
-
-        // 🔧 Try both methods: by orderNumber (for Flitt callback) and by document ID
+        // Try both methods: by orderNumber (for Flitt callback) and by document ID
         let orderData = await OrderService.getOrderByNumber(orderIdToUse);
 
         if (!orderData) {
-          console.log("🔄 Order not found by orderNumber, trying by document ID...");
           orderData = await OrderService.getOrderById(orderIdToUse);
         }
 
@@ -72,45 +62,10 @@ const OrderSuccessPage: React.FC = () => {
         }
 
         setOrder(orderData);
-        console.log("✅ Order loaded successfully:", {
-          id: orderData.id,
-          orderNumber: orderData.orderNumber,
-          paymentStatus: orderData.paymentStatus
-        });
 
-        // ✅ Check if payment is confirmed from URL parameters (TBC redirect)
-        const hasPaymentData = searchParams.get('rrn') && searchParams.get('masked_card');
-
+        // Clear cart only when payment is confirmed
         if (orderData.paymentStatus === "paid" && orderData.orderStatus === "confirmed") {
-          console.log("✅ Payment confirmed - clearing cart");
           clearCart();
-        } else if (hasPaymentData && orderData.paymentStatus === "pending") {
-          // ✅ FALLBACK: If we have payment data in URL but order is still pending,
-          // this means server callback didn't work, so update order manually
-          console.log("🔄 Payment data detected in URL but order still pending - updating order status");
-
-          try {
-            // Update order status using the API
-            const updateResponse = await fetch('/api/payment/test-callback', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ orderNumber: orderData.orderNumber })
-            });
-
-            if (updateResponse.ok) {
-              console.log("✅ Order status updated successfully");
-              // Reload order data
-              const updatedOrder = await OrderService.getOrderByNumber(orderIdToUse);
-              if (updatedOrder) {
-                setOrder(updatedOrder);
-                clearCart();
-              }
-            }
-          } catch (error) {
-            console.error("❌ Error updating order status:", error);
-          }
-        } else {
-          console.log(`⏳ Payment status: ${orderData.paymentStatus}, order status: ${orderData.orderStatus} - cart not cleared`);
         }
       } catch (error) {
         console.error("Error fetching order:", error);
@@ -122,7 +77,7 @@ const OrderSuccessPage: React.FC = () => {
     };
 
     fetchOrder();
-  }, [orderId, searchParams, navigate]);
+  }, [orderId, searchParams, navigate, clearCart]);
 
   // 🎯 Auto-print logic
   useEffect(() => {

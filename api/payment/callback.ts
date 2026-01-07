@@ -53,16 +53,15 @@ function verifyFlittSignature(responseData: any, secretKey: string): boolean {
       .update(signatureString, "utf8")
       .digest("hex");
 
-    console.log("🔐 Callback Signature Verification:");
-    console.log("  📝 Filtered data:", filteredData);
-    console.log("  🔤 Sorted keys:", sortedKeys);
-    console.log("  📊 Sorted values:", sortedValues);
-    console.log("  🔗 Signature string:", signatureString);
-    console.log("  ✅ Expected signature:", expectedSignature);
-    console.log("  📩 Received signature:", signature);
-    console.log("  🎯 Signature match:", expectedSignature === signature);
+    // Signature verification (logging only in case of mismatch)
+    const isMatch = expectedSignature === signature;
+    if (!isMatch) {
+      console.log("🔐 Signature verification failed:");
+      console.log("  Expected:", expectedSignature);
+      console.log("  Received:", signature);
+    }
 
-    return expectedSignature === signature;
+    return isMatch;
   } catch (error) {
     console.error("❌ Error verifying signature:", error);
     return false;
@@ -255,18 +254,10 @@ module.exports = async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  // ✅ EXTENSIVE LOGGING - Log every request that hits this endpoint
-  console.log("🚨 PAYMENT CALLBACK ENDPOINT HIT!");
-  console.log("⏰ Timestamp:", new Date().toISOString());
-  console.log("🌐 URL:", req.url);
-  console.log("📋 Method:", req.method);
-  console.log("🏠 Headers:", JSON.stringify(req.headers, null, 2));
-  console.log("🔍 Query params:", JSON.stringify(req.query, null, 2));
-  console.log("📦 Body:", JSON.stringify(req.body, null, 2));
+  console.log("Payment callback received:", new Date().toISOString());
 
-  // ✅ HEALTH CHECK - Allow simple GET request to test endpoint
+  // Health check
   if (req.method === "GET" && Object.keys(req.query).length === 0) {
-    console.log("🏥 Health check request - endpoint is working");
     return res.status(200).json({
       status: "ok",
       message: "Payment callback endpoint is working",
@@ -281,10 +272,7 @@ module.exports = async function handler(
   }
 
   try {
-    console.log("📞 Processing Flitt Payment Callback:");
-    console.log(`📋 Method: ${req.method}`);
-    console.log("📋 Request body:", JSON.stringify(req.body, null, 2));
-    console.log("📋 Query params:", JSON.stringify(req.query, null, 2));
+    console.log(`Processing payment callback - Method: ${req.method}`);
 
     // Extract response data based on request method
     let responseData;
@@ -328,15 +316,6 @@ module.exports = async function handler(
       response_status,
     } = responseData;
 
-    console.log(`📋 Payment Details:`, {
-      orderId,
-      orderStatus,
-      paymentId,
-      amount,
-      currency,
-      response_status,
-    });
-
     // Validate required fields
     if (!orderId) {
       console.error("❌ Missing order_id in callback");
@@ -348,24 +327,15 @@ module.exports = async function handler(
       orderStatus === "approved" && response_status === "success";
 
     if (isPaymentSuccessful) {
-      console.log(`✅ Payment APPROVED for order ${orderId}`, {
-        paymentId,
-        amount,
-        currency,
-      });
+      console.log(`✅ Payment APPROVED for order ${orderId}`);
     } else {
-      console.log(`❌ Payment FAILED for order ${orderId}`, {
-        orderStatus,
-        response_status,
-        paymentId,
-      });
+      console.log(`❌ Payment FAILED for order ${orderId} - Status: ${orderStatus}, Response: ${response_status}`);
     }
 
     // ✅ Update order status in Firestore
     await updateOrderStatus(orderId, isPaymentSuccessful, responseData);
 
     // Always respond with 200 OK to acknowledge receipt
-    console.log(`📤 Sending OK response to Flitt for order ${orderId}`);
     return res.status(200).send("OK");
   } catch (error) {
     console.error("❌ Error processing payment callback:", error);
