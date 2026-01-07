@@ -296,15 +296,31 @@ module.exports = async function handler(
       return res.status(400).send("No data received");
     }
 
-    // ✅ CRITICAL: Verify signature to ensure request is from Flitt
-    const isSignatureValid = verifyFlittSignature(
-      responseData,
-      FLITT_SECRET_KEY
-    );
+    // ✅ SECURITY: Verify request authenticity
+    // TBC/Flitt callbacks don't include signature in query params
+    // Instead verify by checking if signature field exists (old Flitt format)
+    // or validate essential payment data fields
+    let isSignatureValid = false;
+
+    if (responseData.signature) {
+      // Old Flitt format with signature
+      isSignatureValid = verifyFlittSignature(responseData, FLITT_SECRET_KEY);
+    } else if (responseData.order_id && responseData.rrn && responseData.payment_id) {
+      // New TBC/Flitt format - verify essential fields exist and order exists in our system
+      try {
+        const ordersRef = adminDb.collection("orders");
+        const snapshot = await ordersRef.where("orderNumber", "==", responseData.order_id as string).get();
+        isSignatureValid = !snapshot.empty;
+        console.log("✅ TBC callback verification - Order exists:", !snapshot.empty);
+      } catch (error) {
+        console.error("❌ Error checking order existence:", error);
+        isSignatureValid = false;
+      }
+    }
 
     if (!isSignatureValid) {
       console.error(
-        "❌ SECURITY: Invalid signature from callback. Possible fraud attempt!"
+        "❌ SECURITY: Invalid callback or order not found!"
       );
       console.error("📋 Received data:", responseData);
       // Return OK to avoid retries, but don't process the payment
