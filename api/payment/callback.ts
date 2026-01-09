@@ -199,13 +199,20 @@ async function sendEmailNotification(order: any): Promise<void> {
 
               <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin-bottom: 20px;">
                 <p style="margin: 0; color: #065f46;"><strong>💡 მნიშვნელოვანი ინფორმაცია:</strong></p>
-                <p style="margin: 10px 0 0 0; color: #065f46;">თქვენი შეკვეთა გადაეცა მუშაობის რეჟიმში და მალე დაიწყება მისი დამუშავება. მიწოდების დროისა და დეტალების შესახებ დამატებით გაგიკავშირდებით.</p>
+                <p style="margin: 10px 0 0 0; color: #065f46;">თქვენი შეკვეთა გადაეცა მუშაობის რეჟიმში და მალე დაიწყება მისი დამუშავება. მიწოდების დროისა და დეტალების შესახებ დამატებით დაგიკავშირდებით.</p>
               </div>
 
               <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
                 <p style="color: #666; margin-bottom: 5px;">კითხვების შემთხვევაში დაგვიკავშირდით:</p>
                 <p style="color: #2563eb; font-weight: bold; margin: 5px 0;">📞 მობ: 511 72 72 57</p>
                 <p style="color: #2563eb; font-weight: bold; margin: 5px 0;">✉️ ემაილი: info@lifestore.ge</p>
+
+                <div style="margin-top: 20px; text-align: center;">
+                  <a href="https://lifestore.ge/order-success/${order.orderNumber}?token=${order.accessToken}"
+                     style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">
+                    📄 შეკვეთის დეტალები და PDF
+                  </a>
+                </div>
 
                 <div style="margin-top: 20px;">
                   <p style="color: #999; font-size: 14px; margin: 0;">მადლობა LifeStore-ის არჩევისთვის! 🎉</p>

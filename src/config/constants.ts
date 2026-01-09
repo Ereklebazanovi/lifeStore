@@ -12,6 +12,7 @@ export const ADMIN_CONFIG = {
   BUSINESS_PHONE: "+995 511 72 72 57", // 👈 შეცვალე  ნამდვილი ნომრით
   BUSINESS_EMAIL: "info@lifestore.ge", // 👈 შეცვალე ნამდვილი ბიზნეს მეილით
 };
+
 export const SITE_CONFIG = {
   // ✅ შეცვალე კონკრეტული დომენით:
   BASE_URL: "https://lifestore.ge",

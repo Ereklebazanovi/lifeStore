@@ -71,6 +71,7 @@ export interface Order {
   id: string;
   userId: string | null;
   orderNumber: string;
+  accessToken?: string; // ✅ უნიქალური token permanent access-ისთვის
   source?: OrderSource;
   items: OrderItem[];
   subtotal: number;

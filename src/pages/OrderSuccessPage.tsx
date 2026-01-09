@@ -48,8 +48,19 @@ const OrderSuccessPage: React.FC = () => {
 
     const fetchOrder = async () => {
       try {
-        // Try both methods: by orderNumber (for Flitt callback) and by document ID
-        let orderData = await OrderService.getOrderByNumber(orderIdToUse);
+        let orderData = null;
+
+        // 1. Check for access token (email links)
+        const accessToken = searchParams.get('token');
+        if (accessToken && orderIdToUse) {
+          console.log("Trying with access token...");
+          orderData = await OrderService.getOrderByToken(orderIdToUse, accessToken);
+        }
+
+        // 2. Fallback: Try normal methods
+        if (!orderData) {
+          orderData = await OrderService.getOrderByNumber(orderIdToUse);
+        }
 
         if (!orderData) {
           orderData = await OrderService.getOrderById(orderIdToUse);

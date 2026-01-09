@@ -41,6 +41,18 @@ export class OrderService {
   }
 
   /**
+   * Generate unique access token for order
+   */
+  private static generateAccessToken(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < 32; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  /**
    * Convert CartItem[] to OrderItem[] (For Website Orders)
    */
   private static convertCartItemsToOrderItems(
@@ -244,20 +256,57 @@ export class OrderService {
     orderNumber: string
   ): Promise<Order | null> {
     try {
-      const ordersQuery = query(
+      // 1. ჯერ ვცადოთ ჩვეულებრივი მოძებნა (თუ user დალოგინებულია ან ადმინია)
+      try {
+        const ordersQuery = query(
+          collection(db, "orders"),
+          where("orderNumber", "==", orderNumber),
+          limit(1)
+        );
+        const querySnapshot = await getDocs(ordersQuery);
+
+        if (!querySnapshot.empty) {
+          const orderDoc = querySnapshot.docs[0];
+          const data = orderDoc.data();
+          return {
+            id: orderDoc.id,
+            userId: data.userId,
+            orderNumber: data.orderNumber,
+            source: data.source,
+            items: data.items,
+            subtotal: data.subtotal,
+            shippingCost: data.shippingCost,
+            totalAmount: data.totalAmount,
+            customerInfo: data.customerInfo,
+            deliveryInfo: data.deliveryInfo,
+            orderStatus: data.orderStatus,
+            paymentMethod: data.paymentMethod,
+            paymentStatus: data.paymentStatus,
+            createdAt: data.createdAt.toDate(),
+            updatedAt: data.updatedAt.toDate(),
+            paidAt: data.paidAt?.toDate(),
+          } as Order;
+        }
+      } catch (authError) {
+        // თუ უფლებების ერორია, ესეიგი Guest-ია, ვაგრძელებთ ქვემოთ...
+      }
+
+      // 2. თუ ზემოთ ვერ იპოვა ან ერორი იყო, ვცადოთ როგორც GUEST
+      const guestQuery = query(
         collection(db, "orders"),
         where("orderNumber", "==", orderNumber),
+        where("customerInfo.isGuest", "==", true), // 👈 აუცილებელია Rules-ისთვის!
         limit(1)
       );
 
-      const querySnapshot = await getDocs(ordersQuery);
+      const guestSnapshot = await getDocs(guestQuery);
 
-      if (querySnapshot.empty) {
+      if (guestSnapshot.empty) {
         console.log(`Order not found: ${orderNumber}`);
         return null;
       }
 
-      const orderDoc = querySnapshot.docs[0];
+      const orderDoc = guestSnapshot.docs[0];
       const data = orderDoc.data();
 
       return {
@@ -280,6 +329,56 @@ export class OrderService {
       } as Order;
     } catch (error) {
       console.error("Error getting order by number:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Get order by access token (for email links)
+   */
+  public static async getOrderByToken(
+    orderNumber: string,
+    accessToken: string
+  ): Promise<Order | null> {
+    try {
+      const ordersQuery = query(
+        collection(db, "orders"),
+        where("orderNumber", "==", orderNumber),
+        where("accessToken", "==", accessToken),
+        limit(1)
+      );
+
+      const querySnapshot = await getDocs(ordersQuery);
+
+      if (querySnapshot.empty) {
+        console.log(`Order not found with token: ${orderNumber}`);
+        return null;
+      }
+
+      const orderDoc = querySnapshot.docs[0];
+      const data = orderDoc.data();
+
+      return {
+        id: orderDoc.id,
+        userId: data.userId,
+        orderNumber: data.orderNumber,
+        accessToken: data.accessToken,
+        source: data.source,
+        items: data.items,
+        subtotal: data.subtotal,
+        shippingCost: data.shippingCost,
+        totalAmount: data.totalAmount,
+        customerInfo: data.customerInfo,
+        deliveryInfo: data.deliveryInfo,
+        orderStatus: data.orderStatus,
+        paymentMethod: data.paymentMethod,
+        paymentStatus: data.paymentStatus,
+        createdAt: data.createdAt.toDate(),
+        updatedAt: data.updatedAt.toDate(),
+        paidAt: data.paidAt?.toDate(),
+      } as Order;
+    } catch (error) {
+      console.error("Error getting order by token:", error);
       return null;
     }
   }
@@ -473,6 +572,7 @@ export class OrderService {
 
     try {
       const orderNumber = this.generateOrderNumber();
+      const accessToken = this.generateAccessToken(); // ✅ უნიქალური token
 
       // ✅ 1. TRANSACTION: Update inventory first
       await this.updateProductInventory(inventoryItems);
@@ -490,6 +590,7 @@ export class OrderService {
         id: orderRef.id,
         userId: orderData.userId || null,
         orderNumber,
+        accessToken, // ✅ უნიქალური token
         source: "website",
         items: orderItems,
         subtotal,
@@ -573,6 +674,7 @@ export class OrderService {
 
     try {
       const orderNumber = this.generateOrderNumber();
+      const accessToken = this.generateAccessToken(); // ✅ უნიქალური token
 
       // ✅ 2. TRANSACTION: Update inventory
       if (inventoryItems.length > 0) {
@@ -588,6 +690,7 @@ export class OrderService {
         id: orderRef.id,
         userId: null,
         orderNumber,
+        accessToken, // ✅ უნიქალური token
         source: data.source,
         items: orderItems,
         subtotal,
