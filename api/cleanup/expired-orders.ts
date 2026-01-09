@@ -3,22 +3,17 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminDb } from "../lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 
-/**
- * Serverless function to clean up expired orders
- * This function should be called periodically (every 5-10 minutes) via cron job
- * It finds orders that are older than 30 minutes and still pending, then cancels them
- * and restores the inventory.
- */
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
-  // Allow POST requests (for manual triggers) and cron requests from Vercel
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+  // ✅ შესწორება: დავუშვათ როგორც POST (შენთვის), ისე GET (Vercel Cron-ისთვის)
+  if (req.method !== "POST" && req.method !== "GET") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
   }
 
-  // Check if this is a Vercel cron request or manual trigger
+  // Check if this is a Vercel cron request
   const isVercelCron = req.headers["vercel-cron"] === "1";
 
   if (!isVercelCron) {
@@ -31,62 +26,64 @@ export default async function handler(
       !expectedToken ||
       authHeader !== `Bearer ${expectedToken}`
     ) {
-      return res.status(401).json({ error: "Unauthorized" });
+      res.status(401).json({ error: "Unauthorized" });
+      return;
     }
   }
 
   try {
     console.log("🧹 Starting expired orders cleanup...");
 
-    // Calculate cutoff time (30 minutes ago)
-    // const cutoffTime = new Date();
-    // cutoffTime.setMinutes(cutoffTime.getMinutes() - 30);
-
-    // ✅ შეცვალე ამით (დროებით):
+    // ✅ დროებით 1 წუთი ტესტირებისთვის (როცა მორჩები, დააბრუნე 30-ზე)
     const cutoffTime = new Date();
-    cutoffTime.setMinutes(cutoffTime.getMinutes() - 1); // 1 წუთი
+    cutoffTime.setMinutes(cutoffTime.getMinutes() - 1); 
+    // cutoffTime.setMinutes(cutoffTime.getMinutes() - 30); // Production setting
 
-    // Find all pending orders (filter by time in code to avoid index requirement)
+    // Find all pending orders
     const pendingOrdersQuery = adminDb
       .collection("orders")
       .where("paymentStatus", "==", "pending")
-      .limit(100); // Get more since we'll filter in code
+      .limit(100);
 
     const pendingOrdersSnapshot = await pendingOrdersQuery.get();
 
     if (pendingOrdersSnapshot.empty) {
       console.log("✅ No pending orders found");
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         message: "No pending orders to clean up",
         processedCount: 0,
       });
+      return;
     }
 
-    // Filter expired orders in code (older than 30 minutes)
+    // Filter expired orders in code
     const expiredOrders = pendingOrdersSnapshot.docs.filter((doc) => {
       const orderData = doc.data();
+      // Safety check if createdAt exists
+      if (!orderData.createdAt) return false;
+      
       const createdAt = orderData.createdAt.toDate();
       return createdAt <= cutoffTime;
     });
 
     if (expiredOrders.length === 0) {
       console.log("✅ No expired orders found (all pending orders are recent)");
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         message: "No expired orders to clean up",
         processedCount: 0,
       });
+      return;
     }
 
     console.log(
-      `🔍 Found ${expiredOrders.length} expired orders to process (out of ${pendingOrdersSnapshot.size} pending)`
+      `🔍 Found ${expiredOrders.length} expired orders to process`
     );
 
     let processedCount = 0;
     let errorCount = 0;
 
-    // Process each expired order
     for (const orderDoc of expiredOrders) {
       try {
         const orderData = orderDoc.data();
@@ -96,28 +93,28 @@ export default async function handler(
           `🗑️ Processing expired order: ${orderData.orderNumber} (${orderId})`
         );
 
-        // Create batch for atomic operations
         const batch = adminDb.batch();
 
-        // 1. Update order status to cancelled
+        // 1. Update order status
         batch.update(orderDoc.ref, {
           paymentStatus: "cancelled",
           status: "cancelled",
-          cancellationReason: "Automatic cleanup - expired after 30 minutes",
+          orderStatus: "cancelled", // Update both status fields just in case
+          cancellationReason: "Automatic cleanup - expired",
           cancelledAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         });
 
-        // 2. Restore inventory for each item (including variants)
+        // 2. Restore inventory
         if (orderData.items && Array.isArray(orderData.items)) {
           for (const item of orderData.items) {
-            const productRef = adminDb
-              .collection("products")
-              .doc(item.productId);
+            // Skip manual items or items without ID
+            if (!item.productId || item.productId.startsWith("manual_")) continue;
 
-            // Check if this item has a variant
+            const productRef = adminDb.collection("products").doc(item.productId);
+
             if (item.variantId) {
-              // For variants, we need to read first, then update the specific variant
+              // Variant logic
               const productDoc = await productRef.get();
               if (productDoc.exists) {
                 const productData = productDoc.data();
@@ -129,75 +126,50 @@ export default async function handler(
 
                   if (variantIndex !== -1) {
                     // Restore variant stock
-                    variants[variantIndex].stock =
-                      (variants[variantIndex].stock || 0) + item.quantity;
+                    variants[variantIndex].stock = (variants[variantIndex].stock || 0) + item.quantity;
+                    variants[variantIndex].updatedAt = new Date(); // Update timestamp
 
                     batch.update(productRef, {
-                      variants: variants, // Updated variants array
-                      stock: FieldValue.increment(item.quantity), // And general stock too
+                      variants: variants,
+                      stock: FieldValue.increment(item.quantity),
+                      totalStock: FieldValue.increment(item.quantity),
                       updatedAt: FieldValue.serverTimestamp(),
                     });
-
-                    console.log(
-                      `📦 Restoring ${item.quantity} units to product ${item.productId} variant ${item.variantId}`
-                    );
-                  } else {
-                    console.warn(
-                      `⚠️ Variant ${item.variantId} not found in product ${item.productId}`
-                    );
+                    
+                    console.log(`📦 Restoring variant stock for ${item.productId}`);
                   }
-                } else {
-                  console.warn(
-                    `⚠️ No variants found in product ${item.productId}`
-                  );
                 }
-              } else {
-                console.warn(`⚠️ Product ${item.productId} not found`);
               }
             } else {
-              // For simple products (no variants)
+              // Simple product logic
               batch.update(productRef, {
                 stock: FieldValue.increment(item.quantity),
+                totalStock: FieldValue.increment(item.quantity),
                 updatedAt: FieldValue.serverTimestamp(),
               });
-
-              console.log(
-                `📦 Restoring ${item.quantity} units to product ${item.productId}`
-              );
+              console.log(`📦 Restoring simple stock for ${item.productId}`);
             }
           }
         }
 
-        // Commit the batch
         await batch.commit();
         processedCount++;
-
-        console.log(
-          `✅ Successfully cleaned up order: ${orderData.orderNumber}`
-        );
       } catch (orderError) {
         console.error(`❌ Error processing order ${orderDoc.id}:`, orderError);
         errorCount++;
       }
     }
 
-    console.log(
-      `🧹 Cleanup completed: ${processedCount} orders processed, ${errorCount} errors`
-    );
+    console.log(`🧹 Cleanup completed: ${processedCount} processed`);
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: "Expired orders cleanup completed",
+      message: "Cleanup completed",
       processedCount,
       errorCount,
-      totalFound: expiredOrders.length,
     });
   } catch (error) {
-    console.error("❌ Error during expired orders cleanup:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Internal server error during cleanup",
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+    console.error("❌ Error during cleanup:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 }
