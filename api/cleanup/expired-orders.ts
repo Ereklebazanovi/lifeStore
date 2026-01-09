@@ -45,8 +45,8 @@ export default async function handler(
 
     // ✅ დროებით 1 წუთი ტესტირებისთვის
     const cutoffTime = new Date();
-    cutoffTime.setMinutes(cutoffTime.getMinutes() - 1); 
-    // cutoffTime.setMinutes(cutoffTime.getMinutes() - 30); // Production-ზე დააბრუნე!
+   
+    cutoffTime.setMinutes(cutoffTime.getMinutes() - 30); // Production-ზე დააბრუნე!
 
     const pendingOrdersQuery = adminDb
       .collection("orders")
