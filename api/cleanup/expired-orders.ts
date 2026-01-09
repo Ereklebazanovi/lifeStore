@@ -7,14 +7,22 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
-  // ✅ შესწორება: დავუშვათ როგორც POST (შენთვის), ისე GET (Vercel Cron-ისთვის)
+  // 1. ✅ დიაგნოსტიკა: ვლოგავთ ჰედერებს, რომ დავინახოთ რა მოდის
+  console.log("🔍 Request Method:", req.method);
+  console.log("🔍 User-Agent:", req.headers["user-agent"]);
+  console.log("🔍 Vercel-Cron Header:", req.headers["vercel-cron"]);
+
+  // 2. ✅ GET და POST დაშვება
   if (req.method !== "POST" && req.method !== "GET") {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
 
-  // Check if this is a Vercel cron request
-  const isVercelCron = req.headers["vercel-cron"] === "1";
+  // 3. ✅ გაძლიერებული შემოწმება (Header + User-Agent)
+  // ვამოწმებთ ჰედერს ან იუზერ აგენტს (რომელიმე მაინც თუ ემთხვევა, ვატარებთ)
+  const isCronHeader = req.headers["vercel-cron"] === "1";
+  const isCronAgent = req.headers["user-agent"]?.includes("vercel-cron");
+  const isVercelCron = isCronHeader || isCronAgent;
 
   if (!isVercelCron) {
     // Manual trigger - check authorization
@@ -26,6 +34,7 @@ export default async function handler(
       !expectedToken ||
       authHeader !== `Bearer ${expectedToken}`
     ) {
+      console.error("❌ Auth failed. Header missing or invalid.");
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
@@ -34,12 +43,11 @@ export default async function handler(
   try {
     console.log("🧹 Starting expired orders cleanup...");
 
-    // ✅ დროებით 1 წუთი ტესტირებისთვის (როცა მორჩები, დააბრუნე 30-ზე)
+    // ✅ დროებით 1 წუთი ტესტირებისთვის
     const cutoffTime = new Date();
     cutoffTime.setMinutes(cutoffTime.getMinutes() - 1); 
-    // cutoffTime.setMinutes(cutoffTime.getMinutes() - 30); // Production setting
+    // cutoffTime.setMinutes(cutoffTime.getMinutes() - 30); // Production-ზე დააბრუნე!
 
-    // Find all pending orders
     const pendingOrdersQuery = adminDb
       .collection("orders")
       .where("paymentStatus", "==", "pending")
@@ -49,37 +57,24 @@ export default async function handler(
 
     if (pendingOrdersSnapshot.empty) {
       console.log("✅ No pending orders found");
-      res.status(200).json({
-        success: true,
-        message: "No pending orders to clean up",
-        processedCount: 0,
-      });
+      res.status(200).json({ success: true, message: "No pending orders", processedCount: 0 });
       return;
     }
 
-    // Filter expired orders in code
     const expiredOrders = pendingOrdersSnapshot.docs.filter((doc) => {
       const orderData = doc.data();
-      // Safety check if createdAt exists
       if (!orderData.createdAt) return false;
-      
       const createdAt = orderData.createdAt.toDate();
       return createdAt <= cutoffTime;
     });
 
     if (expiredOrders.length === 0) {
-      console.log("✅ No expired orders found (all pending orders are recent)");
-      res.status(200).json({
-        success: true,
-        message: "No expired orders to clean up",
-        processedCount: 0,
-      });
+      console.log("✅ Pending orders found, but none are old enough yet");
+      res.status(200).json({ success: true, message: "No expired orders", processedCount: 0 });
       return;
     }
 
-    console.log(
-      `🔍 Found ${expiredOrders.length} expired orders to process`
-    );
+    console.log(`🔍 Found ${expiredOrders.length} expired orders to process`);
 
     let processedCount = 0;
     let errorCount = 0;
@@ -88,10 +83,7 @@ export default async function handler(
       try {
         const orderData = orderDoc.data();
         const orderId = orderDoc.id;
-
-        console.log(
-          `🗑️ Processing expired order: ${orderData.orderNumber} (${orderId})`
-        );
+        console.log(`🗑️ Processing: ${orderData.orderNumber} (${orderId})`);
 
         const batch = adminDb.batch();
 
@@ -99,7 +91,7 @@ export default async function handler(
         batch.update(orderDoc.ref, {
           paymentStatus: "cancelled",
           status: "cancelled",
-          orderStatus: "cancelled", // Update both status fields just in case
+          orderStatus: "cancelled",
           cancellationReason: "Automatic cleanup - expired",
           cancelledAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
@@ -108,7 +100,6 @@ export default async function handler(
         // 2. Restore inventory
         if (orderData.items && Array.isArray(orderData.items)) {
           for (const item of orderData.items) {
-            // Skip manual items or items without ID
             if (!item.productId || item.productId.startsWith("manual_")) continue;
 
             const productRef = adminDb.collection("products").doc(item.productId);
@@ -120,14 +111,11 @@ export default async function handler(
                 const productData = productDoc.data();
                 if (productData && productData.variants) {
                   const variants = [...productData.variants];
-                  const variantIndex = variants.findIndex(
-                    (v: any) => v.id === item.variantId
-                  );
+                  const variantIndex = variants.findIndex((v: any) => v.id === item.variantId);
 
                   if (variantIndex !== -1) {
-                    // Restore variant stock
                     variants[variantIndex].stock = (variants[variantIndex].stock || 0) + item.quantity;
-                    variants[variantIndex].updatedAt = new Date(); // Update timestamp
+                    variants[variantIndex].updatedAt = new Date();
 
                     batch.update(productRef, {
                       variants: variants,
@@ -135,7 +123,6 @@ export default async function handler(
                       totalStock: FieldValue.increment(item.quantity),
                       updatedAt: FieldValue.serverTimestamp(),
                     });
-                    
                     console.log(`📦 Restoring variant stock for ${item.productId}`);
                   }
                 }
@@ -161,13 +148,8 @@ export default async function handler(
     }
 
     console.log(`🧹 Cleanup completed: ${processedCount} processed`);
+    res.status(200).json({ success: true, processedCount, errorCount });
 
-    res.status(200).json({
-      success: true,
-      message: "Cleanup completed",
-      processedCount,
-      errorCount,
-    });
   } catch (error) {
     console.error("❌ Error during cleanup:", error);
     res.status(500).json({ error: "Internal server error" });
