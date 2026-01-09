@@ -1,3 +1,4 @@
+// api/payment/create.ts
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
@@ -5,6 +6,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 const FLITT_SECRET_KEY = process.env.FLITT_SECRET_KEY;
 const FLITT_MERCHANT_ID = process.env.FLITT_MERCHANT_ID;
 const FLITT_CALLBACK_URL = process.env.FLITT_CALLBACK_URL || "https://lifestore.ge/api/payment/callback";
+const FLITT_FAIL_URL_BASE = process.env.FLITT_FAIL_URL || "https://lifestore.ge/order-failed";
 
 // Validate required environment variables
 if (!FLITT_SECRET_KEY || !FLITT_MERCHANT_ID) {
@@ -58,9 +60,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const sanitizedDescription = description ? String(description).substring(0, 100) : `LifeStore Order ${orderId}`;
     const cleanDesc = sanitizedDescription.replace(/[^a-zA-Z0-9]/g, "") || "Order";
 
-    // 1. სტრიქონის აწყობა (ზუსტად ისე, როგორც test-flitt.cjs-ში!)
+    // Create dynamic fail_url with order ID
+    const failUrl = `${FLITT_FAIL_URL_BASE}?order_id=${encodeURIComponent(orderId)}`;
+
+    // 1. სტრიქონის აწყობა (keep original signature format for compatibility)
     // თანმიმდევრობა: Secret | Amount | Currency | MerchID | Desc | OrderID | Callback
-    // ❌ Sender Email აქ არ არის!
+    // Note: fail_url is added to request body but not included in signature
     const rawString = [
       FLITT_SECRET_KEY,
       amountInKopecks,
@@ -76,8 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 2. ჰეშირება
     const signature = createHash("sha1").update(rawString).digest("hex");
 
-    // 3. რექვესთის მომზადება
-    // ❌ Sender Email-ს არც აქ ვსვამთ! რომ 100% დაემთხვეს ხელმოწერას.
+    // 3. რექვესთის მომზადება - Updated to include fail_url
     const requestBody = {
       request: {
         amount: amountInKopecks,
@@ -86,6 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         order_desc: cleanDesc,
         order_id: String(orderId),
         server_callback_url: FLITT_CALLBACK_URL,
+        fail_url: failUrl,
         signature: signature
       },
     };

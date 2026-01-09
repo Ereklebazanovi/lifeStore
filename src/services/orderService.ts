@@ -44,8 +44,9 @@ export class OrderService {
    * Generate unique access token for order
    */
   private static generateAccessToken(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
     for (let i = 0; i < 32; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
@@ -380,6 +381,58 @@ export class OrderService {
     } catch (error) {
       console.error("Error getting order by token:", error);
       return null;
+    }
+  }
+
+  /**
+   * Cancel order and rollback inventory
+   */
+  public static async cancelOrder(
+    orderId: string,
+    reason: string = "User cancelled"
+  ): Promise<void> {
+    try {
+      console.log(`🚫 Cancelling order ${orderId}: ${reason}`);
+
+      // 1. Get order data
+      const orderDoc = await getDoc(doc(db, this.COLLECTION_NAME, orderId));
+      if (!orderDoc.exists()) {
+        console.log(`Order ${orderId} not found`);
+        return;
+      }
+
+      const orderData = orderDoc.data();
+
+      // 2. Only cancel if order is still pending
+      if (
+        orderData.paymentStatus !== "pending" ||
+        orderData.orderStatus !== "pending"
+      ) {
+        console.log(`Order ${orderId} is not pending, cannot cancel`);
+        return;
+      }
+
+      // 3. Rollback inventory
+      const inventoryItems = orderData.items.map((item: any) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+      }));
+
+      await this.rollbackProductInventory(inventoryItems);
+
+      // 4. Update order status
+      await updateDoc(orderDoc.ref, {
+        orderStatus: "cancelled",
+        paymentStatus: "failed",
+        cancelReason: reason,
+        updatedAt: new Date(),
+      });
+
+      console.log(`✅ Order ${orderId} cancelled successfully`);
+    } catch (error) {
+      console.error(`❌ Error cancelling order ${orderId}:`, error);
+      throw error;
     }
   }
 
