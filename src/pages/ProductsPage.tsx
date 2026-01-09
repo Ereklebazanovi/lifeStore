@@ -7,7 +7,7 @@ import {
   ChevronRight,
   Search,
   Star,
-  ArrowRight
+  ArrowRight,
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
 import { hasDiscount, getDiscountText } from "../utils/discount";
@@ -39,10 +39,8 @@ const ProductsPage: React.FC = () => {
 
     // ძებნა
     if (searchTerm.trim()) {
-      filtered = filtered.filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -131,15 +129,14 @@ const ProductsPage: React.FC = () => {
               ყველა პროდუქტი
             </h1>
             <p className="text-stone-600 max-w-2xl">
-              აღმოაჩინეთ ჩვენი ეკო-მეგობრული პროდუქტების სრული კოლექცია. შეარჩიეთ
-              საუკეთესო თქვენი სახლისთვის.
+              აღმოაჩინეთ ჩვენი ეკო-მეგობრული პროდუქტების სრული კოლექცია.
+              შეარჩიეთ საუკეთესო თქვენი სახლისთვის.
             </p>
           </div>
 
           {/* 🔥 Professional Sticky Filter Bar 🔥 */}
           <div className="sticky top-0 z-30 bg-stone-50/95 backdrop-blur-sm py-4 mb-8 border-b border-stone-200/50 transition-all">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              
               {/* Tabs Container */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
                 {filterOptions.map((option) => {

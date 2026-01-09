@@ -313,7 +313,7 @@ const CheckoutPage: React.FC = () => {
                       value={formData.firstName}
                       onChange={handleChange}
                       className={inputBaseStyle}
-                      placeholder="გიორგი"
+                      // placeholder="გიორგი"
                     />
                   </div>
                   <div>
@@ -325,7 +325,7 @@ const CheckoutPage: React.FC = () => {
                       value={formData.lastName}
                       onChange={handleChange}
                       className={inputBaseStyle}
-                      placeholder="ბერიძე"
+                      // placeholder="ბერიძე"
                     />
                   </div>
                 </div>
