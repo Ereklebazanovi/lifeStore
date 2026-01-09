@@ -10,7 +10,8 @@ export default async function handler(
   res: VercelResponse
 ): Promise<void> {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    res.status(405).json({ error: "Method not allowed" });
+    return;
   }
 
   try {
@@ -22,9 +23,10 @@ export default async function handler(
     const token = process.env.CLEANUP_SECRET_TOKEN;
 
     if (!token) {
-      return res.status(500).json({
+      res.status(500).json({
         error: "CLEANUP_SECRET_TOKEN not configured",
       });
+      return;
     }
 
     // Call the cleanup function
@@ -38,13 +40,13 @@ export default async function handler(
 
     const result = await response.json();
 
-    return res.status(response.status).json({
+    res.status(response.status).json({
       triggered: true,
       cleanupResult: result,
     });
   } catch (error) {
     console.error("Error triggering cleanup:", error);
-    return res.status(500).json({
+    res.status(500).json({
       error: "Failed to trigger cleanup",
       message: error instanceof Error ? error.message : "Unknown error",
     });

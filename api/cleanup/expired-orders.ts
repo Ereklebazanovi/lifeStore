@@ -7,34 +7,26 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
-  // 1. ✅ დიაგნოსტიკა: ვლოგავთ ჰედერებს, რომ დავინახოთ რა მოდის
+  // 1. Diagnostics
   console.log("🔍 Request Method:", req.method);
   console.log("🔍 User-Agent:", req.headers["user-agent"]);
-  console.log("🔍 Vercel-Cron Header:", req.headers["vercel-cron"]);
 
-  // 2. ✅ GET და POST დაშვება
+  // 2. Allow GET & POST
   if (req.method !== "POST" && req.method !== "GET") {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
 
-  // 3. ✅ გაძლიერებული შემოწმება (Header + User-Agent)
-  // ვამოწმებთ ჰედერს ან იუზერ აგენტს (რომელიმე მაინც თუ ემთხვევა, ვატარებთ)
+  // 3. Auth Check
   const isCronHeader = req.headers["vercel-cron"] === "1";
   const isCronAgent = req.headers["user-agent"]?.includes("vercel-cron");
   const isVercelCron = isCronHeader || isCronAgent;
 
   if (!isVercelCron) {
-    // Manual trigger - check authorization
     const authHeader = req.headers.authorization;
     const expectedToken = process.env.CLEANUP_SECRET_TOKEN;
-
-    if (
-      !authHeader ||
-      !expectedToken ||
-      authHeader !== `Bearer ${expectedToken}`
-    ) {
-      console.error("❌ Auth failed. Header missing or invalid.");
+    if (!authHeader || !expectedToken || authHeader !== `Bearer ${expectedToken}`) {
+      console.error("❌ Auth failed.");
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
@@ -43,10 +35,9 @@ export default async function handler(
   try {
     console.log("🧹 Starting expired orders cleanup...");
 
-    // ✅ დროებით 1 წუთი ტესტირებისთვის
+    // ✅ Production Time: 30 minutes
     const cutoffTime = new Date();
-   
-    cutoffTime.setMinutes(cutoffTime.getMinutes() - 30); // Production-ზე დააბრუნე!
+    cutoffTime.setMinutes(cutoffTime.getMinutes() - 30);
 
     const pendingOrdersQuery = adminDb
       .collection("orders")
@@ -57,24 +48,23 @@ export default async function handler(
 
     if (pendingOrdersSnapshot.empty) {
       console.log("✅ No pending orders found");
-      res.status(200).json({ success: true, message: "No pending orders", processedCount: 0 });
+      res.status(200).json({ success: true, processedCount: 0 });
       return;
     }
 
     const expiredOrders = pendingOrdersSnapshot.docs.filter((doc) => {
       const orderData = doc.data();
       if (!orderData.createdAt) return false;
-      const createdAt = orderData.createdAt.toDate();
-      return createdAt <= cutoffTime;
+      return orderData.createdAt.toDate() <= cutoffTime;
     });
 
     if (expiredOrders.length === 0) {
-      console.log("✅ Pending orders found, but none are old enough yet");
-      res.status(200).json({ success: true, message: "No expired orders", processedCount: 0 });
+      console.log("✅ No expired orders found");
+      res.status(200).json({ success: true, processedCount: 0 });
       return;
     }
 
-    console.log(`🔍 Found ${expiredOrders.length} expired orders to process`);
+    console.log(`🔍 Found ${expiredOrders.length} expired orders`);
 
     let processedCount = 0;
     let errorCount = 0;
@@ -82,8 +72,7 @@ export default async function handler(
     for (const orderDoc of expiredOrders) {
       try {
         const orderData = orderDoc.data();
-        const orderId = orderDoc.id;
-        console.log(`🗑️ Processing: ${orderData.orderNumber} (${orderId})`);
+        console.log(`🗑️ Processing: ${orderData.orderNumber} (${orderDoc.id})`);
 
         const batch = adminDb.batch();
 
@@ -97,61 +86,79 @@ export default async function handler(
           updatedAt: FieldValue.serverTimestamp(),
         });
 
-        // 2. Restore inventory
+        // 2. Restore Inventory (GROUPING LOGIC ✅)
         if (orderData.items && Array.isArray(orderData.items)) {
+
+          // ნაბიჯი A: დავაჯგუფოთ ნივთები, რომ ვარიანტები არ აირიოს
+          const itemsByProduct: { [key: string]: any[] } = {};
+
           for (const item of orderData.items) {
             if (!item.productId || item.productId.startsWith("manual_")) continue;
+            if (!itemsByProduct[item.productId]) {
+              itemsByProduct[item.productId] = [];
+            }
+            itemsByProduct[item.productId].push(item);
+          }
 
-            const productRef = adminDb.collection("products").doc(item.productId);
+          // ნაბიჯი B: თითოეული პროდუქტის განახლება
+          for (const [productId, items] of Object.entries(itemsByProduct)) {
+            const productRef = adminDb.collection("products").doc(productId);
+            const productDoc = await productRef.get();
 
-            if (item.variantId) {
-              // Variant logic
-              const productDoc = await productRef.get();
-              if (productDoc.exists) {
-                const productData = productDoc.data();
-                if (productData && productData.variants) {
-                  const variants = [...productData.variants];
-                  const variantIndex = variants.findIndex((v: any) => v.id === item.variantId);
+            if (!productDoc.exists) continue;
 
-                  if (variantIndex !== -1) {
-                    variants[variantIndex].stock = (variants[variantIndex].stock || 0) + item.quantity;
-                    variants[variantIndex].updatedAt = new Date();
+            const productData = productDoc.data();
+            let totalQuantityRestored = 0;
+            let variantsUpdated = false;
 
-                    batch.update(productRef, {
-                      variants: variants,
-                      stock: FieldValue.increment(item.quantity),
-                      totalStock: FieldValue.increment(item.quantity),
-                      updatedAt: FieldValue.serverTimestamp(),
-                    });
-                    console.log(`📦 Restoring variant stock for ${item.productId}`);
-                  }
+            // ვარიანტების მასივის კოპირება
+            const variants = productData?.variants ? [...productData.variants] : [];
+
+            for (const item of items) {
+              totalQuantityRestored += item.quantity;
+
+              if (item.variantId && variants.length > 0) {
+                const variantIndex = variants.findIndex((v: any) => v.id === item.variantId);
+                if (variantIndex !== -1) {
+                  // ვაბრუნებთ მარაგს კონკრეტულ ვარიანტში
+                  variants[variantIndex].stock = (variants[variantIndex].stock || 0) + item.quantity;
+                  variantsUpdated = true;
+                  console.log(`📦 Variant restored: ${item.productId} / ${item.variantId} (+${item.quantity})`);
                 }
               }
-            } else {
-              // Simple product logic
-              batch.update(productRef, {
-                stock: FieldValue.increment(item.quantity),
-                totalStock: FieldValue.increment(item.quantity),
-                updatedAt: FieldValue.serverTimestamp(),
-              });
-              console.log(`📦 Restoring simple stock for ${item.productId}`);
             }
+
+            // ნაბიჯი C: Batch Update
+            const updatePayload: any = {
+              // ⚠️ აქ ვიყენებთ INCREMENT-ს და არა პირდაპირ რიცხვს (უსაფრთხოებისთვის)
+              stock: FieldValue.increment(totalQuantityRestored),
+              totalStock: FieldValue.increment(totalQuantityRestored),
+              updatedAt: FieldValue.serverTimestamp(),
+            };
+
+            // ვარიანტებს ვანახლებთ მთლიანი მასივით
+            if (variantsUpdated) {
+              updatePayload.variants = variants;
+            }
+
+            batch.update(productRef, updatePayload);
+            console.log(`📦 Product restored: ${productId} (Total +${totalQuantityRestored})`);
           }
         }
 
         await batch.commit();
         processedCount++;
-      } catch (orderError) {
-        console.error(`❌ Error processing order ${orderDoc.id}:`, orderError);
+      } catch (err) {
+        console.error(`❌ Error on order ${orderDoc.id}:`, err);
         errorCount++;
       }
     }
 
-    console.log(`🧹 Cleanup completed: ${processedCount} processed`);
+    console.log(`🧹 Done. Processed: ${processedCount}, Errors: ${errorCount}`);
     res.status(200).json({ success: true, processedCount, errorCount });
 
   } catch (error) {
-    console.error("❌ Error during cleanup:", error);
+    console.error("❌ Fatal Error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
