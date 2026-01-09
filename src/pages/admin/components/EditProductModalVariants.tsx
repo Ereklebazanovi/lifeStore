@@ -519,12 +519,17 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                             type="number"
                             min="0"
                             step="0.01"
-                            value={simplePrice}
+                            value={simplePrice === 0 ? "" : simplePrice}
                             onChange={(e) => {
                               const value = e.target.value;
-                              setSimplePrice(
-                                value === "" ? 0 : parseFloat(value) || 0
-                              );
+                              if (value === "") {
+                                setSimplePrice(0);
+                              } else {
+                                const numValue = parseFloat(value);
+                                if (!isNaN(numValue)) {
+                                  setSimplePrice(numValue);
+                                }
+                              }
                             }}
                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                               errors.simplePrice
@@ -548,12 +553,17 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                             type="number"
                             min="0"
                             step="0.01"
-                            value={simpleSalePrice || ""}
+                            value={simpleSalePrice === undefined || simpleSalePrice === 0 ? "" : simpleSalePrice}
                             onChange={(e) => {
                               const value = e.target.value;
-                              setSimpleSalePrice(
-                                value === "" ? undefined : parseFloat(value) || 0
-                              );
+                              if (value === "") {
+                                setSimpleSalePrice(undefined);
+                              } else {
+                                const numValue = parseFloat(value);
+                                if (!isNaN(numValue)) {
+                                  setSimpleSalePrice(numValue);
+                                }
+                              }
                             }}
                             className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                             placeholder="არასავალდებულო"
@@ -572,12 +582,17 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                           <input
                             type="number"
                             min="0"
-                            value={simpleStock}
+                            value={simpleStock === 0 ? "" : simpleStock}
                             onChange={(e) => {
                               const value = e.target.value;
-                              setSimpleStock(
-                                value === "" ? 0 : parseInt(value) || 0
-                              );
+                              if (value === "") {
+                                setSimpleStock(0);
+                              } else {
+                                const numValue = parseInt(value);
+                                if (!isNaN(numValue)) {
+                                  setSimpleStock(numValue);
+                                }
+                              }
                             }}
                             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                               errors.simpleStock
@@ -744,14 +759,17 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                               type="number"
                               min="0"
                               step="0.01"
-                              value={variant.price}
+                              value={variant.price === 0 ? "" : variant.price}
                               onChange={(e) => {
                                 const value = e.target.value;
-                                updateVariant(
-                                  index,
-                                  "price",
-                                  value === "" ? 0 : parseFloat(value) || 0
-                                );
+                                if (value === "") {
+                                  updateVariant(index, "price", 0);
+                                } else {
+                                  const numValue = parseFloat(value);
+                                  if (!isNaN(numValue)) {
+                                    updateVariant(index, "price", numValue);
+                                  }
+                                }
                               }}
                               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                                 errors[`variant_${index}_price`]
@@ -776,14 +794,17 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                               type="number"
                               min="0"
                               step="0.01"
-                              value={variant.salePrice || ""}
+                              value={variant.salePrice === undefined || variant.salePrice === 0 ? "" : variant.salePrice}
                               onChange={(e) => {
                                 const value = e.target.value;
-                                updateVariant(
-                                  index,
-                                  "salePrice",
-                                  value === "" ? undefined : parseFloat(value) || 0
-                                );
+                                if (value === "") {
+                                  updateVariant(index, "salePrice", undefined);
+                                } else {
+                                  const numValue = parseFloat(value);
+                                  if (!isNaN(numValue)) {
+                                    updateVariant(index, "salePrice", numValue);
+                                  }
+                                }
                               }}
                               className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                               placeholder="არასავალდებულო"
@@ -803,14 +824,17 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                             <input
                               type="number"
                               min="0"
-                              value={variant.stock}
+                              value={variant.stock === 0 ? "" : variant.stock}
                               onChange={(e) => {
                                 const value = e.target.value;
-                                updateVariant(
-                                  index,
-                                  "stock",
-                                  value === "" ? 0 : parseInt(value) || 0
-                                );
+                                if (value === "") {
+                                  updateVariant(index, "stock", 0);
+                                } else {
+                                  const numValue = parseInt(value);
+                                  if (!isNaN(numValue)) {
+                                    updateVariant(index, "stock", numValue);
+                                  }
+                                }
                               }}
                               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                                 errors[`variant_${index}_stock`]

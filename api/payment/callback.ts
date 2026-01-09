@@ -204,7 +204,7 @@ async function sendEmailNotification(order: any): Promise<void> {
 
               <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
                 <p style="color: #666; margin-bottom: 5px;">კითხვების შემთხვევაში დაგვიკავშირდით:</p>
-                <p style="color: #2563eb; font-weight: bold; margin: 5px 0;">📞 მობ: 555 69 00 33</p>
+                <p style="color: #2563eb; font-weight: bold; margin: 5px 0;">📞 მობ: 511 72 72 57</p>
                 <p style="color: #2563eb; font-weight: bold; margin: 5px 0;">✉️ ემაილი: info@lifestore.ge</p>
 
                 <div style="margin-top: 20px;">

@@ -1,19 +1,19 @@
+// src/pages/HomePage.tsx
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Leaf,
-  Truck,
-  ShieldCheck,
   ArrowRight,
   Star,
   CheckCircle,
   Facebook,
   Instagram,
   Utensils,
+  ShieldCheck,
   Search,
+  Filter,
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
-// Removed useCartStore import - Quick Add functionality removed
 import { showToast } from "../components/ui/Toast";
 import { hasDiscount, getDiscountText } from "../utils/discount";
 import {
@@ -24,12 +24,10 @@ import {
 import {
   getStockText,
   getStockColorClassesCompact,
-  getStockStatus,
-  getStockMessage,
 } from "../utils/stock";
 import SEOHead from "../components/SEOHead";
 
-// ფოტოები: სამზარეულო, ხე, კერამიკა, ეკო-ნივთები (არა ავეჯი) - ოპტიმიზებული ზომები
+// ფოტოები: სამზარეულო, ხე, კერამიკა, ეკო-ნივთები (არა ავეჯი)
 const HERO_IMAGES = [
   {
     url: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=75&w=1200&auto=format&fit=crop",
@@ -50,14 +48,12 @@ const HERO_IMAGES = [
 
 const HomePage: React.FC = () => {
   const { products, fetchProducts, isLoading } = useProductStore();
-  // Removed useCartStore as Quick Add is no longer needed
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchProducts();
-    // Hero images preloading
     HERO_IMAGES.forEach((image) => {
       const img = new Image();
       img.src = image.url;
@@ -71,22 +67,16 @@ const HomePage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Removed handleAddToCart - Quick Add functionality removed
-
-  // ფილტრაცია და ძებნა
   const getFilteredProducts = () => {
     let filtered = products.filter((product) => product.isActive !== false);
 
-    // ძებნა
     if (searchTerm.trim()) {
       filtered = filtered.filter(
         (product) =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchTerm.toLowerCase())
+          product.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // ფილტრი
     switch (selectedFilter) {
       case "popular":
         return filtered.filter((product) => product.priority === 100);
@@ -106,7 +96,18 @@ const HomePage: React.FC = () => {
 
   const filteredProducts = getFilteredProducts();
 
-  // Structured data for homepage
+  // Helper to count items for filters
+  const getCount = (type: string) => {
+    const activeProducts = products.filter((p) => p.isActive !== false);
+    switch (type) {
+      case "all": return activeProducts.length;
+      case "popular": return activeProducts.filter(p => p.priority === 100).length;
+      case "discounts": return activeProducts.filter(p => hasDiscount(p)).length;
+      case "new": return activeProducts.length; // Simplified for demo
+      default: return 0;
+    }
+  };
+
   const organizationStructuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -125,19 +126,25 @@ const HomePage: React.FC = () => {
     ],
   };
 
+  const filterOptions = [
+    { value: "all", label: "ყველა" },
+    { value: "popular", label: "პოპულარული" },
+    { value: "discounts", label: "ფასდაკლება" },
+    { value: "new", label: "ახალი" },
+  ];
+
   return (
     <>
       <SEOHead
         title="Life Store - ჰარმონია დეტალებშია | ეკომეგობრული სახლის ნივთები"
-        description="Life Store - თანამედროვე დიზაინისა და ჯანმრთელობისთვის უვნებელი ეკომეგობრული სახლისა და სამზარეულოს ნივთები. გახადე შენი სახლი კომფორტული და დახვეწილი სივრცე."
-        keywords="ეკომეგობრული ნივთები, სახლის ნივთები, სამზარეულო, თანამედროვე დიზაინი, ჯანსაღი ცხოვრება, Life Store"
+        description="Life Store - თანამედროვე დიზაინისა და ჯანმრთელობისთვის უვნებელი ეკომეგობრული სახლისა და სამზარეულოს ნივთები."
+        keywords="ეკომეგობრული ნივთები, სახლის ნივთები, სამზარეულო, Life Store"
         canonicalUrl="https://lifestore.ge/"
         structuredData={organizationStructuredData}
       />
       <div className="min-h-screen bg-stone-50 overflow-x-hidden">
         {/* --- HERO SLIDER --- */}
         <section className="relative h-[450px] lg:h-[600px] w-full overflow-hidden">
-          {/* Image Container with Preloader */}
           <div className="absolute inset-0">
             {HERO_IMAGES.map((slide, index) => (
               <div
@@ -146,42 +153,29 @@ const HomePage: React.FC = () => {
                   index === currentSlide ? "opacity-100" : "opacity-0"
                 }`}
               >
-                {/* Fallback background color */}
                 <div className="absolute inset-0 bg-stone-400" />
-
                 <img
                   src={slide.url}
                   alt={slide.title}
                   className="absolute inset-0 w-full h-full object-cover z-10"
                   loading={index === 0 ? "eager" : "lazy"}
-                  decoding="async"
-                  onError={(e) => {
-                    console.error("Image failed to load:", slide.url);
-                    e.currentTarget.style.display = "none";
-                  }}
                 />
-
-                {/* Enhanced gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-black/60 z-20" />
               </div>
             ))}
           </div>
 
-          {/* Content Container - Better positioning */}
           <div className="relative h-full flex flex-col justify-center items-center text-center px-4 z-20">
             <div className="max-w-5xl mx-auto space-y-4 lg:space-y-6">
               <span className="inline-block px-4 lg:px-6 py-2 lg:py-2.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs lg:text-sm font-medium tracking-wider uppercase">
                 Premium Home & Kitchen
               </span>
-
               <h1 className="text-2xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight drop-shadow-2xl">
                 {HERO_IMAGES[currentSlide].title}
               </h1>
-
               <p className="text-sm sm:text-lg lg:text-xl xl:text-2xl text-white/95 font-light max-w-3xl mx-auto drop-shadow-lg leading-relaxed">
                 {HERO_IMAGES[currentSlide].subtitle}
               </p>
-
               <div className="pt-4 lg:pt-6">
                 <Link
                   to="/products"
@@ -192,8 +186,6 @@ const HomePage: React.FC = () => {
               </div>
             </div>
           </div>
-
-          {/* Navigation Dots - Better positioned */}
           <div className="absolute bottom-6 lg:bottom-8 left-0 right-0 flex justify-center gap-3 z-30">
             {HERO_IMAGES.map((_, index) => (
               <button
@@ -210,52 +202,25 @@ const HomePage: React.FC = () => {
           </div>
         </section>
 
-        {/* --- BRAND VALUES (ნიშა) --- */}
+        {/* --- BRAND VALUES --- */}
         <section className="py-6 lg:py-10 bg-white border-b border-stone-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 text-center md:text-left">
-              <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
-                <div className="p-3.5 bg-emerald-50 text-emerald-700 rounded-2xl">
-                  <Leaf className="w-6 h-6" />
+              {[
+                { icon: Leaf, title: "ეკო & უსაფრთხო", text: "ჯანმრთელობისთვის უვნებელი, ეკოლოგიურად სუფთა მასალები.", color: "bg-emerald-50 text-emerald-700" },
+                { icon: Utensils, title: "პრემიუმ ხარისხი", text: "თანამედროვე დიზაინს მორგებული სამზარეულოს და სახლის ნივთები.", color: "bg-stone-100 text-stone-700" },
+                { icon: ShieldCheck, title: "პირდაპირი იმპორტი", text: "ჩვენ თვითონ ვახდენთ იმპორტს, რაც საუკეთესო ფასს განაპირობებს.", color: "bg-blue-50 text-blue-700" },
+              ].map((item, idx) => (
+                <div key={idx} className="flex flex-col md:flex-row items-center md:items-start gap-4">
+                  <div className={`p-3.5 rounded-2xl ${item.color}`}>
+                    <item.icon className="w-6 h-6" />
+                  </div>
+                  <div className="text-center md:text-left">
+                    <h3 className="font-bold text-stone-900 mb-1">{item.title}</h3>
+                    <p className="text-sm text-stone-500 leading-relaxed">{item.text}</p>
+                  </div>
                 </div>
-                <div className="text-center md:text-left">
-                  <h3 className="font-bold text-stone-900 mb-1">
-                    ეკო & უსაფრთხო
-                  </h3>
-                  <p className="text-sm text-stone-500 leading-relaxed">
-                    ჯანმრთელობისთვის უვნებელი, ეკოლოგიურად სუფთა მასალები.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
-                <div className="p-3.5 bg-stone-100 text-stone-700 rounded-2xl">
-                  <Utensils className="w-6 h-6" />
-                </div>
-                <div className="text-center md:text-left">
-                  <h3 className="font-bold text-stone-900 mb-1">
-                    პრემიუმ ხარისხი
-                  </h3>
-                  <p className="text-sm text-stone-500 leading-relaxed">
-                    თანამედროვე დიზაინს მორგებული სამზარეულოს და სახლის ნივთები.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
-                <div className="p-3.5 bg-blue-50 text-blue-700 rounded-2xl">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <div className="text-center md:text-left">
-                  <h3 className="font-bold text-stone-900 mb-1">
-                    პირდაპირი იმპორტი
-                  </h3>
-                  <p className="text-sm text-stone-500 leading-relaxed">
-                    ჩვენ თვითონ ვახდენთ იმპორტს, რაც საუკეთესო ფასს
-                    განაპირობებს.
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
@@ -263,122 +228,74 @@ const HomePage: React.FC = () => {
         {/* --- PRODUCTS SECTION --- */}
         <section className="py-8 lg:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Header & Filter Bar */}
-            <div className="mb-6 lg:mb-12">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 lg:gap-6 mb-6 lg:mb-8">
-                <div>
-                  <span className="text-emerald-600 font-medium text-sm tracking-wider uppercase mb-2 block">
+            
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6 lg:mb-8">
+               <div>
+                  <span className="text-emerald-600 font-bold text-xs tracking-wider uppercase mb-2 block">
                     ჩვენი კოლექცია
                   </span>
-                  <h2 className="text-xl lg:text-3xl font-bold text-stone-900">
-                    {selectedFilter === "popular"
-                      ? "პოპულარული ნივთები"
-                      : selectedFilter === "discounts"
-                      ? "ფასდაკლებები"
-                      : selectedFilter === "new"
-                      ? "ახალი დამატებული"
-                      : "ყველა პროდუქტი"}
+                  <h2 className="text-2xl lg:text-3xl font-bold text-stone-900">
+                    აღმოაჩინე რჩეული ნივთები
                   </h2>
-                  {filteredProducts.length !==
-                    products.filter((p) => p.isActive !== false).length && (
-                    <p className="text-stone-500 text-sm mt-1">
-                      ნაჩვენებია {filteredProducts.length} პროდუქტი{" "}
-                      {products.filter((p) => p.isActive !== false).length}-დან
-                    </p>
-                  )}
                 </div>
                 <Link
                   to="/products"
-                  className="text-stone-500 hover:text-emerald-600 font-medium flex items-center gap-2 group transition-colors"
+                  className="hidden md:flex text-stone-500 hover:text-stone-900 font-medium items-center gap-2 group transition-colors text-sm"
                 >
-                  სრული კატალოგი{" "}
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  სრული კატალოგი <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
-              </div>
+            </div>
 
-              {/* Professional Filter Bar */}
-              <div className="bg-white rounded-xl border border-stone-200 p-4 lg:p-6 shadow-sm">
-                <div className="flex flex-col gap-3 lg:gap-4">
-                  {/* Search */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-stone-400" />
-                    <input
-                      type="text"
-                      placeholder="ძებნა პროდუქტების დასახელებით..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-sm lg:text-base"
-                    />
-                  </div>
+            {/* 🔥 NEW COMPACT FILTER BAR 🔥 */}
+            <div className="sticky top-0 z-20 md:static bg-stone-50 md:bg-transparent pb-4 md:pb-8 pt-2">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    
+                    {/* Filter Tabs - Horizontal Scroll on Mobile */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                        {filterOptions.map((option) => {
+                            const isActive = selectedFilter === option.value;
+                            return (
+                                <button
+                                    key={option.value}
+                                    onClick={() => setSelectedFilter(option.value)}
+                                    className={`whitespace-nowrap flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border
+                                        ${isActive 
+                                            ? "bg-stone-900 text-white border-stone-900 shadow-md shadow-stone-200" 
+                                            : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                                        }`}
+                                >
+                                    {option.label}
+                                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? "bg-white/20 text-white" : "bg-stone-100 text-stone-500"}`}>
+                                        {getCount(option.value)}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
 
-                  {/* Filter Buttons */}
-                  <div className="grid grid-cols-2 lg:flex gap-2">
-                    {[
-                      {
-                        value: "all",
-                        label: "ყველა პროდუქტი",
-                        shortLabel: "ყველა",
-                        count: products.filter((p) => p.isActive !== false)
-                          .length,
-                      },
-                      {
-                        value: "popular",
-                        label: "პოპულარული",
-                        shortLabel: "პოპულარული",
-                        count: products.filter(
-                          (p) => p.isActive !== false && p.priority === 100
-                        ).length,
-                      },
-                      {
-                        value: "discounts",
-                        label: "ფასდაკლებები",
-                        shortLabel: "ფასდაკლება",
-                        count: products.filter(
-                          (p) => p.isActive !== false && hasDiscount(p)
-                        ).length,
-                      },
-                      {
-                        value: "new",
-                        label: "ახალი დამატებული",
-                        shortLabel: "ახალი",
-                        count: products.filter((p) => p.isActive !== false)
-                          .length,
-                      },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setSelectedFilter(option.value)}
-                        className={`px-2 sm:px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg border transition-all text-xs lg:text-sm font-medium flex items-center justify-center gap-1 lg:gap-2 min-h-[40px] ${
-                          selectedFilter === option.value
-                            ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                            : "border-stone-300 bg-white text-stone-700 hover:border-stone-400"
-                        }`}
-                      >
-                        <span className="truncate block sm:hidden">
-                          {option.shortLabel}
-                        </span>
-                        <span className="truncate hidden sm:block">
-                          {option.label}
-                        </span>
-                        <span className="text-xs bg-stone-100 text-stone-500 px-1 sm:px-1.5 lg:px-2 py-0.5 lg:py-1 rounded flex-shrink-0 min-w-[20px] text-center">
-                          {option.count}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                    {/* Search Input - Compact */}
+                    <div className="relative w-full md:w-64 lg:w-72 flex-shrink-0">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <Search className="h-4 w-4 text-stone-400" />
+                        </div>
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="ძებნა..."
+                            className="w-full bg-white pl-10 pr-4 py-2.5 rounded-full border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-sm text-stone-900 placeholder:text-stone-400 transition-all shadow-sm"
+                        />
+                    </div>
                 </div>
-              </div>
             </div>
 
             {/* Products Grid */}
             {isLoading ? (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8">
                 {[...Array(8)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-2xl h-80 animate-pulse border border-stone-100"
-                  >
-                    <div className="h-48 bg-stone-200 w-full"></div>
+                  <div key={i} className="bg-white rounded-2xl h-80 animate-pulse border border-stone-100">
+                    <div className="h-48 bg-stone-200 w-full rounded-t-2xl"></div>
                     <div className="p-4 space-y-2">
                       <div className="h-4 bg-stone-200 w-3/4 rounded"></div>
                       <div className="h-4 bg-stone-200 w-1/2 rounded"></div>
@@ -387,17 +304,15 @@ const HomePage: React.FC = () => {
                 ))}
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-24 bg-white rounded-3xl border border-stone-100">
-                <Leaf className="w-16 h-16 text-emerald-200 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-stone-900 mb-2">
-                  {searchTerm
-                    ? "ძებნის შედეგები ვერ მოიძებნა"
-                    : "კოლექცია მალე განახლდება"}
+              <div className="text-center py-24 bg-white rounded-3xl border border-stone-100 border-dashed">
+                <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                     <Search className="w-8 h-8 text-stone-300" />
+                </div>
+                <h3 className="text-lg font-bold text-stone-900 mb-1">
+                  {searchTerm ? "ვერაფერი მოიძებნა" : "კოლექცია ცარიელია"}
                 </h3>
-                <p className="text-stone-500">
-                  {searchTerm
-                    ? `"${searchTerm}" მოძებნა შედეგების გარეშე`
-                    : "პროდუქტები ემატება..."}
+                <p className="text-stone-500 text-sm">
+                    {searchTerm ? `სცადეთ სხვა სიტყვა ან შეცვალეთ ფილტრი` : "ამ კატეგორიაში პროდუქტები ჯერ არ არის"}
                 </p>
                 {(searchTerm || selectedFilter !== "all") && (
                   <button
@@ -405,7 +320,7 @@ const HomePage: React.FC = () => {
                       setSelectedFilter("all");
                       setSearchTerm("");
                     }}
-                    className="mt-4 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                    className="mt-4 px-6 py-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-full transition-colors"
                   >
                     ყველას ნახვა
                   </button>
@@ -415,37 +330,31 @@ const HomePage: React.FC = () => {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8">
                 {filteredProducts.slice(0, 12).map((product) => {
                   const isOutOfStock = product.stock === 0;
-
                   return (
                     <div
                       key={product.id}
-                      className="group bg-white rounded-2xl border border-stone-100 hover:border-emerald-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col"
+                      className="group bg-white rounded-2xl border border-stone-100 hover:border-emerald-200 overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 flex flex-col"
                     >
                       {/* Image Area */}
-                      <Link
-                        to={`/product/${product.id}`}
-                        className="relative aspect-[4/5] overflow-hidden bg-stone-50"
-                      >
+                      <Link to={`/product/${product.id}`} className="relative aspect-[4/5] overflow-hidden bg-stone-100">
                         {/* Badges */}
-                        {isOutOfStock ? (
-                          <div className="absolute top-3 left-3 z-10 bg-stone-900/90 backdrop-blur text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">
-                            ამოწურულია
-                          </div>
-                        ) : hasDiscount(product) ? (
-                          <div className="absolute top-3 left-3 z-10 bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
-                            {getDiscountText(product)}
-                          </div>
-                        ) : (
-                          <div className="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur text-emerald-700 text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" /> მარაგშია
-                          </div>
-                        )}
-
+                        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
+                            {isOutOfStock ? (
+                            <span className="bg-stone-900/90 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded-md">
+                                ამოწურულია
+                            </span>
+                            ) : hasDiscount(product) ? (
+                            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
+                                {getDiscountText(product)}
+                            </span>
+                            ) : null}
+                        </div>
+                        
                         {/* Priority Badge */}
                         {product.priority === 100 && (
-                          <div className="absolute top-3 right-3 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
-                            TOP
-                          </div>
+                            <div className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur text-emerald-700 p-1 rounded-full shadow-sm">
+                                <Star className="w-3.5 h-3.5 fill-current" />
+                            </div>
                         )}
 
                         {product.images && product.images.length > 0 ? (
@@ -453,7 +362,7 @@ const HomePage: React.FC = () => {
                             src={product.images[0]}
                             alt={product.name}
                             className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${
-                              isOutOfStock ? "grayscale opacity-70" : ""
+                              isOutOfStock ? "grayscale opacity-80" : ""
                             }`}
                           />
                         ) : (
@@ -461,50 +370,50 @@ const HomePage: React.FC = () => {
                             <Leaf className="w-10 h-10" />
                           </div>
                         )}
-
-                        {/* Quick Add removed - users should go to detail page to select variants */}
+                        
+                        {/* Hover Overlay (Optional but nice) */}
+                        {!isOutOfStock && (
+                            <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center pb-6 bg-gradient-to-t from-black/20 to-transparent">
+                                <span className="bg-white text-stone-900 text-xs font-bold px-4 py-2 rounded-full shadow-lg">
+                                    დაწვრილებით
+                                </span>
+                            </div>
+                        )}
                       </Link>
 
                       {/* Content */}
-                      <div className="p-3 lg:p-4 flex flex-col flex-grow">
+                      <div className="p-4 flex flex-col flex-grow">
                         <Link to={`/product/${product.id}`}>
-                          <h3 className="font-bold text-stone-900 text-xs lg:text-base line-clamp-2 leading-snug hover:text-emerald-700 transition-colors mb-2">
+                          <h3 className="font-bold text-stone-900 text-sm line-clamp-2 leading-snug hover:text-emerald-700 transition-colors mb-2 min-h-[2.5rem]">
                             {product.name}
                           </h3>
                         </Link>
 
-                        {/* Stock Status */}
-                        <div className="mb-2">
-                          <span
-                            className={`text-xs font-medium ${getStockColorClassesCompact(
-                              product
-                            )}`}
-                          >
+                        <div className="mb-3">
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${getStockColorClassesCompact(product)}`}>
                             {getStockText(product)}
                           </span>
                         </div>
 
-                        <div className="mt-auto flex items-center justify-between">
+                        <div className="mt-auto pt-3 border-t border-stone-50 flex items-center justify-between">
                           <div className="flex flex-col">
                             {hasProductDiscount(product) ? (
                               <>
-                                <span className="text-sm text-stone-400 line-through">
+                                <span className="text-xs text-stone-400 line-through">
                                   {getProductOriginalDisplayPrice(product)}
                                 </span>
-                                <span className="text-lg font-bold text-red-600">
+                                <span className="text-base font-bold text-red-600">
                                   {getProductDisplayPrice(product)}
                                 </span>
                               </>
                             ) : (
-                              <span className="text-lg font-bold text-emerald-700">
+                              <span className="text-base font-bold text-emerald-700">
                                 {getProductDisplayPrice(product)}
                               </span>
                             )}
                           </div>
-                          <div className="flex text-yellow-400 gap-0.5">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className="w-3 h-3 fill-current" />
-                            ))}
+                          <div className="w-8 h-8 rounded-full bg-stone-50 flex items-center justify-center group-hover:bg-emerald-50 transition-colors">
+                             <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-emerald-600 transition-colors" />
                           </div>
                         </div>
                       </div>
@@ -513,27 +422,43 @@ const HomePage: React.FC = () => {
                 })}
               </div>
             )}
+            
+            <div className="mt-8 text-center md:hidden">
+                 <Link
+                  to="/products"
+                  className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600 bg-emerald-50 px-6 py-3 rounded-full"
+                >
+                  სრული კატალოგი <ArrowRight className="w-4 h-4" />
+                </Link>
+            </div>
           </div>
         </section>
 
         {/* --- SOCIAL BANNER --- */}
-        <section className="py-16 bg-stone-700 text-white mt-8 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+        <section className="py-16 bg-stone-900 text-white mt-8 relative overflow-hidden">
+            {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-20">
+             <div className="absolute top-0 left-0 w-64 h-64 bg-emerald-500 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2"></div>
+             <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-500 rounded-full blur-[100px] translate-x-1/2 translate-y-1/2"></div>
+          </div>
+          
           <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-            <Leaf className="w-10 h-10 text-emerald-500 mx-auto mb-5" />
+            <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3">
+                <Leaf className="w-8 h-8 text-emerald-400" />
+            </div>
             <h2 className="text-2xl lg:text-4xl font-bold mb-4">
               LifeStore - შენი სახლისთვის
             </h2>
-            <p className="text-stone-400 mb-8 max-w-lg mx-auto">
+            <p className="text-stone-400 mb-8 max-w-lg mx-auto text-sm lg:text-base">
               გამოგვყვევით სოციალურ ქსელებში, ნახეთ ახალი კოლექციები და მიიღეთ
               რჩევები სახლის მოწყობაზე.
             </p>
-            <div className="flex justify-center gap-5">
+            <div className="flex justify-center gap-4">
               <a
                 href="https://www.facebook.com/lifestore.ge"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-5 py-3 bg-blue-600 rounded-full hover:bg-blue-700 transition-all font-medium"
+                className="flex items-center gap-2 px-6 py-3 bg-[#1877F2] rounded-xl hover:bg-[#166fe5] transition-all font-medium shadow-lg shadow-blue-900/20 active:scale-95"
               >
                 <Facebook className="w-5 h-5" /> Facebook
               </a>
@@ -541,7 +466,7 @@ const HomePage: React.FC = () => {
                 href="https://www.instagram.com/lifestore.ge"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full hover:opacity-90 transition-all font-medium"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] rounded-xl hover:opacity-90 transition-all font-medium shadow-lg shadow-pink-900/20 active:scale-95"
               >
                 <Instagram className="w-5 h-5" /> Instagram
               </a>

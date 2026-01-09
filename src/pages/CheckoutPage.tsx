@@ -18,6 +18,8 @@ import {
   ShieldCheck,
   Smartphone,
   Mail,
+  CheckCircle2,
+  Truck,
 } from "lucide-react";
 import type { CreateOrderRequest, CreatePaymentRequest } from "../types";
 
@@ -43,21 +45,22 @@ const CheckoutPage: React.FC = () => {
   const subtotal = getCartTotal();
 
   // --- STATE ---
+  // ✅ Payment method defaults to "flitt" (Online)
   const [formData, setFormData] = useState<CheckoutFormData>({
     firstName: "",
     lastName: "",
     phone: "",
-    secondaryPhone: "", // ✅ მეორე ნომერი დაბრუნდა
+    secondaryPhone: "",
     email: "",
     city: "თბილისი",
     address: "",
     comment: "",
-    paymentMethod: "cash",
+    paymentMethod: "flitt", 
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isAgreed, setIsAgreed] = useState(false); // ✅ თანხმობა
-  const [showConfirmModal, setShowConfirmModal] = useState(false); // ✅ მოდალი დაბრუნდა
+  const [isAgreed, setIsAgreed] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const shippingCost = formData.city === "თბილისი" ? 0 : 7;
   const grandTotal = subtotal + shippingCost;
@@ -79,16 +82,14 @@ const CheckoutPage: React.FC = () => {
   useEffect(() => {
     const validateCart = async () => {
       if (items.length === 0) return;
-
       try {
         await validateAndCleanCart();
       } catch (error) {
         console.error("Checkout cart validation failed:", error);
       }
     };
-
     validateCart();
-  }, [validateAndCleanCart]); // Run once when component mounts
+  }, [items.length, validateAndCleanCart]);
 
   // ცარიელი კალათის შემოწმება
   useEffect(() => {
@@ -111,11 +112,9 @@ const CheckoutPage: React.FC = () => {
 
   // --- HANDLERS ---
 
-  // 1. "შეკვეთის დადასტურებაზე" დაჭერა (ვალიდაცია)
   const handlePreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // ა) თანხმობის შემოწმება
     if (!isAgreed) {
       showToast("გთხოვთ, დაეთანხმოთ წესებსა და პირობებს", "error");
       const checkboxArea = document.getElementById("terms-container");
@@ -129,7 +128,6 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // ბ) ტელეფონის ვალიდაცია
     if (
       !formData.phone ||
       formData.phone.length !== 9 ||
@@ -142,17 +140,14 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // გ) სხვა ველები
     if (!formData.address || !formData.firstName || !formData.lastName) {
       showToast("გთხოვთ შეავსოთ სავალდებულო ველები", "error");
       return;
     }
 
-    // ✅ ყველაფერი რიგზეა -> ვხსნით მოდალს
     setShowConfirmModal(true);
   };
 
-  // 2. მოდალში "კი"-ს დაჭერა (რეალური გაგზავნა)
   const handleConfirmOrder = async () => {
     setShowConfirmModal(false);
     setIsSubmitting(true);
@@ -165,7 +160,7 @@ const CheckoutPage: React.FC = () => {
           firstName: formData.firstName,
           lastName: formData.lastName,
           phone: formData.phone,
-          // @ts-expect-error - secondaryPhone might not be in types yet, but we send it
+          // @ts-expect-error - secondaryPhone handling
           secondaryPhone: formData.secondaryPhone,
           email: formData.email,
         },
@@ -179,9 +174,7 @@ const CheckoutPage: React.FC = () => {
 
       const createdOrder = await OrderService.createOrder(orderRequest);
 
-      // Check if it's a Flitt payment
       if (formData.paymentMethod === "flitt") {
-        // Create payment request for Flitt
         const paymentRequest: CreatePaymentRequest = {
           orderId: createdOrder.orderNumber,
           amount: grandTotal,
@@ -190,24 +183,17 @@ const CheckoutPage: React.FC = () => {
         };
 
         try {
-          // Process Flitt payment (will redirect to Flitt)
           await PaymentService.processPayment(paymentRequest);
-          // ✅ Cart will be cleared only after payment confirmation on success page
-          // Removed: clearCart();
         } catch (paymentError) {
           console.error("Flitt payment error:", paymentError);
           showToast("ონლაინ გადახდის შეცდომა. სცადეთ თავიდან.", "error");
           return;
         }
       } else {
-        // Cash payment - normal flow
         navigate(`/order-success/${createdOrder.id}`);
-
-        // Fallback
         setTimeout(() => {
           window.location.href = `/order-success/${createdOrder.id}`;
         }, 500);
-
         clearCart();
         showToast(`შეკვეთა წარმატებით გაფორმდა!`, "success");
       }
@@ -219,380 +205,376 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
+  // Helper for input styles
+  const inputBaseStyle = "w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all duration-200 text-stone-900 placeholder:text-stone-400";
+  const labelStyle = "block text-xs font-bold text-stone-500 mb-1.5 uppercase tracking-wide";
+
   return (
-    <div className="min-h-screen bg-stone-50 py-20 lg:py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-stone-900 mb-8 text-center lg:text-left font-bpg-arial">
-          შეკვეთის გაფორმება
-        </h1>
+    <div className="min-h-screen bg-[#F8FAFC] py-20 lg:py-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Header */}
+        <div className="mb-8 text-center lg:text-left">
+           <h1 className="text-2xl lg:text-3xl font-bold text-stone-900 font-bpg-arial">
+            შეკვეთის გაფორმება
+          </h1>
+          <p className="text-stone-500 mt-2 text-sm">
+            შეავსეთ მონაცემები და მიიღეთ ნივთი სწრაფად
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-          {/* --- LEFT SIDE: FORMS --- */}
+        <form id="checkout-form" onSubmit={handlePreSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
+          
+          {/* --- LEFT SIDE: INPUTS --- */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Contact Info */}
-            <div className="bg-white p-6 lg:p-8 rounded-2xl shadow-sm border border-stone-200">
-              <h2 className="text-xl font-bold text-stone-800 mb-6 flex items-center gap-2">
-                <User className="w-5 h-5 text-emerald-600" />
-                საკონტაქტო ინფორმაცია
-              </h2>
-
-              <form
-                id="checkout-form"
-                onSubmit={handlePreSubmit}
-                className="space-y-6"
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">
-                      სახელი *
-                    </label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      required
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">
-                      გვარი *
-                    </label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      required
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Primary Phone */}
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">
-                      მობილური *
-                    </label>
-                    <PhoneInput
-                      value={formData.phone}
-                      onChange={(val) =>
-                        setFormData((prev) => ({ ...prev, phone: val }))
-                      }
-                      required
-                    />
-                    <p className="text-[10px] text-stone-400 mt-1">
-                      კურიერი დაგიკავშირდებათ ამ ნომერზე
-                    </p>
-                  </div>
-
-                  {/* ✅ Secondary Phone - დაბრუნდა! */}
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">
-                      დამატებითი ნომერი{" "}
-                      <span className="text-stone-400 text-xs font-normal">
-                        (არასავალდებულო)
-                      </span>
-                    </label>
-                    <PhoneInput
-                      value={formData.secondaryPhone}
-                      onChange={(val) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          secondaryPhone: val,
-                        }))
-                      }
-                      placeholder="მაგ: ოჯახის წევრის"
-                    />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">
-                    ელ-ფოსტა *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
-                      placeholder="example@gmail.com"
-                    />
-                  </div>
-                </div>
-              </form>
-            </div>
-
-            {/* Delivery Info */}
-            <div className="bg-white p-6 lg:p-8 rounded-2xl shadow-sm border border-stone-200">
-              <h2 className="text-xl font-bold text-stone-800 mb-6 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-emerald-600" />
-                მიწოდება
-              </h2>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">
-                    ქალაქი / რაიონი *
-                  </label>
-                  <select
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
-                  >
-                    <option value="თბილისი">თბილისი (უფასო)</option>
-                    <option value="ბათუმი">ბათუმი (+7₾)</option>
-                    <option value="ქუთაისი">ქუთაისი (+7₾)</option>
-                    <option value="რუსთავი">რუსთავი (+7₾)</option>
-                    <option value="სხვა">სხვა რეგიონები (+7₾)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">
-                    ზუსტი მისამართი *
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    required
-                    value={formData.address}
-                    onChange={handleChange}
-                    placeholder="მაგ: ჭავჭავაძის გამზ. 15, ბინა 4"
-                    className="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">
-                    კომენტარი (არასავალდებულო)
-                  </label>
-                  <textarea
-                    name="comment"
-                    rows={3}
-                    value={formData.comment}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
-                    placeholder="მაგ: შლაგბაუმის კოდი..."
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Method */}
-            <div className="bg-white p-6 lg:p-8 rounded-2xl shadow-sm border border-stone-200">
-              <h2 className="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
+            
+            {/* 1. PAYMENT METHOD (Moved to top for priority) */}
+            <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-stone-100">
+               <h2 className="text-lg font-bold text-stone-800 mb-4 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-emerald-600" />
                 გადახდის მეთოდი
               </h2>
-              <div className="space-y-3">
-                <label className="flex items-center p-4 border border-emerald-200 bg-emerald-50 rounded-xl cursor-pointer transition-all">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash"
-                    checked={formData.paymentMethod === "cash"}
-                    onChange={handleChange}
-                    className="w-5 h-5 text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <div className="ml-3 flex items-center gap-2">
-                    <Banknote className="w-5 h-5 text-emerald-700" />
-                    <span className="font-medium text-stone-900">
-                      ადგილზე გადახდა (ქეში/ბარათი)
-                    </span>
-                  </div>
-                </label>
-
-                <label className="flex items-center p-4 border border-blue-200 bg-blue-50 rounded-xl cursor-pointer transition-all">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Online Payment Option */}
+                <label 
+                  className={`relative flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                    formData.paymentMethod === "flitt" 
+                      ? "border-emerald-500 bg-emerald-50/50 shadow-sm" 
+                      : "border-stone-100 hover:border-emerald-200 bg-stone-50"
+                  }`}
+                >
                   <input
                     type="radio"
                     name="paymentMethod"
                     value="flitt"
                     checked={formData.paymentMethod === "flitt"}
                     onChange={handleChange}
-                    className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                    className="hidden"
                   />
-                  <div className="ml-3 flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-blue-700" />
-                    <span className="font-medium text-stone-900">
-                      ონლაინ გადახდა (Flitt)
-                    </span>
-                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      TBC Bank
-                    </span>
-                  </div>
+                  {formData.paymentMethod === "flitt" && (
+                    <div className="absolute top-3 right-3 text-emerald-600">
+                      <CheckCircle2 className="w-5 h-5 fill-emerald-100" />
+                    </div>
+                  )}
+                  <CreditCard className={`w-8 h-8 mb-3 ${formData.paymentMethod === "flitt" ? "text-emerald-600" : "text-stone-400"}`} />
+                  <span className="font-bold text-sm text-stone-900">ონლაინ გადახდა</span>
+                  <span className="text-[11px] text-stone-500 mt-1 text-center leading-tight">
+                    Visa / Mastercard / Amex <br/> ნებისმიერი ბანკით
+                  </span>
+                </label>
+
+                {/* Cash Payment Option */}
+                <label 
+                  className={`relative flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                    formData.paymentMethod === "cash" 
+                      ? "border-emerald-500 bg-emerald-50/50 shadow-sm" 
+                      : "border-stone-100 hover:border-emerald-200 bg-stone-50"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cash"
+                    checked={formData.paymentMethod === "cash"}
+                    onChange={handleChange}
+                    className="hidden"
+                  />
+                  {formData.paymentMethod === "cash" && (
+                     <div className="absolute top-3 right-3 text-emerald-600">
+                      <CheckCircle2 className="w-5 h-5 fill-emerald-100" />
+                    </div>
+                  )}
+                  <Banknote className={`w-8 h-8 mb-3 ${formData.paymentMethod === "cash" ? "text-emerald-600" : "text-stone-400"}`} />
+                  <span className="font-bold text-sm text-stone-900">ადგილზე გადახდა</span>
+                  <span className="text-[11px] text-stone-500 mt-1 text-center leading-tight">
+                    ქეშით ან ბარათით<br/>კურიერთან
+                  </span>
                 </label>
               </div>
             </div>
-          </div>
 
-          {/* --- RIGHT SIDE: SUMMARY --- */}
-          <div className="lg:col-span-5">
-            <div className="bg-white p-6 lg:p-8 rounded-2xl shadow-lg border border-stone-100 sticky top-24">
-              <h2 className="text-xl font-bold text-stone-800 mb-6">
-                შეკვეთის დეტალები
+            {/* 2. COMBINED INFO (Contact + Delivery) */}
+            <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-stone-100">
+              <h2 className="text-lg font-bold text-stone-800 mb-5 flex items-center gap-2">
+                <User className="w-5 h-5 text-emerald-600" />
+                პირადი ინფორმაცია
               </h2>
 
-              <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-4">
+                {/* Name Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelStyle}>სახელი</label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      required
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className={inputBaseStyle}
+                      placeholder="გიორგი"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelStyle}>გვარი</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      required
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className={inputBaseStyle}
+                      placeholder="ბერიძე"
+                    />
+                  </div>
+                </div>
+
+                {/* Phone & Email Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelStyle}>მობილური</label>
+                    <PhoneInput
+                      value={formData.phone}
+                      onChange={(val) => setFormData((prev) => ({ ...prev, phone: val }))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className={labelStyle}>ელ-ფოსტა</label>
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      value={formData.email}
+                      onChange={handleChange}
+                      className={inputBaseStyle}
+                      placeholder="mail@example.com"
+                    />
+                  </div>
+                </div>
+
+                 {/* Secondary Phone (Optional, full width for clean look) */}
+                 <div>
+                    <label className={labelStyle}>
+                      დამატებითი ნომერი <span className="text-stone-300 normal-case font-normal">(არასავალდებულო)</span>
+                    </label>
+                    <PhoneInput
+                      value={formData.secondaryPhone}
+                      onChange={(val) => setFormData((prev) => ({ ...prev, secondaryPhone: val }))}
+                      placeholder="მაგ: ოჯახის წევრის"
+                    />
+                  </div>
+              </div>
+
+              {/* Divider */}
+              <div className="my-6 border-t border-stone-100"></div>
+
+              <h2 className="text-lg font-bold text-stone-800 mb-5 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-emerald-600" />
+                მისამართი
+              </h2>
+
+              <div className="space-y-4">
+                 {/* City & Address */}
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                   <div className="sm:col-span-1">
+                      <label className={labelStyle}>ქალაქი</label>
+                      <select
+                        name="city"
+                        value={formData.city}
+                        onChange={handleChange}
+                        className={`${inputBaseStyle} appearance-none cursor-pointer`}
+                      >
+                        <option value="თბილისი">თბილისი</option>
+                        <option value="ბათუმი">ბათუმი</option>
+                        <option value="ქუთაისი">ქუთაისი</option>
+                        <option value="რუსთავი">რუსთავი</option>
+                        <option value="სხვა">სხვა</option>
+                      </select>
+                   </div>
+                   <div className="sm:col-span-2">
+                      <label className={labelStyle}>ზუსტი მისამართი</label>
+                      <input
+                        type="text"
+                        name="address"
+                        required
+                        value={formData.address}
+                        onChange={handleChange}
+                        placeholder="ქუჩა, კორპუსი, ბინა"
+                        className={inputBaseStyle}
+                      />
+                   </div>
+                 </div>
+
+                 {/* Comment */}
+                 <div>
+                    <label className={labelStyle}>კომენტარი კურიერისთვის</label>
+                    <textarea
+                      name="comment"
+                      rows={2}
+                      value={formData.comment}
+                      onChange={handleChange}
+                      className={inputBaseStyle}
+                      placeholder="მაგ: სადარბაზოს კოდი, ეზოში შესასვლელი..."
+                    />
+                 </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* --- RIGHT SIDE: SUMMARY (Sticky) --- */}
+          <div className="lg:col-span-5">
+            <div className="bg-white rounded-2xl shadow-lg border border-stone-100 sticky top-4 lg:top-8 overflow-hidden">
+              <div className="p-5 bg-stone-50 border-b border-stone-100">
+                <h2 className="text-lg font-bold text-stone-800 flex items-center gap-2">
+                  <Package className="w-5 h-5 text-stone-400" />
+                  თქვენი შეკვეთა
+                  <span className="ml-auto bg-stone-200 text-stone-600 text-xs py-1 px-2 rounded-full">
+                    {items.length} ნივთი
+                  </span>
+                </h2>
+              </div>
+
+              {/* Items List (Compact) */}
+              <div className="max-h-[240px] overflow-y-auto custom-scrollbar p-5 space-y-4">
                 {items.map((item) => (
-                  <div key={item.productId} className="flex gap-4 items-start">
-                    <div className="w-16 h-16 bg-stone-100 rounded-lg overflow-hidden flex-shrink-0 border border-stone-200">
+                  <div key={item.productId} className="flex gap-3">
+                    <div className="w-12 h-12 bg-stone-100 rounded-lg overflow-hidden border border-stone-200 flex-shrink-0">
                       {item.product.images?.[0] ? (
-                        <img
-                          src={item.product.images[0]}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
+                        <img src={item.product.images[0]} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <Package className="w-full h-full p-4 text-stone-300" />
+                        <Package className="w-full h-full p-3 text-stone-300" />
                       )}
                     </div>
-                    <div className="flex-1">
-                      <h4 className="text-sm font-bold text-stone-900 line-clamp-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-stone-900 truncate">
                         {getCartItemDisplayName(item)}
-                      </h4>
-                      <div className="flex justify-between mt-1">
-                        <span className="text-xs text-stone-500">
-                          {item.quantity} x ₾{getItemPrice(item).toFixed(2)}
-                        </span>
-                        <span className="text-sm font-semibold text-stone-700">
-                          ₾{(item.quantity * getItemPrice(item)).toFixed(2)}
-                        </span>
+                      </p>
+                      <div className="flex justify-between items-center mt-1">
+                        <p className="text-xs text-stone-500">
+                          {item.quantity} x {getItemPrice(item).toFixed(2)}₾
+                        </p>
+                        <p className="text-sm font-bold text-stone-800">
+                          {(item.quantity * getItemPrice(item)).toFixed(2)}₾
+                        </p>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="border-t border-stone-100 pt-4 space-y-3 mb-6">
-                <div className="flex justify-between text-stone-600">
-                  <span>პროდუქტები</span>
+              {/* Totals */}
+              <div className="p-5 bg-stone-50/50 border-t border-stone-100 space-y-2">
+                <div className="flex justify-between text-sm text-stone-600">
+                  <span>ჯამი</span>
                   <span>₾{subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center text-stone-600">
-                  <span>მიწოდება ({formData.city})</span>
-                  <span
-                    className={
-                      shippingCost === 0
-                        ? "text-green-600 font-bold"
-                        : "text-stone-900 font-medium"
-                    }
-                  >
-                    {shippingCost === 0
-                      ? "უფასო"
-                      : `+ ₾${shippingCost.toFixed(2)}`}
+                <div className="flex justify-between text-sm text-stone-600">
+                  <span className="flex items-center gap-1">
+                    <Truck className="w-3 h-3" /> 
+                    მიწოდება ({formData.city})
+                  </span>
+                  <span className={shippingCost === 0 ? "text-emerald-600 font-bold" : "text-stone-900"}>
+                    {shippingCost === 0 ? "უფასო" : `+ ₾${shippingCost.toFixed(2)}`}
                   </span>
                 </div>
-                <div className="flex justify-between text-xl font-bold text-stone-900 pt-3 border-t border-stone-100 mt-2">
-                  <span>სულ გადასახდელი</span>
-                  <span className="text-emerald-700">
+                
+                <div className="my-3 border-t border-stone-200 border-dashed"></div>
+
+                <div className="flex justify-between items-end">
+                  <span className="text-base font-bold text-stone-900">სულ გადასახდელი</span>
+                  <span className="text-2xl font-bold text-emerald-600">
                     ₾{grandTotal.toFixed(2)}
                   </span>
                 </div>
               </div>
 
-              {/* ✅ Terms Checkbox */}
-              <div
-                id="terms-container"
-                className="flex items-start gap-3 mb-6 p-4 bg-stone-50 rounded-xl border border-stone-100 transition-all hover:border-emerald-100"
-              >
-                <input
-                  type="checkbox"
-                  id="terms-checkbox"
-                  checked={isAgreed}
-                  onChange={(e) => setIsAgreed(e.target.checked)}
-                  className="mt-1 w-5 h-5 text-emerald-600 rounded border-stone-300 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
-                />
-                <label
-                  htmlFor="terms-checkbox"
-                  className="text-sm text-stone-600 cursor-pointer select-none leading-relaxed"
+              {/* Actions Area */}
+              <div className="p-5 pt-0">
+                {/* Terms */}
+                <div id="terms-container" className="flex items-start gap-3 mb-4">
+                  <input
+                    type="checkbox"
+                    id="terms-checkbox"
+                    checked={isAgreed}
+                    onChange={(e) => setIsAgreed(e.target.checked)}
+                    className="mt-1 w-4 h-4 text-emerald-600 rounded border-stone-300 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <label htmlFor="terms-checkbox" className="text-xs text-stone-500 leading-snug cursor-pointer select-none">
+                    ვეთანხმები <Link to="/terms" target="_blank" className="text-stone-800 font-bold underline decoration-stone-300 underline-offset-2 hover:text-emerald-600">წესებსა და პირობებს</Link>
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  form="checkout-form"
+                  disabled={isSubmitting || !isAgreed}
+                  className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98]
+                    ${isSubmitting || !isAgreed
+                      ? "bg-stone-200 text-stone-400 cursor-not-allowed shadow-none"
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200"
+                    }`}
                 >
-                  ვეთანხმები{" "}
-                  <Link
-                    to="/terms"
-                    target="_blank"
-                    className="text-stone-900 font-bold hover:text-emerald-600 underline"
-                  >
-                    მომსახურების პირობებს*
-                  </Link>
-                </label>
+                  {isSubmitting ? (
+                    "მუშავდება..."
+                  ) : (
+                    <>
+                      <span>შეკვეთის დადასტურება</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
               </div>
-
-              <button
-                type="submit"
-                form="checkout-form" // ეს ღილაკი ატრიგერებს handlePreSubmit-ს
-                disabled={isSubmitting || !isAgreed}
-                className={`w-full font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-lg active:scale-95
-                  ${
-                    isSubmitting || !isAgreed
-                      ? "bg-stone-300 text-stone-500 cursor-not-allowed"
-                      : "bg-stone-900 hover:bg-emerald-600 text-white"
-                  }`}
-              >
-                {isSubmitting ? (
-                  <span>მუშავდება...</span>
-                ) : (
-                  <>
-                    <ShieldCheck className="w-5 h-5" />
-                    <span>შეკვეთის დადასტურება</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
-
-              {!isAgreed && (
-                <p className="text-xs text-red-400 text-center mt-3 font-medium animate-pulse">
-                  * შეკვეთის გასაფორმებლად სავალდებულოა წესებზე თანხმობა
-                </p>
-              )}
+            </div>
+            
+            {/* Trust Badges */}
+            <div className="mt-6 flex justify-center gap-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+                {/* აქ შეგიძლია ჩასვა ბანკების ლოგოები სურვილისამებრ */}
+                <div className="flex items-center gap-1 text-xs text-stone-400">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>დაცული გადახდა</span>
+                </div>
             </div>
           </div>
-        </div>
+        </form>
       </div>
 
-      {/* ✅ CONFIRMATION MODAL - დაბრუნდა! */}
+      {/* CONFIRMATION MODAL */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-center w-12 h-12 bg-emerald-100 rounded-full mx-auto mb-4">
-              <Smartphone className="w-6 h-6 text-emerald-600" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Smartphone className="w-8 h-8 text-emerald-600" />
             </div>
 
-            <h3 className="text-lg font-bold text-center text-stone-900 mb-2">
-              გთხოვთ გადაამოწმოთ ნომერი
+            <h3 className="text-lg font-bold text-center text-stone-900">
+              ნომრის გადამოწმება
             </h3>
-
-            <p className="text-center text-stone-600 text-sm mb-6">
-              კურიერი დაგიკავშირდებათ ამ ნომერზე:
-              <br />
-              <span className="block mt-2 text-2xl font-bold text-stone-900 tracking-wider">
-                {formData.phone.replace(
-                  /(\d{3})(\d{2})(\d{2})(\d{2})/,
-                  "$1 $2 $3 $4"
-                )}
-              </span>
+            
+            <p className="text-center text-stone-500 text-sm mt-2 mb-6">
+              დარწმუნდით რომ ნომერი სწორია, კურიერი დაგიკავშირდებათ:
             </p>
 
-            <div className="flex gap-3">
+            <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 mb-6 text-center">
+               <span className="text-2xl font-bold text-stone-900 tracking-wider">
+                {formData.phone.replace(/(\d{3})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4")}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setShowConfirmModal(false)}
-                className="flex-1 py-3 text-stone-600 font-medium bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors"
+                className="py-3 text-sm font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors"
               >
-                არა, შესწორება
+                შესწორება
               </button>
               <button
                 onClick={handleConfirmOrder}
-                className="flex-1 py-3 text-white font-bold bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg shadow-emerald-200 transition-colors"
+                className="py-3 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg shadow-emerald-200 transition-colors"
               >
-                კი, სწორია
+                დადასტურება
               </button>
             </div>
           </div>
