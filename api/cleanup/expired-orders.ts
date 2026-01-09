@@ -42,17 +42,32 @@ export default async function handler(
     const cutoffTime = new Date();
     cutoffTime.setMinutes(cutoffTime.getMinutes() - 30);
 
-    // Find expired pending orders
-    const expiredOrdersQuery = adminDb
+    // Find all pending orders (filter by time in code to avoid index requirement)
+    const pendingOrdersQuery = adminDb
       .collection("orders")
       .where("paymentStatus", "==", "pending")
-      .where("createdAt", "<=", cutoffTime)
-      .limit(50); // Process in batches
+      .limit(100); // Get more since we'll filter in code
 
-    const expiredOrdersSnapshot = await expiredOrdersQuery.get();
+    const pendingOrdersSnapshot = await pendingOrdersQuery.get();
 
-    if (expiredOrdersSnapshot.empty) {
-      console.log("✅ No expired orders found");
+    if (pendingOrdersSnapshot.empty) {
+      console.log("✅ No pending orders found");
+      return res.status(200).json({
+        success: true,
+        message: "No pending orders to clean up",
+        processedCount: 0,
+      });
+    }
+
+    // Filter expired orders in code (older than 30 minutes)
+    const expiredOrders = pendingOrdersSnapshot.docs.filter(doc => {
+      const orderData = doc.data();
+      const createdAt = orderData.createdAt.toDate();
+      return createdAt <= cutoffTime;
+    });
+
+    if (expiredOrders.length === 0) {
+      console.log("✅ No expired orders found (all pending orders are recent)");
       return res.status(200).json({
         success: true,
         message: "No expired orders to clean up",
@@ -61,14 +76,14 @@ export default async function handler(
     }
 
     console.log(
-      `🔍 Found ${expiredOrdersSnapshot.size} expired orders to process`
+      `🔍 Found ${expiredOrders.length} expired orders to process (out of ${pendingOrdersSnapshot.size} pending)`
     );
 
     let processedCount = 0;
     let errorCount = 0;
 
     // Process each expired order
-    for (const orderDoc of expiredOrdersSnapshot.docs) {
+    for (const orderDoc of expiredOrders) {
       try {
         const orderData = orderDoc.data();
         const orderId = orderDoc.id;
@@ -171,7 +186,7 @@ export default async function handler(
       message: "Expired orders cleanup completed",
       processedCount,
       errorCount,
-      totalFound: expiredOrdersSnapshot.size,
+      totalFound: expiredOrders.length,
     });
   } catch (error) {
     console.error("❌ Error during expired orders cleanup:", error);
