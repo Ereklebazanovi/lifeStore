@@ -39,8 +39,12 @@ export default async function handler(
     console.log("🧹 Starting expired orders cleanup...");
 
     // Calculate cutoff time (30 minutes ago)
+    // const cutoffTime = new Date();
+    // cutoffTime.setMinutes(cutoffTime.getMinutes() - 30);
+
+    // ✅ შეცვალე ამით (დროებით):
     const cutoffTime = new Date();
-    cutoffTime.setMinutes(cutoffTime.getMinutes() - 30);
+    cutoffTime.setMinutes(cutoffTime.getMinutes() - 1); // 1 წუთი
 
     // Find all pending orders (filter by time in code to avoid index requirement)
     const pendingOrdersQuery = adminDb
@@ -60,7 +64,7 @@ export default async function handler(
     }
 
     // Filter expired orders in code (older than 30 minutes)
-    const expiredOrders = pendingOrdersSnapshot.docs.filter(doc => {
+    const expiredOrders = pendingOrdersSnapshot.docs.filter((doc) => {
       const orderData = doc.data();
       const createdAt = orderData.createdAt.toDate();
       return createdAt <= cutoffTime;
