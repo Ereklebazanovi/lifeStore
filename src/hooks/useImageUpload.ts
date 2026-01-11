@@ -83,8 +83,13 @@ export const useImageUpload = (): UseImageUploadReturn => {
 
       console.log('Storage ref created:', storageRef.fullPath);
 
-      // Upload file
-      const snapshot = await uploadBytes(storageRef, file);
+      // Upload file with timeout
+      const uploadPromise = uploadBytes(storageRef, file);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Upload timeout after 15 seconds')), 15000)
+      );
+
+      const snapshot = await Promise.race([uploadPromise, timeoutPromise]);
       console.log('Upload completed successfully:', snapshot);
 
       // Get download URL

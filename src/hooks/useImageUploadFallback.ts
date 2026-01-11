@@ -70,10 +70,10 @@ export const useImageUploadFallback = (): UseImageUploadFallbackReturn => {
       throw new Error('Invalid file type. Only JPEG, PNG, WebP, and GIF images are allowed.');
     }
 
-    // Validate file size (max 5MB for external services)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    // Validate file size (max 2MB for backup service to avoid performance issues)
+    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
     if (file.size > maxSize) {
-      throw new Error('File size too large. Maximum size is 5MB.');
+      throw new Error('File size too large for backup service. Maximum size is 2MB.');
     }
 
     setUploading(true);
@@ -82,28 +82,16 @@ export const useImageUploadFallback = (): UseImageUploadFallbackReturn => {
     try {
       setUploadProgress(25);
 
-      // Try multiple upload methods
-      const uploadMethods = [
-        { name: 'Imgur', method: uploadToImgur },
-        { name: 'Base64', method: convertToBase64 }
-      ];
+      // For now, just use Base64 as it's most reliable
+      console.log('🔄 Using Base64 backup upload method...');
 
       setUploadProgress(50);
+      const url = await convertToBase64(file);
 
-      for (const { name, method } of uploadMethods) {
-        try {
-          console.log(`Trying upload via ${name}...`);
-          const url = await method(file);
-          setUploadProgress(100);
-          console.log(`✅ Upload successful via ${name}:`, url);
-          return url;
-        } catch (error) {
-          console.error(`❌ Upload failed via ${name}:`, error);
-          // Continue to next method
-        }
-      }
+      setUploadProgress(100);
+      console.log('✅ Base64 upload successful');
 
-      throw new Error('ყველა ალტერნატიული ატვირთვის მეთოდი ვერ მუშაობს');
+      return url;
 
     } catch (error) {
       console.error('Error uploading image:', error);
