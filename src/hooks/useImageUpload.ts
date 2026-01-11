@@ -33,17 +33,9 @@ export const useImageUpload = (): UseImageUploadReturn => {
       );
     }
 
-    // Log user info for debugging
-    console.log("Current user:", {
-      uid: currentUser.uid,
-      email: currentUser.email,
-      emailVerified: currentUser.emailVerified,
-    });
-
-    // Get current auth token for debugging
+    // Get current auth token
     try {
-      const token = await currentUser.getIdToken();
-      console.log("Auth token obtained successfully");
+      await currentUser.getIdToken();
     } catch (tokenError) {
       console.error("Error getting auth token:", tokenError);
       throw new Error("ავტორიზაციის ტოკენის მიღება ვერ მოხერხდა");
@@ -79,27 +71,8 @@ export const useImageUpload = (): UseImageUploadReturn => {
       const fileExtension = file.name.split(".").pop();
       const fileName = `${timestamp}_${randomString}.${fileExtension}`;
 
-      // Try different folder structures to debug
-      const possiblePaths = [
-        `${folder}/${fileName}`,
-        `images/${fileName}`,
-        `uploads/${fileName}`,
-        fileName, // root level for testing
-      ];
-
-      console.log("Attempting upload with the following details:", {
-        fileName,
-        fileSize: file.size,
-        fileType: file.type,
-        folder,
-        possiblePaths,
-        storageBucket: storage.app.options.storageBucket,
-      });
-
-      // Try first path
-      let storageRef = ref(storage, possiblePaths[0]);
-
-      console.log("Storage ref created:", storageRef.fullPath);
+      // Create storage reference
+      const storageRef = ref(storage, `${folder}/${fileName}`);
 
       // Upload file with timeout
       const uploadPromise = uploadBytes(storageRef, file);
@@ -114,24 +87,14 @@ export const useImageUpload = (): UseImageUploadReturn => {
         uploadPromise,
         timeoutPromise as Promise<never>,
       ]);
-      console.log("Upload completed successfully:", snapshot);
 
       // Get download URL
       const downloadURL = await getDownloadURL(snapshot.ref);
-      console.log("Download URL obtained:", downloadURL);
 
       setUploadProgress(100);
       return downloadURL;
     } catch (error) {
       console.error("Error uploading image:", error);
-      console.error("Upload error details:", {
-        message: error instanceof Error ? error.message : "Unknown error",
-        code: (error as any)?.code,
-        name: (error as any)?.name,
-        stack: (error as any)?.stack,
-        serverResponse: (error as any)?.serverResponse,
-        customData: (error as any)?.customData,
-      });
 
       // Try to provide more specific error messages
       const errorCode = (error as any)?.code;

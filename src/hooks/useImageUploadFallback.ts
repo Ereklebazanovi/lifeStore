@@ -82,14 +82,10 @@ export const useImageUploadFallback = (): UseImageUploadFallbackReturn => {
     try {
       setUploadProgress(25);
 
-      // For now, just use Base64 as it's most reliable
-      console.log('🔄 Using Base64 backup upload method...');
-
       setUploadProgress(50);
       const url = await convertToBase64(file);
 
       setUploadProgress(100);
-      console.log('✅ Base64 upload successful');
 
       return url;
 

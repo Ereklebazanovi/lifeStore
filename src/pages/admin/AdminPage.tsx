@@ -11,7 +11,6 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import AddProductDrawer from "./components/AddProductDrawer";
 import CreateManualOrderModal from "./components/CreateManualOrderModal";
 import InventoryManagerVariants from "./components/InventoryManagerVariants";
-import StorageDebug from "../../components/debug/StorageDebug";
 
 import { showToast } from "../../components/ui/Toast";
 
@@ -214,28 +213,7 @@ const AdminPage: React.FC = () => {
         // New warehouse management - accessible by both admin and manager
         return <InventoryManagerVariants />;
 
-      case "debug":
-        // Debug section for testing Firebase Storage
-        return user?.role === "admin" ? (
-          <div className="space-y-6">
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Firebase Storage Debug
-              </h2>
-              <p className="text-gray-600 text-sm mb-4">
-                ეს ინსტრუმენტები გეხმარებათ Firebase Storage პრობლემების იდენტიფიცირებაში
-              </p>
-            </div>
-            <StorageDebug />
-          </div>
-        ) : (
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm text-center">
-            <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-            <p className="text-gray-600">მხოლოდ ადმინისტრატორისთვის</p>
-          </div>
-        );
-
-      case "analytics": {
+case "analytics": {
         // Analytics is admin-only
         if (user?.role !== "admin") {
           return (

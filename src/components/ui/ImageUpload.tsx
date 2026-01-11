@@ -39,17 +39,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         const url = await uploadImage(file);
         return url;
       } catch (error) {
-        console.error('Upload failed with Firebase, trying fallback:', error);
-
         // If Firebase fails, try fallback method automatically
         if (useFirebase) {
           setUseFirebase(false);
           try {
             const url = await fallbackUploadImage(file);
-            console.log('✅ Fallback upload successful');
             return url;
           } catch (fallbackError) {
-            console.error('Fallback also failed:', fallbackError);
             alert(`სურათის ატვირთვა ვერ მოხერხდა: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
             return null;
           }
