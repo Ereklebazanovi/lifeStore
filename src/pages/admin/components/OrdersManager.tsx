@@ -432,114 +432,119 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              შეკვეთების მართვა
-            </h2>
-            <p className="text-gray-600 text-sm mt-1">
-              გამოიყენეთ ფილტრები შეკვეთების ძებნისთვის
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-4 gap-4">
-            <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm w-fit">
+      {/* Mobile-First Header */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6 shadow-sm">
+        <div className="flex flex-col space-y-4">
+          {/* Title Section */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+            <div>
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900">
+                შეკვეთების მართვა
+              </h2>
+              <p className="text-gray-600 text-xs md:text-sm mt-1 hidden sm:block">
+                გამოიყენეთ ფილტრები შეკვეთების ძებნისთვის
+              </p>
+            </div>
+
+            {/* Stats Badge */}
+            <div className="bg-gray-100 rounded-lg px-3 py-2 text-xs md:text-sm w-fit">
               <span className="text-gray-600">სულ: </span>
               <span className="font-semibold text-gray-900">
                 {filteredOrders.length} / {orders.length} შეკვეთა
               </span>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2">
-              <button
-                onClick={exportFilteredOrdersPDF}
-                disabled={filteredOrders.length === 0}
-                className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                title="ფილტრირებული შეკვეთების PDF"
-              >
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">PDF ანგარიში</span>
-                <span className="sm:hidden">PDF</span>
-              </button>
+          {/* Mobile Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <button
+              onClick={exportFilteredOrdersPDF}
+              disabled={filteredOrders.length === 0}
+              className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              title="ფილტრირებული შეკვეთების PDF"
+            >
+              <Download className="w-4 h-4" />
+              <span>PDF ანგარიში</span>
+            </button>
 
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="flex items-center justify-center space-x-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors duration-200 text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">ხელით შეკვეთა</span>
-                <span className="sm:hidden">შექმნა</span>
-              </button>
-            </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center justify-center space-x-2 bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition-colors duration-200 text-sm font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              <span>ხელით შეკვეთა</span>
+            </button>
           </div>
         </div>
+        </div>
 
-        {/* Filters */}
-        <div className="space-y-4 lg:space-y-0 lg:flex lg:items-center lg:gap-4">
-          {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="ძებნა შეკვეთის ნომრით ან მომხმარებლით..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+        {/* Mobile-Optimized Filters */}
+        <div className="space-y-3">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="ძებნა ნომრით ან სახელით..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
           </div>
 
-          {/* Filters Row */}
-          <div className="flex flex-col sm:flex-row gap-3 lg:gap-2">
+          {/* Compact Filters */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Date Range */}
-            <div className="flex items-center gap-2 min-w-0">
-              <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <div className="flex items-center gap-2 min-w-0">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-700 flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                თარიღი
+              </label>
+              <div className="flex gap-2">
                 <input
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-full sm:w-auto"
-                  placeholder="თარიღიდან"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm flex-1"
                 />
-                <span className="text-gray-400 text-sm">-</span>
                 <input
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-full sm:w-auto"
-                  placeholder="თარიღამდე"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm flex-1"
                 />
-                {(dateFrom || dateTo) && (
+              </div>
+            </div>
+
+            {/* Status & Clear */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-700">სტატუსი</label>
+              <div className="flex gap-2">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm flex-1"
+                >
+                  <option value="all">ყველა სტატუსი</option>
+                  <option value="pending">მოლოდინში</option>
+                  <option value="shipped">გაგზავნილი</option>
+                  <option value="delivered">მიტანილი</option>
+                  <option value="cancelled">გაუქმებული</option>
+                </select>
+                {(dateFrom || dateTo || statusFilter !== "all") && (
                   <button
                     onClick={() => {
                       setDateFrom("");
                       setDateTo("");
+                      setStatusFilter("all");
                     }}
-                    className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm flex-shrink-0"
-                    title="თარიღების გასუფთავება"
+                    className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                    title="ფილტრების გასუფთავება"
                   >
                     ✕
                   </button>
                 )}
               </div>
             </div>
-
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-auto"
-            >
-              <option value="all">ყველა სტატუსი</option>
-              <option value="pending">მოლოდინში</option>
-              <option value="shipped">გაგზავნილი</option>
-              <option value="delivered">მიტანილი</option>
-              <option value="cancelled">გაუქმებული</option>
-            </select>
           </div>
         </div>
       </div>
