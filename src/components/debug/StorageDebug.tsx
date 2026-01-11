@@ -92,16 +92,37 @@ const StorageDebug: React.FC = () => {
     }
   };
 
-  const testStorageConfig = () => {
+  const testStorageConfig = async () => {
     try {
       const config = storage.app.options;
+
+      // Test storage bucket URLs
+      const possibleBuckets = [
+        config.storageBucket,
+        `${config.projectId}.appspot.com`,
+        `${config.projectId}.firebasestorage.app`
+      ];
+
+      let bucketTestResults = [];
+      for (const bucket of possibleBuckets) {
+        try {
+          const response = await fetch(`https://firebasestorage.googleapis.com/v0/b/${bucket}/o`);
+          bucketTestResults.push(`✅ ${bucket}: ${response.status} ${response.statusText}`);
+        } catch (error) {
+          bucketTestResults.push(`❌ ${bucket}: Network Error`);
+        }
+      }
+
       setTestResult(`Firebase Storage Configuration:
         - Project ID: ${config.projectId}
         - Storage Bucket: ${config.storageBucket}
         - Auth Domain: ${config.authDomain}
         - API Key: ${config.apiKey?.substring(0, 10)}...
         - Storage Instance: ${storage.toString()}
-        - Storage App: ${storage.app.name}`);
+        - Storage App: ${storage.app.name}
+
+        Bucket Connectivity Tests:
+        ${bucketTestResults.join('\n        ')}`);
     } catch (error) {
       setTestResult(`❌ Config error: ${error}`);
     }
