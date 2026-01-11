@@ -4,7 +4,9 @@ import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
 import { getOrderItemDisplayName } from "../../../utils/displayHelpers";
+
 import CreateManualOrderModal from "./CreateManualOrderModal";
+
 import {
   Package,
   Eye,
@@ -559,146 +561,146 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           <div className="hidden lg:block bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <input
-                      type="checkbox"
-                      checked={
-                        selectedOrderIds.length === filteredOrders.length &&
-                        filteredOrders.length > 0
-                      }
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    შეკვეთა
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    მომხმარებელი
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    თანხა
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    სტატუსი
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    თარიღი
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    მოქმედება
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <input
                         type="checkbox"
-                        checked={selectedOrderIds.includes(order.id)}
-                        onChange={(e) =>
-                          handleSelectOrder(order.id, e.target.checked)
+                        checked={
+                          selectedOrderIds.length === filteredOrders.length &&
+                          filteredOrders.length > 0
                         }
+                        onChange={(e) => handleSelectAll(e.target.checked)}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {order.orderNumber}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {order.items.length} პროდუქტი
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <User className="w-4 h-4 text-gray-400 mr-2" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {order.customerInfo.firstName}{" "}
-                            {order.customerInfo.lastName}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {order.customerInfo.phone}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <DollarSign className="w-4 h-4 text-gray-400 mr-1" />
-                        <span className="text-sm font-semibold text-gray-900">
-                          ₾{order.totalAmount.toFixed(2)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <select
-                        value={order.orderStatus}
-                        onChange={(e) =>
-                          handleStatusChange(
-                            order.id,
-                            e.target.value as Order["orderStatus"]
-                          )
-                        }
-                        className={`px-3 py-1 text-sm font-medium rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(
-                          order.orderStatus
-                        )}`}
-                      >
-                        <option value="pending">მოლოდინში</option>
-                        <option value="shipped">გაგზავნილი</option>
-                        <option value="delivered">მიტანილი</option>
-                        <option value="cancelled">გაუქმებული</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <Calendar className="w-4 h-4 text-gray-400 mr-2" />
-                        <div className="text-sm text-gray-900">
-                          {order.createdAt.toLocaleDateString("ka-GE")}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => {
-                            console.log(
-                              "Opening order detail for:",
-                              order.orderNumber
-                            );
-                            console.log("Setting selectedOrder to:", order);
-                            setSelectedOrder(order);
-                          }}
-                          className="text-blue-600 hover:text-blue-700 p-1 rounded hover:bg-blue-50"
-                          title="დეტალების ნახვა"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => exportSingleOrderPDF(order)}
-                          className="text-green-600 hover:text-green-700 p-1 rounded hover:bg-green-50"
-                          title="PDF ჩამოტვირთვა"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                        {order.orderStatus !== "cancelled" && (
-                          <button
-                            onClick={() => handleCancelOrder(order.id)}
-                            className="text-orange-600 hover:text-orange-700 p-1 rounded hover:bg-orange-50"
-                            title="შეკვეთის გაუქმება"
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      შეკვეთა
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      მომხმარებელი
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      თანხა
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      სტატუსი
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      თარიღი
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      მოქმედება
+                    </th>
                   </tr>
-                ))}
-              </tbody>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredOrders.map((order) => (
+                    <tr key={order.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selectedOrderIds.includes(order.id)}
+                          onChange={(e) =>
+                            handleSelectOrder(order.id, e.target.checked)
+                          }
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {order.orderNumber}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {order.items.length} პროდუქტი
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <User className="w-4 h-4 text-gray-400 mr-2" />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {order.customerInfo.firstName}{" "}
+                              {order.customerInfo.lastName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {order.customerInfo.phone}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <DollarSign className="w-4 h-4 text-gray-400 mr-1" />
+                          <span className="text-sm font-semibold text-gray-900">
+                            ₾{order.totalAmount.toFixed(2)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <select
+                          value={order.orderStatus}
+                          onChange={(e) =>
+                            handleStatusChange(
+                              order.id,
+                              e.target.value as Order["orderStatus"]
+                            )
+                          }
+                          className={`px-3 py-1 text-sm font-medium rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(
+                            order.orderStatus
+                          )}`}
+                        >
+                          <option value="pending">მოლოდინში</option>
+                          <option value="shipped">გაგზავნილი</option>
+                          <option value="delivered">მიტანილი</option>
+                          <option value="cancelled">გაუქმებული</option>
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <Calendar className="w-4 h-4 text-gray-400 mr-2" />
+                          <div className="text-sm text-gray-900">
+                            {order.createdAt.toLocaleDateString("ka-GE")}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => {
+                              console.log(
+                                "Opening order detail for:",
+                                order.orderNumber
+                              );
+                              console.log("Setting selectedOrder to:", order);
+                              setSelectedOrder(order);
+                            }}
+                            className="text-blue-600 hover:text-blue-700 p-1 rounded hover:bg-blue-50"
+                            title="დეტალების ნახვა"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => exportSingleOrderPDF(order)}
+                            className="text-green-600 hover:text-green-700 p-1 rounded hover:bg-green-50"
+                            title="PDF ჩამოტვირთვა"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                          {order.orderStatus !== "cancelled" && (
+                            <button
+                              onClick={() => handleCancelOrder(order.id)}
+                              className="text-orange-600 hover:text-orange-700 p-1 rounded hover:bg-orange-50"
+                              title="შეკვეთის გაუქმება"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           </div>
@@ -711,17 +713,22 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                 <label className="flex items-center space-x-3 text-sm font-medium text-gray-700">
                   <input
                     type="checkbox"
-                    checked={selectedOrderIds.length === filteredOrders.length && filteredOrders.length > 0}
+                    checked={
+                      selectedOrderIds.length === filteredOrders.length &&
+                      filteredOrders.length > 0
+                    }
                     onChange={(e) => handleSelectAll(e.target.checked)}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span>
-                    {selectedOrderIds.length === filteredOrders.length && filteredOrders.length > 0
+                    {selectedOrderIds.length === filteredOrders.length &&
+                    filteredOrders.length > 0
                       ? "ყველას მონიშვნის გაუქმება"
-                      : "ყველას მონიშვნა"
-                    }
+                      : "ყველას მონიშვნა"}
                     {selectedOrderIds.length > 0 && (
-                      <span className="ml-2 text-blue-600">({selectedOrderIds.length} მონიშნული)</span>
+                      <span className="ml-2 text-blue-600">
+                        ({selectedOrderIds.length} მონიშნული)
+                      </span>
                     )}
                   </span>
                 </label>
@@ -730,7 +737,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
             {/* Order Cards */}
             {filteredOrders.map((order) => (
-              <div key={order.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+              <div
+                key={order.id}
+                className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
+              >
                 {/* Card Header */}
                 <div className="p-4 border-b border-gray-100">
                   <div className="flex items-center justify-between mb-3">
@@ -738,18 +748,31 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       <input
                         type="checkbox"
                         checked={selectedOrderIds.includes(order.id)}
-                        onChange={(e) => handleSelectOrder(order.id, e.target.checked)}
+                        onChange={(e) =>
+                          handleSelectOrder(order.id, e.target.checked)
+                        }
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                       <div>
-                        <h3 className="font-semibold text-gray-900 text-sm">{order.orderNumber}</h3>
-                        <p className="text-xs text-gray-500">{order.items.length} პროდუქტი</p>
+                        <h3 className="font-semibold text-gray-900 text-sm">
+                          {order.orderNumber}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {order.items.length} პროდუქტი
+                        </p>
                       </div>
                     </div>
                     <select
                       value={order.orderStatus}
-                      onChange={(e) => handleStatusChange(order.id, e.target.value as Order["orderStatus"])}
-                      className={`px-2 py-1 text-xs font-medium rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(order.orderStatus)}`}
+                      onChange={(e) =>
+                        handleStatusChange(
+                          order.id,
+                          e.target.value as Order["orderStatus"]
+                        )
+                      }
+                      className={`px-2 py-1 text-xs font-medium rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(
+                        order.orderStatus
+                      )}`}
                     >
                       <option value="pending">მოლოდინში</option>
                       <option value="shipped">გაგზავნილი</option>
@@ -763,9 +786,12 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {order.customerInfo.firstName} {order.customerInfo.lastName}
+                        {order.customerInfo.firstName}{" "}
+                        {order.customerInfo.lastName}
                       </p>
-                      <p className="text-xs text-gray-500">{order.customerInfo.phone}</p>
+                      <p className="text-xs text-gray-500">
+                        {order.customerInfo.phone}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -776,7 +802,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     <div className="flex items-center space-x-2">
                       <Calendar className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-600">
-                        {order.createdAt.toLocaleDateString('ka-GE')}
+                        {order.createdAt.toLocaleDateString("ka-GE")}
                       </span>
                     </div>
                     <div className="flex items-center space-x-1">
@@ -791,7 +817,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                   <div className="flex items-center justify-center space-x-4">
                     <button
                       onClick={() => {
-                        console.log("Opening order detail for:", order.orderNumber);
+                        console.log(
+                          "Opening order detail for:",
+                          order.orderNumber
+                        );
                         console.log("Setting selectedOrder to:", order);
                         setSelectedOrder(order);
                       }}

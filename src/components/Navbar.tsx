@@ -108,6 +108,20 @@ const Navbar: React.FC = () => {
                   <span className="hidden lg:inline">Admin</span>
                 </Link>
               )}
+
+              {user?.role === "manager" && (
+                <Link
+                  to="/admin"
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${
+                    isActivePath("/admin")
+                      ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white shadow-md shadow-blue-500/30"
+                      : "text-neutral-700 hover:text-blue-600 hover:bg-blue-50/80"
+                  }`}
+                >
+                  <ShieldCheck className="w-[18px] h-[18px]" />
+                  <span className="hidden lg:inline">POS სისტემა</span>
+                </Link>
+              )}
             </div>
 
             <div className="flex items-center gap-2">

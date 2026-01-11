@@ -96,6 +96,13 @@ const AuthButton: React.FC = () => {
                 ადმინისტრატორი
               </div>
             )}
+
+            {user.role === "manager" && (
+              <div className="mt-3 flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-semibold w-fit">
+                <Shield className="w-3 h-3" />
+                მენეჯერი (POS)
+              </div>
+            )}
           </div>
 
           <div className="p-2">

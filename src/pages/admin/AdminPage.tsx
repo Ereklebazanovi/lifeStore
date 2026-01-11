@@ -40,6 +40,11 @@ const AdminPage: React.FC = () => {
     if (user?.role === "admin" || user?.role === "manager") {
       fetchProducts();
       fetchOrdersData();
+
+      // Manager-ისთვის automatic redirect Orders page-ზე
+      if (user?.role === "manager") {
+        setActiveSection("orders");
+      }
     }
   }, [user, fetchProducts]);
 
