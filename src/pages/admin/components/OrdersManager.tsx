@@ -454,27 +454,27 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               </span>
             </div>
 
-          {/* Mobile Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <button
-              onClick={exportFilteredOrdersPDF}
-              disabled={filteredOrders.length === 0}
-              className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-              title="ფილტრირებული შეკვეთების PDF"
-            >
-              <Download className="w-4 h-4" />
-              <span>PDF ანგარიში</span>
-            </button>
+            {/* Mobile Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <button
+                onClick={exportFilteredOrdersPDF}
+                disabled={filteredOrders.length === 0}
+                className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                title="ფილტრირებული შეკვეთების PDF"
+              >
+                <Download className="w-4 h-4" />
+                <span>PDF ანგარიში</span>
+              </button>
 
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center justify-center space-x-2 bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition-colors duration-200 text-sm font-medium"
-            >
-              <Plus className="w-4 h-4" />
-              <span>ხელით შეკვეთა</span>
-            </button>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center justify-center space-x-2 bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition-colors duration-200 text-sm font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                <span>ხელით შეკვეთა</span>
+              </button>
+            </div>
           </div>
-        </div>
         </div>
 
         {/* Mobile-Optimized Filters */}
@@ -517,7 +517,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
             {/* Status & Clear */}
             <div className="space-y-2">
-              <label className="text-xs font-medium text-gray-700">სტატუსი</label>
+              <label className="text-xs font-medium text-gray-700">
+                სტატუსი
+              </label>
               <div className="flex gap-2">
                 <select
                   value={statusFilter}
@@ -636,7 +638,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <DollarSign className="w-4 h-4 text-gray-400 mr-1" />
                           <span className="text-sm font-semibold text-gray-900">
                             ₾{order.totalAmount.toFixed(2)}
                           </span>

@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   X,
+  Bug,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -60,6 +61,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     { id: "orders", icon: ShoppingBag, label: "შეკვეთები" },
     { id: "inventory", icon: Warehouse, label: "საწყობი" },
     { id: "analytics", icon: BarChart3, label: "ანალიტიკა" },
+    { id: "debug", icon: Bug, label: "Debug" },
   ];
 
   // Enhanced Role-based navigation
