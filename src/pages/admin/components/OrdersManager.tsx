@@ -4,7 +4,6 @@ import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
 import { getOrderItemDisplayName } from "../../../utils/displayHelpers";
-
 import CreateManualOrderModal from "./CreateManualOrderModal";
 
 import {
@@ -87,7 +86,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       minute: "2-digit",
     })}</div>
           <div><span class="label">სტატუსი:</span> ${getStatusText(
-            order.orderStatus
+            order.orderStatus,
+            order.paymentStatus,
+            order.createdAt
           )}</div>
           <div><span class="label">გადახდა:</span> ${
             order.paymentMethod === "cash"
@@ -233,7 +234,11 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               hour: "2-digit",
               minute: "2-digit",
             })} |
-              ${getStatusText(order.orderStatus)} |
+              ${getStatusText(
+                order.orderStatus,
+                order.paymentStatus,
+                order.createdAt
+              )} |
               ${order.customerInfo.phone} |
               ${order.items.length} პროდუქტი
             </div>
@@ -291,9 +296,22 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
   };
 
-  const getStatusText = (status: Order["orderStatus"]) => {
+  const getStatusText = (
+    status: Order["orderStatus"],
+    paymentStatus?: string,
+    createdAt?: Date
+  ) => {
     switch (status) {
       case "pending":
+        if (paymentStatus === "pending" && createdAt) {
+          const minutesAgo = Math.floor(
+            (new Date().getTime() - createdAt.getTime()) / (1000 * 60)
+          );
+          const remainingMinutes = Math.max(0, 15 - minutesAgo);
+          return remainingMinutes > 0
+            ? `მოლოდინში (${remainingMinutes} წთ დარჩა)`
+            : "მოლოდინში (გადახდა ვადაგასული)";
+        }
         return "მოლოდინში";
       case "shipped":
         return "გაგზავნილი";
@@ -656,7 +674,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             order.orderStatus
                           )}`}
                         >
-                          <option value="pending">მოლოდინში</option>
+                          <option value="pending">
+                            {getStatusText(
+                              "pending",
+                              order.paymentStatus,
+                              order.createdAt
+                            )}
+                          </option>
                           <option value="shipped">გაგზავნილი</option>
                           <option value="delivered">მიტანილი</option>
                           <option value="cancelled">გაუქმებული</option>
@@ -899,7 +923,11 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                                 selectedOrder.orderStatus
                               )}`}
                             >
-                              {getStatusText(selectedOrder.orderStatus)}
+                              {getStatusText(
+                                selectedOrder.orderStatus,
+                                selectedOrder.paymentStatus,
+                                selectedOrder.createdAt
+                              )}
                             </span>
                           </p>
                         </div>
@@ -1076,6 +1104,49 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       </div>
                     </div>
 
+                    {/* Cancellation Information */}
+                    {selectedOrder.orderStatus === "cancelled" && (
+                      <div className="mt-6 pt-6 border-t border-gray-200">
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                          <h4 className="flex items-center text-lg font-semibold text-red-800 mb-3">
+                            <XCircle className="w-5 h-5 mr-2" />
+                            გაუქმების ინფორმაცია
+                          </h4>
+                          <div className="space-y-3">
+                            {selectedOrder.cancelReason && (
+                              <div>
+                                <span className="text-sm font-medium text-red-700">
+                                  მიზეზი:
+                                </span>
+                                <p className="text-sm text-red-900 mt-1 bg-red-100 p-3 rounded-lg border border-red-200">
+                                  {selectedOrder.cancelReason}
+                                </p>
+                              </div>
+                            )}
+                            {selectedOrder.cancelledAt && (
+                              <div>
+                                <span className="text-sm font-medium text-red-700">
+                                  გაუქმების თარიღი:
+                                </span>
+                                <p className="text-sm text-red-900 mt-1">
+                                  {selectedOrder.cancelledAt.toLocaleDateString(
+                                    "ka-GE"
+                                  )}{" "}
+                                  {selectedOrder.cancelledAt.toLocaleTimeString(
+                                    "ka-GE",
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    }
+                                  )}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Status Change Section */}
                     <div className="mt-6 pt-6 border-t border-gray-200">
                       <h4 className="text-lg font-semibold text-gray-900 mb-3">
@@ -1092,7 +1163,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           }
                           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                          <option value="pending">მოლოდინში</option>
+                          <option value="pending">
+                            {getStatusText(
+                              "pending",
+                              selectedOrder.paymentStatus,
+                              selectedOrder.createdAt
+                            )}
+                          </option>
                           <option value="shipped">გაგზავნილი</option>
                           <option value="delivered">მიტანილი</option>
                           <option value="cancelled">გაუქმებული</option>

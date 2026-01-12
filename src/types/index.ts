@@ -106,6 +106,9 @@ export interface Order {
   deliveredAt?: Date;
   adminNotes?: string;
   trackingNumber?: string;
+  // Cancellation fields
+  cancelReason?: string;
+  cancelledAt?: Date;
 }
 
 export interface OrderItem {

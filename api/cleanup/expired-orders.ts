@@ -35,7 +35,7 @@ export default async function handler(
   try {
     console.log("🧹 Starting expired orders cleanup...");
 
-    // ✅ Production Time: 30 minutes
+    // ✅ Production Time: 15 minutes - optimal for ecommerce
     const cutoffTime = new Date();
     cutoffTime.setMinutes(cutoffTime.getMinutes() - 15);
 
@@ -76,14 +76,15 @@ export default async function handler(
 
         const batch = adminDb.batch();
 
-        // 1. Update order status
+        // 1. Update order status with detailed reason
         batch.update(orderDoc.ref, {
           paymentStatus: "cancelled",
           status: "cancelled",
           orderStatus: "cancelled",
-          cancellationReason: "Automatic cleanup - expired",
+          cancellationReason: "ავტომატურად გაუქმდა - 15 წუთის განმავლობაში გადახდა არ მოხდა",
           cancelledAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
+          adminNotes: `შეკვეთა ავტომატურად გაუქმდა ${new Date().toLocaleString("ka-GE")} - კლიენტმა 15 წუთში არ დაასრულა გადახდის პროცესი. მარაგი ავტომატურად აღდგა.`,
         });
 
         // 2. Restore Inventory (GROUPING LOGIC ✅)
