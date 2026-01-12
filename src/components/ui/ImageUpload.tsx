@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, Link, Loader2, AlertCircle } from 'lucide-react';
-import { useImageUpload } from '../../hooks/useImageUpload';
+// import { useImageUpload } from '../../hooks/useImageUpload'; // Firebase Storage - broken
+import { useCloudinaryUpload as useImageUpload } from '../../hooks/useCloudinaryUpload'; // Using Cloudinary instead
 
 interface ImageUploadProps {
   images: string[];
