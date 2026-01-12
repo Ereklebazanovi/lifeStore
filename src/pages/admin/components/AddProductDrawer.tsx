@@ -349,7 +349,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                 <ImageUpload
                   images={images}
                   onChange={setImages}
-                  maxImages={5}
+                  maxImages={4}
                 />
               </div>
 

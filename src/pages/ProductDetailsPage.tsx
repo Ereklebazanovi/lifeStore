@@ -32,6 +32,7 @@ const ProductDetailsPage: React.FC = () => {
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     null
   );
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -263,37 +264,74 @@ const ProductDetailsPage: React.FC = () => {
                   ) : null}
                 </div>
 
+                {/* Zoom Icon */}
+                {product.images && product.images.length > 0 && (
+                  <button
+                    onClick={() => setIsImageModalOpen(true)}
+                    className="absolute top-4 right-4 z-10 bg-white/80 backdrop-blur-sm hover:bg-white text-gray-700 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+                    title="გადიდება"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                    </svg>
+                  </button>
+                )}
+
                 {product.images && product.images.length > 0 ? (
                   <img
                     src={selectedImage}
                     alt={product.name}
-                    className="w-full h-full object-contain p-6 lg:p-12 transition-transform duration-300 group-hover:scale-105"
+                    className="w-full h-full object-contain p-6 lg:p-12 transition-transform duration-300 group-hover:scale-105 cursor-zoom-in"
+                    onClick={() => setIsImageModalOpen(true)}
                   />
                 ) : (
                   <Leaf className="w-20 h-20 text-emerald-200" />
                 )}
               </div>
 
-              {/* Thumbnails (Below main image) */}
-              {product.images && product.images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto p-4 border-t border-stone-100 scrollbar-hide bg-white">
-                  {product.images.map((img, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedImage(img)}
-                      className={`relative flex-shrink-0 w-16 h-16 rounded-xl border-2 overflow-hidden transition-all duration-200 ${
-                        selectedImage === img
-                          ? "border-emerald-500 ring-2 ring-emerald-100 opacity-100"
-                          : "border-stone-100 opacity-70 hover:opacity-100 hover:border-stone-300"
-                      }`}
-                    >
-                      <img
-                        src={img}
-                        alt=""
-                        className="w-full h-full object-contain p-1"
-                      />
-                    </button>
-                  ))}
+              {/* Image Gallery (Always show if images exist) */}
+              {product.images && product.images.length > 0 && (
+                <div className="border-t border-stone-100 bg-white">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-gray-700">
+                        სურათები ({product.images.length}/4)
+                      </h4>
+                      {product.images.length > 1 && (
+                        <span className="text-xs text-gray-500">
+                          არჩეულია: {product.images.indexOf(selectedImage) + 1}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                      {product.images.map((img, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedImage(img)}
+                          className={`relative flex-shrink-0 w-20 h-20 lg:w-24 lg:h-24 rounded-xl border-2 overflow-hidden transition-all duration-200 ${
+                            selectedImage === img
+                              ? "border-emerald-500 ring-2 ring-emerald-100 opacity-100 transform scale-105"
+                              : "border-stone-200 opacity-80 hover:opacity-100 hover:border-emerald-300 hover:transform hover:scale-102"
+                          }`}
+                        >
+                          <img
+                            src={img}
+                            alt={`${product.name} - სურათი ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute bottom-1 right-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                            {index + 1}
+                          </div>
+                          {selectedImage === img && (
+                            <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
+                              <Check className="w-4 h-4 text-emerald-600" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -486,6 +524,63 @@ const ProductDetailsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Image Modal */}
+      {isImageModalOpen && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+          <div className="relative max-w-screen-lg w-full h-full flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 text-white">
+              <div>
+                <h3 className="text-lg font-semibold">{product?.name}</h3>
+                <p className="text-sm opacity-75">
+                  სურათი {(product?.images?.indexOf(selectedImage) || 0) + 1} / {product?.images?.length || 0}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsImageModalOpen(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Image */}
+            <div className="flex-1 flex items-center justify-center">
+              <img
+                src={selectedImage}
+                alt={product?.name || ""}
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+
+            {/* Thumbnails Navigation */}
+            {product?.images && product.images.length > 1 && (
+              <div className="p-4">
+                <div className="flex gap-2 justify-center overflow-x-auto">
+                  {product.images.map((img, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImage(img)}
+                      className={`flex-shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${
+                        selectedImage === img
+                          ? "border-emerald-400 opacity-100"
+                          : "border-white/30 opacity-60 hover:opacity-100"
+                      }`}
+                    >
+                      <img
+                        src={img}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 };
