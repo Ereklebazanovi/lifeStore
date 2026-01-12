@@ -64,8 +64,45 @@ export class OrderService {
         productId: item.productId,
         product: item.product,
         quantity: item.quantity,
-        price: item.product.price,
-        total: item.quantity * item.product.price,
+        price: (() => {
+          // Calculate correct price (considering sale price and variants)
+          let actualPrice = item.product.price || 0;
+
+          // Check if this is a variant product
+          if (item.variantId && item.product.variants) {
+            const variant = item.product.variants.find(v => v.id === item.variantId);
+            if (variant) {
+              // Use sale price if available and lower than regular price
+              actualPrice = variant.salePrice && variant.salePrice < variant.price
+                ? variant.salePrice
+                : variant.price;
+            }
+          } else {
+            // For simple products, check if there's a sale price
+            if (item.product.salePrice && item.product.salePrice < item.product.price) {
+              actualPrice = item.product.salePrice;
+            }
+          }
+          return actualPrice;
+        })(),
+        total: (() => {
+          // Calculate total with actual price
+          let actualPrice = item.product.price || 0;
+
+          if (item.variantId && item.product.variants) {
+            const variant = item.product.variants.find(v => v.id === item.variantId);
+            if (variant) {
+              actualPrice = variant.salePrice && variant.salePrice < variant.price
+                ? variant.salePrice
+                : variant.price;
+            }
+          } else {
+            if (item.product.salePrice && item.product.salePrice < item.product.price) {
+              actualPrice = item.product.salePrice;
+            }
+          }
+          return item.quantity * actualPrice;
+        })(),
       };
 
       // Only add variantId if it exists (avoid undefined)

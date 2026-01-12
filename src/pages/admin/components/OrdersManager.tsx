@@ -459,7 +459,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               <h2 className="text-lg md:text-xl font-semibold text-gray-900">
                 შეკვეთების მართვა
               </h2>
-              <p className="text-gray-600 text-xs md:text-sm mt-1 hidden sm:block">
+              <p className="text-gray-600 text-xs md:text-sm mt-4 hidden sm:block">
                 გამოიყენეთ ფილტრები შეკვეთების ძებნისთვის
               </p>
             </div>
@@ -496,7 +496,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         </div>
 
         {/* Mobile-Optimized Filters */}
-        <div className="space-y-3">
+        <div className="space-y-3 mt-4">
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -644,11 +644,12 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         </div>
                         <div className="text-sm text-gray-500">
                           {order.items.length} პროდუქტი
-                          {order.orderStatus === "cancelled" && order.cancelReason && (
-                            <div className="text-xs text-red-600 mt-1 truncate max-w-xs">
-                              მიზეზი: {order.cancelReason}
-                            </div>
-                          )}
+                          {order.orderStatus === "cancelled" &&
+                            order.cancelReason && (
+                              <div className="text-xs text-red-600 mt-1 truncate max-w-xs">
+                                მიზეზი: {order.cancelReason}
+                              </div>
+                            )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -809,11 +810,12 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         <p className="text-xs text-gray-500">
                           {order.items.length} პროდუქტი
                         </p>
-                        {order.orderStatus === "cancelled" && order.cancelReason && (
-                          <p className="text-xs text-red-600 mt-1 truncate">
-                            მიზეზი: {order.cancelReason}
-                          </p>
-                        )}
+                        {order.orderStatus === "cancelled" &&
+                          order.cancelReason && (
+                            <p className="text-xs text-red-600 mt-1 truncate">
+                              მიზეზი: {order.cancelReason}
+                            </p>
+                          )}
                       </div>
                     </div>
                     <select
@@ -1044,8 +1046,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       {/* Order Summary */}
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <h4 className="flex items-center text-lg font-semibold text-gray-900 mb-3">
-                          <DollarSign className="w-5 h-5 mr-2 text-green-600" />
-                          შეკვეთის შეჯამება
+                          ₾ შეკვეთის შეჯამება
                         </h4>
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
@@ -1080,26 +1081,40 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             {selectedOrder.source && (
                               <p className="text-sm text-gray-600">
                                 <span className="font-medium">წყარო:</span>{" "}
-                                {selectedOrder.source === "website" ? "ვებსაიტი" :
-                                 selectedOrder.source === "instagram" ? "Instagram" :
-                                 selectedOrder.source === "facebook" ? "Facebook" :
-                                 selectedOrder.source === "tiktok" ? "TikTok" :
-                                 selectedOrder.source === "phone" ? "ტელეფონი" :
-                                 selectedOrder.source === "personal" ? "პირადად" :
-                                 selectedOrder.source}
+                                {selectedOrder.source === "website"
+                                  ? "ვებსაიტი"
+                                  : selectedOrder.source === "instagram"
+                                  ? "Instagram"
+                                  : selectedOrder.source === "facebook"
+                                  ? "Facebook"
+                                  : selectedOrder.source === "tiktok"
+                                  ? "TikTok"
+                                  : selectedOrder.source === "phone"
+                                  ? "ტელეფონი"
+                                  : selectedOrder.source === "personal"
+                                  ? "პირადად"
+                                  : selectedOrder.source}
                               </p>
                             )}
                             {selectedOrder.paidAt && (
                               <p className="text-sm text-green-600">
                                 <span className="font-medium">გადახდილი:</span>{" "}
                                 {(() => {
-                                  const date = typeof selectedOrder.paidAt === 'object' && 'seconds' in selectedOrder.paidAt
-                                    ? new Date(selectedOrder.paidAt.seconds * 1000)
-                                    : new Date(selectedOrder.paidAt as Date);
-                                  return date.toLocaleDateString("ka-GE") + " " + date.toLocaleTimeString("ka-GE", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  });
+                                  const date =
+                                    typeof selectedOrder.paidAt === "object" &&
+                                    "seconds" in selectedOrder.paidAt
+                                      ? new Date(
+                                          selectedOrder.paidAt.seconds * 1000
+                                        )
+                                      : new Date(selectedOrder.paidAt as Date);
+                                  return (
+                                    date.toLocaleDateString("ka-GE") +
+                                    " " +
+                                    date.toLocaleTimeString("ka-GE", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  );
                                 })()}
                               </p>
                             )}
@@ -1180,13 +1195,25 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                                 </span>
                                 <p className="text-sm text-red-900 mt-1">
                                   {(() => {
-                                    const date = typeof selectedOrder.cancelledAt === 'object' && 'seconds' in selectedOrder.cancelledAt
-                                      ? new Date(selectedOrder.cancelledAt.seconds * 1000)
-                                      : new Date(selectedOrder.cancelledAt as Date);
-                                    return date.toLocaleDateString("ka-GE") + " " + date.toLocaleTimeString("ka-GE", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    });
+                                    const date =
+                                      typeof selectedOrder.cancelledAt ===
+                                        "object" &&
+                                      "seconds" in selectedOrder.cancelledAt
+                                        ? new Date(
+                                            selectedOrder.cancelledAt.seconds *
+                                              1000
+                                          )
+                                        : new Date(
+                                            selectedOrder.cancelledAt as Date
+                                          );
+                                    return (
+                                      date.toLocaleDateString("ka-GE") +
+                                      " " +
+                                      date.toLocaleTimeString("ka-GE", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })
+                                    );
                                   })()}
                                 </p>
                               </div>
