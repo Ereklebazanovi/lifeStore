@@ -635,9 +635,20 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
                           {order.orderNumber}
+                          {order.orderStatus === "cancelled" && (
+                            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              <XCircle className="w-3 h-3 mr-1" />
+                              გაუქმებული
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm text-gray-500">
                           {order.items.length} პროდუქტი
+                          {order.orderStatus === "cancelled" && order.cancelReason && (
+                            <div className="text-xs text-red-600 mt-1 truncate max-w-xs">
+                              მიზეზი: {order.cancelReason}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -784,12 +795,25 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                       <div>
-                        <h3 className="font-semibold text-gray-900 text-sm">
-                          {order.orderNumber}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-900 text-sm">
+                            {order.orderNumber}
+                          </h3>
+                          {order.orderStatus === "cancelled" && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              <XCircle className="w-3 h-3 mr-1" />
+                              გაუქმ.
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500">
                           {order.items.length} პროდუქტი
                         </p>
+                        {order.orderStatus === "cancelled" && order.cancelReason && (
+                          <p className="text-xs text-red-600 mt-1 truncate">
+                            მიზეზი: {order.cancelReason}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <select
@@ -1046,13 +1070,35 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                               </span>
                             </div>
                           </div>
-                          <div className="mt-3 pt-3 border-t border-gray-200">
+                          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
                             <p className="text-sm text-gray-600">
                               <span className="font-medium">გადახდა:</span>{" "}
                               {selectedOrder.paymentMethod === "cash"
                                 ? "ადგილზე გადახდა"
                                 : "საბანკო გადარიცხვა"}
                             </p>
+                            {selectedOrder.source && (
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">წყარო:</span>{" "}
+                                {selectedOrder.source === "website" ? "ვებსაიტი" :
+                                 selectedOrder.source === "instagram" ? "Instagram" :
+                                 selectedOrder.source === "facebook" ? "Facebook" :
+                                 selectedOrder.source === "tiktok" ? "TikTok" :
+                                 selectedOrder.source === "phone" ? "ტელეფონი" :
+                                 selectedOrder.source === "personal" ? "პირადად" :
+                                 selectedOrder.source}
+                              </p>
+                            )}
+                            {selectedOrder.paidAt && (
+                              <p className="text-sm text-green-600">
+                                <span className="font-medium">გადახდილი:</span>{" "}
+                                {new Date(selectedOrder.paidAt).toLocaleDateString("ka-GE")}{" "}
+                                {new Date(selectedOrder.paidAt).toLocaleTimeString("ka-GE", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1129,20 +1175,34 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                                   გაუქმების თარიღი:
                                 </span>
                                 <p className="text-sm text-red-900 mt-1">
-                                  {selectedOrder.cancelledAt.toLocaleDateString(
-                                    "ka-GE"
-                                  )}{" "}
-                                  {selectedOrder.cancelledAt.toLocaleTimeString(
-                                    "ka-GE",
-                                    {
+                                  {(() => {
+                                    const date = selectedOrder.cancelledAt.seconds
+                                      ? new Date(selectedOrder.cancelledAt.seconds * 1000)
+                                      : new Date(selectedOrder.cancelledAt);
+                                    return date.toLocaleDateString("ka-GE") + " " + date.toLocaleTimeString("ka-GE", {
                                       hour: "2-digit",
                                       minute: "2-digit",
-                                    }
-                                  )}
+                                    });
+                                  })()}
                                 </p>
                               </div>
                             )}
                           </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Admin Notes */}
+                    {selectedOrder.adminNotes && (
+                      <div className="mt-6 pt-6 border-t border-gray-200">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <h4 className="flex items-center text-lg font-semibold text-blue-800 mb-3">
+                            <AlertCircle className="w-5 h-5 mr-2" />
+                            ადმინ შენიშვნები
+                          </h4>
+                          <p className="text-sm text-blue-900 bg-blue-100 p-3 rounded-lg border border-blue-200">
+                            {selectedOrder.adminNotes}
+                          </p>
                         </div>
                       </div>
                     )}
