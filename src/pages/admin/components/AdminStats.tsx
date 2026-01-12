@@ -43,7 +43,7 @@ const AdminStats: React.FC<AdminStatsProps> = ({ products }) => {
     {
       label: "მარაგის ღირებულება",
       value: `₾${totalValue.toFixed(0)}`,
-      icon: DollarSign,
+      // icon: DollarSign,
       color: "indigo",
       change: "+15%",
       isPositive: true,
