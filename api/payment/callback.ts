@@ -2,7 +2,19 @@
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminDb } from "../lib/firebase-admin";
-import { ADMIN_CONFIG, SITE_CONFIG } from "../../src/config/constants";
+// Constants - local copy to avoid ES Module import issues
+const ADMIN_CONFIG = {
+  EMAIL: "ebazanovi@gmail.com",
+  BUSINESS_NAME: "LifeStore",
+  BUSINESS_PHONE: "+995 511 72 72 57",
+  BUSINESS_EMAIL: "info@lifestore.ge",
+};
+
+const SITE_CONFIG = {
+  BASE_URL: "https://lifestore.ge",
+  SITE_NAME: "LifeStore",
+  DESCRIPTION: "ონლაინ მაღაზია სახლის ნივთებისთვის",
+};
 
 // Flitt Configuration - Environment variables only for security
 const FLITT_SECRET_KEY = process.env.FLITT_SECRET_KEY;
