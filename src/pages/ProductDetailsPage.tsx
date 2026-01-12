@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Share2,
   Check,
+  X,
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
