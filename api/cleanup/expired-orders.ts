@@ -37,7 +37,7 @@ export default async function handler(
 
     // ✅ Production Time: 30 minutes
     const cutoffTime = new Date();
-    cutoffTime.setMinutes(cutoffTime.getMinutes() - 30);
+    cutoffTime.setMinutes(cutoffTime.getMinutes() - 15);
 
     const pendingOrdersQuery = adminDb
       .collection("orders")
