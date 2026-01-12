@@ -3,14 +3,13 @@
 
 export const ADMIN_CONFIG = {
   // ადმინის მეილი - შეცვალე როცა საჭიროა
-  EMAIL: "ebazanovi@gmail.com", // 👈 აქ შეცვალე ნამდვილი მენეჯერის მეილით
-
+  EMAIL: "ebazanovi@gmail.com", 
   // ბიზნეს ინფორმაცია
   BUSINESS_NAME: "LifeStore",
   //511 72 72 57
 
-  BUSINESS_PHONE: "+995 511 72 72 57", // 👈 შეცვალე  ნამდვილი ნომრით
-  BUSINESS_EMAIL: "info@lifestore.ge", // 👈 შეცვალე ნამდვილი ბიზნეს მეილით
+  BUSINESS_PHONE: "+995 511 72 72 57", 
+  BUSINESS_EMAIL: "info@lifestore.ge", 
 };
 
 export const SITE_CONFIG = {
@@ -21,11 +20,4 @@ export const SITE_CONFIG = {
   SITE_NAME: "LifeStore",
   DESCRIPTION: "ონლაინ მაღაზია სახლის ნივთებისთვის",
 };
-// export const SITE_CONFIG = {
-//   // საიტის URL - ეხლა localhost, შემდეგ შეცვალე ნამდვილ დომეინზე
-//   BASE_URL: window.location.origin, // ავტომატურად იღებს localhost ან production URL
 
-//   // საიტის მეტაინფო
-//   SITE_NAME: "LifeStore",
-//   DESCRIPTION: "ონლაინ მაღაზია სახლის ნივთებისთვის",
-// };

@@ -2,6 +2,7 @@
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminDb } from "../lib/firebase-admin";
+import { ADMIN_CONFIG, SITE_CONFIG } from "../../src/config/constants";
 
 // Flitt Configuration - Environment variables only for security
 const FLITT_SECRET_KEY = process.env.FLITT_SECRET_KEY;
@@ -79,7 +80,9 @@ async function updateOrderStatus(
   try {
     // Find order by orderNumber first
     const ordersRef = adminDb.collection("orders");
-    const snapshot = await ordersRef.where("orderNumber", "==", orderNumber).get();
+    const snapshot = await ordersRef
+      .where("orderNumber", "==", orderNumber)
+      .get();
 
     if (snapshot.empty) {
       console.error(`❌ Order ${orderNumber} not found in database`);
@@ -93,7 +96,9 @@ async function updateOrderStatus(
 
     // ✅ IDEMPOTENCY CHECK: Prevent duplicate payment processing
     if (isPaymentSuccessful && orderData?.paymentStatus === "paid") {
-      console.log(`⚠️ Order ${orderNumber} already marked as paid. Skipping duplicate processing.`);
+      console.log(
+        `⚠️ Order ${orderNumber} already marked as paid. Skipping duplicate processing.`
+      );
       return;
     }
 
@@ -137,7 +142,10 @@ async function updateOrderStatus(
           console.log(`✅ Email sent successfully for order ${orderNumber}`);
         }
       } catch (emailError) {
-        console.error(`❌ Failed to send email for order ${orderNumber}:`, emailError);
+        console.error(
+          `❌ Failed to send email for order ${orderNumber}:`,
+          emailError
+        );
         // Don't fail the payment process if email fails
       }
     } else {
@@ -180,21 +188,43 @@ async function sendEmailNotification(order: any): Promise<void> {
               <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <h2 style="color: #1d4ed8; margin-bottom: 15px;">📋 შეკვეთის დეტალები</h2>
                 <p><strong>შეკვეთის ნომერი:</strong> ${order.orderNumber}</p>
-                <p><strong>თარიღი:</strong> ${new Date(order.createdAt).toLocaleDateString('ka-GE')}</p>
-                <p><strong>მიწოდების მისამართი:</strong> ${order.deliveryInfo.city}, ${order.deliveryInfo.address}</p>
-                <p><strong>სულ ღირებულება:</strong> ₾${order.totalAmount.toFixed(2)}</p>
+                <p><strong>თარიღი:</strong> ${new Date(
+                  order.createdAt
+                ).toLocaleDateString("ka-GE")}</p>
+                <p><strong>მიწოდების მისამართი:</strong> ${
+                  order.deliveryInfo.city
+                }, ${order.deliveryInfo.address}</p>
+                <p><strong>სულ ღირებულება:</strong> ₾${order.totalAmount.toFixed(
+                  2
+                )}</p>
               </div>
 
               <div style="margin-bottom: 20px;">
                 <h3 style="color: #333; margin-bottom: 15px;">🛍️ შეკვეთილი პროდუქტები:</h3>
-                ${order.items.map((item: any) => `
+                ${order.items
+                  .map(
+                    (item: any) => `
                   <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-bottom: 10px;">
-                    <p style="margin: 5px 0;"><strong>${item.product.name}</strong></p>
-                    ${item.variantId ? `<p style="margin: 5px 0; color: #666; font-size: 14px;">ვარიანტი: ${item.variantName || ''}</p>` : ''}
-                    <p style="margin: 5px 0;">რაოდენობა: ${item.quantity} ცალი</p>
-                    <p style="margin: 5px 0; color: #059669; font-weight: bold;">₾${(item.total || item.price * item.quantity).toFixed(2)}</p>
+                    <p style="margin: 5px 0;"><strong>${
+                      item.product.name
+                    }</strong></p>
+                    ${
+                      item.variantId
+                        ? `<p style="margin: 5px 0; color: #666; font-size: 14px;">ვარიანტი: ${
+                            item.variantName || ""
+                          }</p>`
+                        : ""
+                    }
+                    <p style="margin: 5px 0;">რაოდენობა: ${
+                      item.quantity
+                    } ცალი</p>
+                    <p style="margin: 5px 0; color: #059669; font-weight: bold;">₾${(
+                      item.total || item.price * item.quantity
+                    ).toFixed(2)}</p>
                   </div>
-                `).join('')}
+                `
+                  )
+                  .join("")}
               </div>
 
               <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin-bottom: 20px;">
@@ -204,11 +234,17 @@ async function sendEmailNotification(order: any): Promise<void> {
 
               <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
                 <p style="color: #666; margin-bottom: 5px;">კითხვების შემთხვევაში დაგვიკავშირდით:</p>
-                <p style="color: #2563eb; font-weight: bold; margin: 5px 0;">📞 მობ: 511 72 72 57</p>
-                <p style="color: #2563eb; font-weight: bold; margin: 5px 0;">✉️ ემაილი: info@lifestore.ge</p>
+                <p style="color: #2563eb; font-weight: bold; margin: 5px 0;">📞 მობ: ${
+                  ADMIN_CONFIG.BUSINESS_PHONE
+                }</p>
+                <p style="color: #2563eb; font-weight: bold; margin: 5px 0;">✉️ ემაილი: ${
+                  ADMIN_CONFIG.BUSINESS_EMAIL
+                }</p>
 
                 <div style="margin-top: 20px; text-align: center;">
-                  <a href="https://lifestore.ge/order-success/${order.orderNumber}?token=${order.accessToken}"
+                  <a href="${SITE_CONFIG.BASE_URL}/order-success/${
+          order.orderNumber
+        }?token=${order.accessToken}"
                      style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">
                     📄 შეკვეთის დეტალები და PDF
                   </a>
@@ -225,35 +261,54 @@ async function sendEmailNotification(order: any): Promise<void> {
     });
 
     // Add admin notification email
+    console.log(`📧 Sending admin notification to: ${ADMIN_CONFIG.EMAIL}`);
     await adminDb.collection("mail").add({
-      to: ["info@lifestore.ge"],
+      to: [ADMIN_CONFIG.EMAIL],
       message: {
         subject: `🔔 ახალი შეკვეთა - #${order.orderNumber}`,
         html: `
           <div style="font-family: Georgian, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <h2 style="color: #dc2626;">🔔 ახალი შეკვეთა მიღებულია!</h2>
             <p><strong>შეკვეთის ნომერი:</strong> ${order.orderNumber}</p>
-            <p><strong>კლიენტი:</strong> ${order.customerInfo.firstName} ${order.customerInfo.lastName}</p>
+            <p><strong>კლიენტი:</strong> ${order.customerInfo.firstName} ${
+          order.customerInfo.lastName
+        }</p>
             <p><strong>ტელეფონი:</strong> ${order.customerInfo.phone}</p>
             <p><strong>ემაილი:</strong> ${order.customerInfo.email}</p>
-            <p><strong>მისამართი:</strong> ${order.deliveryInfo.city}, ${order.deliveryInfo.address}</p>
-            <p><strong>სულ ღირებულება:</strong> ₾${order.totalAmount.toFixed(2)}</p>
+            <p><strong>მისამართი:</strong> ${order.deliveryInfo.city}, ${
+          order.deliveryInfo.address
+        }</p>
+            <p><strong>სულ ღირებულება:</strong> ₾${order.totalAmount.toFixed(
+              2
+            )}</p>
 
             <h3>პროდუქტები:</h3>
-            ${order.items.map((item: any) => `
+            ${order.items
+              .map(
+                (item: any) => `
               <div style="border: 1px solid #ccc; padding: 10px; margin: 5px 0;">
                 <p><strong>${item.product.name}</strong></p>
-                ${item.variantId ? `<p>ვარიანტი: ${item.variantName || ''}</p>` : ''}
+                ${
+                  item.variantId
+                    ? `<p>ვარიანტი: ${item.variantName || ""}</p>`
+                    : ""
+                }
                 <p>რაოდენობა: ${item.quantity} ცალი</p>
-                <p>ღირებულება: ₾${(item.total || item.price * item.quantity).toFixed(2)}</p>
+                <p>ღირებულება: ₾${(
+                  item.total || item.price * item.quantity
+                ).toFixed(2)}</p>
               </div>
-            `).join('')}
+            `
+              )
+              .join("")}
           </div>
         `,
       },
     });
 
     console.log("✅ Email notifications added to Firebase mail collection");
+    console.log(`📧 Customer email sent to: ${order.customerInfo.email}`);
+    console.log(`👨‍💼 Admin notification sent to: ${ADMIN_CONFIG.EMAIL}`);
   } catch (error) {
     console.error("❌ Error adding email to mail collection:", error);
     throw error;
@@ -267,18 +322,25 @@ module.exports = async function handler(
   console.log("Payment callback received:", new Date().toISOString());
   console.log("Method:", req.method);
   console.log("Query params:", JSON.stringify(req.query, null, 2));
-  console.log("Headers:", JSON.stringify({
-    'content-type': req.headers['content-type'],
-    'user-agent': req.headers['user-agent'],
-    'x-forwarded-for': req.headers['x-forwarded-for']
-  }, null, 2));
+  console.log(
+    "Headers:",
+    JSON.stringify(
+      {
+        "content-type": req.headers["content-type"],
+        "user-agent": req.headers["user-agent"],
+        "x-forwarded-for": req.headers["x-forwarded-for"],
+      },
+      null,
+      2
+    )
+  );
 
   // Health check
   if (req.method === "GET" && Object.keys(req.query).length === 0) {
     return res.status(200).json({
       status: "ok",
       message: "Payment callback endpoint is working",
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -315,13 +377,22 @@ module.exports = async function handler(
     if (responseData.signature) {
       // Old Flitt format with signature
       isSignatureValid = verifyFlittSignature(responseData, FLITT_SECRET_KEY);
-    } else if (responseData.order_id && responseData.rrn && responseData.payment_id) {
+    } else if (
+      responseData.order_id &&
+      responseData.rrn &&
+      responseData.payment_id
+    ) {
       // New TBC/Flitt format - verify essential fields exist and order exists in our system
       try {
         const ordersRef = adminDb.collection("orders");
-        const snapshot = await ordersRef.where("orderNumber", "==", responseData.order_id as string).get();
+        const snapshot = await ordersRef
+          .where("orderNumber", "==", responseData.order_id as string)
+          .get();
         isSignatureValid = !snapshot.empty;
-        console.log("✅ TBC callback verification - Order exists:", !snapshot.empty);
+        console.log(
+          "✅ TBC callback verification - Order exists:",
+          !snapshot.empty
+        );
       } catch (error) {
         console.error("❌ Error checking order existence:", error);
         isSignatureValid = false;
@@ -329,9 +400,7 @@ module.exports = async function handler(
     }
 
     if (!isSignatureValid) {
-      console.error(
-        "❌ SECURITY: Invalid callback or order not found!"
-      );
+      console.error("❌ SECURITY: Invalid callback or order not found!");
       console.error("📋 Received data:", responseData);
       // Return OK to avoid retries, but don't process the payment
       return res.status(200).send("OK");
@@ -362,7 +431,9 @@ module.exports = async function handler(
     if (isPaymentSuccessful) {
       console.log(`✅ Payment APPROVED for order ${orderId}`);
     } else {
-      console.log(`❌ Payment FAILED for order ${orderId} - Status: ${orderStatus}, Response: ${response_status}`);
+      console.log(
+        `❌ Payment FAILED for order ${orderId} - Status: ${orderStatus}, Response: ${response_status}`
+      );
     }
 
     // ✅ Update order status in Firestore

@@ -1,3 +1,4 @@
+//displayHelpers.ts
 import type { CartItem, Product, OrderItem } from "../types";
 
 /**
