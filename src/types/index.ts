@@ -102,13 +102,13 @@ export interface Order {
   orderStatus: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   createdAt: Date;
   updatedAt: Date;
-  paidAt?: Date; // ✅ Added for payment completion timestamp
-  deliveredAt?: Date;
+  paidAt?: Date | { seconds: number; nanoseconds: number }; // ✅ Added for payment completion timestamp
+  deliveredAt?: Date | { seconds: number; nanoseconds: number };
   adminNotes?: string;
   trackingNumber?: string;
   // Cancellation fields
   cancelReason?: string;
-  cancelledAt?: Date;
+  cancelledAt?: Date | { seconds: number; nanoseconds: number };
 }
 
 export interface OrderItem {

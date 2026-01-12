@@ -1092,11 +1092,15 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             {selectedOrder.paidAt && (
                               <p className="text-sm text-green-600">
                                 <span className="font-medium">გადახდილი:</span>{" "}
-                                {new Date(selectedOrder.paidAt).toLocaleDateString("ka-GE")}{" "}
-                                {new Date(selectedOrder.paidAt).toLocaleTimeString("ka-GE", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
+                                {(() => {
+                                  const date = typeof selectedOrder.paidAt === 'object' && 'seconds' in selectedOrder.paidAt
+                                    ? new Date(selectedOrder.paidAt.seconds * 1000)
+                                    : new Date(selectedOrder.paidAt as Date);
+                                  return date.toLocaleDateString("ka-GE") + " " + date.toLocaleTimeString("ka-GE", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  });
+                                })()}
                               </p>
                             )}
                           </div>
@@ -1176,9 +1180,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                                 </span>
                                 <p className="text-sm text-red-900 mt-1">
                                   {(() => {
-                                    const date = selectedOrder.cancelledAt.seconds
+                                    const date = typeof selectedOrder.cancelledAt === 'object' && 'seconds' in selectedOrder.cancelledAt
                                       ? new Date(selectedOrder.cancelledAt.seconds * 1000)
-                                      : new Date(selectedOrder.cancelledAt);
+                                      : new Date(selectedOrder.cancelledAt as Date);
                                     return date.toLocaleDateString("ka-GE") + " " + date.toLocaleTimeString("ka-GE", {
                                       hour: "2-digit",
                                       minute: "2-digit",
