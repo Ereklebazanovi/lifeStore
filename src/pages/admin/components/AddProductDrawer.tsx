@@ -571,54 +571,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                     </p>
                   )}
 
-                  {/* Bulk Discount Tool */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h5 className="font-medium text-blue-900">
-                          სწრაფი ფასდაკლება
-                        </h5>
-                        <p className="text-sm text-blue-700">
-                          ყველა ვარიანტზე ერთდროულად ფასდაკლების გამოყენება
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 max-w-xs">
-                        <input
-                          type="number"
-                          min="1"
-                          max="99"
-                          value={bulkDiscountPercent || ""}
-                          onChange={(e) =>
-                            setBulkDiscountPercent(Number(e.target.value))
-                          }
-                          placeholder="მაგ: 20"
-                          className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                        <p className="text-xs text-blue-600 mt-1">
-                          ფასდაკლება %-ში
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={applyBulkDiscount}
-                        disabled={
-                          !bulkDiscountPercent || bulkDiscountPercent <= 0
-                        }
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        გამოყენება
-                      </button>
-                      <button
-                        type="button"
-                        onClick={clearAllSalePrices}
-                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                      >
-                        გასუფთავება
-                      </button>
-                    </div>
-                  </div>
+                
 
                   <div className="space-y-4">
                     {variants.map((variant, index) => (

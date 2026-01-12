@@ -644,41 +644,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                     </button>
                   </div>
 
-                  {/* Bulk Discount Tool */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h5 className="font-medium text-blue-900 mb-3">🏷️ სწრაფი ფასდაკლება</h5>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <input
-                          type="number"
-                          min="1"
-                          max="99"
-                          value={bulkDiscountPercent}
-                          onChange={(e) => setBulkDiscountPercent(parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="ფასდაკლების %"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={applyBulkDiscount}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                      >
-                        გამოყენება
-                      </button>
-                      <button
-                        type="button"
-                        onClick={clearAllSalePrices}
-                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
-                      >
-                        გაწმენდა
-                      </button>
-                    </div>
-                    <p className="text-xs text-blue-700 mt-2">
-                      ყველა ვარიანტზე ერთდროულად ფასდაკლების გამოყენება
-                    </p>
-                  </div>
-
+               
                   {errors.variants && (
                     <p className="text-red-500 text-sm">{errors.variants}</p>
                   )}
