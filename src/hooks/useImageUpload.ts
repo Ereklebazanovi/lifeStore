@@ -1,12 +1,7 @@
 // src/hooks/useImageUpload.ts
-import { useState } from "react";
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject,
-} from "firebase/storage";
-import { storage, auth } from "../services/firebase";
+import { useState } from 'react';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { storage, auth } from '../services/firebase';
 
 interface UseImageUploadReturn {
   uploading: boolean;
@@ -19,46 +14,25 @@ export const useImageUpload = (): UseImageUploadReturn => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const uploadImage = async (
-    file: File,
-    folder = "products"
-  ): Promise<string> => {
-    if (!file) throw new Error("No file provided");
+  const uploadImage = async (file: File, folder = 'products'): Promise<string> => {
+    if (!file) throw new Error('No file provided');
 
     // Check authentication first
     const currentUser = auth.currentUser;
     if (!currentUser) {
-      throw new Error(
-        "მომხმარებელი არ არის ავტორიზებული. გთხოვთ შედით სისტემაში."
-      );
-    }
-
-    // Get current auth token
-    try {
-      await currentUser.getIdToken();
-    } catch (tokenError) {
-      console.error("Error getting auth token:", tokenError);
-      throw new Error("ავტორიზაციის ტოკენის მიღება ვერ მოხერხდა");
+      throw new Error('მომხმარებელი არ არის ავტორიზებული. გთხოვთ შედით სისტემაში.');
     }
 
     // Validate file type
-    const allowedTypes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp",
-      "image/gif",
-    ];
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      throw new Error(
-        "Invalid file type. Only JPEG, PNG, WebP, and GIF images are allowed."
-      );
+      throw new Error('მხარდაჭერილია მხოლოდ JPEG, PNG და WebP ფორმატები.');
     }
 
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
     if (file.size > maxSize) {
-      throw new Error("File size too large. Maximum size is 10MB.");
+      throw new Error('ფაილის ზომა ძალიან დიდია. მაქსიმუმ 5MB.');
     }
 
     setUploading(true);
@@ -68,25 +42,17 @@ export const useImageUpload = (): UseImageUploadReturn => {
       // Generate unique filename
       const timestamp = Date.now();
       const randomString = Math.random().toString(36).substring(2);
-      const fileExtension = file.name.split(".").pop();
+      const fileExtension = file.name.split('.').pop();
       const fileName = `${timestamp}_${randomString}.${fileExtension}`;
 
       // Create storage reference
       const storageRef = ref(storage, `${folder}/${fileName}`);
 
-      // Upload file with timeout
-      const uploadPromise = uploadBytes(storageRef, file);
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error("Upload timeout after 15 seconds")),
-          15000
-        )
-      );
+      // Upload file
+      setUploadProgress(25);
+      const snapshot = await uploadBytes(storageRef, file);
 
-      const snapshot = await Promise.race([
-        uploadPromise,
-        timeoutPromise as Promise<never>,
-      ]);
+      setUploadProgress(75);
 
       // Get download URL
       const downloadURL = await getDownloadURL(snapshot.ref);
@@ -94,33 +60,18 @@ export const useImageUpload = (): UseImageUploadReturn => {
       setUploadProgress(100);
       return downloadURL;
     } catch (error) {
-      console.error("Error uploading image:", error);
+      console.error('Error uploading image:', error);
 
-      // Try to provide more specific error messages
+      // Simplified error handling
       const errorCode = (error as any)?.code;
-      switch (errorCode) {
-        case "storage/unauthorized":
-          throw new Error(
-            "ავტორიზაციის შეცდომა. შეამოწმეთ Firebase Storage rules."
-          );
-        case "storage/quota-exceeded":
-          throw new Error("შენახვის ლიმიტი ამოწურულია.");
-        case "storage/unauthenticated":
-          throw new Error("გთხოვთ შედით სისტემაში სურათის ასატვირთად.");
-        case "storage/unknown":
-          throw new Error(
-            "Firebase Storage-ის უცნობი შეცდომა. შეამოწმეთ Firebase კონფიგურაცია."
-          );
-        case "storage/retry-limit-exceeded":
-          throw new Error("ატვირთვის მცდელობების ლიმიტი ამოწურულია.");
-        case "storage/invalid-format":
-          throw new Error("ფაილის ფორმატი არასწორია.");
-        default:
-          throw new Error(
-            `სურათის ატვირთვა ვერ მოხერხდა: ${
-              error instanceof Error ? error.message : "უცნობი შეცდომა"
-            } (კოდი: ${errorCode || "უცნობი"})`
-          );
+      if (errorCode === 'storage/unauthorized') {
+        throw new Error('ავტორიზაციის შეცდომა. შეამოწმეთ Firebase Storage rules.');
+      } else if (errorCode === 'storage/quota-exceeded') {
+        throw new Error('შენახვის ლიმიტი ამოწურულია.');
+      } else if (errorCode === 'storage/unauthenticated') {
+        throw new Error('გთხოვთ შედით სისტემაში სურათის ასატვირთად.');
+      } else {
+        throw new Error('სურათის ატვირთვა ვერ მოხერხდა. სცადეთ თავიდან.');
       }
     } finally {
       setUploading(false);
@@ -133,14 +84,14 @@ export const useImageUpload = (): UseImageUploadReturn => {
       // Extract file path from URL
       const url = new URL(imageUrl);
       const pathname = decodeURIComponent(url.pathname);
-      const filePath = pathname.split("/o/")[1]?.split("?")[0];
+      const filePath = pathname.split('/o/')[1]?.split('?')[0];
 
       if (filePath) {
         const imageRef = ref(storage, filePath);
         await deleteObject(imageRef);
       }
     } catch (error) {
-      console.error("Error deleting image:", error);
+      console.error('Error deleting image:', error);
       // Don't throw error for delete operations
     }
   };
@@ -149,6 +100,6 @@ export const useImageUpload = (): UseImageUploadReturn => {
     uploading,
     uploadImage,
     deleteImage,
-    uploadProgress,
+    uploadProgress
   };
 };

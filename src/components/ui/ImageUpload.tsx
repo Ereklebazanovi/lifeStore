@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, Link, Loader2, AlertCircle } from 'lucide-react';
 import { useImageUpload } from '../../hooks/useImageUpload';
-import { useImageUploadFallback } from '../../hooks/useImageUploadFallback';
 
 interface ImageUploadProps {
   images: string[];
@@ -17,15 +16,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
   const [urlInput, setUrlInput] = useState('');
   const [dragActive, setDragActive] = useState(false);
-  const [useFirebase, setUseFirebase] = useState(false); // Default to backup service
-  const { uploading: fbUploading, uploadImage: fbUploadImage, uploadProgress: fbProgress } = useImageUpload();
-  const { uploading: fallbackUploading, uploadImage: fallbackUploadImage, uploadProgress: fallbackProgress } = useImageUploadFallback();
+  const { uploading, uploadImage, uploadProgress } = useImageUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Use fallback if Firebase fails
-  const uploading = useFirebase ? fbUploading : fallbackUploading;
-  const uploadProgress = useFirebase ? fbProgress : fallbackProgress;
-  const uploadImage = useFirebase ? fbUploadImage : fallbackUploadImage;
 
   const handleFileUpload = async (files: FileList) => {
     if (images.length + files.length > maxImages) {
@@ -35,24 +27,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
     const uploadPromises = Array.from(files).map(async (file) => {
       try {
-        // First try Firebase
         const url = await uploadImage(file);
         return url;
       } catch (error) {
-        // If Firebase fails, try fallback method automatically
-        if (useFirebase) {
-          setUseFirebase(false);
-          try {
-            const url = await fallbackUploadImage(file);
-            return url;
-          } catch (fallbackError) {
-            alert(`სურათის ატვირთვა ვერ მოხერხდა: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
-            return null;
-          }
-        } else {
-          alert(`სურათის ატვირთვა ვერ მოხერხდა: ${error instanceof Error ? error.message : 'Unknown error'}`);
-          return null;
-        }
+        console.error('Upload failed:', error);
+        alert(`სურათის ატვირთვა ვერ მოხერხდა: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return null;
       }
     });
 
@@ -121,33 +101,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           >
             <Link className="w-4 h-4 inline mr-1" />
             ლინკი
-          </button>
-        </div>
-
-        {/* Upload Service Selector */}
-        <div className="flex items-center space-x-2 text-sm">
-          <span className="text-gray-500">სერვისი:</span>
-          <button
-            type="button"
-            onClick={() => setUseFirebase(true)}
-            className={`px-2 py-1 rounded text-xs ${
-              useFirebase
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-            }`}
-          >
-            Firebase
-          </button>
-          <button
-            type="button"
-            onClick={() => setUseFirebase(false)}
-            className={`px-2 py-1 rounded text-xs ${
-              !useFirebase
-                ? 'bg-green-500 text-white'
-                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-            }`}
-          >
-            Backup
           </button>
         </div>
       </div>
