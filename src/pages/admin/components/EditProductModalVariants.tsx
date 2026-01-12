@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Package, Plus, Trash2, Save, Edit3, Info } from "lucide-react";
 import { useProductStore } from "../../../store/productStore";
+import { deleteField } from "firebase/firestore";
 import ImageUpload from "../../../components/ui/ImageUpload";
 import { PRIORITY_PRESETS, getPriorityEmoji } from "../../../utils/priority";
 import { showToast } from "../../../components/ui/Toast";
@@ -232,7 +233,8 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
       const stats = calculateStats();
       const now = new Date();
 
-      const productData = {
+      // Construct base product data
+      const productData: any = {
         name: productName.trim(),
         description: description.trim(),
         category: category.trim(),
@@ -243,34 +245,41 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
         // ძველი ველები backward compatibility-სთვის
         price: hasVariants ? stats.minPrice : simplePrice,
-        ...((!hasVariants && simpleSalePrice !== undefined) && { salePrice: simpleSalePrice }),
         stock: hasVariants ? stats.totalStock : simpleStock,
 
         // ახალი ველები variant system-ისთვის
         minPrice: stats.minPrice,
         maxPrice: stats.maxPrice,
         totalStock: stats.totalStock,
-
-        // ვარიანტები
-        variants: hasVariants
-          ? variants.map((variant) => ({
-              id:
-                variant.id ||
-                `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              name: variant.name.trim(),
-              price: variant.price,
-              ...(variant.salePrice !== undefined && { salePrice: variant.salePrice }),
-              stock: variant.stock,
-              isActive: variant.isActive,
-              createdAt:
-                product.variants?.find((v) => v.id === variant.id)?.createdAt ||
-                now,
-              updatedAt: now,
-            }))
-          : undefined,
-
         updatedAt: now,
       };
+
+      // Add salePrice only if it exists for simple products
+      if (!hasVariants && simpleSalePrice !== undefined) {
+        productData.salePrice = simpleSalePrice;
+      }
+
+      // Handle variants field based on hasVariants
+      if (hasVariants) {
+        productData.variants = variants.map((variant) => ({
+          id:
+            variant.id ||
+            `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: variant.name.trim(),
+          price: variant.price,
+          ...(variant.salePrice !== undefined && { salePrice: variant.salePrice }),
+          stock: variant.stock,
+          isActive: variant.isActive,
+          createdAt:
+            product.variants?.find((v) => v.id === variant.id)?.createdAt ||
+            now,
+          updatedAt: now,
+        }));
+      } else if (product.hasVariants && product.variants) {
+        // If converting from variant product to simple product, remove variants field
+        productData.variants = deleteField();
+      }
+      // Note: For products that were never variant products, we don't include variants field
 
       await updateProduct(product.id, productData);
       showToast("პროდუქტი წარმატებით განახლდა", "success");
