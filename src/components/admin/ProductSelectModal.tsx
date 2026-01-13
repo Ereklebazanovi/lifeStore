@@ -61,8 +61,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
       product.name.toLowerCase().includes(searchLower) ||
       product.description?.toLowerCase().includes(searchLower) ||
       product.variants?.some(v =>
-        v.color?.toLowerCase().includes(searchLower) ||
-        v.size?.toLowerCase().includes(searchLower)
+        v.name?.toLowerCase().includes(searchLower)
       )
     );
   });
@@ -121,7 +120,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
         type: "existing",
         product: selectedProduct,
         variantId: selectedVariant.id,
-        name: `${selectedProduct.name} (${selectedVariant.color || selectedVariant.size || 'ვარიანტი'})`,
+        name: `${selectedProduct.name} (${selectedVariant.name})`,
         price: actualPrice,
         stock,
         stockStatus: getStockStatus(stock, quantity) as any,
@@ -274,10 +273,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                           <div className="flex items-center justify-between">
                             <div>
                               <div className="font-medium text-gray-900">
-                                {variant.color && variant.size
-                                  ? `${variant.color} - ${variant.size}`
-                                  : variant.color || variant.size || 'ვარიანტი'
-                                }
+                                {variant.name}
                               </div>
                               <div className="text-sm text-gray-600">
                                 ₾{variant.salePrice && variant.salePrice < variant.price
@@ -355,16 +351,16 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                     <h4 className="font-medium text-emerald-900 mb-2">არჩეული პროდუქტი:</h4>
                     <div className="text-sm text-emerald-800">
                       <div>{selectedProduct.name}
-                        {selectedVariant && ` (${selectedVariant.color || selectedVariant.size || 'ვარიანტი'})`}
+                        {selectedVariant && ` (${selectedVariant.name})`}
                       </div>
                       <div>რაოდენობა: {quantity}</div>
                       <div className="font-medium mt-1">
                         ღირებულება: ₾{(
                           (selectedVariant?.salePrice && selectedVariant.salePrice < selectedVariant.price
                             ? selectedVariant.salePrice
-                            : selectedVariant?.price || selectedProduct.salePrice && selectedProduct.salePrice < selectedProduct.price
+                            : selectedVariant?.price || (selectedProduct.salePrice && selectedProduct.salePrice < selectedProduct.price
                             ? selectedProduct.salePrice
-                            : selectedProduct.price) * quantity
+                            : selectedProduct.price)) * quantity
                         ).toFixed(2)}
                       </div>
                     </div>
