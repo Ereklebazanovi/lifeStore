@@ -568,7 +568,7 @@ export class OrderService {
               </div>
 
               <div style="margin-top: 30px; text-align: center;">
-                <a href="${SITE_CONFIG.BASE_URL}/admin/orders"
+                <a href="${SITE_CONFIG.BASE_URL}/admin"
                    style="background-color: #2563eb; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
                    🖥️ ადმინ პანელში ნახვა
                 </a>
