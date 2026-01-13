@@ -91,14 +91,28 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
     setSelectedProduct(product);
     if (product.variants && product.variants.length > 0) {
       setSelectedVariant(null); // Reset variant selection
+      // Reset quantity to 1 when switching products with variants
+      setQuantity(1);
     } else {
-      // Simple product, can select immediately
+      // Simple product, adjust quantity to available stock
+      const productStock = getTotalStock(product);
+      setQuantity(Math.min(quantity, productStock));
       setSelectedVariant(null);
     }
   };
 
   const handleVariantClick = (variant: ProductVariant) => {
     setSelectedVariant(variant);
+    // Smart quantity adjustment when switching variants
+    const variantStock = variant.stock || 0;
+    if (variantStock === 0) {
+      // If variant is out of stock, set quantity to 1 but disable buttons
+      setQuantity(1);
+    } else if (quantity > variantStock) {
+      // If current quantity exceeds variant stock, set to max available
+      setQuantity(variantStock);
+    }
+    // If variant has enough stock, keep current quantity
   };
 
   const handleConfirm = () => {
@@ -359,11 +373,13 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                     <input
                       type="number"
                       value={quantity}
-                      onChange={(e) =>
-                        setQuantity(Math.max(1, parseInt(e.target.value) || 1))
-                      }
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 1;
+                        setQuantity(Math.max(1, Math.min(value, currentStock)));
+                      }}
                       className="w-16 text-center py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       min="1"
+                      max={currentStock}
                     />
                     <button
                       onClick={() => setQuantity(quantity + 1)}
@@ -373,9 +389,19 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
+                  {stockStatus === "out_of_stock" && (
+                    <p className="text-sm text-red-600 mt-1">
+                      ⚠️ პროდუქტი მარაგში არ არის!
+                    </p>
+                  )}
                   {stockStatus === "insufficient" && (
                     <p className="text-sm text-red-600 mt-1">
-                      არასაკმარისი მარაგი! ხელმისაწვდომია: {currentStock}
+                      ⚠️ არასაკმარისი მარაგი! ხელმისაწვდომია: {currentStock}
+                    </p>
+                  )}
+                  {stockStatus === "low" && currentStock > 0 && (
+                    <p className="text-sm text-yellow-600 mt-1">
+                      ⚠️ დაბალი მარაგი! დარჩენილია: {currentStock}
                     </p>
                   )}
                 </div>
