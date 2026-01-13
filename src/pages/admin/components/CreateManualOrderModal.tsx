@@ -247,7 +247,6 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                     <option value="instagram">Instagram</option>
                     <option value="facebook">Facebook</option>
                     <option value="tiktok">TikTok</option>
-                    <option value="phone">ტელეფონი</option>
                     <option value="personal">პირადი</option>
                     <option value="other">სხვა</option>
                   </select>
@@ -332,7 +331,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                   </div>
                   <input
                     type="email"
-                    placeholder="ელ-ფოსტა (არასავალდებულო)"
+                    placeholder="ელ-ფოსტა"
                     value={customerInfo.email}
                     onChange={(e) =>
                       setCustomerInfo({
