@@ -2,7 +2,7 @@
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminDb } from "../lib/firebase-admin";
-// Constants - local copy to avoid ES Module import issues
+ 
 const ADMIN_CONFIG = {
   EMAIL: "ebazanovi@gmail.com",
   BUSINESS_NAME: "LifeStore",
@@ -193,7 +193,7 @@ async function sendEmailNotification(order: any): Promise<void> {
           <div style="font-family: Georgian, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
             <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
               <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #2563eb; margin-bottom: 10px;">✅ შეკვეთა წარმატებით დადასტურდა!</h1>
+                <h1 style="color: #2563eb; margin-bottom: 10px;">✅ შეკვეთა მიღებულია!</h1>
                 <p style="color: #666; font-size: 16px;">მადლობა LifeStore-დან შესყიდვისთვის</p>
               </div>
 

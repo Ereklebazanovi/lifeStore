@@ -37,6 +37,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [statusFilter, setStatusFilter] = useState<
     "all" | Order["orderStatus"]
   >("all");
+  const [activeTab, setActiveTab] = useState<"active" | "live" | "history">(
+    "active"
+  );
+  
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -296,6 +300,60 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
   };
 
+  const getStandardStatusText = (status: Order["orderStatus"]) => {
+    switch (status) {
+      case "pending":
+        return "📋 მოლოდინში";
+      case "confirmed": // დროებით თავსებადობისთვის
+        return "✅ დამუშავებული";
+      case "shipped":
+        return "📦 გაგზავნილი";
+      case "delivered":
+        return "🎉 მიტანილი";
+      case "cancelled":
+        return "❌ გაუქმებული";
+      default:
+        return status;
+    }
+  };
+
+  const getSmartStatusText = (
+    order: Order,
+    currentTab: "active" | "live" | "history"
+  ) => {
+    // ახალი სტანდარტული 5 სტატუსი
+    if (currentTab === "active") {
+      // შესასრულებელი - გადახდილი შეკვეთები
+      if (order.adminNotes?.includes("Manually added via Admin Panel")) {
+        return `📋 ხელით დამატებული (${getStandardStatusText(order.orderStatus)})`;
+      } else {
+        return getStandardStatusText(order.orderStatus);
+      }
+    }
+
+    if (currentTab === "live") {
+      // ლაივ რეჟიმი - გადახდის მოლოდინი
+      const minutesAgo = Math.floor(
+        (new Date().getTime() - order.createdAt.getTime()) / (1000 * 60)
+      );
+      const remainingMinutes = Math.max(0, 15 - minutesAgo);
+
+      if (remainingMinutes > 0) {
+        return `⏳ იხდის... (${remainingMinutes} წთ დარჩა)`;
+      } else {
+        return "❌ ვადაგასული";
+      }
+    }
+
+    if (currentTab === "history") {
+      // ისტორია - სტანდარტული სტატუსები
+      return getStandardStatusText(order.orderStatus);
+    }
+
+    return getStandardStatusText(order.orderStatus);
+  };
+
+  // ძველი ფუნქცია თავსებადობისთვის
   const getStatusText = (
     status: Order["orderStatus"],
     paymentStatus?: string,
@@ -340,8 +398,51 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
   };
 
-  const getFilteredOrders = () => {
+  const getTabFilteredOrders = (tab: "active" | "live" | "history") => {
     return orders.filter((order) => {
+      switch (tab) {
+        case "active":
+          // 🟢 შესასრულებელი: შექმნილი შეკვეთები რომელიც საქმიანია
+          // 1. გადახდილი შეკვეთები (კარტით ან ნაღდით confirmed)
+          // 2. ხელით დამატებული შეკვეთები (manual orders)
+          // 3. ნაღდი ფულის შეკვეთები მოლოდინში
+          return (
+            // გადახდილი შეკვეთები რომლებიც არ არის დასრულებული
+            (order.paymentStatus === "paid" &&
+             !["shipped", "delivered", "cancelled"].includes(order.orderStatus)) ||
+
+            // ხელით დამატებული შეკვეთები (არ აუქმდება)
+            (order.adminNotes?.includes("Manually added via Admin Panel") &&
+             !["cancelled"].includes(order.orderStatus)) ||
+
+            // ნაღდი ფულის შეკვეთები მოლოდინში (cash orders)
+            (order.paymentMethod === "cash" &&
+             order.orderStatus === "pending" &&
+             !order.adminNotes?.includes("Manually added via Admin Panel"))
+          );
+
+        case "live":
+          // 🟡 ლაივ რეჟიმი: კარტით გადახდის მოლოდინი (15 წუთიანი)
+          return (
+            order.paymentStatus === "pending" &&
+            order.paymentMethod !== "cash" &&
+            !order.adminNotes?.includes("Manually added via Admin Panel")
+          );
+
+        case "history":
+          // 🔵 ისტორია: დასრულებული შეკვეთები
+          return ["shipped", "delivered", "cancelled"].includes(order.orderStatus);
+
+        default:
+          return true;
+      }
+    });
+  };
+
+  const getFilteredOrders = () => {
+    let filteredByTab = getTabFilteredOrders(activeTab);
+
+    return filteredByTab.filter((order) => {
       const matchesSearch =
         order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.customerInfo.firstName
@@ -350,15 +451,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         order.customerInfo.lastName
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
-      const matchesStatus =
-        statusFilter === "all" || order.orderStatus === statusFilter;
 
       // Date filtering
       const orderDate = order.createdAt.toISOString().split("T")[0];
       const matchesDateFrom = !dateFrom || orderDate >= dateFrom;
       const matchesDateTo = !dateTo || orderDate <= dateTo;
 
-      return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
+      return matchesSearch && matchesDateFrom && matchesDateTo;
     });
   };
 
@@ -495,6 +594,52 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           </div>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200 mb-4">
+          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            {[
+              {
+                id: "active",
+                name: "🟢 შესასრულებელი",
+                count: getTabFilteredOrders("active").length,
+              },
+              {
+                id: "live",
+                name: "🟡 ლაივ რეჟიმი",
+                count: getTabFilteredOrders("live").length,
+              },
+              {
+                id: "history",
+                name: "🔵 ისტორია",
+                count: getTabFilteredOrders("history").length,
+              },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {tab.name}
+                {tab.count > 0 && (
+                  <span
+                    className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
+                      activeTab === tab.id
+                        ? "bg-blue-100 text-blue-600"
+                        : "bg-gray-100 text-gray-900"
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </nav>
+        </div>
+
         {/* Mobile-Optimized Filters */}
         <div className="space-y-3 mt-4">
           {/* Search Bar */}
@@ -545,10 +690,11 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm flex-1"
                 >
                   <option value="all">ყველა სტატუსი</option>
-                  <option value="pending">მოლოდინში</option>
-                  <option value="shipped">გაგზავნილი</option>
-                  <option value="delivered">მიტანილი</option>
-                  <option value="cancelled">გაუქმებული</option>
+                  <option value="pending">📋 მოლოდინში</option>
+                  <option value="confirmed">✅ დამუშავებული</option>
+                  <option value="shipped">📦 გაგზავნილი</option>
+                  <option value="delivered">🎉 მიტანილი</option>
+                  <option value="cancelled">❌ გაუქმებული</option>
                 </select>
                 {(dateFrom || dateTo || statusFilter !== "all") && (
                   <button
@@ -674,29 +820,39 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          value={order.orderStatus}
-                          onChange={(e) =>
-                            handleStatusChange(
-                              order.id,
-                              e.target.value as Order["orderStatus"]
-                            )
-                          }
-                          className={`px-3 py-1 text-sm font-medium rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(
-                            order.orderStatus
-                          )}`}
-                        >
-                          <option value="pending">
-                            {getStatusText(
-                              "pending",
-                              order.paymentStatus,
-                              order.createdAt
-                            )}
-                          </option>
-                          <option value="shipped">გაგზავნილი</option>
-                          <option value="delivered">მიტანილი</option>
-                          <option value="cancelled">გაუქმებული</option>
-                        </select>
+                        <div className="flex items-center gap-2">
+                          {/* ჭკვიანი სტატუსის ნაჩვენები */}
+                          <span
+                            className={`px-3 py-1 text-sm font-medium rounded-full ${
+                              activeTab === "active"
+                                ? "bg-green-100 text-green-800"
+                                : activeTab === "live"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {getSmartStatusText(order, activeTab)}
+                          </span>
+
+                          {/* Action dropdown მხოლოდ active tab-ისთვის */}
+                          {activeTab === "active" && (
+                            <select
+                              value={order.orderStatus}
+                              onChange={(e) =>
+                                handleStatusChange(
+                                  order.id,
+                                  e.target.value as Order["orderStatus"]
+                                )
+                              }
+                              className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="pending">📋 მოლოდინში</option>
+                              <option value="confirmed">✅ დამუშავებული</option>
+                              <option value="shipped">📦 გაგზავნე</option>
+                              <option value="delivered">🎉 მიტანე</option>
+                            </select>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -818,23 +974,39 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           )}
                       </div>
                     </div>
-                    <select
-                      value={order.orderStatus}
-                      onChange={(e) =>
-                        handleStatusChange(
-                          order.id,
-                          e.target.value as Order["orderStatus"]
-                        )
-                      }
-                      className={`px-2 py-1 text-xs font-medium rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(
-                        order.orderStatus
-                      )}`}
-                    >
-                      <option value="pending">მოლოდინში</option>
-                      <option value="shipped">გაგზავნილი</option>
-                      <option value="delivered">მიტანილი</option>
-                      <option value="cancelled">გაუქმებული</option>
-                    </select>
+                    {/* ჭკვიანი სტატუსი მობაილისთვის */}
+                    <div className="flex flex-col gap-1">
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full text-center ${
+                          activeTab === "active"
+                            ? "bg-green-100 text-green-800"
+                            : activeTab === "live"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {getSmartStatusText(order, activeTab)}
+                      </span>
+
+                      {/* Action dropdown მხოლოდ active tab-ისთვის */}
+                      {activeTab === "active" && (
+                        <select
+                          value={order.orderStatus}
+                          onChange={(e) =>
+                            handleStatusChange(
+                              order.id,
+                              e.target.value as Order["orderStatus"]
+                            )
+                          }
+                          className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                        >
+                          <option value="pending">📋 მოლოდინში</option>
+                          <option value="confirmed">✅ დამუშავებული</option>
+                          <option value="shipped">📦 გაგზავნე</option>
+                          <option value="delivered">🎉 მიტანე</option>
+                        </select>
+                      )}
+                    </div>
                   </div>
 
                   {/* Customer Info */}
@@ -1254,16 +1426,11 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           }
                           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                          <option value="pending">
-                            {getStatusText(
-                              "pending",
-                              selectedOrder.paymentStatus,
-                              selectedOrder.createdAt
-                            )}
-                          </option>
-                          <option value="shipped">გაგზავნილი</option>
-                          <option value="delivered">მიტანილი</option>
-                          <option value="cancelled">გაუქმებული</option>
+                          <option value="pending">📋 მოლოდინში</option>
+                          <option value="confirmed">✅ დამუშავებული</option>
+                          <option value="shipped">📦 გაგზავნილი</option>
+                          <option value="delivered">🎉 მიტანილი</option>
+                          <option value="cancelled">❌ გაუქმებული</option>
                         </select>
                         <div className="text-sm text-gray-500">
                           ცვლილება მაშინვე შეინახება

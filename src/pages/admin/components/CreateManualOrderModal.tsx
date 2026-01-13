@@ -55,8 +55,8 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     { name: "", price: 0, quantity: 1 },
   ]);
   const [source, setSource] = useState<OrderSource>("instagram");
-  const [status, setStatus] = useState<"pending" | "shipped" | "delivered">(
-    "shipped"
+  const [status, setStatus] = useState<"pending" | "confirmed" | "shipped" | "delivered">(
+    "pending"
   );
   const [paymentMethod, setPaymentMethod] = useState<
     "cash" | "other" | "bank_transfer"
@@ -76,7 +76,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       setDeliveryInfo({ city: "თბილისი", address: "", comment: "" });
       setItems([{ name: "", price: 0, quantity: 1 }]);
       setSource("instagram");
-      setStatus("shipped");
+      setStatus("pending");
       setPaymentMethod("cash");
       setShippingCost(0);
     }
@@ -254,9 +254,10 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                   onChange={(e) => setStatus(e.target.value as any)}
                   className="w-full px-3 py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
                 >
-                  <option value="pending">მუშავდება</option>
-                  <option value="shipped">გაგზავნილი</option>
-                  <option value="delivered">მიტანილი</option>
+                  <option value="pending">📋 მოლოდინში</option>
+                  <option value="confirmed">✅ დამუშავებული</option>
+                  <option value="shipped">📦 გაგზავნილი</option>
+                  <option value="delivered">🎉 მიტანილი</option>
                 </select>
               </div>
               <div>
@@ -529,12 +530,12 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
               <div className="flex justify-end">
                 <div className="w-full sm:w-2/3 md:w-1/2 space-y-3 bg-stone-50 p-4 rounded-lg border border-stone-100">
                   <div className="flex justify-between text-stone-600 text-base">
-                    <span>ქვე-ჯამი:</span>
+                    <span>ჯამი:</span>
                     <span className="font-medium">₾{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center text-stone-600 text-base">
                     <span className="flex items-center gap-2">
-                      მიწოდება <DollarSign className="w-4 h-4" />
+                      მიწოდება ₾
                     </span>
                     <input
                       type="number"

@@ -183,11 +183,11 @@ export interface CreateManualOrderRequest {
     comment?: string;
   };
   shippingCost: number;
-  status: "pending" | "shipped" | "delivered";
+  status: "pending" | "confirmed" | "shipped" | "delivered";
   paymentMethod: Order["paymentMethod"];
 }
 
-export type OrderStatus = "pending" | "shipped" | "delivered" | "cancelled";
+export type OrderStatus = "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
 // ეს რჩება როგორც არის (სტრინგების ტიპი)
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 

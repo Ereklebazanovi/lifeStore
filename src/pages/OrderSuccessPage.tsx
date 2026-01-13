@@ -164,13 +164,15 @@ const OrderSuccessPage: React.FC = () => {
   const getStatusText = (status: string) => {
     switch (status) {
       case "pending":
-        return "მიღებულია";
+        return "📋 მოლოდინში";
+      case "confirmed":
+        return "✅ დამუშავებული";
       case "shipped":
-        return "გზაშია";
+        return "📦 გაგზავნილი";
       case "delivered":
-        return "ჩაბარებულია";
+        return "🎉 ჩაბარებულია";
       case "cancelled":
-        return "გაუქმებული";
+        return "❌ გაუქმებული";
       default:
         return status;
     }
