@@ -464,7 +464,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       const matchesDateFrom = !dateFrom || orderDate >= dateFrom;
       const matchesDateTo = !dateTo || orderDate <= dateTo;
 
-      return matchesSearch && matchesDateFrom && matchesDateTo;
+      // Status filtering
+      const matchesStatus = statusFilter === "all" || order.orderStatus === statusFilter;
+
+      return matchesSearch && matchesDateFrom && matchesDateTo && matchesStatus;
     });
   };
 
