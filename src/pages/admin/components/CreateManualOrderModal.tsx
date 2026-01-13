@@ -329,9 +329,17 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                       placeholder="555 12 34 56"
                     />
                   </div>
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-blue-600 text-xs">ℹ</span>
+                    </div>
+                    <span className="text-blue-700 text-sm">
+                      შეყვანილ კლიენტის ელფოსტაზე გაიგზავნება შეკვეთის დამადასტურებელი შეტყობინება
+                    </span>
+                  </div>
                   <input
                     type="email"
-                    placeholder="ელ-ფოსტა"
+                    placeholder="ელ-ფოსტა (არასავალდებულო)"
                     value={customerInfo.email}
                     onChange={(e) =>
                       setCustomerInfo({
@@ -396,9 +404,14 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                 <ShoppingBag className="w-5 h-5 text-emerald-600" />
                 პროდუქტები
               </h3>
-              <p className="text-red-600 mb-1">
-                შესაძლებელია იმ პროდუქტების არჩევა რომელიც საწყობშია
-              </p>
+              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-emerald-600 text-xs">✓</span>
+                </div>
+                <span className="text-emerald-700 text-sm font-medium">
+                  შესაძლებელია იმ პროდუქტების არჩევა რომელიც საწყობშია
+                </span>
+              </div>
               <div className="border border-stone-200 rounded-lg overflow-hidden mb-4">
                 <div className="overflow-x-auto">
                   <table className="w-full text-base text-left min-w-[600px]">
@@ -544,7 +557,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                     <span className="font-medium">₾{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center text-stone-600 text-base">
-                    <span className="flex items-center gap-2">მიწოდება ₾</span>
+                    <span className="flex items-center gap-2">მიტანის თანხა ₾</span>
                     <input
                       type="number"
                       min="0"
