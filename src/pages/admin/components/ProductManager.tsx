@@ -171,7 +171,7 @@ const ProductManager: React.FC = () => {
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
                               {product.name}
-                              {product.priority && (
+                              {product.priority != null && product.priority > 0 && (
                                 <span className="ml-2 text-xs">
                                   {getPriorityEmoji(product.priority)}
                                 </span>
@@ -279,7 +279,7 @@ const ProductManager: React.FC = () => {
                       <div>
                         <h3 className="text-sm font-medium text-gray-900 truncate">
                           {product.name}
-                          {product.priority && (
+                          {product.priority != null && product.priority > 0 && (
                             <span className="ml-2 text-xs">
                               {getPriorityEmoji(product.priority)}
                             </span>
