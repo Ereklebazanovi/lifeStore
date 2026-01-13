@@ -55,7 +55,6 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
     }
   }, [isOpen, requestedQuantity]);
 
-  
   // Filter products based on search
   const filteredProducts = products.filter((product) => {
     if (!searchTerm) return true;
@@ -107,11 +106,14 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
     // Smart quantity adjustment when switching variants
     const variantStock = variant.stock || 0;
     if (variantStock === 0) {
-      // If variant is out of stock, set quantity to 1 but disable buttons
+      // If variant is out of stock, set quantity to 1 and disable controls
       setQuantity(1);
     } else if (quantity > variantStock) {
       // If current quantity exceeds variant stock, set to max available
       setQuantity(variantStock);
+    } else if (quantity === 0) {
+      // Safety: ensure quantity is never 0
+      setQuantity(1);
     }
     // If variant has enough stock, keep current quantity
   };
@@ -168,8 +170,9 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
 
   const canConfirm =
     selectedProduct && (!selectedProduct.variants?.length || selectedVariant);
-  const currentStock =
-    selectedVariant?.stock || getTotalStock(selectedProduct || ({} as Product));
+  const currentStock = selectedVariant
+    ? selectedVariant.stock
+    : getTotalStock(selectedProduct || ({} as Product));
   const stockStatus = getStockStatus(currentStock, quantity);
 
   if (!isOpen) return null;
@@ -366,7 +369,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      disabled={quantity <= 1}
+                      disabled={quantity <= 1 || currentStock === 0}
                       className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Minus className="w-4 h-4" />
@@ -375,16 +378,23 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                       type="number"
                       value={quantity}
                       onChange={(e) => {
+                        if (currentStock === 0) return; // Prevent changes when out of stock
                         const value = parseInt(e.target.value) || 1;
                         setQuantity(Math.max(1, Math.min(value, currentStock)));
                       }}
-                      className="w-16 text-center py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      className={`w-16 text-center py-1 text-sm border rounded-md focus:ring-2 focus:border-transparent ${
+                        currentStock === 0
+                          ? "border-red-300 bg-red-50 text-red-500 cursor-not-allowed"
+                          : "border-gray-300 focus:ring-emerald-500"
+                      }`}
                       min="1"
                       max={currentStock}
+                      disabled={currentStock === 0}
+                      readOnly={currentStock === 0}
                     />
                     <button
                       onClick={() => setQuantity(quantity + 1)}
-                      disabled={quantity >= currentStock}
+                      disabled={quantity >= currentStock || currentStock === 0}
                       className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Plus className="w-4 h-4" />
