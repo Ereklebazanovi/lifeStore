@@ -103,6 +103,8 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     quantity?: number
   ) => {
     const newItems = [...items];
+    const wasEmpty = !newItems[index].name; // Check if this was an empty row
+
     newItems[index] = {
       ...newItems[index],
       productId: selection.product?.id,
@@ -112,6 +114,11 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       quantity: quantity || newItems[index].quantity, // Use provided quantity or keep existing
     };
     setItems(newItems);
+
+    // If this was an empty row (new product added), automatically add another empty row
+    if (wasEmpty) {
+      setItems([...newItems, { name: "", price: 0, quantity: 1 }]);
+    }
   };
 
   const addItemRow = () => {

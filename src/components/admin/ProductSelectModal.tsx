@@ -55,6 +55,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
     }
   }, [isOpen, requestedQuantity]);
 
+  
   // Filter products based on search
   const filteredProducts = products.filter((product) => {
     if (!searchTerm) return true;
