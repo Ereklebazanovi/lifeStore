@@ -115,10 +115,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     };
     setItems(newItems);
 
-    // If this was an empty row (new product added), automatically add another empty row
-    if (wasEmpty) {
-      setItems([...newItems, { name: "", price: 0, quantity: 1 }]);
-    }
+    // No automatic empty row addition - user will manually add if needed
   };
 
   const addItemRow = () => {
@@ -537,7 +534,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                   className="w-full py-3 bg-stone-50 hover:bg-stone-100 text-stone-600 text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors border-t border-stone-200"
                 >
                   <Plus className="w-4 h-4" />
-                  დამატება
+                  კიდევ ერთი პროდუქტის დამატება
                 </button>
               </div>
               {/* Totals - ✅ გავხადეთ უფრო ფართო და კომფორტული */}
