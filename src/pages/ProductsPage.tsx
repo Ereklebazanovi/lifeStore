@@ -12,6 +12,7 @@ import {
 import { useProductStore } from "../store/productStore";
 import { hasDiscount, getDiscountText } from "../utils/discount";
 import { getStockText, getStockColorClassesCompact } from "../utils/stock";
+import { useInventoryRefresh } from "../hooks/useInventoryRefresh";
 import {
   getProductDisplayPrice,
   getProductOriginalDisplayPrice,
@@ -28,6 +29,9 @@ const ProductsPage: React.FC = () => {
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
+
+  // ✅ Real-time inventory refresh
+  useInventoryRefresh({ enabled: true, interval: 45000 }); // 45 წამი
 
   // გვერდის გადატვირთვა ფილტრის შეცვლისას
   useEffect(() => {

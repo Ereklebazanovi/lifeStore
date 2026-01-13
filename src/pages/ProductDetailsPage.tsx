@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
+import { useInventoryRefresh } from "../hooks/useInventoryRefresh";
 import { showToast } from "../components/ui/Toast";
 import SEOHead from "../components/SEOHead";
 import type { Product } from "../types";
@@ -34,6 +35,9 @@ const ProductDetailsPage: React.FC = () => {
     null
   );
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
+  // ✅ Real-time inventory refresh კრიტიკული პროდუქტის გვერდზე
+  useInventoryRefresh({ enabled: true, interval: 40000 }); // 40 წამი
 
   useEffect(() => {
     const loadProduct = async () => {

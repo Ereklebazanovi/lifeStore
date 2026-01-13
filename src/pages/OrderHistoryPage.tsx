@@ -103,7 +103,7 @@ const OrderHistoryPage: React.FC = () => {
       case "pending":
         return "📋 მოლოდინში";
       case "confirmed":
-        return "✅ დამუშავებული";
+        return "💳 გადახდილი";
       case "shipped":
         return "📦 გაგზავნილი";
       case "delivered":

@@ -530,14 +530,49 @@ export class OrderService {
             order.source || "website"
           })`,
           html: `
-            <div style="font-family: Arial, sans-serif;">
-              <h2 style="color: #2563eb;">ახალი შეკვეთა (${
-                order.source || "website"
-              })</h2>
-              <p><strong>კლიენტი:</strong> ${order.customerInfo.firstName} ${
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">
+                🔔 ახალი შეკვეთა: ${order.orderNumber}
+              </h2>
+
+              <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #1e293b; margin-top: 0;">📊 შეკვეთის დეტალები</h3>
+
+                <p style="margin: 8px 0;">
+                  <strong>📍 წყარო:</strong>
+                  <span style="background-color: ${
+                    order.source === "website" ? "#10b981" : "#f59e0b"
+                  }; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                    ${order.source === "website" ? "🌐 ვებსაიტი" :
+                      order.source === "instagram" ? "📱 Instagram" :
+                      order.source === "facebook" ? "👥 Facebook" :
+                      order.source === "tiktok" ? "🎵 TikTok" :
+                      order.source === "phone" ? "📞 ტელეფონი" :
+                      order.source === "personal" ? "🤝 პირადი" :
+                      order.source || "🌐 ვებსაიტი"}
+                  </span>
+                </p>
+
+                <p style="margin: 8px 0;"><strong>👤 კლიენტი:</strong> ${order.customerInfo.firstName} ${
             order.customerInfo.lastName
           }</p>
-              <p><strong>თანხა:</strong> ₾${order.totalAmount.toFixed(2)}</p>
+                <p style="margin: 8px 0;"><strong>📞 ტელეფონი:</strong> ${order.customerInfo.phone}</p>
+                <p style="margin: 8px 0;"><strong>📧 იმეილი:</strong> ${order.customerInfo.email || "არ არის მითითებული"}</p>
+                <p style="margin: 8px 0;"><strong>🏠 მისამართი:</strong> ${order.deliveryInfo.city}, ${order.deliveryInfo.address}</p>
+                <p style="margin: 8px 0;"><strong>💰 გადახდის მეთოდი:</strong> ${
+                  order.paymentMethod === "cash" ? "💵 ნაღდი ფული (ადგილზე)" : "💳 ბანკო კარტი"
+                }</p>
+                <p style="margin: 8px 0; font-size: 18px; color: #059669;">
+                  <strong>💰 ჯამური თანხა:</strong> ₾${order.totalAmount.toFixed(2)}
+                </p>
+              </div>
+
+              <div style="margin-top: 30px; text-align: center;">
+                <a href="${SITE_CONFIG.BASE_URL}/admin/orders"
+                   style="background-color: #2563eb; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                   🖥️ ადმინ პანელში ნახვა
+                </a>
+              </div>
             </div>
           `,
         },
@@ -708,8 +743,18 @@ export class OrderService {
       await setDoc(orderRef, firestorePayload);
 
       console.log("✅ Order created successfully:", orderNumber);
-      // ✅ Email will be sent only after payment confirmation in payment callback
-      // Removed: this.sendEmailNotification(order);
+
+      // ✅ ნაღდი ფულით გადახდისთვის მაშინვე ვაგზავნოთ email notifications
+      if (orderData.paymentMethod === "cash") {
+        console.log("💰 Cash payment detected - sending email notifications immediately");
+        try {
+          await this.sendEmailNotification(order);
+        } catch (emailError) {
+          console.error("❌ Failed to send email notification:", emailError);
+          // არ ვაფაილებთ შეკვეთას email ერორის გამო
+        }
+      }
+      // ✅ კარტით გადახდისთვის email გაიგზავნება payment callback-ში
 
       return order;
     } catch (error) {

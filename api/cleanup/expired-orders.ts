@@ -84,7 +84,7 @@ export default async function handler(
           cancellationReason: "ავტომატურად გაუქმდა - 15 წუთის განმავლობაში გადახდა არ მოხდა",
           cancelledAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
-          adminNotes: `შეკვეთა ავტომატურად გაუქმდა ${new Date().toLocaleString("ka-GE")} - კლიენტმა 15 წუთში არ დაასრულა გადახდის პროცესი. მარაგი ავტომატურად აღდგა.`,
+          adminNotes: `შეკვეთა ავტომატურად გაუქმდა ${new Date().toLocaleString("ka-GE")} - კლიენტმა 15 წუთში არ დაასრულა გადახდის პროცესი.ამ პროდუქტის მარაგი ავტომატურად დაბრუნდა.`,
         });
 
         // 2. Restore Inventory (GROUPING LOGIC ✅)

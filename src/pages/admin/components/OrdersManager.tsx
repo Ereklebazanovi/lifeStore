@@ -305,7 +305,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       case "pending":
         return "📋 მოლოდინში";
       case "confirmed": // დროებით თავსებადობისთვის
-        return "✅ დამუშავებული";
+        return "💳 გადახდილი";
       case "shipped":
         return "📦 გაგზავნილი";
       case "delivered":
@@ -411,6 +411,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             (order.paymentStatus === "paid" &&
              !["shipped", "delivered", "cancelled"].includes(order.orderStatus)) ||
 
+            // დადასტურებული შეკვეთები (confirmed) რომლებიც არ არის დასრულებული
+            (order.orderStatus === "confirmed" &&
+             !["shipped", "delivered", "cancelled"].includes(order.orderStatus)) ||
+
             // ხელით დამატებული შეკვეთები (არ აუქმდება)
             (order.adminNotes?.includes("Manually added via Admin Panel") &&
              !["cancelled"].includes(order.orderStatus)) ||
@@ -449,6 +453,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           .toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
         order.customerInfo.lastName
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        order.customerInfo.phone
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
 
@@ -647,7 +654,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="ძებნა ნომრით ან სახელით..."
+              placeholder="ძებნა ნომრით, სახელით ან ტელეფონით..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -691,7 +698,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                 >
                   <option value="all">ყველა სტატუსი</option>
                   <option value="pending">📋 მოლოდინში</option>
-                  <option value="confirmed">✅ დამუშავებული</option>
+                  <option value="confirmed">💳 გადახდილი</option>
                   <option value="shipped">📦 გაგზავნილი</option>
                   <option value="delivered">🎉 მიტანილი</option>
                   <option value="cancelled">❌ გაუქმებული</option>
@@ -847,7 +854,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                               className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                             >
                               <option value="pending">📋 მოლოდინში</option>
-                              <option value="confirmed">✅ დამუშავებული</option>
+                              <option value="confirmed">💳 გადახდილი</option>
                               <option value="shipped">📦 გაგზავნე</option>
                               <option value="delivered">🎉 მიტანე</option>
                             </select>
@@ -1001,7 +1008,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                         >
                           <option value="pending">📋 მოლოდინში</option>
-                          <option value="confirmed">✅ დამუშავებული</option>
+                          <option value="confirmed">💳 გადახდილი</option>
                           <option value="shipped">📦 გაგზავნე</option>
                           <option value="delivered">🎉 მიტანე</option>
                         </select>
@@ -1427,7 +1434,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="pending">📋 მოლოდინში</option>
-                          <option value="confirmed">✅ დამუშავებული</option>
+                          <option value="confirmed">💳 გადახდილი</option>
                           <option value="shipped">📦 გაგზავნილი</option>
                           <option value="delivered">🎉 მიტანილი</option>
                           <option value="cancelled">❌ გაუქმებული</option>

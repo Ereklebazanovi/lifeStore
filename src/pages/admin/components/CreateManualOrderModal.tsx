@@ -255,7 +255,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                   className="w-full px-3 py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
                 >
                   <option value="pending">📋 მოლოდინში</option>
-                  <option value="confirmed">✅ დამუშავებული</option>
+                  <option value="confirmed">💳 გადახდილი</option>
                   <option value="shipped">📦 გაგზავნილი</option>
                   <option value="delivered">🎉 მიტანილი</option>
                 </select>

@@ -8,6 +8,7 @@ import { getCartItemDisplayName } from "../utils/displayHelpers";
 import { OrderService } from "../services/orderService";
 import { PaymentService } from "../services/paymentService";
 import PhoneInput from "../components/ui/PhoneInput";
+import { useInventoryRefresh } from "../hooks/useInventoryRefresh";
 import {
   MapPin,
   User,
@@ -90,6 +91,9 @@ const CheckoutPage: React.FC = () => {
     };
     validateCart();
   }, [items.length, validateAndCleanCart]);
+
+  // ✅ Real-time inventory refresh - ყველაზე კრიტიკული checkout-ზე
+  useInventoryRefresh({ enabled: true, interval: 30000 }); // 30 წამი checkout-ზე
 
   // ცარიელი კალათის შემოწმება
   useEffect(() => {

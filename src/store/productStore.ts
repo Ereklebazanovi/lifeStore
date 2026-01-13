@@ -32,6 +32,7 @@ interface ProductActions {
   updateVariant: (productId: string, variantId: string, updates: Partial<ProductVariant>) => Promise<void>; // Update variant
   deleteVariant: (productId: string, variantId: string) => Promise<void>; // Remove variant
   subscribeToProducts: () => () => void;
+  refreshInventory: () => Promise<void>; // Real-time inventory refresh
   setLoading: (loading: boolean) => void;
 }
 
@@ -524,6 +525,46 @@ export const useProductStore = create<ProductState & ProductActions>(
       });
 
       return unsubscribe;
+    },
+
+    // ✅ Real-time inventory refresh (მხოლოდ მარაგის მონაცემები, არა სრული პროდუქტები)
+    refreshInventory: async () => {
+      try {
+        const currentProducts = get().products;
+
+        // რომ მხოლოდ stock fields შევამოწმოთ, არ ჩამოვტვირთოთ სრული პროდუქტები
+        const productsRef = collection(db, "products");
+        const snapshot = await getDocs(productsRef);
+
+        const updatedProducts = currentProducts.map((currentProduct) => {
+          const serverDoc = snapshot.docs.find((doc) => doc.id === currentProduct.id);
+
+          if (serverDoc) {
+            const serverData = serverDoc.data();
+
+            // მხოლოდ stock მონაცემების განახლება
+            return {
+              ...currentProduct,
+              stock: serverData.stock || 0,
+              totalStock: serverData.totalStock,
+              variants: currentProduct.variants?.map((variant) => {
+                const serverVariant = serverData.variants?.find((v: any) => v.id === variant.id);
+                return serverVariant
+                  ? { ...variant, stock: serverVariant.stock || 0 }
+                  : variant;
+              }),
+            };
+          }
+
+          return currentProduct; // თუ server-ზე არ არის, უცვლელი დატოვება
+        });
+
+        set({ products: updatedProducts });
+        console.log("📦 Inventory refreshed silently");
+      } catch (error) {
+        console.error("❌ Error refreshing inventory:", error);
+        // Silent fail - არ ვშლით UX-ს
+      }
     },
   })
 );

@@ -58,40 +58,53 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!value.trim()) {
-      setFilteredItems([]);
-      return;
-    }
-
     const searchTerm = value.toLowerCase().trim();
     const items: SearchItem[] = [];
 
     // Search through active products
-    products
-      .filter((p) => p.isActive && p.name.toLowerCase().includes(searchTerm))
+    // თუ value ცარიელია - ყველა პროდუქტი ჩანს, თუ არა - ძებნა
+    const filteredProducts = products.filter((p) => {
+      if (!p.isActive) return false;
+      if (!searchTerm) return true; // ყველა პროდუქტი ჩანს თუ search ცარიელია
+      return p.name.toLowerCase().includes(searchTerm);
+    });
+
+    filteredProducts
       .forEach((product) => {
         if (product.hasVariants && product.variants) {
           // Add each active variant as separate item
           product.variants
             .filter((variant) => variant.isActive)
             .forEach((variant) => {
+              // გამოვიყენოთ sale price თუ ის ნაკლებია regular price-ზე
+              const actualPrice =
+                variant.salePrice && variant.salePrice < variant.price
+                  ? variant.salePrice
+                  : variant.price;
+
               items.push({
                 type: "variant",
                 product,
                 variant,
                 searchDisplay: `${product.name} - ${variant.name}`,
                 stock: variant.stock || 0,
-                price: variant.price,
+                price: actualPrice,
               });
             });
         } else {
           // Add simple product
+          // გამოვიყენოთ sale price თუ ის ნაკლებია regular price-ზე
+          const actualPrice =
+            product.salePrice && product.salePrice < product.price
+              ? product.salePrice
+              : product.price;
+
           items.push({
             type: "product",
             product,
             searchDisplay: product.name,
             stock: product.stock || 0,
-            price: product.price,
+            price: actualPrice,
           });
         }
       });
@@ -103,7 +116,7 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
       return 0;
     });
 
-    setFilteredItems(items.slice(0, 8)); // Show up to 8 items
+    setFilteredItems(items.slice(0, 12)); // Show up to 12 items
   }, [value, products]);
 
   // ✅ განახლებული პოზიციონირების ლოგიკა
@@ -148,7 +161,7 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e.target.value);
-    setIsOpen(e.target.value.length > 0);
+    setIsOpen(true); // ყოველთვის გახსნა
   };
 
   const handleItemSelect = (item: SearchItem) => {
@@ -180,7 +193,7 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
     onProductSelect({ type: "manual", name: value, price: 0 });
   };
 
-  const showDropdown = isOpen && (filteredItems.length > 0 || value.length > 0);
+  const showDropdown = isOpen && (filteredItems.length > 0 || true); // ყოველთვის ჩვენება
 
   return (
     <div className="relative group">
@@ -191,7 +204,7 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
           type="text"
           value={value}
           onChange={handleInputChange}
-          onFocus={() => value.length > 0 && setIsOpen(true)}
+          onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
           className={`w-full pl-9 pr-3 py-2 text-sm border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none ${className}`}
         />
@@ -244,9 +257,32 @@ const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
                       <span className="font-medium text-stone-900 truncate">
                         {item.searchDisplay}
                       </span>
-                      <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
-                        ₾{item.price.toFixed(2)}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        {/* თუ ფასდაკლებაა - ვაჩვენოთ ძველი ფასი გადახაზული */}
+                        {item.variant && item.variant.salePrice && item.variant.salePrice < item.variant.price ? (
+                          <>
+                            <span className="text-xs text-stone-400 line-through">
+                              ₾{item.variant.price.toFixed(2)}
+                            </span>
+                            <span className="text-xs font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">
+                              ₾{item.price.toFixed(2)}
+                            </span>
+                          </>
+                        ) : item.type === "product" && item.product.salePrice && item.product.salePrice < item.product.price ? (
+                          <>
+                            <span className="text-xs text-stone-400 line-through">
+                              ₾{item.product.price.toFixed(2)}
+                            </span>
+                            <span className="text-xs font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">
+                              ₾{item.price.toFixed(2)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                            ₾{item.price.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="text-xs text-stone-500 mt-1 flex items-center gap-2">
                       {item.type === "variant" && (
