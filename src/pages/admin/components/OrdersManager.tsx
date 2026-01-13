@@ -92,7 +92,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           <div><span class="label">სტატუსი:</span> ${getStatusText(
             order.orderStatus,
             order.paymentStatus,
-            order.createdAt
+            order.createdAt,
+            order.paymentMethod
           )}</div>
           <div><span class="label">გადახდა:</span> ${
             order.paymentMethod === "cash"
@@ -241,7 +242,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               ${getStatusText(
                 order.orderStatus,
                 order.paymentStatus,
-                order.createdAt
+                order.createdAt,
+                order.paymentMethod
               )} |
               ${order.customerInfo.phone} |
               ${order.items.length} პროდუქტი
@@ -333,6 +335,11 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
     if (currentTab === "live") {
       // ლაივ რეჟიმი - გადახდის მოლოდინი
+      // Cash orders don't have timer in live mode - they shouldn't be in live at all
+      if (order.paymentMethod === "cash") {
+        return "💰 ნაღდი ფული - ადგილზე გადახდა";
+      }
+
       const minutesAgo = Math.floor(
         (new Date().getTime() - order.createdAt.getTime()) / (1000 * 60)
       );
@@ -357,11 +364,18 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const getStatusText = (
     status: Order["orderStatus"],
     paymentStatus?: string,
-    createdAt?: Date
+    createdAt?: Date,
+    paymentMethod?: string
   ) => {
     switch (status) {
       case "pending":
         if (paymentStatus === "pending" && createdAt) {
+          // Cash orders don't have countdown timer - they wait for manual confirmation
+          if (paymentMethod === "cash") {
+            return "💰 ნაღდი ფული - ადგილზე გადახდა";
+          }
+
+          // Card orders have 15-minute countdown
           const minutesAgo = Math.floor(
             (new Date().getTime() - createdAt.getTime()) / (1000 * 60)
           );
@@ -859,7 +873,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                               <option value="pending">📋 მოლოდინში</option>
                               <option value="confirmed">💳 გადახდილი</option>
                               <option value="shipped">📦 გაგზავნე</option>
-                              <option value="delivered">🎉 მიტანე</option>
+                              <option value="delivered">🎉 მიტანილი</option>
                             </select>
                           )}
                         </div>
@@ -1013,7 +1027,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           <option value="pending">📋 მოლოდინში</option>
                           <option value="confirmed">💳 გადახდილი</option>
                           <option value="shipped">📦 გაგზავნე</option>
-                          <option value="delivered">🎉 მიტანე</option>
+                          <option value="delivered">🎉 მიტანილი</option>
                         </select>
                       )}
                     </div>
@@ -1134,7 +1148,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                               {getStatusText(
                                 selectedOrder.orderStatus,
                                 selectedOrder.paymentStatus,
-                                selectedOrder.createdAt
+                                selectedOrder.createdAt,
+                                selectedOrder.paymentMethod
                               )}
                             </span>
                           </p>

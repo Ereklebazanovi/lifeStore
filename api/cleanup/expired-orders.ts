@@ -55,6 +55,14 @@ export default async function handler(
     const expiredOrders = pendingOrdersSnapshot.docs.filter((doc) => {
       const orderData = doc.data();
       if (!orderData.createdAt) return false;
+
+      // ⚠️ CRITICAL: Never expire cash orders - they wait for manual confirmation
+      if (orderData.paymentMethod === "cash") {
+        console.log(`💰 Skipping cash order: ${orderData.orderNumber}`);
+        return false;
+      }
+
+      // Only card orders should expire after 15 minutes
       return orderData.createdAt.toDate() <= cutoffTime;
     });
 
