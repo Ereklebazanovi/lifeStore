@@ -54,9 +54,9 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     { name: "", price: 0, quantity: 1 },
   ]);
   const [source, setSource] = useState<OrderSource>("instagram");
-  const [status, setStatus] = useState<"pending" | "confirmed" | "shipped" | "delivered">(
-    "pending"
-  );
+  const [status, setStatus] = useState<
+    "pending" | "confirmed" | "shipped" | "delivered"
+  >("pending");
   const [paymentMethod, setPaymentMethod] = useState<
     "cash" | "other" | "bank_transfer"
   >("cash");
@@ -97,7 +97,11 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     setItems(newItems);
   };
 
-  const handleProductSelect = (index: number, selection: ProductSelection, quantity?: number) => {
+  const handleProductSelect = (
+    index: number,
+    selection: ProductSelection,
+    quantity?: number
+  ) => {
     const newItems = [...items];
     newItems[index] = {
       ...newItems[index],
@@ -389,6 +393,9 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                 <ShoppingBag className="w-5 h-5 text-emerald-600" />
                 პროდუქტები
               </h3>
+              <p className="text-red-600 mb-1">
+                შესაძლებელია იმ პროდუქტების არჩევა რომელიც საწყობშია
+              </p>
               <div className="border border-stone-200 rounded-lg overflow-hidden mb-4">
                 <div className="overflow-x-auto">
                   <table className="w-full text-base text-left min-w-[600px]">
@@ -410,8 +417,8 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                               onChange={(value) =>
                                 handleItemChange(index, "name", value)
                               }
-                              onProductSelect={(selection) =>
-                                handleProductSelect(index, selection)
+                              onProductSelect={(selection, quantity) =>
+                                handleProductSelect(index, selection, quantity)
                               }
                               placeholder="მაგ: ლანჩბოქსი"
                               className="px-3 py-2 text-base !border-stone-200 !rounded focus:!ring-2 focus:!ring-emerald-500 !outline-none"
@@ -534,9 +541,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                     <span className="font-medium">₾{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center text-stone-600 text-base">
-                    <span className="flex items-center gap-2">
-                      მიწოდება ₾
-                    </span>
+                    <span className="flex items-center gap-2">მიწოდება ₾</span>
                     <input
                       type="number"
                       min="0"

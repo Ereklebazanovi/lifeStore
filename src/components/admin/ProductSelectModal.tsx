@@ -40,7 +40,9 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
   const { products } = useProductStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
+    null
+  );
   const [quantity, setQuantity] = useState(requestedQuantity);
 
   // Reset state when modal opens
@@ -60,9 +62,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
     return (
       product.name.toLowerCase().includes(searchLower) ||
       product.description?.toLowerCase().includes(searchLower) ||
-      product.variants?.some(v =>
-        v.name?.toLowerCase().includes(searchLower)
-      )
+      product.variants?.some((v) => v.name?.toLowerCase().includes(searchLower))
     );
   });
 
@@ -110,9 +110,11 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
 
     if (selectedVariant) {
       // Variant product
-      actualPrice = selectedVariant.salePrice && selectedVariant.salePrice < selectedVariant.price
-        ? selectedVariant.salePrice
-        : selectedVariant.price;
+      actualPrice =
+        selectedVariant.salePrice &&
+        selectedVariant.salePrice < selectedVariant.price
+          ? selectedVariant.salePrice
+          : selectedVariant.price;
 
       stock = selectedVariant.stock || 0;
 
@@ -127,9 +129,11 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
       };
     } else {
       // Simple product
-      actualPrice = selectedProduct.salePrice && selectedProduct.salePrice < selectedProduct.price
-        ? selectedProduct.salePrice
-        : selectedProduct.price;
+      actualPrice =
+        selectedProduct.salePrice &&
+        selectedProduct.salePrice < selectedProduct.price
+          ? selectedProduct.salePrice
+          : selectedProduct.price;
 
       stock = getTotalStock(selectedProduct);
 
@@ -147,8 +151,10 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
     onClose();
   };
 
-  const canConfirm = selectedProduct && (!selectedProduct.variants?.length || selectedVariant);
-  const currentStock = selectedVariant?.stock || getTotalStock(selectedProduct || {} as Product);
+  const canConfirm =
+    selectedProduct && (!selectedProduct.variants?.length || selectedVariant);
+  const currentStock =
+    selectedVariant?.stock || getTotalStock(selectedProduct || ({} as Product));
   const stockStatus = getStockStatus(currentStock, quantity);
 
   if (!isOpen) return null;
@@ -162,10 +168,10 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
+      <div className="relative bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 max-h-[85vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-900">პროდუქტის არჩევა</h2>
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="text-lg font-bold text-gray-900">პროდუქტის არჩევა</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -175,15 +181,15 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
         </div>
 
         {/* Search */}
-        <div className="p-6 border-b">
+        <div className="p-4 border-b">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="ძებნა პროდუქტის სახელით, ფერით, ზომით..."
+              placeholder="ძებნა პროდუქტის სახელით..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               autoFocus
             />
           </div>
@@ -193,8 +199,10 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
         <div className="flex-1 flex overflow-hidden">
           {/* Products List */}
           <div className="w-1/2 border-r overflow-y-auto">
-            <div className="p-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">პროდუქტები ({filteredProducts.length})</h3>
+            <div className="p-3">
+              <h3 className="text-xs font-semibold text-gray-700 mb-2 uppercase">
+                პროდუქტები ({filteredProducts.length})
+              </h3>
               <div className="space-y-2">
                 {filteredProducts.map((product) => {
                   const totalStock = getTotalStock(product);
@@ -204,7 +212,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                     <button
                       key={product.id}
                       onClick={() => handleProductClick(product)}
-                      className={`w-full text-left p-3 rounded-lg border transition-all ${
+                      className={`w-full text-left p-2 rounded-md border transition-all ${
                         isSelected
                           ? "border-emerald-500 bg-emerald-50"
                           : "border-gray-200 hover:border-gray-300"
@@ -212,26 +220,31 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{product.name}</h4>
-                          <div className="text-sm text-gray-600">
-                            ₾{product.salePrice && product.salePrice < product.price
-                              ? (
-                                <>
-                                  <span className="line-through text-gray-400">
-                                    {product.price.toFixed(2)}
-                                  </span>
-                                  <span className="ml-1 text-red-600 font-medium">
-                                    {product.salePrice.toFixed(2)}
-                                  </span>
-                                </>
-                              )
-                              : product.price.toFixed(2)
-                            }
+                          <h4 className="text-sm font-medium text-gray-900">
+                            {product.name}
+                          </h4>
+                          <div className="text-xs text-gray-600">
+                            ₾
+                            {product.salePrice &&
+                            product.salePrice < product.price ? (
+                              <>
+                                <span className="line-through text-gray-400">
+                                  {product.price.toFixed(2)}
+                                </span>
+                                <span className="ml-1 text-red-600 font-medium">
+                                  {product.salePrice.toFixed(2)}
+                                </span>
+                              </>
+                            ) : (
+                              product.price.toFixed(2)
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           {getStockIcon(getStockStatus(totalStock, quantity))}
-                          <span className="text-sm text-gray-500">[მარაგი: {totalStock}]</span>
+                          <span className="text-xs text-gray-500">
+                            [{totalStock}]
+                          </span>
                         </div>
                       </div>
                     </button>
@@ -244,27 +257,31 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
           {/* Variants & Details */}
           <div className="w-1/2 flex flex-col">
             {selectedProduct ? (
-              <div className="flex-1 overflow-y-auto p-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+              <div className="flex-1 overflow-y-auto p-3">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
                   {selectedProduct.name}
                 </h3>
 
                 {/* Variants */}
-                {selectedProduct.variants && selectedProduct.variants.length > 0 ? (
-                  <div className="space-y-2 mb-6">
-                    <h4 className="text-xs font-medium text-gray-600 uppercase">ვარიანტები</h4>
+                {selectedProduct.variants &&
+                selectedProduct.variants.length > 0 ? (
+                  <div className="space-y-1 mb-4">
+                    <h4 className="text-xs font-medium text-gray-600 uppercase">
+                      ვარიანტები
+                    </h4>
                     {selectedProduct.variants.map((variant) => {
                       const isSelected = selectedVariant?.id === variant.id;
                       const variantStock = variant.stock || 0;
-                      const actualPrice = variant.salePrice && variant.salePrice < variant.price
-                        ? variant.salePrice
-                        : variant.price;
+                      const actualPrice =
+                        variant.salePrice && variant.salePrice < variant.price
+                          ? variant.salePrice
+                          : variant.price;
 
                       return (
                         <button
                           key={variant.id}
                           onClick={() => handleVariantClick(variant)}
-                          className={`w-full text-left p-3 rounded-lg border transition-all ${
+                          className={`w-full text-left p-2 rounded-md border transition-all ${
                             isSelected
                               ? "border-emerald-500 bg-emerald-50"
                               : "border-gray-200 hover:border-gray-300"
@@ -272,28 +289,33 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="font-medium text-gray-900">
+                              <div className="text-sm font-medium text-gray-900">
                                 {variant.name}
                               </div>
-                              <div className="text-sm text-gray-600">
-                                ₾{variant.salePrice && variant.salePrice < variant.price
-                                  ? (
-                                    <>
-                                      <span className="line-through text-gray-400">
-                                        {variant.price.toFixed(2)}
-                                      </span>
-                                      <span className="ml-1 text-red-600 font-medium">
-                                        {variant.salePrice.toFixed(2)}
-                                      </span>
-                                    </>
-                                  )
-                                  : variant.price.toFixed(2)
-                                }
+                              <div className="text-xs text-gray-600">
+                                ₾
+                                {variant.salePrice &&
+                                variant.salePrice < variant.price ? (
+                                  <>
+                                    <span className="line-through text-gray-400">
+                                      {variant.price.toFixed(2)}
+                                    </span>
+                                    <span className="ml-1 text-red-600 font-medium">
+                                      {variant.salePrice.toFixed(2)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  variant.price.toFixed(2)
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                              {getStockIcon(getStockStatus(variantStock, quantity))}
-                              <span className="text-sm text-gray-500">[მარაგი: {variantStock}]</span>
+                              {getStockIcon(
+                                getStockStatus(variantStock, quantity)
+                              )}
+                              <span className="text-xs text-gray-500">
+                                [{variantStock}]
+                              </span>
                             </div>
                           </div>
                         </button>
@@ -303,18 +325,29 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                 ) : (
                   <div className="mb-6">
                     <div className="p-3 bg-gray-50 rounded-lg">
-                      <div className="text-sm text-gray-600">მარტივი პროდუქტი</div>
+                      <div className="text-sm text-gray-600">
+                        მარტივი პროდუქტი
+                      </div>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-gray-900">მარაგი: {getTotalStock(selectedProduct)}</span>
-                        {getStockIcon(getStockStatus(getTotalStock(selectedProduct), quantity))}
+                        <span className="text-gray-900">
+                          მარაგი: {getTotalStock(selectedProduct)}
+                        </span>
+                        {getStockIcon(
+                          getStockStatus(
+                            getTotalStock(selectedProduct),
+                            quantity
+                          )
+                        )}
                       </div>
                     </div>
                   </div>
                 )}
 
                 {/* Quantity */}
-                <div className="mb-6">
-                  <h4 className="text-xs font-medium text-gray-600 uppercase mb-2">რაოდენობა</h4>
+                <div className="mb-4">
+                  <h4 className="text-xs font-medium text-gray-600 uppercase mb-1">
+                    რაოდენობა
+                  </h4>
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -326,8 +359,10 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                     <input
                       type="number"
                       value={quantity}
-                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-20 text-center py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      onChange={(e) =>
+                        setQuantity(Math.max(1, parseInt(e.target.value) || 1))
+                      }
+                      className="w-16 text-center py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       min="1"
                     />
                     <button
@@ -347,20 +382,27 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
 
                 {/* Selection Summary */}
                 {canConfirm && (
-                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-                    <h4 className="font-medium text-emerald-900 mb-2">არჩეული პროდუქტი:</h4>
-                    <div className="text-sm text-emerald-800">
-                      <div>{selectedProduct.name}
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md">
+                    <h4 className="text-sm font-medium text-emerald-900 mb-1">
+                      არჩეული პროდუქტი:
+                    </h4>
+                    <div className="text-xs text-emerald-800">
+                      <div>
+                        {selectedProduct.name}
                         {selectedVariant && ` (${selectedVariant.name})`}
                       </div>
                       <div>რაოდენობა: {quantity}</div>
                       <div className="font-medium mt-1">
-                        ღირებულება: ₾{(
-                          (selectedVariant?.salePrice && selectedVariant.salePrice < selectedVariant.price
+                        ღირებულება: ₾
+                        {(
+                          (selectedVariant?.salePrice &&
+                          selectedVariant.salePrice < selectedVariant.price
                             ? selectedVariant.salePrice
-                            : selectedVariant?.price || (selectedProduct.salePrice && selectedProduct.salePrice < selectedProduct.price
-                            ? selectedProduct.salePrice
-                            : selectedProduct.price)) * quantity
+                            : selectedVariant?.price ||
+                              (selectedProduct.salePrice &&
+                              selectedProduct.salePrice < selectedProduct.price
+                                ? selectedProduct.salePrice
+                                : selectedProduct.price)) * quantity
                         ).toFixed(2)}
                       </div>
                     </div>
@@ -379,17 +421,21 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t bg-gray-50 flex items-center justify-between">
+        <div className="p-4 border-t bg-gray-50 flex items-center justify-between">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
           >
             გაუქმება
           </button>
           <button
             onClick={handleConfirm}
-            disabled={!canConfirm || stockStatus === "insufficient" || stockStatus === "out_of_stock"}
-            className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition-colors"
+            disabled={
+              !canConfirm ||
+              stockStatus === "insufficient" ||
+              stockStatus === "out_of_stock"
+            }
+            className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 transition-colors"
           >
             <ShoppingCart className="w-4 h-4" />
             <span>დამატება</span>
