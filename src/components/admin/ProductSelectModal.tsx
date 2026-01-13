@@ -94,9 +94,9 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
       // Reset quantity to 1 when switching products with variants
       setQuantity(1);
     } else {
-      // Simple product, adjust quantity to available stock
+      // Simple product - reset quantity based on stock
       const productStock = getTotalStock(product);
-      setQuantity(Math.min(quantity, productStock));
+      setQuantity(productStock > 0 ? 1 : 0);
       setSelectedVariant(null);
     }
   };
@@ -106,13 +106,10 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
     // Smart quantity adjustment when switching variants
     const variantStock = variant.stock || 0;
     if (variantStock === 0) {
-      // If variant is out of stock, set quantity to 1 and disable controls
-      setQuantity(1);
-    } else if (quantity > variantStock) {
-      // If current quantity exceeds variant stock, set to max available
-      setQuantity(variantStock);
-    } else if (quantity === 0) {
-      // Safety: ensure quantity is never 0
+      // If variant is out of stock, set quantity to 0 and disable controls
+      setQuantity(0);
+    } else {
+      // If variant has stock, always reset to 1 for fresh start
       setQuantity(1);
     }
     // If variant has enough stock, keep current quantity
@@ -368,8 +365,8 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                   </h4>
                   <div className="flex items-center space-x-3">
                     <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      disabled={quantity <= 1 || currentStock === 0}
+                      onClick={() => setQuantity(Math.max(currentStock === 0 ? 0 : 1, quantity - 1))}
+                      disabled={quantity <= (currentStock === 0 ? 0 : 1)}
                       className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Minus className="w-4 h-4" />
@@ -387,7 +384,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                           ? "border-red-300 bg-red-50 text-red-500 cursor-not-allowed"
                           : "border-gray-300 focus:ring-emerald-500"
                       }`}
-                      min="1"
+                      min={currentStock === 0 ? "0" : "1"}
                       max={currentStock}
                       disabled={currentStock === 0}
                       readOnly={currentStock === 0}
@@ -469,6 +466,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
             onClick={handleConfirm}
             disabled={
               !canConfirm ||
+              quantity === 0 ||
               stockStatus === "insufficient" ||
               stockStatus === "out_of_stock"
             }
