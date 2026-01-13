@@ -20,9 +20,8 @@ import type {
 } from "../../../types";
 // ✅ 1. იმპორტი
 import PhoneInput from "../../../components/ui/PhoneInput";
-import ProductAutocomplete, {
-  ProductSelection,
-} from "../../../components/admin/ProductAutocomplete";
+import ProductSelector from "../../../components/admin/ProductSelector";
+import { ProductSelection } from "../../../components/admin/ProductSelectModal";
 import { useProductStore } from "../../../store/productStore";
 
 interface CreateManualOrderModalProps {
@@ -98,7 +97,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     setItems(newItems);
   };
 
-  const handleProductSelect = (index: number, selection: ProductSelection) => {
+  const handleProductSelect = (index: number, selection: ProductSelection, quantity?: number) => {
     const newItems = [...items];
     newItems[index] = {
       ...newItems[index],
@@ -106,6 +105,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       variantId: selection.variantId, // 👈 ვამატებთ variant ID-ს
       name: selection.name,
       price: selection.price,
+      quantity: quantity || newItems[index].quantity, // Use provided quantity or keep existing
     };
     setItems(newItems);
   };
@@ -405,7 +405,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                       {items.map((item, index) => (
                         <tr key={index}>
                           <td className="p-3">
-                            <ProductAutocomplete
+                            <ProductSelector
                               value={item.name}
                               onChange={(value) =>
                                 handleItemChange(index, "name", value)
