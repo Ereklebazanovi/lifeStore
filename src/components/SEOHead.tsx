@@ -48,9 +48,19 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     updateMetaTag('og:title', title, true);
     updateMetaTag('og:description', description, true);
     updateMetaTag('og:image', ogImage, true);
+    updateMetaTag('og:image:width', '1200', true);
+    updateMetaTag('og:image:height', '630', true);
     updateMetaTag('og:type', ogType, true);
+    updateMetaTag('og:site_name', 'Life Store', true);
+    if (canonicalUrl) {
+      updateMetaTag('og:url', canonicalUrl, true);
+    }
+
+    // Facebook specific tags
+    updateMetaTag('fb:app_id', '1234567890', true); // Replace with actual Facebook App ID
 
     // Twitter tags
+    updateMetaTag('twitter:card', 'summary_large_image');
     updateMetaTag('twitter:title', title, true);
     updateMetaTag('twitter:description', description, true);
     updateMetaTag('twitter:image', ogImage, true);
