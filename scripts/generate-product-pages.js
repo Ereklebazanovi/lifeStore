@@ -59,6 +59,8 @@ function generateProductHTML(product) {
     <meta property="og:image" content="${product.images?.[0] || 'https://lifestore.ge/Screenshot 2025-12-10 151703.png'}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="${product.name}">
     <meta property="og:site_name" content="Life Store">
     <meta property="og:locale" content="ka_GE">
 
@@ -109,13 +111,20 @@ function generateProductHTML(product) {
     <!-- Redirect to main app after meta tags are read -->
     <script>
       // Check if this is a bot/crawler (they usually don't execute JS)
-      const isBot = /bot|crawler|spider|facebook|twitter|whatsapp/i.test(navigator.userAgent);
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isBot = /bot|crawler|spider|facebookexternalhit|twitterbot|whatsapp|linkedinbot|telegrambot/i.test(userAgent);
+
+      // Debug info (only in development)
+      console.log('User Agent:', userAgent, 'Is Bot:', isBot);
 
       if (!isBot) {
         // Human user - redirect to main React app root and let React Router handle routing
+        console.log('Redirecting human user...');
         setTimeout(() => {
           window.location.href = "https://lifestore.ge/?redirect=product/${product.id}";
         }, 100);
+      } else {
+        console.log('Bot detected - staying on static page');
       }
     </script>
 
@@ -152,7 +161,7 @@ function generateProductHTML(product) {
             </div>
 
             <p style="text-align: center; margin: 30px 0;">
-                <a href="https://lifestore.ge/product/${product.id}"
+                <a href="https://lifestore.ge/?redirect=product/${product.id}"
                    style="background: #059669; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
                     🛒 შეუკვეთეთ ახლავე
                 </a>
