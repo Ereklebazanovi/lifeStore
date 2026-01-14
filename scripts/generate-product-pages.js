@@ -115,7 +115,7 @@ function generateProductHTML(product) {
         // Human user - redirect to main React app root and let React Router handle routing
         setTimeout(() => {
           window.location.href = "https://lifestore.ge/?redirect=product/${product.id}";
-        }, 500);
+        }, 100);
       }
     </script>
 
