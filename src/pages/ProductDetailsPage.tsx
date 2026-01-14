@@ -178,7 +178,10 @@ const ProductDetailsPage: React.FC = () => {
     const facebookUrl = `https://lifestore.ge/api/og/${product.id}`; // Special URL for Facebook bot
     const shareText = `🛍️ ${product.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n✅ მარაგშია ${getCurrentStock()} ცალი\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
 
-    // Enhanced Facebook Share URL with detailed quote
+    // Enhanced Facebook Share URL with detailed quote + cache buster
+    const cacheBuster = Date.now(); // Current timestamp to bust Facebook cache
+    const shareUrl = `https://lifestore.ge/product/${product.id}?v=${cacheBuster}`;
+
     const detailedQuote = `🛍️ ${product.name}
 💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
 ✅ მარაგშია: ${getCurrentStock()} ცალი
@@ -191,7 +194,7 @@ ${product.description}
 🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${product.id}`;
 
     const facebookParams = new URLSearchParams({
-      u: regularUrl, // Use regular URL for now
+      u: shareUrl, // Use cache-busting URL
       quote: detailedQuote,
     });
     const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
@@ -687,7 +690,8 @@ ${product.description}
               <button
                 onClick={() => {
                   if (!product) return;
-                  const regularUrl = `https://lifestore.ge/product/${product.id}`;
+                  const cacheBuster = Date.now();
+                  const shareUrl = `https://lifestore.ge/product/${product.id}?v=${cacheBuster}`;
                   const detailedQuote = `🛍️ ${product.name}
 💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
 ✅ მარაგშია: ${getCurrentStock()} ცალი
@@ -697,10 +701,10 @@ ${product.description}
 
 🌿 Life Store - ეკომეგობრული სახლის ნივთები
 🚚 უფასო მიწოდება თბილისში
-🛒 შეუკვეთეთ ახლავე: ${regularUrl}`;
+🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${product.id}`;
 
                   const facebookParams = new URLSearchParams({
-                    u: regularUrl,
+                    u: shareUrl,
                     quote: detailedQuote,
                   });
                   const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
