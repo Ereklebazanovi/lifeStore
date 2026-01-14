@@ -6,6 +6,7 @@ import {
   Routes,
   Route,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import Navbar from "./components/Navbar";
@@ -34,7 +35,19 @@ import { ToastContainer } from "./components/ui/Toast";
 
 const CheckAndRenderLayout: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isAdminRoute = location.pathname.startsWith('/admin');
+
+  // Handle redirect parameter from static product pages
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const redirectPath = urlParams.get('redirect');
+
+    if (redirectPath) {
+      // Remove query parameter and navigate to the redirect path
+      navigate(`/${redirectPath}`, { replace: true });
+    }
+  }, [location.search, navigate]);
 
   if (isAdminRoute) {
     return <AnimatedRoutes />;

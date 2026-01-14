@@ -112,10 +112,10 @@ function generateProductHTML(product) {
       const isBot = /bot|crawler|spider|facebook|twitter|whatsapp/i.test(navigator.userAgent);
 
       if (!isBot) {
-        // Human user - redirect to main app
+        // Human user - redirect to main React app root and let React Router handle routing
         setTimeout(() => {
-          window.location.href = "https://lifestore.ge/product/${product.id}";
-        }, 100);
+          window.location.href = "https://lifestore.ge/?redirect=product/${product.id}";
+        }, 500);
       }
     </script>
 
