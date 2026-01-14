@@ -171,6 +171,8 @@ const ProductDetailsPage: React.FC = () => {
   };
 
   const handleShare = () => {
+    if (!product) return;
+
     const shareUrl = `https://lifestore.ge/product/${product.id}`;
     const shareText = `${product.name} - ₾${getCurrentPrice().toFixed(2)}`;
     const shareImage = product.images?.[0] || '';
