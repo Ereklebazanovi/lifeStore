@@ -59,7 +59,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     { id: "products", icon: Package, label: "პროდუქტები" },
     { id: "orders", icon: ShoppingBag, label: "შეკვეთები" },
     { id: "inventory", icon: Warehouse, label: "საწყობი" },
-    { id: "analytics", icon: BarChart3, label: "ანალიტიკა" },
+    
   ];
 
   // Enhanced Role-based navigation
