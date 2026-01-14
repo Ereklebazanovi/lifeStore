@@ -173,29 +173,30 @@ const ProductDetailsPage: React.FC = () => {
   const handleShare = () => {
     if (!product) return;
 
-    const shareUrl = `https://lifestore.ge/product/${product.id}`;
+    // Different URLs for different purposes
+    const regularUrl = `https://lifestore.ge/product/${product.id}`;
+    const facebookUrl = `https://lifestore.ge/api/og/${product.id}`; // Special URL for Facebook bot
     const shareText = `🛍️ ${product.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n✅ მარაგშია ${getCurrentStock()} ცალი\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
-    const shareImage = product.images?.[0] || '';
 
-    // Enhanced Facebook Share URL with quote parameter
+    // Enhanced Facebook Share URL with Open Graph endpoint
     const facebookParams = new URLSearchParams({
-      u: shareUrl,
+      u: facebookUrl, // Use OG endpoint for Facebook
       quote: `🛍️ ${product.name} - ₾${getCurrentPrice().toFixed(2)}\n\n${product.description.slice(0, 100)}...\n\n✅ მარაგშია ${getCurrentStock()} ცალი | Life Store`,
     });
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
+    const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
 
-    // WhatsApp Share URL with enhanced text
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText}\n${shareUrl}`)}`;
+    // WhatsApp Share URL with regular URL
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText}\n${regularUrl}`)}`;
 
     // Native Share API (Mobile)
     if (navigator.share && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
       navigator.share({
         title: shareText,
-        url: shareUrl,
+        url: regularUrl,
       }).catch((error) => {
         console.log('Error sharing:', error);
         // Fallback to Facebook
-        window.open(facebookUrl, '_blank', 'width=600,height=400');
+        window.open(facebookShareUrl, '_blank', 'width=600,height=400');
       });
     } else {
       // Desktop - show share modal
@@ -674,13 +675,13 @@ const ProductDetailsPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => {
-                  const shareUrl = `https://lifestore.ge/product/${product?.id}`;
+                  const facebookUrl = `https://lifestore.ge/api/og/${product?.id}`;
                   const facebookParams = new URLSearchParams({
-                    u: shareUrl,
+                    u: facebookUrl,
                     quote: `🛍️ ${product?.name} - ₾${getCurrentPrice().toFixed(2)}\n\n${product?.description.slice(0, 100)}...\n\n✅ მარაგშია ${getCurrentStock()} ცალი | Life Store`,
                   });
-                  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
-                  window.open(facebookUrl, '_blank', 'width=600,height=400');
+                  const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
+                  window.open(facebookShareUrl, '_blank', 'width=600,height=400');
                   setIsShareModalOpen(false);
                 }}
                 className="flex items-center gap-3 p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
@@ -694,8 +695,8 @@ const ProductDetailsPage: React.FC = () => {
               <button
                 onClick={() => {
                   const shareText = `🛍️ ${product?.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n✅ მარაგშია ${getCurrentStock()} ცალი\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
-                  const shareUrl = `https://lifestore.ge/product/${product?.id}`;
-                  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText}\n${shareUrl}`)}`;
+                  const regularUrl = `https://lifestore.ge/product/${product?.id}`;
+                  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText}\n${regularUrl}`)}`;
                   window.open(whatsappUrl, '_blank');
                   setIsShareModalOpen(false);
                 }}
@@ -709,8 +710,8 @@ const ProductDetailsPage: React.FC = () => {
 
               <button
                 onClick={() => {
-                  const shareUrl = `https://lifestore.ge/product/${product?.id}`;
-                  navigator.clipboard.writeText(shareUrl);
+                  const regularUrl = `https://lifestore.ge/product/${product?.id}`;
+                  navigator.clipboard.writeText(regularUrl);
                   showToast("ლინკი დაკოპირდა!", "success");
                   setIsShareModalOpen(false);
                 }}
@@ -725,8 +726,8 @@ const ProductDetailsPage: React.FC = () => {
               <button
                 onClick={() => {
                   const shareText = `🛍️ ${product?.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n✅ მარაგშია ${getCurrentStock()} ცალი\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
-                  const shareUrl = `https://lifestore.ge/product/${product?.id}`;
-                  const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+                  const regularUrl = `https://lifestore.ge/product/${product?.id}`;
+                  const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(regularUrl)}&text=${encodeURIComponent(shareText)}`;
                   window.open(telegramUrl, '_blank');
                   setIsShareModalOpen(false);
                 }}
