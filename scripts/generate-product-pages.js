@@ -40,6 +40,19 @@ function generateProductHTML(product) {
   const stockStatus = totalStock > 0 ? 'მარაგშია' : 'ამოწურულია';
   const availability = totalStock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
 
+  // Helper function to optimize Cloudinary URLs for Facebook
+  function getOptimizedImageUrl(imageUrl) {
+    if (!imageUrl) return null;
+
+    // If Cloudinary URL, remove dynamic parameters and use static dimensions
+    if (imageUrl.includes('cloudinary.com')) {
+      // Replace dynamic parameters with fixed dimensions for Facebook
+      return imageUrl.replace(/\/f_auto,q_auto,w_\d+\//, '/w_1200,h_630,c_fill,f_jpg,q_80/');
+    }
+
+    return imageUrl;
+  }
+
   return `<!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -53,13 +66,13 @@ function generateProductHTML(product) {
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="product">
-    <meta property="og:url" content="https://lifestore.ge/product/${product.id}">
+    <meta property="og:url" content="https://www.lifestore.ge/product/${product.id}">
     <meta property="og:title" content="${product.name} - ₾${actualPrice.toFixed(2)} ${discountPercent > 0 ? `(${discountPercent}% ფასდაკლება!)` : ''}">
     <meta property="og:description" content="${product.description?.slice(0, 160) || product.name} ✅ ${stockStatus} ${totalStock > 0 ? `${totalStock} ცალი` : ''}">
-    <meta property="og:image" content="${product.images?.[0] || 'https://lifestore.ge/Screenshot 2025-12-10 151703.png'}">
+    <meta property="og:image" content="${getOptimizedImageUrl(product.images?.[0]) || 'https://lifestore.ge/Screenshot 2025-12-10 151703.png'}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:alt" content="${product.name}">
     <meta property="og:site_name" content="Life Store">
     <meta property="og:locale" content="ka_GE">
@@ -75,7 +88,7 @@ function generateProductHTML(product) {
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="${product.name} - ₾${actualPrice.toFixed(2)}">
     <meta name="twitter:description" content="${product.description?.slice(0, 160) || product.name}">
-    <meta name="twitter:image" content="${product.images?.[0] || 'https://lifestore.ge/Screenshot 2025-12-10 151703.png'}">
+    <meta name="twitter:image" content="${getOptimizedImageUrl(product.images?.[0]) || 'https://lifestore.ge/Screenshot 2025-12-10 151703.png'}">
 
     <!-- Structured Data -->
     <script type="application/ld+json">
@@ -84,7 +97,7 @@ function generateProductHTML(product) {
       "@type": "Product",
       "name": "${product.name}",
       "description": "${product.description || product.name}",
-      "image": "${product.images?.[0] || 'https://lifestore.ge/Screenshot 2025-12-10 151703.png'}",
+      "image": "${getOptimizedImageUrl(product.images?.[0]) || 'https://lifestore.ge/Screenshot 2025-12-10 151703.png'}",
       "brand": {
         "@type": "Brand",
         "name": "Life Store"
@@ -146,7 +159,7 @@ function generateProductHTML(product) {
         </header>
 
         <main>
-            ${product.images?.[0] ? `<img src="${product.images[0]}" alt="${product.name}" style="max-width: 100%; height: 400px; object-fit: contain; border-radius: 12px;">` : ''}
+            ${product.images?.[0] ? `<img src="${getOptimizedImageUrl(product.images[0])}" alt="${product.name}" style="max-width: 100%; height: 400px; object-fit: contain; border-radius: 12px;">` : ''}
 
             <p><strong>კატეგორია:</strong> ${product.category}</p>
             <p>${product.description || ''}</p>
