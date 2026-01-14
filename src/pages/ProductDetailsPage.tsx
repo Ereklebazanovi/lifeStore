@@ -174,13 +174,17 @@ const ProductDetailsPage: React.FC = () => {
     if (!product) return;
 
     const shareUrl = `https://lifestore.ge/product/${product.id}`;
-    const shareText = `${product.name} - ₾${getCurrentPrice().toFixed(2)}`;
+    const shareText = `🛍️ ${product.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n✅ მარაგშია ${getCurrentStock()} ცალი\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
     const shareImage = product.images?.[0] || '';
 
-    // Facebook Share URL
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    // Enhanced Facebook Share URL with quote parameter
+    const facebookParams = new URLSearchParams({
+      u: shareUrl,
+      quote: `🛍️ ${product.name} - ₾${getCurrentPrice().toFixed(2)}\n\n${product.description.slice(0, 100)}...\n\n✅ მარაგშია ${getCurrentStock()} ცალი | Life Store`,
+    });
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
 
-    // WhatsApp Share URL
+    // WhatsApp Share URL with enhanced text
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText}\n${shareUrl}`)}`;
 
     // Native Share API (Mobile)
@@ -236,12 +240,29 @@ const ProductDetailsPage: React.FC = () => {
   return (
     <>
       <SEOHead
-        title={`${product.name} | Life Store`}
-        description={product.description.slice(0, 160)}
-        keywords={`${product.name}, ეკო პროდუქტები`}
-        ogImage={product.images?.[0] || ""}
+        title={`${product.name} - ₾${getCurrentPrice().toFixed(2)} | Life Store`}
+        description={`${product.description.slice(0, 140)} ✅ მარაგშია ${getCurrentStock()} ცალი`}
+        keywords={`${product.name}, ეკო პროდუქტები, ${product.category}`}
+        ogImage={product.images?.[0] || "https://lifestore.ge/Screenshot 2025-12-10 151703.png"}
         ogType="product"
         canonicalUrl={`https://lifestore.ge/product/${product.id}`}
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": product.name,
+          "description": product.description,
+          "image": product.images?.[0] || "",
+          "offers": {
+            "@type": "Offer",
+            "price": getCurrentPrice(),
+            "priceCurrency": "GEL",
+            "availability": isOutOfStock() ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"
+          },
+          "brand": {
+            "@type": "Brand",
+            "name": "Life Store"
+          }
+        }}
       />
 
       <div className="min-h-screen bg-white lg:bg-[#F8FAFC] pb-32 lg:pb-16">
@@ -654,7 +675,11 @@ const ProductDetailsPage: React.FC = () => {
               <button
                 onClick={() => {
                   const shareUrl = `https://lifestore.ge/product/${product?.id}`;
-                  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+                  const facebookParams = new URLSearchParams({
+                    u: shareUrl,
+                    quote: `🛍️ ${product?.name} - ₾${getCurrentPrice().toFixed(2)}\n\n${product?.description.slice(0, 100)}...\n\n✅ მარაგშია ${getCurrentStock()} ცალი | Life Store`,
+                  });
+                  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
                   window.open(facebookUrl, '_blank', 'width=600,height=400');
                   setIsShareModalOpen(false);
                 }}
@@ -668,7 +693,7 @@ const ProductDetailsPage: React.FC = () => {
 
               <button
                 onClick={() => {
-                  const shareText = `${product?.name} - ₾${getCurrentPrice().toFixed(2)}`;
+                  const shareText = `🛍️ ${product?.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n✅ მარაგშია ${getCurrentStock()} ცალი\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
                   const shareUrl = `https://lifestore.ge/product/${product?.id}`;
                   const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText}\n${shareUrl}`)}`;
                   window.open(whatsappUrl, '_blank');
@@ -699,7 +724,7 @@ const ProductDetailsPage: React.FC = () => {
 
               <button
                 onClick={() => {
-                  const shareText = `${product?.name} - ₾${getCurrentPrice().toFixed(2)}`;
+                  const shareText = `🛍️ ${product?.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n✅ მარაგშია ${getCurrentStock()} ცალი\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
                   const shareUrl = `https://lifestore.ge/product/${product?.id}`;
                   const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
                   window.open(telegramUrl, '_blank');
