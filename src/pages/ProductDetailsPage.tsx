@@ -178,10 +178,21 @@ const ProductDetailsPage: React.FC = () => {
     const facebookUrl = `https://lifestore.ge/api/og/${product.id}`; // Special URL for Facebook bot
     const shareText = `🛍️ ${product.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n✅ მარაგშია ${getCurrentStock()} ცალი\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
 
-    // Enhanced Facebook Share URL with Open Graph endpoint
+    // Enhanced Facebook Share URL with detailed quote
+    const detailedQuote = `🛍️ ${product.name}
+💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
+✅ მარაგშია: ${getCurrentStock()} ცალი
+📦 კატეგორია: ${product.category}
+
+${product.description}
+
+🌿 Life Store - ეკომეგობრული სახლის ნივთები
+🚚 უფასო მიწოდება თბილისში
+🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${product.id}`;
+
     const facebookParams = new URLSearchParams({
-      u: facebookUrl, // Use OG endpoint for Facebook
-      quote: `🛍️ ${product.name} - ₾${getCurrentPrice().toFixed(2)}\n\n${product.description.slice(0, 100)}...\n\n✅ მარაგშია ${getCurrentStock()} ცალი | Life Store`,
+      u: regularUrl, // Use regular URL for now
+      quote: detailedQuote,
     });
     const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
 
@@ -675,10 +686,22 @@ const ProductDetailsPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => {
-                  const facebookUrl = `https://lifestore.ge/api/og/${product?.id}`;
+                  if (!product) return;
+                  const regularUrl = `https://lifestore.ge/product/${product.id}`;
+                  const detailedQuote = `🛍️ ${product.name}
+💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
+✅ მარაგშია: ${getCurrentStock()} ცალი
+📦 კატეგორია: ${product.category}
+
+${product.description}
+
+🌿 Life Store - ეკომეგობრული სახლის ნივთები
+🚚 უფასო მიწოდება თბილისში
+🛒 შეუკვეთეთ ახლავე: ${regularUrl}`;
+
                   const facebookParams = new URLSearchParams({
-                    u: facebookUrl,
-                    quote: `🛍️ ${product?.name} - ₾${getCurrentPrice().toFixed(2)}\n\n${product?.description.slice(0, 100)}...\n\n✅ მარაგშია ${getCurrentStock()} ცალი | Life Store`,
+                    u: regularUrl,
+                    quote: detailedQuote,
                   });
                   const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
                   window.open(facebookShareUrl, '_blank', 'width=600,height=400');
