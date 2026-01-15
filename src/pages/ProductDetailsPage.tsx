@@ -119,6 +119,14 @@ const ProductDetailsPage: React.FC = () => {
     return product?.stock || 0;
   };
 
+  const getCurrentWeight = () => {
+    const variant = getSelectedVariant();
+    if (variant && variant.weight !== undefined) {
+      return variant.weight;
+    }
+    return product?.weight;
+  };
+
   const isOutOfStock = () => {
     return getCurrentStock() <= 0;
   };
@@ -185,7 +193,7 @@ const ProductDetailsPage: React.FC = () => {
     const detailedQuote = `🛍️ ${product.name}
 💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
 ✅ მარაგშია: ${getCurrentStock()} ცალი
-📦 კატეგორია: ${product.category}
+📦 კატეგორია: ${product.category}${getCurrentWeight() ? `\n⚖️ წონა: ${getCurrentWeight()}გრ` : ''}
 
 ${product.description}
 
@@ -418,9 +426,16 @@ ${product.description}
                   <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50 px-2.5 py-1 rounded-lg">
                       {product.category}
                   </span>
-                  <div className={`flex items-center gap-1.5 text-sm font-medium ${outOfStock ? "text-red-600" : "text-emerald-700"}`}>
-                      <div className={`w-2 h-2 rounded-full ${outOfStock ? "bg-red-500" : "bg-emerald-500"}`}></div>
-                      <span>{outOfStock ? "მარაგში არ არის" : `მარაგშია: ${currentStock}`}</span>
+                  <div className="flex items-center gap-3">
+                      <div className={`flex items-center gap-1.5 text-sm font-medium ${outOfStock ? "text-red-600" : "text-emerald-700"}`}>
+                          <div className={`w-2 h-2 rounded-full ${outOfStock ? "bg-red-500" : "bg-emerald-500"}`}></div>
+                          <span>{outOfStock ? "მარაგში არ არის" : `მარაგშია: ${currentStock}`}</span>
+                      </div>
+                      {getCurrentWeight() && (
+                          <div className="flex items-center gap-1.5 text-sm font-medium text-stone-600">
+                              <span>⚖️ {getCurrentWeight()}გრ</span>
+                          </div>
+                      )}
                   </div>
               </div>
 
@@ -475,7 +490,12 @@ ${product.description}
                                     : "border-stone-200 bg-white text-stone-700 hover:border-emerald-300 hover:text-emerald-600"
                                 }`}
                             >
-                              {variant.name}
+                              <div className="flex flex-col items-center text-center">
+                                <span>{variant.name}</span>
+                                {variant.weight && (
+                                  <span className="text-xs text-stone-500">⚖️ {variant.weight}გრ</span>
+                                )}
+                              </div>
                               {isSelected && !isDisabled && <Check className="w-4 h-4" />}
                             </button>
                           );
@@ -695,7 +715,7 @@ ${product.description}
                   const detailedQuote = `🛍️ ${product.name}
 💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
 ✅ მარაგშია: ${getCurrentStock()} ცალი
-📦 კატეგორია: ${product.category}
+📦 კატეგორია: ${product.category}${getCurrentWeight() ? `\n⚖️ წონა: ${getCurrentWeight()}გრ` : ''}
 
 ${product.description}
 

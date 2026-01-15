@@ -16,6 +16,7 @@ export interface ProductVariant {
   price: number; // Variant-specific regular price
   salePrice?: number; // Optional discounted price (when on sale)
   stock: number; // Variant-specific stock
+  weight?: number; // Weight in grams (გრ)
   isActive: boolean; // Can be disabled without deleting
   createdAt: Date;
   updatedAt: Date;
@@ -38,6 +39,7 @@ export interface Product {
   salePrice?: number; // Optional discounted price for simple products
   originalPrice?: number;
   stock: number; // Always present for backward compatibility
+  weight?: number; // Weight in grams (გრ) for simple products
 
   // Computed fields (read-only)
   totalStock?: number; // Sum of all variant stocks (auto-calculated)

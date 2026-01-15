@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
-import { getOrderItemDisplayName } from "../../../utils/displayHelpers";
+import { getOrderItemDisplayName, getOrderItemDisplayNameWithWeight } from "../../../utils/displayHelpers";
 import CreateManualOrderModal from "./CreateManualOrderModal";
 
 import {
@@ -126,7 +126,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             .map(
               (item) => `
             <div class="product-item">
-              <span>${getOrderItemDisplayName(item)} - ${
+              <span>${getOrderItemDisplayNameWithWeight(item)} - ${
                 item.quantity
               } ცალი × ₾${item.price.toFixed(2)}</span>
               <span>₾${item.total.toFixed(2)}</span>

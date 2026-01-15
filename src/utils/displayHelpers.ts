@@ -63,3 +63,25 @@ export function getOrderItemDisplayName(item: OrderItem): string {
 
   return baseName;
 }
+
+/**
+ * Get the display name for an order item with weight information for PDF export
+ */
+export function getOrderItemDisplayNameWithWeight(item: OrderItem): string {
+  const baseName = getOrderItemDisplayName(item);
+
+  // Get weight from variant or product
+  let weight: number | undefined;
+  if (item.variantId && item.product.variants) {
+    const variant = item.product.variants.find((v) => v.id === item.variantId);
+    weight = variant?.weight;
+  } else {
+    weight = item.product.weight;
+  }
+
+  if (weight) {
+    return `${baseName} (${weight}გრ)`;
+  }
+
+  return baseName;
+}

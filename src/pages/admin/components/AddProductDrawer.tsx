@@ -1,3 +1,4 @@
+//AddProductDrawer.tsx
 import React, { useState } from "react";
 import { X, Package, Plus, Trash2, Save, Info } from "lucide-react";
 import { useProductStore } from "../../../store/productStore";
@@ -17,6 +18,7 @@ interface SimpleVariant {
   price: number;
   salePrice?: number;
   stock: number;
+  weight?: number;
 }
 
 const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
@@ -40,10 +42,11 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
   const [simplePrice, setSimplePrice] = useState<number>(0);
   const [simpleSalePrice, setSimpleSalePrice] = useState<number | undefined>(undefined);
   const [simpleStock, setSimpleStock] = useState<number>(0);
+  const [simpleWeight, setSimpleWeight] = useState<number | undefined>(undefined);
 
   // ვარიანტების მასივი
   const [variants, setVariants] = useState<SimpleVariant[]>([
-    { name: "", price: 0, salePrice: undefined, stock: 0 },
+    { name: "", price: 0, salePrice: undefined, stock: 0, weight: undefined },
   ]);
   const [bulkDiscountPercent, setBulkDiscountPercent] = useState<number>(0);
 
@@ -105,7 +108,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
   const addVariant = () => {
     setVariants([
       ...variants,
-      { name: "", price: 0, salePrice: undefined, stock: 0 },
+      { name: "", price: 0, salePrice: undefined, stock: 0, weight: undefined },
     ]);
   };
 
@@ -205,6 +208,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
         price: hasVariants ? stats.minPrice : simplePrice,
         ...((!hasVariants && simpleSalePrice !== undefined) && { salePrice: simpleSalePrice }),
         stock: hasVariants ? stats.totalStock : simpleStock,
+        ...((!hasVariants && simpleWeight !== undefined) && { weight: simpleWeight }),
 
         // ახალი ველები variant system-ისთვის
         minPrice: stats.minPrice,
@@ -219,6 +223,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
             price: variant.price,
             ...(variant.salePrice !== undefined && { salePrice: variant.salePrice }),
             stock: variant.stock,
+            ...(variant.weight !== undefined && { weight: variant.weight }),
             isActive: true,
             createdAt: now,
             updatedAt: now,
@@ -242,7 +247,8 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
       setSimplePrice(0);
       setSimpleSalePrice(undefined);
       setSimpleStock(0);
-      setVariants([{ name: "", price: 0, salePrice: undefined, stock: 0 }]);
+      setSimpleWeight(undefined);
+      setVariants([{ name: "", price: 0, salePrice: undefined, stock: 0, weight: undefined }]);
       setBulkDiscountPercent(0);
       setErrors({});
 
@@ -437,7 +443,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                       <h4 className="font-medium text-blue-900 mb-3">
                         მარტივი პროდუქტი
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-blue-800 mb-2">
                             ფასი (₾) <span className="text-red-500">*</span>
@@ -534,6 +540,31 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                             </p>
                           )}
                         </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">
+                            ⚖️ წონა (გრ)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={simpleWeight === undefined ? "" : simpleWeight}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === "") {
+                                setSimpleWeight(undefined);
+                              } else {
+                                const numValue = parseInt(value);
+                                if (!isNaN(numValue)) {
+                                  setSimpleWeight(numValue);
+                                }
+                              }
+                            }}
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="არასავალდებულო"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -594,6 +625,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                           )}
                         </div>
 
+                        <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {/* Variant Name */}
                           <div>
@@ -704,7 +736,9 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                                 </p>
                               )}
                           </div>
+                        </div>
 
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Stock */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -738,6 +772,33 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                               </p>
                             )}
                           </div>
+
+                          {/* Weight */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              ⚖️ წონა (გრ)
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={variant.weight === undefined ? "" : variant.weight}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === "") {
+                                  updateVariant(index, "weight", undefined);
+                                } else {
+                                  const numValue = parseInt(value);
+                                  if (!isNaN(numValue)) {
+                                    updateVariant(index, "weight", numValue);
+                                  }
+                                }
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                              placeholder="არასავალდებულო"
+                            />
+                          </div>
+                        </div>
                         </div>
                       </div>
                     ))}
