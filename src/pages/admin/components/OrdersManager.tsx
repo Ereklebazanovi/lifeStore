@@ -3,10 +3,7 @@ import React, { useState } from "react";
 import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
-import {
-  getOrderItemDisplayName,
-  getOrderItemDisplayNameWithWeight,
-} from "../../../utils/displayHelpers";
+import { getOrderItemDisplayName } from "../../../utils/displayHelpers"; // WithWeight აღარ გვჭირდება
 import CreateManualOrderModal from "./CreateManualOrderModal";
 
 import {
@@ -25,8 +22,10 @@ import {
   DollarSign,
   X,
   Trash2,
-  Check,
   XCircle,
+  Instagram,
+  Facebook,
+  Globe,
 } from "lucide-react";
 
 interface OrdersManagerProps {
@@ -54,9 +53,18 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
 
-  // PDF Export functions
+  const getSourceIcon = (source?: string) => {
+    switch (source) {
+      case "instagram": return <Instagram className="w-4 h-4 text-pink-600" />;
+      case "facebook": return <Facebook className="w-4 h-4 text-blue-600" />;
+      case "phone": return <Phone className="w-4 h-4 text-green-600" />;
+      case "personal": return <User className="w-4 h-4 text-gray-600" />;
+      default: return <Globe className="w-4 h-4 text-blue-400" />;
+    }
+  };
+
+  // 📄 განახლებული PDF ფუნქცია - ლამაზი წონით
   const exportSingleOrderPDF = (order: Order) => {
-    // Create a new window with the order details for printing
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
@@ -67,12 +75,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         <meta charset="utf-8">
         <title>შეკვეთა ${order.orderNumber}</title>
         <style>
-          body { font-family: 'Noto Sans Georgian', Arial, sans-serif; margin: 20px; line-height: 1.4; }
+          body { font-family: 'Helvetica', 'Arial', sans-serif; margin: 20px; line-height: 1.4; color: #111; }
           .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
           .section { margin-bottom: 15px; }
           .label { font-weight: bold; display: inline-block; width: 120px; }
-          .products { margin-top: 20px; }
-          .product-item { border-bottom: 1px solid #eee; padding: 8px 0; display: flex; justify-content: space-between; }
+          .products { margin-top: 20px; border-top: 1px solid #ddd; }
+          .product-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+          .product-info { display: flex; flex-direction: column; }
+          .product-meta { font-size: 11px; color: #666; margin-top: 2px; }
           .total { border-top: 2px solid #333; padding-top: 10px; margin-top: 15px; font-weight: bold; }
           @media print { body { margin: 0; } }
         </style>
@@ -126,16 +136,29 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         <div class="products">
           <h3>პროდუქტები:</h3>
           ${order.items
-            .map(
-              (item) => `
-            <div class="product-item">
-              <span>${getOrderItemDisplayNameWithWeight(item)} - ${
-                item.quantity
-              } ცალი × ₾${item.price.toFixed(2)}</span>
-              <span>₾${item.total.toFixed(2)}</span>
-            </div>
-          `
-            )
+            .map((item) => {
+              // წონის ლოგიკა PDF-ისთვის
+              let weight = item.product.weight;
+              if (item.variantId && item.product.variants) {
+                 const variant = item.product.variants.find(v => v.id === item.variantId);
+                 if (variant && variant.weight) {
+                     weight = variant.weight;
+                 }
+              }
+
+              return `
+              <div class="product-item">
+                <div class="product-info">
+                  <strong>${getOrderItemDisplayName(item)}</strong>
+                  <span class="product-meta">
+                    ${item.quantity} ცალი × ₾${item.price.toFixed(2)}
+                    ${weight ? ` | წონა: ${weight} გრ` : ''}
+                  </span>
+                </div>
+                <span>₾${item.total.toFixed(2)}</span>
+              </div>
+              `;
+            })
             .join("")}
         </div>
 
@@ -326,9 +349,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     order: Order,
     currentTab: "active" | "live" | "history"
   ) => {
-    // ახალი სტანდარტული 5 სტატუსი
     if (currentTab === "active") {
-      // შესასრულებელი - გადახდილი შეკვეთები
       if (order.adminNotes?.includes("Manually added via Admin Panel")) {
         return `📋 ხელით დამატებული (${getStandardStatusText(
           order.orderStatus
@@ -339,8 +360,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
 
     if (currentTab === "live") {
-      // ლაივ რეჟიმი - გადახდის მოლოდინი
-      // Cash orders don't have timer in live mode - they shouldn't be in live at all
       if (order.paymentMethod === "cash") {
         return "💰 ნაღდი ფული - ადგილზე გადახდა";
       }
@@ -358,14 +377,12 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
 
     if (currentTab === "history") {
-      // ისტორია - სტანდარტული სტატუსები
       return getStandardStatusText(order.orderStatus);
     }
 
     return getStandardStatusText(order.orderStatus);
   };
 
-  // ძველი ფუნქცია თავსებადობისთვის
   const getStatusText = (
     status: Order["orderStatus"],
     paymentStatus?: string,
@@ -375,12 +392,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     switch (status) {
       case "pending":
         if (paymentStatus === "pending" && createdAt) {
-          // Cash orders don't have countdown timer - they wait for manual confirmation
           if (paymentMethod === "cash") {
             return "💰 ნაღდი ფული - ადგილზე გადახდა";
           }
-
-          // Card orders have 15-minute countdown
           const minutesAgo = Math.floor(
             (new Date().getTime() - createdAt.getTime()) / (1000 * 60)
           );
@@ -401,52 +415,27 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const getStatusIcon = (status: Order["orderStatus"]) => {
-    switch (status) {
-      case "pending":
-        return <Clock className="w-4 h-4" />;
-      case "shipped":
-        return <CheckCircle className="w-4 h-4" />;
-      case "delivered":
-        return <Package className="w-4 h-4" />;
-      case "cancelled":
-        return <AlertCircle className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
-  };
-
   const getTabFilteredOrders = (tab: "active" | "live" | "history") => {
     return orders.filter((order) => {
       switch (tab) {
         case "active":
-          // 🟢 შესასრულებელი: შექმნილი შეკვეთები რომელიც საქმიანია
-          // 1. გადახდილი შეკვეთები (კარტით ან ნაღდით confirmed)
-          // 2. ხელით დამატებული შეკვეთები (manual orders)
-          // 3. ნაღდი ფულის შეკვეთები მოლოდინში
           return (
-            // გადახდილი შეკვეთები რომლებიც არ არის დასრულებული
             (order.paymentStatus === "paid" &&
               !["shipped", "delivered", "cancelled"].includes(
                 order.orderStatus
               )) ||
-            // დადასტურებული შეკვეთები (confirmed) რომლებიც არ არის დასრულებული
             (order.orderStatus === "confirmed" &&
               !["shipped", "delivered", "cancelled"].includes(
                 order.orderStatus
               )) ||
-            // ხელით დამატებული შეკვეთები (არ აუქმდება)
             (order.adminNotes?.includes("Manually added via Admin Panel") &&
               !["cancelled"].includes(order.orderStatus)) ||
-            // ნაღდი ფულის შეკვეთები მოლოდინში (cash orders)
             (order.paymentMethod === "cash" &&
               order.orderStatus === "pending" &&
               !order.adminNotes?.includes("Manually added via Admin Panel"))
           );
 
         case "live":
-          // 🟡 ლაივ რეჟიმი: კარტით გადახდის მოლოდინი (15 წუთიანი)
           return (
             order.paymentStatus === "pending" &&
             order.paymentMethod !== "cash" &&
@@ -454,7 +443,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           );
 
         case "history":
-          // 🔵 ისტორია: დასრულებული შეკვეთები
           return ["shipped", "delivered", "cancelled"].includes(
             order.orderStatus
           );
@@ -481,12 +469,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
 
-      // Date filtering
       const orderDate = order.createdAt.toISOString().split("T")[0];
       const matchesDateFrom = !dateFrom || orderDate >= dateFrom;
       const matchesDateTo = !dateTo || orderDate <= dateTo;
 
-      // Status filtering
       const matchesStatus =
         statusFilter === "all" || order.orderStatus === statusFilter;
 
@@ -502,7 +488,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     showToast("შეკვეთა წარმატებით შეიქმნა", "success");
   };
 
-  // Delete functions
   const handleSelectOrder = (orderId: string, isSelected: boolean) => {
     if (isSelected) {
       setSelectedOrderIds((prev) => [...prev, orderId]);
@@ -560,14 +545,12 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const confirmDelete = async () => {
     try {
       if (orderToDelete === "selected") {
-        // Delete selected orders
         await Promise.all(
           selectedOrderIds.map((id) => OrderService.deleteOrder(id))
         );
         showToast(`${selectedOrderIds.length} შეკვეთა წაიშალა`, "success");
         setSelectedOrderIds([]);
       } else if (orderToDelete) {
-        // Delete single order
         await OrderService.deleteOrder(orderToDelete);
         showToast("შეკვეთა წაიშალა", "success");
       }
@@ -854,7 +837,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          {/* ჭკვიანი სტატუსის ნაჩვენები */}
                           <span
                             className={`px-3 py-1 text-sm font-medium rounded-full ${
                               activeTab === "active"
@@ -867,7 +849,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             {getSmartStatusText(order, activeTab)}
                           </span>
 
-                          {/* Action dropdown მხოლოდ active tab-ისთვის */}
                           {activeTab === "active" && (
                             <select
                               value={order.orderStatus}
@@ -898,14 +879,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
                           <button
-                            onClick={() => {
-                              console.log(
-                                "Opening order detail for:",
-                                order.orderNumber
-                              );
-                              console.log("Setting selectedOrder to:", order);
-                              setSelectedOrder(order);
-                            }}
+                            onClick={() => setSelectedOrder(order)}
                             className="text-blue-600 hover:text-blue-700 p-1 rounded hover:bg-blue-50"
                             title="დეტალების ნახვა"
                           >
@@ -938,7 +912,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           {/* Mobile Card Layout */}
           <div className="lg:hidden space-y-4">
-            {/* Mobile Bulk Select */}
             {filteredOrders.length > 0 && (
               <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                 <label className="flex items-center space-x-3 text-sm font-medium text-gray-700">
@@ -966,13 +939,11 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               </div>
             )}
 
-            {/* Order Cards */}
             {filteredOrders.map((order) => (
               <div
                 key={order.id}
                 className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
               >
-                {/* Card Header */}
                 <div className="p-4 border-b border-gray-100">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
@@ -1007,7 +978,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           )}
                       </div>
                     </div>
-                    {/* ჭკვიანი სტატუსი მობაილისთვის */}
                     <div className="flex flex-col gap-1">
                       <span
                         className={`px-2 py-1 text-xs font-medium rounded-full text-center ${
@@ -1021,7 +991,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         {getSmartStatusText(order, activeTab)}
                       </span>
 
-                      {/* Action dropdown მხოლოდ active tab-ისთვის */}
                       {activeTab === "active" && (
                         <select
                           value={order.orderStatus}
@@ -1033,16 +1002,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           }
                           className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                         >
-                          <option value="pending">📋 მოლოდინში</option>
-                          <option value="confirmed">💳 გადახდილი</option>
+                          <option value="pending">მზადებაში</option>
                           <option value="shipped">📦 გაგზავნე</option>
-                          <option value="delivered">🎉 მიტანილი</option>
+                          <option value="delivered">✅ მიტანილი</option>
                         </select>
                       )}
                     </div>
                   </div>
 
-                  {/* Customer Info */}
                   <div className="flex items-center space-x-2 mb-2">
                     <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div className="min-w-0">
@@ -1057,7 +1024,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                   </div>
                 </div>
 
-                {/* Card Content */}
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
@@ -1074,17 +1040,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="flex items-center justify-center space-x-4">
                     <button
-                      onClick={() => {
-                        console.log(
-                          "Opening order detail for:",
-                          order.orderNumber
-                        );
-                        console.log("Setting selectedOrder to:", order);
-                        setSelectedOrder(order);
-                      }}
+                      onClick={() => setSelectedOrder(order)}
                       className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
                       title="დეტალების ნახვა"
                     >
@@ -1117,368 +1075,289 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         </>
       )}
 
-      {/* Order Detail Modal */}
-      {selectedOrder &&
-        (() => {
-          console.log(
-            "Modal is rendering! selectedOrder:",
-            selectedOrder.orderNumber
-          );
-          return (
-            <div className="fixed inset-0 z-[9999] overflow-y-auto">
-              <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div
-                  className="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity"
-                  onClick={() => setSelectedOrder(null)}
-                ></div>
-                <span className="hidden sm:inline-block sm:align-middle sm:h-screen">
-                  &#8203;
-                </span>
-                <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-[10000]">
-                  {/* Header */}
-                  <div className="bg-white px-6 pt-6 pb-4 border-b border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Package className="w-6 h-6 text-blue-600" />
-                        <div>
-                          <h3 className="text-xl font-semibold text-gray-900">
-                            შეკვეთა #{selectedOrder.orderNumber}
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            {selectedOrder.createdAt.toLocaleDateString(
-                              "ka-GE"
-                            )}{" "}
-                            •
-                            <span
-                              className={`ml-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                                selectedOrder.orderStatus
-                              )}`}
-                            >
-                              {getStatusText(
-                                selectedOrder.orderStatus,
-                                selectedOrder.paymentStatus,
-                                selectedOrder.createdAt,
-                                selectedOrder.paymentMethod
-                              )}
-                            </span>
-                          </p>
-                        </div>
+      {selectedOrder && (
+        <div className="fixed inset-0 z-[9999] overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div
+              className="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity"
+              onClick={() => setSelectedOrder(null)}
+            ></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen">
+              &#8203;
+            </span>
+            <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-[10000]">
+              <div className="bg-white px-6 pt-6 pb-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Package className="w-6 h-6 text-blue-600" />
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        შეკვეთა #{selectedOrder.orderNumber}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {selectedOrder.createdAt.toLocaleDateString("ka-GE")} •
+                        <span
+                          className={`ml-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                            selectedOrder.orderStatus
+                          )}`}
+                        >
+                          {getStatusText(
+                            selectedOrder.orderStatus,
+                            selectedOrder.paymentStatus,
+                            selectedOrder.createdAt,
+                            selectedOrder.paymentMethod
+                          )}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => exportSingleOrderPDF(selectedOrder)}
+                      className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>PDF</span>
+                    </button>
+                    {selectedOrder.orderStatus !== "cancelled" && (
+                      <button
+                        onClick={() => {
+                          handleCancelOrder(selectedOrder.id);
+                          setSelectedOrder(null);
+                        }}
+                        className="flex items-center space-x-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors duration-200"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        <span>გაუქმება</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        handleDeleteSingle(selectedOrder.id);
+                        setSelectedOrder(null);
+                      }}
+                      className="flex items-center space-x-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200"
+                      title="სრული წაშლა (შეუქცევადი)"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setSelectedOrder(null)}
+                      className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white px-6 py-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="flex items-center text-lg font-semibold text-gray-900 mb-3">
+                      <User className="w-5 h-5 mr-2 text-blue-600" />
+                      მომხმარებლის ინფო
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-700 w-20">
+                          სახელი:
+                        </span>
+                        <span className="text-sm text-gray-900">
+                          {selectedOrder.customerInfo.firstName}{" "}
+                          {selectedOrder.customerInfo.lastName}
+                        </span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => exportSingleOrderPDF(selectedOrder)}
-                          className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200"
-                        >
-                          <Download className="w-4 h-4" />
-                          <span>PDF</span>
-                        </button>
-                        {selectedOrder.orderStatus !== "cancelled" && (
-                          <button
-                            onClick={() => {
-                              handleCancelOrder(selectedOrder.id);
-                              setSelectedOrder(null);
-                            }}
-                            className="flex items-center space-x-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors duration-200"
-                          >
-                            <XCircle className="w-4 h-4" />
-                            <span>გაუქმება</span>
-                          </button>
-                        )}
-                        <button
-                          onClick={() => {
-                            handleDeleteSingle(selectedOrder.id);
-                            setSelectedOrder(null);
-                          }}
-                          className="flex items-center space-x-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200"
-                          title="სრული წაშლა (შეუქცევადი)"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setSelectedOrder(null)}
-                          className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
+                        <Phone className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm text-gray-900">
+                          {selectedOrder.customerInfo.phone}
+                        </span>
                       </div>
+                      <div className="flex items-start space-x-2">
+                        <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                        <span className="text-sm text-gray-900">
+                          {selectedOrder.deliveryInfo.city},{" "}
+                          {selectedOrder.deliveryInfo.address}
+                        </span>
+                      </div>
+                      {selectedOrder.deliveryInfo.comment && (
+                        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                          <p className="text-xs font-medium text-blue-700 mb-1">
+                            კომენტარი:
+                          </p>
+                          <p className="text-sm text-blue-900">
+                            "{selectedOrder.deliveryInfo.comment}"
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Content */}
-                  <div className="bg-white px-6 py-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Customer Info */}
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="flex items-center text-lg font-semibold text-gray-900 mb-3">
-                          <User className="w-5 h-5 mr-2 text-blue-600" />
-                          მომხმარებლის ინფო
-                        </h4>
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-gray-700 w-20">
-                              სახელი:
-                            </span>
-                            <span className="text-sm text-gray-900">
-                              {selectedOrder.customerInfo.firstName}{" "}
-                              {selectedOrder.customerInfo.lastName}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Phone className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm text-gray-900">
-                              {selectedOrder.customerInfo.phone}
-                            </span>
-                          </div>
-                          <div className="flex items-start space-x-2">
-                            <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                            <span className="text-sm text-gray-900">
-                              {selectedOrder.deliveryInfo.city},{" "}
-                              {selectedOrder.deliveryInfo.address}
-                            </span>
-                          </div>
-                          {selectedOrder.deliveryInfo.comment && (
-                            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                              <p className="text-xs font-medium text-blue-700 mb-1">
-                                კომენტარი:
-                              </p>
-                              <p className="text-sm text-blue-900">
-                                "{selectedOrder.deliveryInfo.comment}"
-                              </p>
-                            </div>
-                          )}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="flex items-center text-lg font-semibold text-gray-900 mb-3">
+                      ₾ შეკვეთის შეჯამება
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">პროდუქტები:</span>
+                        <span className="font-medium text-gray-900">
+                          ₾{selectedOrder.subtotal.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">მიწოდება:</span>
+                        <span className="font-medium text-gray-900">
+                          {selectedOrder.shippingCost === 0
+                            ? "უფასო"
+                            : `₾${selectedOrder.shippingCost.toFixed(2)}`}
+                        </span>
+                      </div>
+                      <div className="border-t border-gray-200 pt-2 mt-3">
+                        <div className="flex justify-between text-lg font-semibold">
+                          <span className="text-gray-900">სულ:</span>
+                          <span className="text-green-600">
+                            ₾{selectedOrder.totalAmount.toFixed(2)}
+                          </span>
                         </div>
                       </div>
+                      <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">გადახდა:</span>{" "}
+                          {selectedOrder.paymentMethod === "cash"
+                            ? "ადგილზე გადახდა"
+                            : "საბანკო გადარიცხვა"}
+                        </p>
+                        {selectedOrder.source && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <span className="font-medium">წყარო:</span>
+                            {getSourceIcon(selectedOrder.source)}
+                            <span className="capitalize">{selectedOrder.source}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                      {/* Order Summary */}
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="flex items-center text-lg font-semibold text-gray-900 mb-3">
-                          ₾ შეკვეთის შეჯამება
-                        </h4>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">პროდუქტები:</span>
-                            <span className="font-medium text-gray-900">
-                              ₾{selectedOrder.subtotal.toFixed(2)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">მიწოდება:</span>
-                            <span className="font-medium text-gray-900">
-                              {selectedOrder.shippingCost === 0
-                                ? "უფასო"
-                                : `₾${selectedOrder.shippingCost.toFixed(2)}`}
-                            </span>
-                          </div>
-                          <div className="border-t border-gray-200 pt-2 mt-3">
-                            <div className="flex justify-between text-lg font-semibold">
-                              <span className="text-gray-900">სულ:</span>
-                              <span className="text-green-600">
-                                ₾{selectedOrder.totalAmount.toFixed(2)}
+                {/* MODAL PRODUCTS LIST */}
+                <div className="mt-6">
+                  <h4 className="flex items-center text-lg font-semibold text-gray-900 mb-4">
+                    <Package className="w-5 h-5 mr-2 text-purple-600" />
+                    პროდუქტები ({selectedOrder.items.length})
+                  </h4>
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="max-h-64 overflow-y-auto">
+                      {selectedOrder.items.map((item, index) => {
+                        // 1. Weight Extraction Logic
+                        let weight = item.product.weight;
+                        if (item.variantId && item.product.variants) {
+                           const variant = item.product.variants.find(v => v.id === item.variantId);
+                           if (variant && variant.weight) {
+                               weight = variant.weight;
+                           }
+                        }
+
+                        return (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0"
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-gray-200">
+                                {item.product.images?.[0] ? (
+                                  <img
+                                    src={item.product.images[0]}
+                                    alt={item.product.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <Package className="w-6 h-6 text-gray-400" />
+                                )}
+                              </div>
+
+                              <div>
+                                <h5 className="font-medium text-gray-900">
+                                  {getOrderItemDisplayName(item)}
+                                </h5>
+                                <p className="text-sm text-gray-500 mt-0.5">
+                                  ₾{item.price.toFixed(2)} × {item.quantity} ცალი
+                                </p>
+                                {weight ? (
+                                  <div className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-medium bg-stone-100 text-stone-600 border border-stone-200">
+                                     <span className="text-stone-400">წონა:</span> {weight} გრ
+                                  </div>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            <div className="text-right">
+                              <span className="text-lg font-semibold text-gray-900">
+                                ₾{item.total.toFixed(2)}
                               </span>
                             </div>
                           </div>
-                          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
-                            <p className="text-sm text-gray-600">
-                              <span className="font-medium">გადახდა:</span>{" "}
-                              {selectedOrder.paymentMethod === "cash"
-                                ? "ადგილზე გადახდა"
-                                : "საბანკო გადარიცხვა"}
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {selectedOrder.orderStatus === "cancelled" && (
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <h4 className="flex items-center text-lg font-semibold text-red-800 mb-3">
+                        <XCircle className="w-5 h-5 mr-2" />
+                        გაუქმების ინფორმაცია
+                      </h4>
+                      <div className="space-y-3">
+                        {selectedOrder.cancelReason && (
+                          <div>
+                            <span className="text-sm font-medium text-red-700">
+                              მიზეზი:
+                            </span>
+                            <p className="text-sm text-red-900 mt-1 bg-red-100 p-3 rounded-lg border border-red-200">
+                              {selectedOrder.cancelReason}
                             </p>
-                            {selectedOrder.source && (
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">წყარო:</span>{" "}
-                                {selectedOrder.source === "website"
-                                  ? "ვებსაიტი"
-                                  : selectedOrder.source === "instagram"
-                                  ? "Instagram"
-                                  : selectedOrder.source === "facebook"
-                                  ? "Facebook"
-                                  : selectedOrder.source === "tiktok"
-                                  ? "TikTok"
-                                  : selectedOrder.source === "phone"
-                                  ? "ტელეფონი"
-                                  : selectedOrder.source === "personal"
-                                  ? "პირადად"
-                                  : selectedOrder.source}
-                              </p>
-                            )}
-                            {selectedOrder.paidAt && (
-                              <p className="text-sm text-green-600">
-                                <span className="font-medium">გადახდილი:</span>{" "}
-                                {(() => {
-                                  const date =
-                                    typeof selectedOrder.paidAt === "object" &&
-                                    "seconds" in selectedOrder.paidAt
-                                      ? new Date(
-                                          selectedOrder.paidAt.seconds * 1000
-                                        )
-                                      : new Date(selectedOrder.paidAt as Date);
-                                  return (
-                                    date.toLocaleDateString("ka-GE") +
-                                    " " +
-                                    date.toLocaleTimeString("ka-GE", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })
-                                  );
-                                })()}
-                              </p>
-                            )}
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
+                  </div>
+                )}
 
-                    {/* Products */}
-                    <div className="mt-6">
-                      <h4 className="flex items-center text-lg font-semibold text-gray-900 mb-4">
-                        <Package className="w-5 h-5 mr-2 text-purple-600" />
-                        პროდუქტები ({selectedOrder.items.length})
-                      </h4>
-                      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="max-h-64 overflow-y-auto">
-                          {selectedOrder.items.map((item, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0"
-                            >
-                              <div className="flex items-center space-x-4">
-                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                                  {item.product.images?.[0] ? (
-                                    <img
-                                      src={item.product.images[0]}
-                                      alt={item.product.name}
-                                      className="w-full h-full object-cover rounded-lg"
-                                    />
-                                  ) : (
-                                    <Package className="w-6 h-6 text-gray-400" />
-                                  )}
-                                </div>
-                                <div>
-                                  <h5 className="font-medium text-gray-900">
-                                    {getOrderItemDisplayNameWithWeight(item)}
-                                  </h5>
-                                  <p className="text-sm text-gray-500">
-                                    ₾{item.price.toFixed(2)} × {item.quantity}{" "}
-                                    ცალი
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-lg font-semibold text-gray-900">
-                                  ₾{item.total.toFixed(2)}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Cancellation Information */}
-                    {selectedOrder.orderStatus === "cancelled" && (
-                      <div className="mt-6 pt-6 border-t border-gray-200">
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                          <h4 className="flex items-center text-lg font-semibold text-red-800 mb-3">
-                            <XCircle className="w-5 h-5 mr-2" />
-                            გაუქმების ინფორმაცია
-                          </h4>
-                          <div className="space-y-3">
-                            {selectedOrder.cancelReason && (
-                              <div>
-                                <span className="text-sm font-medium text-red-700">
-                                  მიზეზი:
-                                </span>
-                                <p className="text-sm text-red-900 mt-1 bg-red-100 p-3 rounded-lg border border-red-200">
-                                  {selectedOrder.cancelReason}
-                                </p>
-                              </div>
-                            )}
-                            {selectedOrder.cancelledAt && (
-                              <div>
-                                <span className="text-sm font-medium text-red-700">
-                                  გაუქმების თარიღი:
-                                </span>
-                                <p className="text-sm text-red-900 mt-1">
-                                  {(() => {
-                                    const date =
-                                      typeof selectedOrder.cancelledAt ===
-                                        "object" &&
-                                      "seconds" in selectedOrder.cancelledAt
-                                        ? new Date(
-                                            selectedOrder.cancelledAt.seconds *
-                                              1000
-                                          )
-                                        : new Date(
-                                            selectedOrder.cancelledAt as Date
-                                          );
-                                    return (
-                                      date.toLocaleDateString("ka-GE") +
-                                      " " +
-                                      date.toLocaleTimeString("ka-GE", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })
-                                    );
-                                  })()}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Admin Notes */}
-                    {selectedOrder.adminNotes && (
-                      <div className="mt-6 pt-6 border-t border-gray-200">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <h4 className="flex items-center text-lg font-semibold text-blue-800 mb-3">
-                            <AlertCircle className="w-5 h-5 mr-2" />
-                            ადმინ შენიშვნები
-                          </h4>
-                          <p className="text-sm text-blue-900 bg-blue-100 p-3 rounded-lg border border-blue-200">
-                            {selectedOrder.adminNotes}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Status Change Section */}
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                        სტატუსის შეცვლა
-                      </h4>
-                      <div className="flex items-center space-x-4">
-                        <select
-                          value={selectedOrder.orderStatus}
-                          onChange={(e) =>
-                            handleStatusChange(
-                              selectedOrder.id,
-                              e.target.value as Order["orderStatus"]
-                            )
-                          }
-                          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                          <option value="pending">📋 მოლოდინში</option>
-                          <option value="confirmed">💳 გადახდილი</option>
-                          <option value="shipped">📦 გაგზავნილი</option>
-                          <option value="delivered">🎉 მიტანილი</option>
-                          <option value="cancelled">❌ გაუქმებული</option>
-                        </select>
-                        <div className="text-sm text-gray-500">
-                          ცვლილება მაშინვე შეინახება
-                        </div>
-                      </div>
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                    სტატუსის შეცვლა
+                  </h4>
+                  <div className="flex items-center space-x-4">
+                    <select
+                      value={selectedOrder.orderStatus}
+                      onChange={(e) =>
+                        handleStatusChange(
+                          selectedOrder.id,
+                          e.target.value as Order["orderStatus"]
+                        )
+                      }
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="pending">📋 მოლოდინში</option>
+                      <option value="confirmed">💳 გადახდილი</option>
+                      <option value="shipped">📦 გაგზავნილი</option>
+                      <option value="delivered">🎉 მიტანილი</option>
+                      <option value="cancelled">❌ გაუქმებული</option>
+                    </select>
+                    <div className="text-sm text-gray-500">
+                      ცვლილება მაშინვე შეინახება
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          );
-        })()}
+          </div>
+        </div>
+      )}
 
-      {/* Cancel Order Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 z-[9999] overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -1501,13 +1380,12 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     </h3>
                     <div className="mt-2">
                       <p className="text-sm text-gray-500 mb-4">
-                        მიუთითეთ გაუქმების მიზეზი. პროდუქტები ავტომატურად
-                        დაბრუნდება საწყობში.
+                        მიუთითეთ გაუქმების მიზეზი.
                       </p>
                       <textarea
                         value={cancelReason}
                         onChange={(e) => setCancelReason(e.target.value)}
-                        placeholder="მიზეზი (მაგ: მომხმარებლის მოთხოვნით, არარსებული პროდუქტი, ტექნიკური ხარვეზი)"
+                        placeholder="მიზეზი..."
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
                         rows={3}
                       />
@@ -1540,7 +1418,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[9999] overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -1548,9 +1425,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               className="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity"
               onClick={() => setShowDeleteConfirm(false)}
             ></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen">
-              &#8203;
-            </span>
             <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="bg-white px-6 pt-6 pb-4">
                 <div className="flex items-center">
@@ -1563,16 +1437,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     </h3>
                     <div className="mt-2">
                       <p className="text-sm text-red-600 font-medium mb-2">
-                        ყურადღება: ეს მოქმედება შეუქცევადია! მონაცემები ბაზიდან
-                        სრულად წაიშლება და მათი აღდგენა შეუძლებელია.
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        ისტორიისა და სტატისტიკის შესანარჩუნებლად, გირჩევთ
-                        გამოიყენოთ "გაუქმება". წაშლის ფუნქცია გამოიყენეთ მხოლოდ
-                        სატესტო ან მცდარი ჩანაწერებისთვის.
-                      </p>
-                      <p className="text-sm text-gray-500 mt-2">
-                        გაგრძელება მხოლოდ სატესტო ან ნაგვისთვისაა.
+                        ყურადღება: ეს მოქმედება შეუქცევადია!
                       </p>
                     </div>
                   </div>
@@ -1599,7 +1464,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         </div>
       )}
 
-      {/* Create Manual Order Modal */}
       {showCreateModal && (
         <CreateManualOrderModal
           isOpen={showCreateModal}
