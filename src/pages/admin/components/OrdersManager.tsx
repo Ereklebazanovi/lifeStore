@@ -205,7 +205,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     if (!printWindow) return;
 
     // Format date
-    const orderDate = order.createdAt.toDate().toLocaleDateString("ka-GE");
+    const orderDate = (order.createdAt instanceof Date
+      ? order.createdAt
+      : order.createdAt.toDate()).toLocaleDateString("ka-GE");
 
     // Calculate total items and weight
     let totalWeight = 0;
@@ -358,7 +360,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           <div class="section">
             <div class="section-title">👤 მიმღები</div>
             <div class="customer-info">
-              <div>${order.customerInfo.name || 'სახელი მითითებული არ არის'}</div>
+              <div>${(order.customerInfo.firstName + ' ' + order.customerInfo.lastName).trim() || 'სახელი მითითებული არ არის'}</div>
               <div class="address">📍 ${order.deliveryInfo.city}, ${order.deliveryInfo.address}</div>
               <div>📞 ${order.customerInfo.phone || 'N/A'}</div>
             </div>
@@ -846,7 +848,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       <body>
         ${selectedOrders.map(order => {
           // Calculate order details for each label
-          const orderDate = order.createdAt.toDate().toLocaleDateString("ka-GE");
+          const orderDate = (order.createdAt instanceof Date
+            ? order.createdAt
+            : order.createdAt.toDate()).toLocaleDateString("ka-GE");
           let totalWeight = 0;
           let itemsCount = 0;
 
@@ -885,7 +889,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               <div class="section">
                 <div class="section-title">👤 მიმღები</div>
                 <div class="customer-info">
-                  <div>${order.customerInfo.name || 'სახელი მითითებული არ არის'}</div>
+                  <div>${(order.customerInfo.firstName + ' ' + order.customerInfo.lastName).trim() || 'სახელი მითითებული არ არის'}</div>
                   <div class="address">📍 ${order.deliveryInfo.city}, ${order.deliveryInfo.address}</div>
                   <div>📞 ${order.customerInfo.phone || 'N/A'}</div>
                 </div>

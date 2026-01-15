@@ -130,7 +130,7 @@ export class OrderService {
       if (item.productId && !item.productId.startsWith("manual_")) {
         try {
           const productDoc = await getDoc(doc(db, "products", item.productId));
-          if (productDoc.exists) {
+          if (productDoc.exists()) {
             const productData = productDoc.data() as Product;
 
             // Find variant if specified
