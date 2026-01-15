@@ -534,7 +534,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
             ${totalWeight > 0 ? `
             <div class="weight-info">
-              <div class="weight-badge">⚖ სრული წონა: ${totalWeight}გრ</div>
+              <div class="weight-badge">⚖ პროდუქტის წონა: ${totalWeight}გრ</div>
             </div>
             ` : ''}
           </div>
@@ -1235,7 +1235,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
                 ${totalWeight > 0 ? `
                 <div class="weight-info">
-                  <div class="weight-badge">⚖ სრული წონა: ${totalWeight}გრ</div>
+                  <div class="weight-badge">⚖ პროდუქტის წონა: ${totalWeight}გრ</div>
                 </div>
                 ` : ''}
               </div>
