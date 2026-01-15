@@ -252,62 +252,104 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           body {
-            font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 8px;
-            line-height: 1.1;
+            font-family: 'Arial', 'Georgia', sans-serif;
+            font-size: 7px;
+            line-height: 1.2;
             color: #000;
             width: 72mm;
             height: 88mm;
-            padding: 1mm;
+            padding: 1.5mm;
             background: white;
           }
 
           .label-container {
             width: 100%;
             height: 100%;
-            border: 1px solid #000;
+            border: 2px solid #000;
             padding: 2mm;
             display: flex;
             flex-direction: column;
+            background: white;
           }
 
           .header {
             text-align: center;
             border-bottom: 1px solid #000;
             padding-bottom: 1mm;
-            margin-bottom: 1mm;
+            margin-bottom: 1.5mm;
+            background: #f8f9fa;
+            padding: 1mm;
+            margin: -2mm -2mm 1.5mm -2mm;
+          }
+
+          .logo-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5mm;
+          }
+
+          .logo {
+            width: 8mm;
+            height: 6mm;
+            margin-right: 1.5mm;
+            object-fit: contain;
           }
 
           .store-name {
-            font-size: 12px;
+            font-size: 8px;
             font-weight: bold;
-            margin-bottom: 1mm;
+            color: #2d5a27;
+            letter-spacing: 0.3px;
           }
 
           .order-info {
+            font-size: 6px;
+            font-weight: bold;
+            margin-top: 0.5mm;
+            color: #333;
+          }
+
+          .order-number {
             font-size: 7px;
-            margin-bottom: 1mm;
+            font-weight: bold;
+            color: #000;
           }
 
           .section {
-            margin-bottom: 2mm;
+            margin-bottom: 1.5mm;
             flex-shrink: 0;
           }
 
           .section-title {
-            font-size: 7px;
+            font-size: 8px;
             font-weight: bold;
-            margin-bottom: 0.5mm;
-            border-bottom: 0.5px solid #ccc;
+            margin-bottom: 1mm;
+            padding-bottom: 0.5mm;
+            border-bottom: 1px solid #333;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
           }
 
           .customer-info {
             font-size: 7px;
-            line-height: 1.2;
+            line-height: 1.3;
+          }
+
+          .customer-name {
+            font-weight: bold;
+            font-size: 8px;
+            margin-bottom: 0.5mm;
           }
 
           .address {
             font-weight: bold;
+            margin: 0.5mm 0;
+          }
+
+          .phone {
+            color: #555;
           }
 
           .products {
@@ -316,25 +358,121 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           .product-item {
-            margin-bottom: 0.5mm;
-            line-height: 1.1;
+            margin-bottom: 0.8mm;
+            line-height: 1.2;
+            padding-left: 2mm;
+            position: relative;
           }
 
-          .total-info {
-            border-top: 1px solid #000;
-            padding-top: 1mm;
-            text-align: center;
-            font-size: 8px;
+          .product-item:before {
+            content: "•";
+            position: absolute;
+            left: 0;
             font-weight: bold;
           }
 
           .weight-badge {
-            background: #f0f0f0;
-            padding: 0.5mm 1mm;
-            border-radius: 1mm;
+            background: #e9ecef;
+            border: 1px solid #dee2e6;
+            padding: 0.8mm 1.5mm;
+            border-radius: 2mm;
             font-size: 6px;
             display: inline-block;
+            margin-top: 1mm;
+            font-weight: bold;
+          }
+
+          .total-info {
+            border-top: 2px solid #000;
+            padding-top: 1.5mm;
+            text-align: center;
+            font-size: 9px;
+            font-weight: bold;
+            background: #f8f9fa;
+            margin: 1mm -2mm -2mm -2mm;
+            padding: 2mm;
+          }
+
+          .total-amount {
+            font-size: 10px;
+            color: #2d5a27;
+          }
+
+          .payment-method {
+            font-size: 7px;
+            color: #666;
             margin-top: 0.5mm;
+          }
+
+          .info-label {
+            font-size: 5px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+            margin-top: 0.8mm;
+            margin-bottom: 0.2mm;
+            font-weight: normal;
+          }
+
+          .delivery-comment {
+            font-size: 6px;
+            font-style: italic;
+            color: #555;
+            margin-bottom: 0.5mm;
+          }
+
+          .products-summary {
+            margin-bottom: 1mm;
+            padding: 0.5mm;
+            background: #f8f9fa;
+            border-radius: 1mm;
+          }
+
+          .summary-line {
+            font-size: 6px;
+            margin-bottom: 0.3mm;
+          }
+
+          .products-list {
+            margin-bottom: 0.8mm;
+          }
+
+          .additional-items {
+            font-style: italic;
+            color: #666;
+          }
+
+          .weight-info {
+            margin-top: 0.8mm;
+          }
+
+          .payment-details {
+            font-size: 6px;
+          }
+
+          .payment-line {
+            margin-bottom: 0.5mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+
+          .payment-status {
+            margin-top: 1mm;
+            padding: 0.5mm;
+            border-radius: 1mm;
+            text-align: center;
+            font-weight: bold;
+          }
+
+          .payment-status.paid {
+            background: #d4edda;
+            color: #155724;
+          }
+
+          .payment-status.pending {
+            background: #fff3cd;
+            color: #856404;
           }
 
           @media print {
@@ -349,37 +487,69 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         <div class="label-container">
           <!-- Header -->
           <div class="header">
-            <div class="store-name">🏪 LifeStore</div>
+            <div class="logo-section">
+              <img src="./Screenshot 2025-12-10 151703.png" alt="LifeStore" class="logo">
+              <div class="store-name">LifeStore</div>
+            </div>
             <div class="order-info">
-              📦 ${order.orderNumber}<br>
-              📅 ${orderDate}
+              <div class="order-number">${order.orderNumber}</div>
+              <div>${orderDate}</div>
             </div>
           </div>
 
           <!-- Customer Info -->
           <div class="section">
-            <div class="section-title">👤 მიმღები</div>
+            <div class="section-title">✉ მისამართი და მიმღები</div>
             <div class="customer-info">
-              <div>${(order.customerInfo.firstName + ' ' + order.customerInfo.lastName).trim() || 'სახელი მითითებული არ არის'}</div>
-              <div class="address">📍 ${order.deliveryInfo.city}, ${order.deliveryInfo.address}</div>
-              <div>📞 ${order.customerInfo.phone || 'N/A'}</div>
+              <div class="info-label">სრული სახელი:</div>
+              <div class="customer-name">${(order.customerInfo.firstName + ' ' + order.customerInfo.lastName).trim() || 'სახელი მითითებული არ არის'}</div>
+
+              <div class="info-label">მიტანის მისამართი:</div>
+              <div class="address">${order.deliveryInfo.city}, ${order.deliveryInfo.address}</div>
+
+              <div class="info-label">საკონტაქტო ნომერი:</div>
+              <div class="phone">${order.customerInfo.phone || 'ტელეფონი მითითებული არ არის'}</div>
+
+              ${order.deliveryInfo.comment ? `
+              <div class="info-label">კომენტარი:</div>
+              <div class="delivery-comment">${order.deliveryInfo.comment}</div>
+              ` : ''}
             </div>
           </div>
 
           <!-- Products -->
           <div class="section products">
-            <div class="section-title">📦 პროდუქტები (${itemsCount} ცალი)</div>
-            ${productsList.map(product =>
-              `<div class="product-item">• ${product}</div>`
-            ).join('')}
-            ${moreItems ? `<div class="product-item">${moreItems}</div>` : ''}
-            ${totalWeight > 0 ? `<div class="weight-badge">⚖️ სულ წონა: ${totalWeight}გრ</div>` : ''}
+            <div class="section-title">📦 შეკვეთის შინაარსი</div>
+            <div class="products-summary">
+              <div class="summary-line">სულ ნივთები: <strong>${itemsCount} ცალი</strong></div>
+              ${order.items.length > 1 ? `<div class="summary-line">ნივთების სახეობა: <strong>${order.items.length} ტიპი</strong></div>` : ''}
+            </div>
+
+            <div class="products-list">
+              ${productsList.map(product =>
+                `<div class="product-item">${product}</div>`
+              ).join('')}
+              ${moreItems ? `<div class="product-item additional-items">${moreItems}</div>` : ''}
+            </div>
+
+            ${totalWeight > 0 ? `
+            <div class="weight-info">
+              <div class="weight-badge">⚖ სრული წონა: ${totalWeight}გრ</div>
+            </div>
+            ` : ''}
           </div>
 
-          <!-- Total -->
-          <div class="total-info">
-            💰 ₾${order.totalAmount.toFixed(2)}
-            ${order.paymentMethod === 'cash' ? ' (ნაღდი)' : ''}
+          <!-- Payment & Total -->
+          <div class="section">
+            <div class="section-title">💰 გადახდის ინფორმაცია</div>
+            <div class="payment-details">
+              <div class="payment-line">შეკვეთის ღირებულება: <span class="total-amount">₾${order.totalAmount.toFixed(2)}</span></div>
+              <div class="payment-line">გადახდის მეთოდი: <strong>${order.paymentMethod === 'cash' ? 'ნაღდი ანგარიშსწორება' : 'ონლაინ გადახდა'}</strong></div>
+              ${order.deliveryInfo.shippingCost ? `<div class="payment-line">მიტანის ღირებულება: ₾${order.deliveryInfo.shippingCost.toFixed(2)}</div>` : ''}
+              <div class="payment-status ${order.paymentStatus === 'paid' ? 'paid' : 'pending'}">
+                სტატუსი: ${order.paymentStatus === 'paid' ? '✓ გადახდილი' : '⏳ მოლოდინში'}
+              </div>
+            </div>
           </div>
         </div>
       </body>
@@ -748,7 +918,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           body {
-            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-family: 'Arial', 'Georgia', sans-serif;
+            font-size: 7px;
+            line-height: 1.2;
             color: #000;
             background: white;
           }
@@ -758,10 +930,11 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             min-height: 88mm;
             margin-bottom: 4mm;
             page-break-after: always;
-            border: 1px solid #000;
+            border: 2px solid #000;
             padding: 2mm;
             display: flex;
             flex-direction: column;
+            background: white;
           }
 
           .label-page:last-child {
@@ -773,40 +946,81 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             text-align: center;
             border-bottom: 1px solid #000;
             padding-bottom: 1mm;
-            margin-bottom: 1mm;
+            margin-bottom: 1.5mm;
+            background: #f8f9fa;
+            padding: 1mm;
+            margin: -2mm -2mm 1.5mm -2mm;
             flex-shrink: 0;
           }
 
+          .logo-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5mm;
+          }
+
+          .logo {
+            width: 8mm;
+            height: 6mm;
+            margin-right: 1.5mm;
+            object-fit: contain;
+          }
+
           .store-name {
-            font-size: 12px;
+            font-size: 8px;
             font-weight: bold;
-            margin-bottom: 1mm;
+            color: #2d5a27;
+            letter-spacing: 0.3px;
           }
 
           .order-info {
+            font-size: 6px;
+            font-weight: bold;
+            margin-top: 0.5mm;
+            color: #333;
+          }
+
+          .order-number {
             font-size: 7px;
-            margin-bottom: 1mm;
+            font-weight: bold;
+            color: #000;
           }
 
           .section {
-            margin-bottom: 2mm;
+            margin-bottom: 1.5mm;
             flex-shrink: 0;
           }
 
           .section-title {
-            font-size: 7px;
+            font-size: 8px;
             font-weight: bold;
-            margin-bottom: 0.5mm;
-            border-bottom: 0.5px solid #ccc;
+            margin-bottom: 1mm;
+            padding-bottom: 0.5mm;
+            border-bottom: 1px solid #333;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
           }
 
           .customer-info {
             font-size: 7px;
-            line-height: 1.2;
+            line-height: 1.3;
+          }
+
+          .customer-name {
+            font-weight: bold;
+            font-size: 8px;
+            margin-bottom: 0.5mm;
           }
 
           .address {
             font-weight: bold;
+            margin: 0.5mm 0;
+          }
+
+          .phone {
+            color: #555;
           }
 
           .products {
@@ -815,26 +1029,122 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           .product-item {
-            margin-bottom: 0.5mm;
-            line-height: 1.1;
+            margin-bottom: 0.8mm;
+            line-height: 1.2;
+            padding-left: 2mm;
+            position: relative;
+          }
+
+          .product-item:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
           }
 
           .total-info {
-            border-top: 1px solid #000;
-            padding-top: 1mm;
+            border-top: 2px solid #000;
+            padding-top: 1.5mm;
             text-align: center;
-            font-size: 8px;
+            font-size: 9px;
             font-weight: bold;
+            background: #f8f9fa;
+            margin: 1mm -2mm -2mm -2mm;
+            padding: 2mm;
             flex-shrink: 0;
           }
 
+          .total-amount {
+            font-size: 10px;
+            color: #2d5a27;
+          }
+
+          .payment-method {
+            font-size: 7px;
+            color: #666;
+            margin-top: 0.5mm;
+          }
+
           .weight-badge {
-            background: #f0f0f0;
-            padding: 0.5mm 1mm;
-            border-radius: 1mm;
+            background: #e9ecef;
+            border: 1px solid #dee2e6;
+            padding: 0.8mm 1.5mm;
+            border-radius: 2mm;
             font-size: 6px;
             display: inline-block;
-            margin-top: 0.5mm;
+            margin-top: 1mm;
+            font-weight: bold;
+          }
+
+          .info-label {
+            font-size: 5px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+            margin-top: 0.8mm;
+            margin-bottom: 0.2mm;
+            font-weight: normal;
+          }
+
+          .delivery-comment {
+            font-size: 6px;
+            font-style: italic;
+            color: #555;
+            margin-bottom: 0.5mm;
+          }
+
+          .products-summary {
+            margin-bottom: 1mm;
+            padding: 0.5mm;
+            background: #f8f9fa;
+            border-radius: 1mm;
+          }
+
+          .summary-line {
+            font-size: 6px;
+            margin-bottom: 0.3mm;
+          }
+
+          .products-list {
+            margin-bottom: 0.8mm;
+          }
+
+          .additional-items {
+            font-style: italic;
+            color: #666;
+          }
+
+          .weight-info {
+            margin-top: 0.8mm;
+          }
+
+          .payment-details {
+            font-size: 6px;
+          }
+
+          .payment-line {
+            margin-bottom: 0.5mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+
+          .payment-status {
+            margin-top: 1mm;
+            padding: 0.5mm;
+            border-radius: 1mm;
+            text-align: center;
+            font-weight: bold;
+          }
+
+          .payment-status.paid {
+            background: #d4edda;
+            color: #155724;
+          }
+
+          .payment-status.pending {
+            background: #fff3cd;
+            color: #856404;
           }
 
           @media print {
@@ -878,37 +1188,69 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             <div class="label-page">
               <!-- Header -->
               <div class="header">
-                <div class="store-name">🏪 LifeStore</div>
+                <div class="logo-section">
+                  <img src="./Screenshot 2025-12-10 151703.png" alt="LifeStore" class="logo">
+                  <div class="store-name">LifeStore</div>
+                </div>
                 <div class="order-info">
-                  📦 ${order.orderNumber}<br>
-                  📅 ${orderDate}
+                  <div class="order-number">${order.orderNumber}</div>
+                  <div>${orderDate}</div>
                 </div>
               </div>
 
               <!-- Customer Info -->
               <div class="section">
-                <div class="section-title">👤 მიმღები</div>
+                <div class="section-title">✉ მისამართი და მიმღები</div>
                 <div class="customer-info">
-                  <div>${(order.customerInfo.firstName + ' ' + order.customerInfo.lastName).trim() || 'სახელი მითითებული არ არის'}</div>
-                  <div class="address">📍 ${order.deliveryInfo.city}, ${order.deliveryInfo.address}</div>
-                  <div>📞 ${order.customerInfo.phone || 'N/A'}</div>
+                  <div class="info-label">სრული სახელი:</div>
+                  <div class="customer-name">${(order.customerInfo.firstName + ' ' + order.customerInfo.lastName).trim() || 'სახელი მითითებული არ არის'}</div>
+
+                  <div class="info-label">მიტანის მისამართი:</div>
+                  <div class="address">${order.deliveryInfo.city}, ${order.deliveryInfo.address}</div>
+
+                  <div class="info-label">საკონტაქტო ნომერი:</div>
+                  <div class="phone">${order.customerInfo.phone || 'ტელეფონი მითითებული არ არის'}</div>
+
+                  ${order.deliveryInfo.comment ? `
+                  <div class="info-label">კომენტარი:</div>
+                  <div class="delivery-comment">${order.deliveryInfo.comment}</div>
+                  ` : ''}
                 </div>
               </div>
 
               <!-- Products -->
               <div class="section products">
-                <div class="section-title">📦 პროდუქტები (${itemsCount} ცალი)</div>
-                ${productsList.map(product =>
-                  `<div class="product-item">• ${product}</div>`
-                ).join('')}
-                ${moreItems ? `<div class="product-item">${moreItems}</div>` : ''}
-                ${totalWeight > 0 ? `<div class="weight-badge">⚖️ სულ წონა: ${totalWeight}გრ</div>` : ''}
+                <div class="section-title">📦 შეკვეთის შინაარსი</div>
+                <div class="products-summary">
+                  <div class="summary-line">სულ ნივთები: <strong>${itemsCount} ცალი</strong></div>
+                  ${order.items.length > 1 ? `<div class="summary-line">ნივთების სახეობა: <strong>${order.items.length} ტიპი</strong></div>` : ''}
+                </div>
+
+                <div class="products-list">
+                  ${productsList.map(product =>
+                    `<div class="product-item">${product}</div>`
+                  ).join('')}
+                  ${moreItems ? `<div class="product-item additional-items">${moreItems}</div>` : ''}
+                </div>
+
+                ${totalWeight > 0 ? `
+                <div class="weight-info">
+                  <div class="weight-badge">⚖ სრული წონა: ${totalWeight}გრ</div>
+                </div>
+                ` : ''}
               </div>
 
-              <!-- Total -->
-              <div class="total-info">
-                💰 ₾${order.totalAmount.toFixed(2)}
-                ${order.paymentMethod === 'cash' ? ' (ნაღდი)' : ''}
+              <!-- Payment & Total -->
+              <div class="section">
+                <div class="section-title">💰 გადახდის ინფორმაცია</div>
+                <div class="payment-details">
+                  <div class="payment-line">შეკვეთის ღირებულება: <span class="total-amount">₾${order.totalAmount.toFixed(2)}</span></div>
+                  <div class="payment-line">გადახდის მეთოდი: <strong>${order.paymentMethod === 'cash' ? 'ნაღდი ანგარიშსწორება' : 'ონლაინ გადახდა'}</strong></div>
+                  ${order.deliveryInfo.shippingCost ? `<div class="payment-line">მიტანის ღირებულება: ₾${order.deliveryInfo.shippingCost.toFixed(2)}</div>` : ''}
+                  <div class="payment-status ${order.paymentStatus === 'paid' ? 'paid' : 'pending'}">
+                    სტატუსი: ${order.paymentStatus === 'paid' ? '✓ გადახდილი' : '⏳ მოლოდინში'}
+                  </div>
+                </div>
               </div>
             </div>
           `;
