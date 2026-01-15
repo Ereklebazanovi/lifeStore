@@ -26,6 +26,7 @@ import {
   Instagram,
   Facebook,
   Globe,
+  Tags,
 } from "lucide-react";
 
 interface OrdersManagerProps {
@@ -146,15 +147,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                  }
               }
 
-              // Debug logging for PDF
-              console.log(`PDF Item:`, {
-                productId: item.productId,
-                variantId: item.variantId,
-                productWeight: item.product.weight,
-                extractedWeight: weight,
-                productName: item.product.name,
-                fullProduct: item.product
-              });
 
               return `
               <div class="product-item">
@@ -205,6 +197,200 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
     printWindow.document.write(printContent);
     printWindow.document.close();
+  };
+
+  // 🏷️ ლეიბლის გენერაცია (76x92მმ ზომა თერმალური პრინტერისთვის)
+  const generateShippingLabel = (order: Order) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    // Format date
+    const orderDate = order.createdAt.toDate().toLocaleDateString("ka-GE");
+
+    // Calculate total items and weight
+    let totalWeight = 0;
+    let itemsCount = 0;
+    const productsList = order.items.map(item => {
+      // Weight calculation
+      let weight = item.product.weight;
+      if (item.variantId && item.product.variants) {
+        const variant = item.product.variants.find((v: any) => v.id === item.variantId);
+        if (variant && variant.weight) {
+          weight = variant.weight;
+        }
+      }
+
+      if (weight) {
+        totalWeight += weight * item.quantity;
+      }
+      itemsCount += item.quantity;
+
+      const displayName = getOrderItemDisplayName(item);
+      return `${displayName} x${item.quantity}${weight ? ` (${weight}გრ)` : ''}`;
+    }).slice(0, 3); // მაქსიმუმ 3 პროდუქტი ვაჩვენოთ სივრცის დასაზღვევად
+
+    const moreItems = order.items.length > 3 ? `...და კიდევ ${order.items.length - 3}` : '';
+
+    const labelContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>ლეიბლი - ${order.orderNumber}</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+
+          @page {
+            size: 76mm 92mm;
+            margin: 2mm;
+          }
+
+          body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-size: 8px;
+            line-height: 1.1;
+            color: #000;
+            width: 72mm;
+            height: 88mm;
+            padding: 1mm;
+            background: white;
+          }
+
+          .label-container {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #000;
+            padding: 2mm;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .header {
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 1mm;
+            margin-bottom: 1mm;
+          }
+
+          .store-name {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 1mm;
+          }
+
+          .order-info {
+            font-size: 7px;
+            margin-bottom: 1mm;
+          }
+
+          .section {
+            margin-bottom: 2mm;
+            flex-shrink: 0;
+          }
+
+          .section-title {
+            font-size: 7px;
+            font-weight: bold;
+            margin-bottom: 0.5mm;
+            border-bottom: 0.5px solid #ccc;
+          }
+
+          .customer-info {
+            font-size: 7px;
+            line-height: 1.2;
+          }
+
+          .address {
+            font-weight: bold;
+          }
+
+          .products {
+            font-size: 6px;
+            flex-grow: 1;
+          }
+
+          .product-item {
+            margin-bottom: 0.5mm;
+            line-height: 1.1;
+          }
+
+          .total-info {
+            border-top: 1px solid #000;
+            padding-top: 1mm;
+            text-align: center;
+            font-size: 8px;
+            font-weight: bold;
+          }
+
+          .weight-badge {
+            background: #f0f0f0;
+            padding: 0.5mm 1mm;
+            border-radius: 1mm;
+            font-size: 6px;
+            display: inline-block;
+            margin-top: 0.5mm;
+          }
+
+          @media print {
+            body {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="label-container">
+          <!-- Header -->
+          <div class="header">
+            <div class="store-name">🏪 LifeStore</div>
+            <div class="order-info">
+              📦 ${order.orderNumber}<br>
+              📅 ${orderDate}
+            </div>
+          </div>
+
+          <!-- Customer Info -->
+          <div class="section">
+            <div class="section-title">👤 მიმღები</div>
+            <div class="customer-info">
+              <div>${order.customerInfo.name || 'სახელი მითითებული არ არის'}</div>
+              <div class="address">📍 ${order.deliveryInfo.city}, ${order.deliveryInfo.address}</div>
+              <div>📞 ${order.customerInfo.phone || 'N/A'}</div>
+            </div>
+          </div>
+
+          <!-- Products -->
+          <div class="section products">
+            <div class="section-title">📦 პროდუქტები (${itemsCount} ცალი)</div>
+            ${productsList.map(product =>
+              `<div class="product-item">• ${product}</div>`
+            ).join('')}
+            ${moreItems ? `<div class="product-item">${moreItems}</div>` : ''}
+            ${totalWeight > 0 ? `<div class="weight-badge">⚖️ სულ წონა: ${totalWeight}გრ</div>` : ''}
+          </div>
+
+          <!-- Total -->
+          <div class="total-info">
+            💰 ₾${order.totalAmount.toFixed(2)}
+            ${order.paymentMethod === 'cash' ? ' (ნაღდი)' : ''}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(labelContent);
+    printWindow.document.close();
+
+    // Auto-print after a small delay
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
   };
 
   const exportFilteredOrdersPDF = () => {
@@ -528,6 +714,216 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     setShowDeleteConfirm(true);
   };
 
+  // 🏷️ მონიშნული შეკვეთების ლეიბლების დაბეჭდვა
+  const generateMultipleLabels = () => {
+    if (selectedOrderIds.length === 0) {
+      showToast("მონიშნეთ შეკვეთები ლეიბლის დასაბეჭდად", "error");
+      return;
+    }
+
+    const selectedOrders = orders.filter(order => selectedOrderIds.includes(order.id));
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    // Create multiple labels in one document
+    const multiLabelContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>ლეიბლები - ${selectedOrders.length} შეკვეთა</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+
+          @page {
+            size: 76mm auto;
+            margin: 2mm;
+          }
+
+          body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            color: #000;
+            background: white;
+          }
+
+          .label-page {
+            width: 72mm;
+            min-height: 88mm;
+            margin-bottom: 4mm;
+            page-break-after: always;
+            border: 1px solid #000;
+            padding: 2mm;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .label-page:last-child {
+            page-break-after: auto;
+            margin-bottom: 0;
+          }
+
+          .header {
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 1mm;
+            margin-bottom: 1mm;
+            flex-shrink: 0;
+          }
+
+          .store-name {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 1mm;
+          }
+
+          .order-info {
+            font-size: 7px;
+            margin-bottom: 1mm;
+          }
+
+          .section {
+            margin-bottom: 2mm;
+            flex-shrink: 0;
+          }
+
+          .section-title {
+            font-size: 7px;
+            font-weight: bold;
+            margin-bottom: 0.5mm;
+            border-bottom: 0.5px solid #ccc;
+          }
+
+          .customer-info {
+            font-size: 7px;
+            line-height: 1.2;
+          }
+
+          .address {
+            font-weight: bold;
+          }
+
+          .products {
+            font-size: 6px;
+            flex-grow: 1;
+          }
+
+          .product-item {
+            margin-bottom: 0.5mm;
+            line-height: 1.1;
+          }
+
+          .total-info {
+            border-top: 1px solid #000;
+            padding-top: 1mm;
+            text-align: center;
+            font-size: 8px;
+            font-weight: bold;
+            flex-shrink: 0;
+          }
+
+          .weight-badge {
+            background: #f0f0f0;
+            padding: 0.5mm 1mm;
+            border-radius: 1mm;
+            font-size: 6px;
+            display: inline-block;
+            margin-top: 0.5mm;
+          }
+
+          @media print {
+            body {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        ${selectedOrders.map(order => {
+          // Calculate order details for each label
+          const orderDate = order.createdAt.toDate().toLocaleDateString("ka-GE");
+          let totalWeight = 0;
+          let itemsCount = 0;
+
+          const productsList = order.items.map(item => {
+            let weight = item.product.weight;
+            if (item.variantId && item.product.variants) {
+              const variant = item.product.variants.find((v: any) => v.id === item.variantId);
+              if (variant && variant.weight) {
+                weight = variant.weight;
+              }
+            }
+
+            if (weight) {
+              totalWeight += weight * item.quantity;
+            }
+            itemsCount += item.quantity;
+
+            const displayName = getOrderItemDisplayName(item);
+            return `${displayName} x${item.quantity}${weight ? ` (${weight}გრ)` : ''}`;
+          }).slice(0, 3);
+
+          const moreItems = order.items.length > 3 ? `...და კიდევ ${order.items.length - 3}` : '';
+
+          return `
+            <div class="label-page">
+              <!-- Header -->
+              <div class="header">
+                <div class="store-name">🏪 LifeStore</div>
+                <div class="order-info">
+                  📦 ${order.orderNumber}<br>
+                  📅 ${orderDate}
+                </div>
+              </div>
+
+              <!-- Customer Info -->
+              <div class="section">
+                <div class="section-title">👤 მიმღები</div>
+                <div class="customer-info">
+                  <div>${order.customerInfo.name || 'სახელი მითითებული არ არის'}</div>
+                  <div class="address">📍 ${order.deliveryInfo.city}, ${order.deliveryInfo.address}</div>
+                  <div>📞 ${order.customerInfo.phone || 'N/A'}</div>
+                </div>
+              </div>
+
+              <!-- Products -->
+              <div class="section products">
+                <div class="section-title">📦 პროდუქტები (${itemsCount} ცალი)</div>
+                ${productsList.map(product =>
+                  `<div class="product-item">• ${product}</div>`
+                ).join('')}
+                ${moreItems ? `<div class="product-item">${moreItems}</div>` : ''}
+                ${totalWeight > 0 ? `<div class="weight-badge">⚖️ სულ წონა: ${totalWeight}გრ</div>` : ''}
+              </div>
+
+              <!-- Total -->
+              <div class="total-info">
+                💰 ₾${order.totalAmount.toFixed(2)}
+                ${order.paymentMethod === 'cash' ? ' (ნაღდი)' : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(multiLabelContent);
+    printWindow.document.close();
+
+    // Auto-print after a small delay
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
+
+    showToast(`${selectedOrders.length} ლეიბლი მზადდება დაბეჭდვისთვის`, "success");
+  };
+
   const handleCancelOrder = (orderId: string) => {
     setOrderToCancel(orderId);
     setShowCancelModal(true);
@@ -608,6 +1004,17 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                 <Download className="w-4 h-4" />
                 <span>PDF ანგარიში</span>
               </button>
+
+              {selectedOrderIds.length > 0 && (
+                <button
+                  onClick={generateMultipleLabels}
+                  className="flex items-center justify-center space-x-2 bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors duration-200 text-sm font-medium"
+                  title={`${selectedOrderIds.length} შეკვეთის ლეიბლების დაბეჭდვა (76x92მმ)`}
+                >
+                  <Tags className="w-4 h-4" />
+                  <span>ლეიბლები ({selectedOrderIds.length})</span>
+                </button>
+              )}
 
               <button
                 onClick={() => setShowCreateModal(true)}
@@ -902,6 +1309,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           >
                             <Download className="w-4 h-4" />
                           </button>
+                          <button
+                            onClick={() => generateShippingLabel(order)}
+                            className="text-blue-600 hover:text-blue-700 p-1 rounded hover:bg-blue-50"
+                            title="ლეიბლის ბეჭდვა (76x92მმ)"
+                          >
+                            <Tags className="w-4 h-4" />
+                          </button>
                           {order.orderStatus !== "cancelled" && (
                             <button
                               onClick={() => handleCancelOrder(order.id)}
@@ -1067,6 +1481,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       <Download className="w-4 h-4" />
                       <span>PDF</span>
                     </button>
+                    <button
+                      onClick={() => generateShippingLabel(order)}
+                      className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      title="ლეიბლის ბეჭდვა (76x92მმ)"
+                    >
+                      <Tags className="w-4 h-4" />
+                      <span>ლეიბლი</span>
+                    </button>
                     {order.orderStatus !== "cancelled" && (
                       <button
                         onClick={() => handleCancelOrder(order.id)}
@@ -1128,6 +1550,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     >
                       <Download className="w-4 h-4" />
                       <span>PDF</span>
+                    </button>
+                    <button
+                      onClick={() => generateShippingLabel(selectedOrder)}
+                      className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                      title="ლეიბლის ბეჭდვა (76x92მმ)"
+                    >
+                      <Tags className="w-4 h-4" />
+                      <span>ლეიბლი</span>
                     </button>
                     {selectedOrder.orderStatus !== "cancelled" && (
                       <button
@@ -1268,16 +1698,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                            }
                         }
 
-                        // Debug logging
-                        console.log(`Item ${index}:`, {
-                          productId: item.productId,
-                          variantId: item.variantId,
-                          productWeight: item.product.weight,
-                          extractedWeight: weight,
-                          productName: item.product.name,
-                          fullProduct: item.product,
-                          variant: item.variantId && item.product.variants ? item.product.variants.find(v => v.id === item.variantId) : null
-                        });
 
                         return (
                           <div
