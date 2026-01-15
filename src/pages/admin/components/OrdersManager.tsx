@@ -850,7 +850,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           // Calculate order details for each label
           const orderDate = (order.createdAt instanceof Date
             ? order.createdAt
-            : order.createdAt.toDate()).toLocaleDateString("ka-GE");
+            : (order.createdAt as any).toDate()).toLocaleDateString("ka-GE");
           let totalWeight = 0;
           let itemsCount = 0;
 
