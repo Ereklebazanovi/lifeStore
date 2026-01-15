@@ -766,7 +766,10 @@ export class OrderService {
           ...orderData.customerInfo,
           isGuest: orderData.userId === null || orderData.userId === undefined,
         },
-        deliveryInfo: orderData.deliveryInfo,
+        deliveryInfo: {
+          ...orderData.deliveryInfo,
+          shippingCost
+        },
         paymentMethod: orderData.paymentMethod,
         paymentStatus: "pending",
         orderStatus: "pending",
@@ -879,7 +882,10 @@ export class OrderService {
           email: data.customerInfo.email || "",
           isGuest: true,
         },
-        deliveryInfo: data.deliveryInfo,
+        deliveryInfo: {
+          ...data.deliveryInfo,
+          shippingCost: data.shippingCost
+        },
         paymentMethod: data.paymentMethod,
         paymentStatus:
           data.status === "delivered" ||
