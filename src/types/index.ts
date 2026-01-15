@@ -129,6 +129,7 @@ export interface ManualOrderItem {
   name: string; // Display name (product + variant name if applicable)
   price: number;
   quantity: number;
+  weight?: number; // Weight in grams (გრ)
 }
 
 export interface CreateOrderRequest {

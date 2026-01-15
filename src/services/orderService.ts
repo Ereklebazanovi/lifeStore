@@ -25,6 +25,8 @@ import type {
   CartItem,
   OrderItem,
   ManualOrderItem, // ✅ დაემატა
+  Product,
+  ProductVariant,
 } from "../types";
 
 export class OrderService {
@@ -118,30 +120,68 @@ export class OrderService {
    * ✅ Convert Manual Items to Order Items (For Admin Manual Entry)
    * ქმნის "ფეიკ" პროდუქტის ობიექტს, რომ სისტემამ შეცდომა არ ამოაგდოს
    */
-  private static convertManualItemsToOrderItems(
+  private static async convertManualItemsToOrderItems(
     items: ManualOrderItem[]
-  ): OrderItem[] {
-    return items.map((item) => ({
-      productId:
-        item.productId ||
-        `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // ✅ იყენებს product ID-ს თუ არის, სხვაგვარად ქმნის manual ID-ს
-      product: {
-        id: item.productId || "manual_entry",
-        name: item.name,
-        description: "Added manually by admin",
+  ): Promise<OrderItem[]> {
+    const orderItems: OrderItem[] = [];
+
+    for (const item of items) {
+      // If it's a real product, fetch the product data
+      if (item.productId && !item.productId.startsWith("manual_")) {
+        try {
+          const productDoc = await getDoc(doc(db, "products", item.productId));
+          if (productDoc.exists) {
+            const productData = productDoc.data() as Product;
+
+            // Find variant if specified
+            let variant: ProductVariant | undefined;
+            if (item.variantId && productData.variants) {
+              variant = productData.variants.find((v: ProductVariant) => v.id === item.variantId);
+            }
+
+            orderItems.push({
+              productId: item.productId,
+              variantId: item.variantId,
+              product: productData,
+              variant: variant,
+              quantity: item.quantity,
+              price: item.price,
+              total: item.quantity * item.price,
+            });
+            continue;
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch product ${item.productId}:`, error);
+        }
+      }
+
+      // Fallback for manual entries or failed product fetches
+      orderItems.push({
+        productId:
+          item.productId ||
+          `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        variantId: item.variantId,
+        product: {
+          id: item.productId || "manual_entry",
+          name: item.name,
+          description: "Added manually by admin",
+          price: item.price,
+          images: [],
+          category: "manual",
+          stock: 0,
+          hasVariants: false,
+          weight: item.weight, // ✅ ვამატებთ წონის ინფორმაციას
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          isActive: true,
+        },
+        quantity: item.quantity,
         price: item.price,
-        images: [], // სურათის გარეშე (PDF-ში გამოჩნდება პაკეტის აიკონი)
-        category: "manual",
-        stock: 0,
-        hasVariants: false, // Manual entries are simple products
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        isActive: true,
-      },
-      quantity: item.quantity,
-      price: item.price,
-      total: item.quantity * item.price,
-    }));
+        total: item.quantity * item.price,
+      });
+    }
+
+    return orderItems;
   }
 
   /**
@@ -789,7 +829,7 @@ export class OrderService {
     data: CreateManualOrderRequest
   ): Promise<Order> {
     // 1. ვამზადებთ აიტემებს
-    const orderItems = this.convertManualItemsToOrderItems(data.items);
+    const orderItems = await this.convertManualItemsToOrderItems(data.items);
 
     // ვფილტრავთ მხოლოდ რეალურ პროდუქტებს ინვენტარისთვის
     const inventoryItems = data.items

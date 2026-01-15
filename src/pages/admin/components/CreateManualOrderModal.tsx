@@ -51,7 +51,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     comment: "",
   });
   const [items, setItems] = useState<ManualOrderItem[]>([
-    { name: "", price: 0, quantity: 1 },
+    { name: "", price: 0, quantity: 1, weight: undefined },
   ]);
   const [source, setSource] = useState<OrderSource>("instagram");
   const [status, setStatus] = useState<
@@ -112,6 +112,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       name: selection.name,
       price: selection.price,
       quantity: quantity || newItems[index].quantity, // Use provided quantity or keep existing
+      weight: selection.weight, // 👈 ვამატებთ წონის ინფორმაციას
     };
     setItems(newItems);
 
@@ -119,7 +120,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   };
 
   const addItemRow = () => {
-    setItems([...items, { name: "", price: 0, quantity: 1 }]);
+    setItems([...items, { name: "", price: 0, quantity: 1, weight: undefined }]);
   };
 
   const removeItemRow = (index: number) => {
