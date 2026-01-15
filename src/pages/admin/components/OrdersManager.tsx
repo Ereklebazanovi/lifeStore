@@ -146,6 +146,16 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                  }
               }
 
+              // Debug logging for PDF
+              console.log(`PDF Item:`, {
+                productId: item.productId,
+                variantId: item.variantId,
+                productWeight: item.product.weight,
+                extractedWeight: weight,
+                productName: item.product.name,
+                fullProduct: item.product
+              });
+
               return `
               <div class="product-item">
                 <div class="product-info">
@@ -1257,6 +1267,17 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                                weight = variant.weight;
                            }
                         }
+
+                        // Debug logging
+                        console.log(`Item ${index}:`, {
+                          productId: item.productId,
+                          variantId: item.variantId,
+                          productWeight: item.product.weight,
+                          extractedWeight: weight,
+                          productName: item.product.name,
+                          fullProduct: item.product,
+                          variant: item.variantId && item.product.variants ? item.product.variants.find(v => v.id === item.variantId) : null
+                        });
 
                         return (
                           <div
