@@ -3,7 +3,10 @@ import React, { useState } from "react";
 import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
-import { getOrderItemDisplayName, getOrderItemDisplayNameWithWeight } from "../../../utils/displayHelpers";
+import {
+  getOrderItemDisplayName,
+  getOrderItemDisplayNameWithWeight,
+} from "../../../utils/displayHelpers";
 import CreateManualOrderModal from "./CreateManualOrderModal";
 
 import {
@@ -40,7 +43,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [activeTab, setActiveTab] = useState<"active" | "live" | "history">(
     "active"
   );
-  
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -327,7 +330,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     if (currentTab === "active") {
       // შესასრულებელი - გადახდილი შეკვეთები
       if (order.adminNotes?.includes("Manually added via Admin Panel")) {
-        return `📋 ხელით დამატებული (${getStandardStatusText(order.orderStatus)})`;
+        return `📋 ხელით დამატებული (${getStandardStatusText(
+          order.orderStatus
+        )})`;
       } else {
         return getStandardStatusText(order.orderStatus);
       }
@@ -423,20 +428,21 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           return (
             // გადახდილი შეკვეთები რომლებიც არ არის დასრულებული
             (order.paymentStatus === "paid" &&
-             !["shipped", "delivered", "cancelled"].includes(order.orderStatus)) ||
-
+              !["shipped", "delivered", "cancelled"].includes(
+                order.orderStatus
+              )) ||
             // დადასტურებული შეკვეთები (confirmed) რომლებიც არ არის დასრულებული
             (order.orderStatus === "confirmed" &&
-             !["shipped", "delivered", "cancelled"].includes(order.orderStatus)) ||
-
+              !["shipped", "delivered", "cancelled"].includes(
+                order.orderStatus
+              )) ||
             // ხელით დამატებული შეკვეთები (არ აუქმდება)
             (order.adminNotes?.includes("Manually added via Admin Panel") &&
-             !["cancelled"].includes(order.orderStatus)) ||
-
+              !["cancelled"].includes(order.orderStatus)) ||
             // ნაღდი ფულის შეკვეთები მოლოდინში (cash orders)
             (order.paymentMethod === "cash" &&
-             order.orderStatus === "pending" &&
-             !order.adminNotes?.includes("Manually added via Admin Panel"))
+              order.orderStatus === "pending" &&
+              !order.adminNotes?.includes("Manually added via Admin Panel"))
           );
 
         case "live":
@@ -449,7 +455,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
         case "history":
           // 🔵 ისტორია: დასრულებული შეკვეთები
-          return ["shipped", "delivered", "cancelled"].includes(order.orderStatus);
+          return ["shipped", "delivered", "cancelled"].includes(
+            order.orderStatus
+          );
 
         default:
           return true;
@@ -479,7 +487,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       const matchesDateTo = !dateTo || orderDate <= dateTo;
 
       // Status filtering
-      const matchesStatus = statusFilter === "all" || order.orderStatus === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" || order.orderStatus === statusFilter;
 
       return matchesSearch && matchesDateFrom && matchesDateTo && matchesStatus;
     });
@@ -1347,7 +1356,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                                 </div>
                                 <div>
                                   <h5 className="font-medium text-gray-900">
-                                    {getOrderItemDisplayName(item)}
+                                    {getOrderItemDisplayNameWithWeight(item)}
                                   </h5>
                                   <p className="text-sm text-gray-500">
                                     ₾{item.price.toFixed(2)} × {item.quantity}{" "}
