@@ -21,10 +21,7 @@ import {
   getProductOriginalDisplayPrice,
   hasDiscount as hasProductDiscount,
 } from "../utils/productHelpers";
-import {
-  getStockText,
-  getStockColorClassesCompact,
-} from "../utils/stock";
+import { getStockText, getStockColorClassesCompact } from "../utils/stock";
 import SEOHead from "../components/SEOHead";
 
 // ფოტოები: სამზარეულო, ხე, კერამიკა, ეკო-ნივთები (არა ავეჯი)
@@ -51,6 +48,7 @@ const HomePage: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [displayCount, setDisplayCount] = useState(12);
 
   useEffect(() => {
     fetchProducts();
@@ -71,9 +69,8 @@ const HomePage: React.FC = () => {
     let filtered = products.filter((product) => product.isActive !== false);
 
     if (searchTerm.trim()) {
-      filtered = filtered.filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -95,16 +92,31 @@ const HomePage: React.FC = () => {
   };
 
   const filteredProducts = getFilteredProducts();
+  const hasMoreProducts = filteredProducts.length > displayCount;
+
+  const handleLoadMore = () => {
+    setDisplayCount((prev) => prev + 12);
+  };
+
+  // Reset display count when filters change
+  useEffect(() => {
+    setDisplayCount(12);
+  }, [selectedFilter, searchTerm]);
 
   // Helper to count items for filters
   const getCount = (type: string) => {
     const activeProducts = products.filter((p) => p.isActive !== false);
     switch (type) {
-      case "all": return activeProducts.length;
-      case "popular": return activeProducts.filter(p => p.priority === 100).length;
-      case "discounts": return activeProducts.filter(p => hasDiscount(p)).length;
-      case "new": return activeProducts.length; // Simplified for demo
-      default: return 0;
+      case "all":
+        return activeProducts.length;
+      case "popular":
+        return activeProducts.filter((p) => p.priority === 100).length;
+      case "discounts":
+        return activeProducts.filter((p) => hasDiscount(p)).length;
+      case "new":
+        return activeProducts.length; // Simplified for demo
+      default:
+        return 0;
     }
   };
 
@@ -207,17 +219,39 @@ const HomePage: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 text-center md:text-left">
               {[
-                { icon: Leaf, title: "ეკო & უსაფრთხო", text: "ჯანმრთელობისთვის უვნებელი, ეკოლოგიურად სუფთა მასალები.", color: "bg-emerald-50 text-emerald-700" },
-                { icon: Utensils, title: "პრემიუმ ხარისხი", text: "თანამედროვე დიზაინს მორგებული სამზარეულოს და სახლის ნივთები.", color: "bg-stone-100 text-stone-700" },
-                { icon: ShieldCheck, title: "პირდაპირი იმპორტი", text: "ჩვენ თვითონ ვახდენთ იმპორტს, რაც საუკეთესო ფასს განაპირობებს.", color: "bg-blue-50 text-blue-700" },
+                {
+                  icon: Leaf,
+                  title: "ეკო & უსაფრთხო",
+                  text: "ჯანმრთელობისთვის უვნებელი, ეკოლოგიურად სუფთა მასალები.",
+                  color: "bg-emerald-50 text-emerald-700",
+                },
+                {
+                  icon: Utensils,
+                  title: "პრემიუმ ხარისხი",
+                  text: "თანამედროვე დიზაინს მორგებული სამზარეულოს და სახლის ნივთები.",
+                  color: "bg-stone-100 text-stone-700",
+                },
+                {
+                  icon: ShieldCheck,
+                  title: "პირდაპირი იმპორტი",
+                  text: "ჩვენ თვითონ ვახდენთ იმპორტს, რაც საუკეთესო ფასს განაპირობებს.",
+                  color: "bg-blue-50 text-blue-700",
+                },
               ].map((item, idx) => (
-                <div key={idx} className="flex flex-col md:flex-row items-center md:items-start gap-4">
+                <div
+                  key={idx}
+                  className="flex flex-col md:flex-row items-center md:items-start gap-4"
+                >
                   <div className={`p-3.5 rounded-2xl ${item.color}`}>
                     <item.icon className="w-6 h-6" />
                   </div>
                   <div className="text-center md:text-left">
-                    <h3 className="font-bold text-stone-900 mb-1">{item.title}</h3>
-                    <p className="text-sm text-stone-500 leading-relaxed">{item.text}</p>
+                    <h3 className="font-bold text-stone-900 mb-1">
+                      {item.title}
+                    </h3>
+                    <p className="text-sm text-stone-500 leading-relaxed">
+                      {item.text}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -228,73 +262,82 @@ const HomePage: React.FC = () => {
         {/* --- PRODUCTS SECTION --- */}
         <section className="py-8 lg:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6 lg:mb-8">
-               <div>
-                  <span className="text-emerald-600 font-bold text-xs tracking-wider uppercase mb-2 block">
-                    ჩვენი კოლექცია
-                  </span>
-                  <h2 className="text-2xl lg:text-3xl font-bold text-stone-900">
-                    აღმოაჩინე რჩეული ნივთები
-                  </h2>
-                </div>
-                <Link
-                  to="/products"
-                  className="hidden md:flex text-stone-500 hover:text-stone-900 font-medium items-center gap-2 group transition-colors text-sm"
-                >
-                  სრული კატალოგი <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
+              <div>
+                <span className="text-emerald-600 font-bold text-xs tracking-wider uppercase mb-2 block">
+                  ჩვენი კოლექცია
+                </span>
+                <h2 className="text-2xl lg:text-3xl font-bold text-stone-900">
+                  აღმოაჩინე რჩეული ნივთები
+                </h2>
+              </div>
+              <Link
+                to="/products"
+                className="hidden md:flex text-stone-500 hover:text-stone-900 font-medium items-center gap-2 group transition-colors text-sm"
+              >
+                სრული კატალოგი{" "}
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </div>
 
             {/* 🔥 NEW COMPACT FILTER BAR 🔥 */}
             <div className="sticky top-0 z-20 md:static bg-stone-50 md:bg-transparent pb-4 md:pb-8 pt-2">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    
-                    {/* Filter Tabs - Horizontal Scroll on Mobile */}
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                        {filterOptions.map((option) => {
-                            const isActive = selectedFilter === option.value;
-                            return (
-                                <button
-                                    key={option.value}
-                                    onClick={() => setSelectedFilter(option.value)}
-                                    className={`whitespace-nowrap flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border
-                                        ${isActive 
-                                            ? "bg-stone-900 text-white border-stone-900 shadow-md shadow-stone-200" 
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                {/* Filter Tabs - Horizontal Scroll on Mobile */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                  {filterOptions.map((option) => {
+                    const isActive = selectedFilter === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        onClick={() => setSelectedFilter(option.value)}
+                        className={`whitespace-nowrap flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border
+                                        ${
+                                          isActive
+                                            ? "bg-stone-900 text-white border-stone-900 shadow-md shadow-stone-200"
                                             : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
                                         }`}
-                                >
-                                    {option.label}
-                                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? "bg-white/20 text-white" : "bg-stone-100 text-stone-500"}`}>
-                                        {getCount(option.value)}
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* Search Input - Compact */}
-                    <div className="relative w-full md:w-64 lg:w-72 flex-shrink-0">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                            <Search className="h-4 w-4 text-stone-400" />
-                        </div>
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="ძებნა..."
-                            className="w-full bg-white pl-10 pr-4 py-2.5 rounded-full border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-sm text-stone-900 placeholder:text-stone-400 transition-all shadow-sm"
-                        />
-                    </div>
+                      >
+                        {option.label}
+                        <span
+                          className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            isActive
+                              ? "bg-white/20 text-white"
+                              : "bg-stone-100 text-stone-500"
+                          }`}
+                        >
+                          {getCount(option.value)}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {/* Search Input - Compact */}
+                <div className="relative w-full md:w-64 lg:w-72 flex-shrink-0">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-stone-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="ძებნა..."
+                    className="w-full bg-white pl-10 pr-4 py-2.5 rounded-full border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-sm text-stone-900 placeholder:text-stone-400 transition-all shadow-sm"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Products Grid */}
             {isLoading ? (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8">
                 {[...Array(8)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-2xl h-80 animate-pulse border border-stone-100">
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl h-80 animate-pulse border border-stone-100"
+                  >
                     <div className="h-48 bg-stone-200 w-full rounded-t-2xl"></div>
                     <div className="p-4 space-y-2">
                       <div className="h-4 bg-stone-200 w-3/4 rounded"></div>
@@ -306,13 +349,15 @@ const HomePage: React.FC = () => {
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-24 bg-white rounded-3xl border border-stone-100 border-dashed">
                 <div className="w-16 h-16 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                     <Search className="w-8 h-8 text-stone-300" />
+                  <Search className="w-8 h-8 text-stone-300" />
                 </div>
                 <h3 className="text-lg font-bold text-stone-900 mb-1">
                   {searchTerm ? "ვერაფერი მოიძებნა" : "კოლექცია ცარიელია"}
                 </h3>
                 <p className="text-stone-500 text-sm">
-                    {searchTerm ? `სცადეთ სხვა სიტყვა ან შეცვალეთ ფილტრი` : "ამ კატეგორიაში პროდუქტები ჯერ არ არის"}
+                  {searchTerm
+                    ? `სცადეთ სხვა სიტყვა ან შეცვალეთ ფილტრი`
+                    : "ამ კატეგორიაში პროდუქტები ჯერ არ არის"}
                 </p>
                 {(searchTerm || selectedFilter !== "all") && (
                   <button
@@ -328,7 +373,7 @@ const HomePage: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8">
-                {filteredProducts.slice(0, 12).map((product) => {
+                {filteredProducts.slice(0, displayCount).map((product) => {
                   const isOutOfStock = product.stock === 0;
                   return (
                     <div
@@ -336,25 +381,28 @@ const HomePage: React.FC = () => {
                       className="group bg-white rounded-2xl border border-stone-100 hover:border-emerald-200 overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 flex flex-col"
                     >
                       {/* Image Area */}
-                      <Link to={`/product/${product.id}`} className="relative aspect-[4/5] overflow-hidden bg-stone-100">
+                      <Link
+                        to={`/product/${product.id}`}
+                        className="relative aspect-[4/5] overflow-hidden bg-stone-100"
+                      >
                         {/* Badges */}
                         <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
-                            {isOutOfStock ? (
+                          {isOutOfStock ? (
                             <span className="bg-stone-900/90 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded-md">
-                                ამოწურულია
+                              ამოწურულია
                             </span>
-                            ) : hasDiscount(product) ? (
+                          ) : hasDiscount(product) ? (
                             <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
-                                {getDiscountText(product)}
+                              {getDiscountText(product)}
                             </span>
-                            ) : null}
+                          ) : null}
                         </div>
-                        
+
                         {/* Priority Badge */}
                         {product.priority === 100 && (
-                            <div className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur text-emerald-700 p-1 rounded-full shadow-sm">
-                                <Star className="w-3.5 h-3.5 fill-current" />
-                            </div>
+                          <div className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur text-emerald-700 p-1 rounded-full shadow-sm">
+                            <Star className="w-3.5 h-3.5 fill-current" />
+                          </div>
                         )}
 
                         {product.images && product.images.length > 0 ? (
@@ -370,14 +418,14 @@ const HomePage: React.FC = () => {
                             <Leaf className="w-10 h-10" />
                           </div>
                         )}
-                        
+
                         {/* Hover Overlay (Optional but nice) */}
                         {!isOutOfStock && (
-                            <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center pb-6 bg-gradient-to-t from-black/20 to-transparent">
-                                <span className="bg-white text-stone-900 text-xs font-bold px-4 py-2 rounded-full shadow-lg">
-                                    დაწვრილებით
-                                </span>
-                            </div>
+                          <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center pb-6 bg-gradient-to-t from-black/20 to-transparent">
+                            <span className="bg-white text-stone-900 text-xs font-bold px-4 py-2 rounded-full shadow-lg">
+                              დაწვრილებით
+                            </span>
+                          </div>
                         )}
                       </Link>
 
@@ -390,7 +438,11 @@ const HomePage: React.FC = () => {
                         </Link>
 
                         <div className="mb-3">
-                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${getStockColorClassesCompact(product)}`}>
+                          <span
+                            className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${getStockColorClassesCompact(
+                              product
+                            )}`}
+                          >
                             {getStockText(product)}
                           </span>
                         </div>
@@ -413,7 +465,7 @@ const HomePage: React.FC = () => {
                             )}
                           </div>
                           <div className="w-8 h-8 rounded-full bg-stone-50 flex items-center justify-center group-hover:bg-emerald-50 transition-colors">
-                             <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-emerald-600 transition-colors" />
+                            <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-emerald-600 transition-colors" />
                           </div>
                         </div>
                       </div>
@@ -422,29 +474,42 @@ const HomePage: React.FC = () => {
                 })}
               </div>
             )}
-            
-            <div className="mt-8 text-center md:hidden">
-                 <Link
-                  to="/products"
-                  className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600 bg-emerald-50 px-6 py-3 rounded-full"
+
+            {/* Load More Button */}
+            {!isLoading && filteredProducts.length > 0 && hasMoreProducts && (
+              <div className="mt-8 text-center">
+                <button
+                  onClick={handleLoadMore}
+                  className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-300 px-6 py-3 rounded-full transition-all duration-200 shadow-sm hover:shadow-md"
                 >
-                  სრული კატალოგი <ArrowRight className="w-4 h-4" />
-                </Link>
+                  მეტის ნახვა ({filteredProducts.length - displayCount}{" "}
+                  დარჩენილი) <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <div className="mt-8 text-center md:hidden">
+              <Link
+                to="/products"
+                className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600 bg-emerald-50 px-6 py-3 rounded-full"
+              >
+                სრული კატალოგი <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
           </div>
         </section>
 
         {/* --- SOCIAL BANNER --- */}
         <section className="py-16 bg-stone-900 text-white mt-8 relative overflow-hidden">
-            {/* Background Pattern */}
+          {/* Background Pattern */}
           <div className="absolute inset-0 opacity-20">
-             <div className="absolute top-0 left-0 w-64 h-64 bg-emerald-500 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2"></div>
-             <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-500 rounded-full blur-[100px] translate-x-1/2 translate-y-1/2"></div>
+            <div className="absolute top-0 left-0 w-64 h-64 bg-emerald-500 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2"></div>
+            <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-500 rounded-full blur-[100px] translate-x-1/2 translate-y-1/2"></div>
           </div>
-          
+
           <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
             <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3">
-                <Leaf className="w-8 h-8 text-emerald-400" />
+              <Leaf className="w-8 h-8 text-emerald-400" />
             </div>
             <h2 className="text-2xl lg:text-4xl font-bold mb-4">
               LifeStore - შენი სახლისთვის
