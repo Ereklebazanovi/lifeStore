@@ -87,6 +87,7 @@ export interface Order {
     isGuest: boolean;
   };
   deliveryInfo: {
+    shippingCost: any;
     city: string;
     address: string;
     comment?: string;
