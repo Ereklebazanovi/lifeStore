@@ -21,6 +21,7 @@ export interface ProductSelection {
   name: string;
   price: number;
   stock?: number;
+  weight?: number;
   stockStatus?: "available" | "low" | "out_of_stock";
 }
 
@@ -139,6 +140,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
         name: `${selectedProduct.name} (${selectedVariant.name})`,
         price: actualPrice,
         stock,
+        weight: selectedVariant.weight,
         stockStatus: getStockStatus(stock, quantity) as any,
       };
     } else {
@@ -157,6 +159,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
         name: selectedProduct.name,
         price: actualPrice,
         stock,
+        weight: selectedProduct.weight,
         stockStatus: getStockStatus(stock, quantity) as any,
       };
     }
@@ -365,7 +368,11 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                   </h4>
                   <div className="flex items-center space-x-3">
                     <button
-                      onClick={() => setQuantity(Math.max(currentStock === 0 ? 0 : 1, quantity - 1))}
+                      onClick={() =>
+                        setQuantity(
+                          Math.max(currentStock === 0 ? 0 : 1, quantity - 1)
+                        )
+                      }
                       disabled={quantity <= (currentStock === 0 ? 0 : 1)}
                       className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >

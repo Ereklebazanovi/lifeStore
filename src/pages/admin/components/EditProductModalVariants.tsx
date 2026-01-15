@@ -1,3 +1,4 @@
+//EditProductModalVariants.tsx
 import React, { useState, useEffect } from "react";
 import { X, Package, Plus, Trash2, Save, Edit3, Info } from "lucide-react";
 import { useProductStore } from "../../../store/productStore";
@@ -20,6 +21,7 @@ interface SimpleVariant {
   price: number;
   salePrice?: number;
   stock: number;
+  weight?: number;
   isActive: boolean;
 }
 
@@ -44,8 +46,13 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
   // მარტივი პროდუქტი (ვარიანტების გარეშე)
   const [simplePrice, setSimplePrice] = useState<number>(0);
-  const [simpleSalePrice, setSimpleSalePrice] = useState<number | undefined>(undefined);
+  const [simpleSalePrice, setSimpleSalePrice] = useState<number | undefined>(
+    undefined
+  );
   const [simpleStock, setSimpleStock] = useState<number>(0);
+  const [simpleWeight, setSimpleWeight] = useState<number | undefined>(
+    undefined
+  );
 
   // ვარიანტების მასივი
   const [variants, setVariants] = useState<SimpleVariant[]>([]);
@@ -77,6 +84,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
             price: v.price,
             salePrice: v.salePrice,
             stock: v.stock,
+            weight: v.weight,
             isActive: v.isActive,
           }))
         );
@@ -87,7 +95,17 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
         setSimplePrice(product.price || 0);
         setSimpleSalePrice(product.salePrice);
         setSimpleStock(product.stock || 0);
-        setVariants([{ name: "", price: 0, salePrice: undefined, stock: 0, isActive: true }]);
+        setSimpleWeight(product.weight);
+        setVariants([
+          {
+            name: "",
+            price: 0,
+            salePrice: undefined,
+            stock: 0,
+            weight: undefined,
+            isActive: true,
+          },
+        ]);
       }
 
       setErrors({});
@@ -150,7 +168,14 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
   const addVariant = () => {
     setVariants([
       ...variants,
-      { name: "", price: 0, salePrice: undefined, stock: 0, isActive: true },
+      {
+        name: "",
+        price: 0,
+        salePrice: undefined,
+        stock: 0,
+        weight: undefined,
+        isActive: true,
+      },
     ]);
   };
 
@@ -178,20 +203,27 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
       return;
     }
 
-    const newVariants = variants.map(variant => ({
+    const newVariants = variants.map((variant) => ({
       ...variant,
-      salePrice: variant.price > 0 ? Math.round(variant.price * (1 - bulkDiscountPercent / 100) * 100) / 100 : undefined
+      salePrice:
+        variant.price > 0
+          ? Math.round(variant.price * (1 - bulkDiscountPercent / 100) * 100) /
+            100
+          : undefined,
     }));
 
     setVariants(newVariants);
-    showToast(`${bulkDiscountPercent}% ფასდაკლება გამოყენებულია ყველა ვარიანტზე`, "success");
+    showToast(
+      `${bulkDiscountPercent}% ფასდაკლება გამოყენებულია ყველა ვარიანტზე`,
+      "success"
+    );
   };
 
   // Clear all sale prices
   const clearAllSalePrices = () => {
-    const newVariants = variants.map(variant => ({
+    const newVariants = variants.map((variant) => ({
       ...variant,
-      salePrice: undefined
+      salePrice: undefined,
     }));
     setVariants(newVariants);
     showToast("ყველა ფასდაკლება მოხსნილია", "success");
@@ -246,6 +278,8 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
         // ძველი ველები backward compatibility-სთვის
         price: hasVariants ? stats.minPrice : simplePrice,
         stock: hasVariants ? stats.totalStock : simpleStock,
+        ...(!hasVariants &&
+          simpleWeight !== undefined && { weight: simpleWeight }),
 
         // ახალი ველები variant system-ისთვის
         minPrice: stats.minPrice,
@@ -267,8 +301,11 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
             `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name: variant.name.trim(),
           price: variant.price,
-          ...(variant.salePrice !== undefined && { salePrice: variant.salePrice }),
+          ...(variant.salePrice !== undefined && {
+            salePrice: variant.salePrice,
+          }),
           stock: variant.stock,
+          ...(variant.weight !== undefined && { weight: variant.weight }),
           isActive: variant.isActive,
           createdAt:
             product.variants?.find((v) => v.id === variant.id)?.createdAt ||
@@ -519,7 +556,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                       <h4 className="font-medium text-blue-900 mb-3">
                         მარტივი პროდუქტი
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-blue-800 mb-2">
                             ფასი (₾) <span className="text-red-500">*</span>
@@ -562,7 +599,12 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                             type="number"
                             min="0"
                             step="0.01"
-                            value={simpleSalePrice === undefined || simpleSalePrice === 0 ? "" : simpleSalePrice}
+                            value={
+                              simpleSalePrice === undefined ||
+                              simpleSalePrice === 0
+                                ? ""
+                                : simpleSalePrice
+                            }
                             onChange={(e) => {
                               const value = e.target.value;
                               if (value === "") {
@@ -577,11 +619,12 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                             className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                             placeholder="არასავალდებულო"
                           />
-                          {simpleSalePrice && simpleSalePrice >= simplePrice && (
-                            <p className="text-orange-600 text-sm mt-1">
-                              ფასდაკლებული ფასი ნაკლები უნდა იყოს ძირითადზე
-                            </p>
-                          )}
+                          {simpleSalePrice &&
+                            simpleSalePrice >= simplePrice && (
+                              <p className="text-orange-600 text-sm mt-1">
+                                ფასდაკლებული ფასი ნაკლები უნდა იყოს ძირითადზე
+                              </p>
+                            )}
                         </div>
 
                         <div>
@@ -616,6 +659,33 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                             </p>
                           )}
                         </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-blue-800 mb-2">
+                            ⚖️ წონა (გრ)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={
+                              simpleWeight === undefined ? "" : simpleWeight
+                            }
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === "") {
+                                setSimpleWeight(undefined);
+                              } else {
+                                const numValue = parseInt(value);
+                                if (!isNaN(numValue)) {
+                                  setSimpleWeight(numValue);
+                                }
+                              }
+                            }}
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="არასავალდებულო"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -644,7 +714,6 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                     </button>
                   </div>
 
-               
                   {errors.variants && (
                     <p className="text-red-500 text-sm">{errors.variants}</p>
                   )}
@@ -769,7 +838,12 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                               type="number"
                               min="0"
                               step="0.01"
-                              value={variant.salePrice === undefined || variant.salePrice === 0 ? "" : variant.salePrice}
+                              value={
+                                variant.salePrice === undefined ||
+                                variant.salePrice === 0
+                                  ? ""
+                                  : variant.salePrice
+                              }
                               onChange={(e) => {
                                 const value = e.target.value;
                                 if (value === "") {
@@ -784,11 +858,12 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                               className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                               placeholder="არასავალდებულო"
                             />
-                            {variant.salePrice && variant.salePrice >= variant.price && (
-                              <p className="text-orange-600 text-xs mt-1">
-                                ფასდაკლებული ფასი ნაკლები უნდა იყოს ძირითადზე
-                              </p>
-                            )}
+                            {variant.salePrice &&
+                              variant.salePrice >= variant.price && (
+                                <p className="text-orange-600 text-xs mt-1">
+                                  ფასდაკლებული ფასი ნაკლები უნდა იყოს ძირითადზე
+                                </p>
+                              )}
                           </div>
 
                           {/* Stock */}
@@ -823,6 +898,38 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                                 {errors[`variant_${index}_stock`]}
                               </p>
                             )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                          {/* Weight */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              ⚖️ წონა (გრ)
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={
+                                variant.weight === undefined
+                                  ? ""
+                                  : variant.weight
+                              }
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === "") {
+                                  updateVariant(index, "weight", undefined);
+                                } else {
+                                  const numValue = parseInt(value);
+                                  if (!isNaN(numValue)) {
+                                    updateVariant(index, "weight", numValue);
+                                  }
+                                }
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="არასავალდებულო"
+                            />
                           </div>
                         </div>
                       </div>

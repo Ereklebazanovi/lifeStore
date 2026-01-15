@@ -334,7 +334,8 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                       <span className="text-blue-600 text-xs">ℹ</span>
                     </div>
                     <span className="text-blue-700 text-sm">
-                      შეყვანილ კლიენტის ელფოსტაზე გაიგზავნება შეკვეთის დამადასტურებელი შეტყობინება
+                      შეყვანილ კლიენტის ელფოსტაზე გაიგზავნება შეკვეთის
+                      დამადასტურებელი შეტყობინება
                     </span>
                   </div>
                   <input
@@ -489,6 +490,36 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                                     );
                                   }
                                 })()}
+                                {/* Weight Information */}
+                                {(() => {
+                                  const currentProduct = products.find(
+                                    (p) => p.id === item.productId
+                                  );
+                                  if (!currentProduct) return null;
+
+                                  let weight: number | undefined;
+                                  if (
+                                    item.variantId &&
+                                    currentProduct.hasVariants
+                                  ) {
+                                    const variant =
+                                      currentProduct.variants?.find(
+                                        (v) => v.id === item.variantId
+                                      );
+                                    weight = variant?.weight;
+                                  } else {
+                                    weight = currentProduct.weight;
+                                  }
+
+                                  if (weight) {
+                                    return (
+                                      <span className="ml-2 text-stone-600 bg-stone-50 px-2 py-1 rounded border border-stone-200">
+                                        ⚖️ {weight}გრ
+                                      </span>
+                                    );
+                                  }
+                                  return null;
+                                })()}
                               </div>
                             )}
                           </td>
@@ -557,7 +588,9 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                     <span className="font-medium">₾{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center text-stone-600 text-base">
-                    <span className="flex items-center gap-2">მიტანის თანხა ₾</span>
+                    <span className="flex items-center gap-2">
+                      მიტანის თანხა ₾
+                    </span>
                     <input
                       type="number"
                       min="0"
