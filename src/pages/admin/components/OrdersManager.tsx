@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
-import { getOrderItemDisplayName } from "../../../utils/displayHelpers"; // WithWeight აღარ გვჭირდება
+import { getOrderItemDisplayName } from "../../../utils/displayHelpers";
 import CreateManualOrderModal from "./CreateManualOrderModal";
 
 import {
@@ -63,7 +63,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
   };
 
-  // 📄 განახლებული PDF ფუნქცია - ლამაზი წონით
+  // 📄 PDF ფუნქცია - გასწორებული წონის ჩვენებით
   const exportSingleOrderPDF = (order: Order) => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
@@ -80,9 +80,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           .section { margin-bottom: 15px; }
           .label { font-weight: bold; display: inline-block; width: 120px; }
           .products { margin-top: 20px; border-top: 1px solid #ddd; }
-          .product-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+          .product-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: flex-start; }
           .product-info { display: flex; flex-direction: column; }
-          .product-meta { font-size: 11px; color: #666; margin-top: 2px; }
+          .product-meta { font-size: 12px; color: #666; margin-top: 4px; }
+          .product-weight { font-size: 11px; color: #555; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; }
           .total { border-top: 2px solid #333; padding-top: 10px; margin-top: 15px; font-weight: bold; }
           @media print { body { margin: 0; } }
         </style>
@@ -136,29 +137,33 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         <div class="products">
           <h3>პროდუქტები:</h3>
           ${order.items
-            .map((item) => {
-              // წონის ლოგიკა PDF-ისთვის
-              let weight = item.product.weight;
-              if (item.variantId && item.product.variants) {
-                 const variant = item.product.variants.find(v => v.id === item.variantId);
-                 if (variant && variant.weight) {
-                     weight = variant.weight;
-                 }
-              }
+            .map(
+              (item) => {
+                // ✅ ლოგიკა: ვამოწმებთ ჯერ manual entry-ს წონას, შემდეგ პროდუქტისას
+                let weight = (item as any).weight || item.product?.weight;
+                
+                // თუ ვარიანტია, ვეძებთ ვარიანტის წონას
+                if (item.variantId && item.product?.variants) {
+                    const variant = item.product.variants.find(v => v.id === item.variantId);
+                    if (variant && variant.weight) {
+                        weight = variant.weight;
+                    }
+                }
 
-              return `
-              <div class="product-item">
-                <div class="product-info">
-                  <strong>${getOrderItemDisplayName(item)}</strong>
-                  <span class="product-meta">
-                    ${item.quantity} ცალი × ₾${item.price.toFixed(2)}
-                    ${weight ? ` | წონა: ${weight} გრ` : ''}
-                  </span>
+                return `
+                <div class="product-item">
+                  <div class="product-info">
+                    <strong>${getOrderItemDisplayName(item)}</strong>
+                    <div class="product-meta">
+                      ${item.quantity} ცალი × ₾${item.price.toFixed(2)}
+                    </div>
+                    ${weight ? `<div class="product-weight">წონა: ${weight} გრ</div>` : ''}
+                  </div>
+                  <span>₾${item.total.toFixed(2)}</span>
                 </div>
-                <span>₾${item.total.toFixed(2)}</span>
-              </div>
-              `;
-            })
+                `;
+              }
+            )
             .join("")}
         </div>
 
@@ -415,6 +420,21 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
   };
 
+  const getStatusIcon = (status: Order["orderStatus"]) => {
+    switch (status) {
+      case "pending":
+        return <Clock className="w-4 h-4" />;
+      case "shipped":
+        return <CheckCircle className="w-4 h-4" />;
+      case "delivered":
+        return <Package className="w-4 h-4" />;
+      case "cancelled":
+        return <AlertCircle className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
+    }
+  };
+
   const getTabFilteredOrders = (tab: "active" | "live" | "history") => {
     return orders.filter((order) => {
       switch (tab) {
@@ -568,7 +588,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       {/* Mobile-First Header */}
       <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6 shadow-sm">
         <div className="flex flex-col space-y-4">
-          {/* Title Section */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between">
             <div>
               <h2 className="text-lg md:text-xl font-semibold text-gray-900">
@@ -579,7 +598,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               </p>
             </div>
 
-            {/* Stats Badge */}
             <div className="bg-gray-100 rounded-lg px-3 py-2 text-xs md:text-sm w-fit">
               <span className="text-gray-600">სულ: </span>
               <span className="font-semibold text-gray-900">
@@ -587,7 +605,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               </span>
             </div>
 
-            {/* Mobile Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <button
                 onClick={exportFilteredOrdersPDF}
@@ -610,7 +627,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           </div>
         </div>
 
-        {/* Tab Navigation */}
         <div className="border-b border-gray-200 mb-4">
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
             {[
@@ -656,9 +672,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           </nav>
         </div>
 
-        {/* Mobile-Optimized Filters */}
         <div className="space-y-3 mt-4">
-          {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
@@ -670,9 +684,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             />
           </div>
 
-          {/* Compact Filters */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Date Range */}
             <div className="space-y-2">
               <label className="text-xs font-medium text-gray-700 flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
@@ -694,7 +706,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               </div>
             </div>
 
-            {/* Status & Clear */}
             <div className="space-y-2">
               <label className="text-xs font-medium text-gray-700">
                 სტატუსი
@@ -731,7 +742,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         </div>
       </div>
 
-      {/* Orders Table */}
       {filteredOrders.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-lg p-12 text-center shadow-sm">
           <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -744,7 +754,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         </div>
       ) : (
         <>
-          {/* Desktop Table */}
           <div className="hidden lg:block bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -910,7 +919,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             </div>
           </div>
 
-          {/* Mobile Card Layout */}
           <div className="lg:hidden space-y-4">
             {filteredOrders.length > 0 && (
               <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
@@ -1240,7 +1248,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                   </div>
                 </div>
 
-                {/* MODAL PRODUCTS LIST */}
+                {/* MODAL PRODUCTS LIST - განახლებული */}
                 <div className="mt-6">
                   <h4 className="flex items-center text-lg font-semibold text-gray-900 mb-4">
                     <Package className="w-5 h-5 mr-2 text-purple-600" />
@@ -1249,13 +1257,15 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                   <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                     <div className="max-h-64 overflow-y-auto">
                       {selectedOrder.items.map((item, index) => {
-                        // 1. Weight Extraction Logic
-                        let weight = item.product.weight;
-                        if (item.variantId && item.product.variants) {
-                           const variant = item.product.variants.find(v => v.id === item.variantId);
-                           if (variant && variant.weight) {
-                               weight = variant.weight;
-                           }
+                        // ✅ ლოგიკა: ვამოწმებთ ჯერ manual entry-ს წონას, შემდეგ პროდუქტისას
+                        let weight = (item as any).weight || item.product?.weight;
+                        
+                        // თუ ვარიანტია, ვეძებთ ვარიანტის წონას
+                        if (item.variantId && item.product?.variants) {
+                            const variant = item.product.variants.find(v => v.id === item.variantId);
+                            if (variant && variant.weight) {
+                                weight = variant.weight;
+                            }
                         }
 
                         return (
@@ -1283,9 +1293,11 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                                 <p className="text-sm text-gray-500 mt-0.5">
                                   ₾{item.price.toFixed(2)} × {item.quantity} ცალი
                                 </p>
+                                
+                                {/* ✅ წონის ბეჯი - "წონა:" ტექსტით */}
                                 {weight ? (
-                                  <div className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-medium bg-stone-100 text-stone-600 border border-stone-200">
-                                     <span className="text-stone-400">წონა:</span> {weight} გრ
+                                  <div className="mt-1.5 inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-stone-100 text-stone-600 border border-stone-200">
+                                     <span className="text-stone-500 mr-1">წონა:</span> {weight} გრ
                                   </div>
                                 ) : null}
                               </div>
