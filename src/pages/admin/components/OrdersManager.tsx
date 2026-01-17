@@ -103,7 +103,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     const totalItems = productsList.reduce((sum, p) => sum + p.quantity, 0);
 
     // დინამიური font-size პროდუქტების რაოდენობის მიხედვით
-    const productFontSize = productsList.length > 8 ? '5px' : 
+    const productFontSize = productsList.length > 10 ? '4.5px' : 
+                           productsList.length > 7 ? '5px' :
                            productsList.length > 5 ? '5.5px' : '6px';
 
     const labelContent = `
@@ -120,38 +121,43 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           @page {
-            size: 76mm auto;
-            margin: 2mm;
+            size: 76mm 65mm;
+            margin: 1mm;
           }
 
           body {
             font-family: 'Arial', 'Georgia', sans-serif;
             font-size: 7px;
-            line-height: 1.2;
+            line-height: 1.15;
             color: #000;
-            width: 72mm;
-            padding: 1.5mm;
+            width: 74mm;
+            height: 63mm;
+            padding: 0;
+            margin: 0;
             background: white;
+            overflow: hidden;
           }
 
           .label-container {
             width: 100%;
+            height: 100%;
             border: 2px solid #000;
-            padding: 2mm;
+            padding: 1.5mm;
             display: flex;
             flex-direction: column;
             background: white;
+            box-sizing: border-box;
           }
 
-          /* Header - Fixed */
+          /* Header - Compact */
           .header {
             text-align: center;
             border-bottom: 1px solid #000;
-            padding-bottom: 1mm;
-            margin-bottom: 1.5mm;
+            padding-bottom: 0.8mm;
+            margin-bottom: 1mm;
             background: #f8f9fa;
-            padding: 1mm;
-            margin: -2mm -2mm 1.5mm -2mm;
+            padding: 0.8mm;
+            margin: -1.5mm -1.5mm 1mm -1.5mm;
             flex-shrink: 0;
           }
 
@@ -159,102 +165,107 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 0.5mm;
+            margin-bottom: 0.3mm;
           }
 
           .logo {
-            width: 8mm;
-            height: 6mm;
-            margin-right: 1.5mm;
+            width: 7mm;
+            height: 5mm;
+            margin-right: 1mm;
             object-fit: contain;
           }
 
           .store-name {
-            font-size: 8px;
+            font-size: 7px;
             font-weight: bold;
             color: #2d5a27;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
           }
 
           .order-info {
-            font-size: 6px;
+            font-size: 5.5px;
             font-weight: bold;
-            margin-top: 0.5mm;
+            margin-top: 0.3mm;
             color: #333;
           }
 
           .order-number {
-            font-size: 7px;
+            font-size: 6.5px;
             font-weight: bold;
             color: #000;
           }
 
-          /* Customer Section - Compact */
+          /* Customer Section - Ultra Compact */
           .section {
-            margin-bottom: 1.5mm;
+            margin-bottom: 1mm;
             flex-shrink: 0;
           }
 
           .section-title {
-            font-size: 7px;
+            font-size: 6px;
             font-weight: bold;
-            margin-bottom: 0.8mm;
-            padding-bottom: 0.4mm;
-            border-bottom: 1px solid #333;
+            margin-bottom: 0.5mm;
+            padding-bottom: 0.3mm;
+            border-bottom: 0.5px solid #333;
             color: #333;
             text-transform: uppercase;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.1px;
           }
 
           .customer-info {
-            font-size: 6.5px;
-            line-height: 1.25;
+            font-size: 6px;
+            line-height: 1.2;
           }
 
           .customer-name {
             font-weight: bold;
-            font-size: 7px;
-            margin-bottom: 0.3mm;
+            font-size: 6.5px;
+            margin-bottom: 0.2mm;
           }
 
           .info-line {
-            margin-bottom: 0.3mm;
+            margin-bottom: 0.2mm;
             display: flex;
             align-items: baseline;
           }
 
           .info-label {
-            font-size: 5.5px;
+            font-size: 5px;
             color: #666;
-            min-width: 12mm;
+            min-width: 10mm;
             flex-shrink: 0;
           }
 
           .info-value {
             font-weight: 500;
             color: #000;
+            font-size: 5.5px;
           }
 
-          /* Products Section - Natural Flow */
+          /* Products Section - Compact */
           .products {
             font-size: ${productFontSize};
+            flex-grow: 1;
             display: flex;
             flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
           }
 
           .products-header {
             flex-shrink: 0;
-            margin-bottom: 1mm;
+            margin-bottom: 0.6mm;
           }
 
           .products-list {
-            flex-shrink: 0;
+            flex-grow: 1;
+            overflow: hidden;
           }
 
           .product-item {
-            margin-bottom: 0.8mm;
-            line-height: 1.3;
-            padding-left: 2mm;
+            margin-bottom: 0.5mm;
+            line-height: 1.2;
+            padding-left: 1.5mm;
             position: relative;
             word-wrap: break-word;
           }
@@ -264,7 +275,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             position: absolute;
             left: 0;
             font-weight: bold;
-            font-size: 7px;
+            font-size: 6px;
           }
 
           .product-name {
@@ -278,60 +289,60 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           .product-weight {
             color: #666;
-            font-size: 95%;
+            font-size: 90%;
           }
 
           .summary-badge {
             background: #e9ecef;
             border: 1px solid #dee2e6;
-            padding: 0.8mm 1.5mm;
-            border-radius: 1.5mm;
-            font-size: 5.5px;
+            padding: 0.5mm 1mm;
+            border-radius: 1mm;
+            font-size: 5px;
             display: inline-block;
-            margin-top: 0.8mm;
+            margin-top: 0.5mm;
             font-weight: bold;
           }
 
-          /* Footer - Fixed */
+          /* Footer - Compact */
           .total-info {
-            border-top: 2px solid #000;
-            padding-top: 1.5mm;
+            border-top: 1.5px solid #000;
+            padding-top: 0.8mm;
             text-align: center;
-            font-size: 8px;
+            font-size: 7px;
             font-weight: bold;
             background: #f8f9fa;
-            margin: 1.5mm -2mm -2mm -2mm;
-            padding: 2mm;
+            margin: 0.8mm -1.5mm -1.5mm -1.5mm;
+            padding: 1mm 1.5mm;
             flex-shrink: 0;
           }
 
           .payment-line {
-            font-size: 6px;
-            margin-bottom: 0.4mm;
+            font-size: 5.5px;
+            margin-bottom: 0.3mm;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 1mm;
+            padding: 0 0.5mm;
           }
 
           .total-amount {
-            font-size: 9px;
+            font-size: 8px;
             color: #2d5a27;
           }
 
           .payment-method {
-            font-size: 6px;
+            font-size: 5.5px;
             color: #666;
-            margin-top: 0.4mm;
+            margin-top: 0.3mm;
           }
 
           .payment-status {
-            margin-top: 0.6mm;
-            padding: 0.4mm;
-            border-radius: 1mm;
+            margin-top: 0.5mm;
+            padding: 0.3mm;
+            border-radius: 0.8mm;
             text-align: center;
             font-weight: bold;
-            font-size: 6px;
+            font-size: 5.5px;
           }
 
           .payment-status.paid {
