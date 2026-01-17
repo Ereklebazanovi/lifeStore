@@ -64,7 +64,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
   };
 
-  // 🏷️ გაუმჯობესებული ლეიბლის გენერაცია
+  // 🏷️ გაუმჯობესებული ლეიბლის გენერაცია (76x92მმ ოპტიმიზებული)
   const generateShippingLabel = (order: Order) => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
@@ -103,8 +103,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     const totalItems = productsList.reduce((sum, p) => sum + p.quantity, 0);
 
     // დინამიური font-size პროდუქტების რაოდენობის მიხედვით
-    const productFontSize = productsList.length > 8 ? '5px' : 
-                           productsList.length > 5 ? '5.5px' : '6px';
+    const productFontSize = productsList.length > 10 ? '6.5px' : 
+                           productsList.length > 6 ? '7px' : '7.5px';
 
     const labelContent = `
       <!DOCTYPE html>
@@ -121,39 +121,41 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           @page {
             size: 76mm 92mm;
-            margin: 2mm;
+            margin: 0;
           }
 
           body {
-            font-family: 'Arial', 'Georgia', sans-serif;
-            font-size: 7px;
-            line-height: 1.2;
+            font-family: 'Arial', sans-serif;
+            font-size: 8px;
+            line-height: 1.3;
             color: #000;
-            width: 72mm;
-            height: 88mm;
-            padding: 1.5mm;
+            width: 76mm;
+            height: 92mm;
+            margin: 0;
+            padding: 0;
             background: white;
           }
 
           .label-container {
-            width: 100%;
-            height: 100%;
-            border: 2px solid #000;
-            padding: 2mm;
+            width: 76mm;
+            height: 92mm;
+            border: 2.5px solid #000;
+            padding: 3mm;
             display: flex;
             flex-direction: column;
             background: white;
+            box-sizing: border-box;
           }
 
-          /* Header - Fixed */
+          /* Header - Compact & Bold */
           .header {
             text-align: center;
-            border-bottom: 1px solid #000;
-            padding-bottom: 1mm;
-            margin-bottom: 1.5mm;
-            background: #f8f9fa;
-            padding: 1mm;
-            margin: -2mm -2mm 1.5mm -2mm;
+            border-bottom: 2px solid #000;
+            padding-bottom: 2mm;
+            margin-bottom: 2.5mm;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 2mm;
+            margin: -3mm -3mm 2.5mm -3mm;
             flex-shrink: 0;
           }
 
@@ -161,83 +163,92 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 0.5mm;
+            margin-bottom: 1.5mm;
+            gap: 2mm;
           }
 
           .logo {
-            width: 8mm;
-            height: 6mm;
-            margin-right: 1.5mm;
+            width: 12mm;
+            height: 9mm;
             object-fit: contain;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
           }
 
           .store-name {
-            font-size: 8px;
-            font-weight: bold;
-            color: #2d5a27;
-            letter-spacing: 0.3px;
+            font-size: 11px;
+            font-weight: 900;
+            color: #1a3a15;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
           }
 
           .order-info {
-            font-size: 6px;
+            font-size: 7.5px;
             font-weight: bold;
-            margin-top: 0.5mm;
+            margin-top: 1mm;
             color: #333;
+            line-height: 1.4;
           }
 
           .order-number {
-            font-size: 7px;
-            font-weight: bold;
+            font-size: 9px;
+            font-weight: 900;
             color: #000;
+            letter-spacing: 0.3px;
           }
 
-          /* Customer Section - Compact */
+          /* Customer Section - Readable */
           .section {
-            margin-bottom: 1.2mm;
+            margin-bottom: 2mm;
             flex-shrink: 0;
           }
 
           .section-title {
-            font-size: 7px;
-            font-weight: bold;
-            margin-bottom: 0.8mm;
-            padding-bottom: 0.4mm;
-            border-bottom: 1px solid #333;
-            color: #333;
+            font-size: 8px;
+            font-weight: 900;
+            margin-bottom: 1.5mm;
+            padding-bottom: 0.8mm;
+            border-bottom: 1.5px solid #333;
+            color: #1a1a1a;
             text-transform: uppercase;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.3px;
           }
 
           .customer-info {
-            font-size: 6.5px;
-            line-height: 1.25;
+            font-size: 7.5px;
+            line-height: 1.5;
           }
 
           .customer-name {
-            font-weight: bold;
-            font-size: 7px;
-            margin-bottom: 0.3mm;
+            font-weight: 900;
+            font-size: 8.5px;
+            margin-bottom: 1mm;
+            color: #000;
           }
 
           .info-line {
-            margin-bottom: 0.3mm;
+            margin-bottom: 1mm;
             display: flex;
-            align-items: baseline;
+            align-items: flex-start;
+            gap: 1mm;
           }
 
           .info-label {
-            font-size: 5.5px;
-            color: #666;
-            min-width: 12mm;
+            font-size: 7px;
+            color: #555;
+            font-weight: 600;
+            min-width: 16mm;
             flex-shrink: 0;
           }
 
           .info-value {
-            font-weight: 500;
+            font-weight: 600;
             color: #000;
+            flex: 1;
+            word-wrap: break-word;
           }
 
-          /* Products Section - Flexible (გაიზრდება საჭიროებისამებრ) */
+          /* Products Section - Clear & Spacious */
           .products {
             font-size: ${productFontSize};
             flex-grow: 1;
@@ -248,7 +259,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           .products-header {
             flex-shrink: 0;
-            margin-bottom: 0.8mm;
+            margin-bottom: 1.5mm;
           }
 
           .products-list {
@@ -257,96 +268,111 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           .product-item {
-            margin-bottom: 0.6mm;
-            line-height: 1.3;
-            padding-left: 2mm;
+            margin-bottom: 1.2mm;
+            line-height: 1.5;
+            padding-left: 3mm;
             position: relative;
             word-wrap: break-word;
           }
 
           .product-item:before {
-            content: "•";
+            content: "▪";
             position: absolute;
             left: 0;
             font-weight: bold;
-            font-size: 7px;
+            font-size: 9px;
+            color: #2d5a27;
           }
 
           .product-name {
-            font-weight: 500;
+            font-weight: 600;
+            color: #1a1a1a;
           }
 
           .product-quantity {
-            font-weight: bold;
+            font-weight: 900;
             color: #2d5a27;
+            font-size: 105%;
           }
 
           .product-weight {
             color: #666;
             font-size: 95%;
+            font-weight: 500;
           }
 
           .summary-badge {
-            background: #e9ecef;
-            border: 1px solid #dee2e6;
-            padding: 0.6mm 1.2mm;
-            border-radius: 1.5mm;
-            font-size: 5.5px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 1.5px solid #81c784;
+            padding: 1mm 2mm;
+            border-radius: 2mm;
+            font-size: 7px;
             display: inline-block;
-            margin-top: 0.6mm;
-            font-weight: bold;
+            margin-top: 1mm;
+            font-weight: 900;
+            color: #2d5a27;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
           }
 
-          /* Footer - Fixed */
+          /* Footer - Bold & Clear */
           .total-info {
-            border-top: 2px solid #000;
-            padding-top: 1.2mm;
+            border-top: 3px solid #000;
+            padding-top: 2mm;
             text-align: center;
-            font-size: 8px;
+            font-size: 9px;
             font-weight: bold;
-            background: #f8f9fa;
-            margin: 1mm -2mm -2mm -2mm;
-            padding: 1.5mm 2mm;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            margin: 2mm -3mm -3mm -3mm;
+            padding: 2.5mm 3mm;
             flex-shrink: 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
           }
 
           .payment-line {
-            font-size: 6px;
-            margin-bottom: 0.4mm;
+            font-size: 7.5px;
+            margin-bottom: 1mm;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 1mm;
+            padding: 0 2mm;
+            font-weight: 700;
           }
 
           .total-amount {
-            font-size: 9px;
-            color: #2d5a27;
+            font-size: 11px;
+            color: #1a3a15;
+            font-weight: 900;
+            letter-spacing: 0.3px;
           }
 
           .payment-method {
-            font-size: 6px;
-            color: #666;
-            margin-top: 0.4mm;
+            font-size: 7px;
+            color: #555;
+            margin-top: 0.8mm;
+            font-weight: 600;
           }
 
           .payment-status {
-            margin-top: 0.6mm;
-            padding: 0.4mm;
-            border-radius: 1mm;
+            margin-top: 1.5mm;
+            padding: 1mm;
+            border-radius: 2mm;
             text-align: center;
-            font-weight: bold;
-            font-size: 6px;
+            font-weight: 900;
+            font-size: 7.5px;
+            letter-spacing: 0.2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
           }
 
           .payment-status.paid {
-            background: #d4edda;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
             color: #155724;
+            border: 1.5px solid #a8d5ba;
           }
 
           .payment-status.pending {
-            background: #fff3cd;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
             color: #856404;
+            border: 1.5px solid #ffd93d;
           }
 
           @media print {
@@ -359,7 +385,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       </head>
       <body>
         <div class="label-container">
-          <!-- Header - Fixed Height -->
+          <!-- Header -->
           <div class="header">
             <div class="logo-section">
               <img src="./Screenshot 2025-12-10 151703.png" alt="LifeStore" class="logo">
@@ -371,7 +397,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             </div>
           </div>
 
-          <!-- Customer Info - Compact -->
+          <!-- Customer Info -->
           <div class="section">
             <div class="section-title">✉ მიმღები</div>
             <div class="customer-info">
@@ -389,7 +415,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             </div>
           </div>
 
-          <!-- Products - Flexible Height -->
+          <!-- Products -->
           <div class="products">
             <div class="products-header">
               <div class="section-title">📦 შეკვეთა</div>
@@ -408,7 +434,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             </div>
           </div>
 
-          <!-- Payment & Total - Fixed Height -->
+          <!-- Payment & Total -->
           <div class="total-info">
             <div class="payment-line">
               <span>გადახდა:</span>
@@ -477,8 +503,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       );
 
       const totalItems = productsList.reduce((sum, p) => sum + p.quantity, 0);
-      const productFontSize = productsList.length > 8 ? '5px' : 
-                             productsList.length > 5 ? '5.5px' : '6px';
+      const productFontSize = productsList.length > 10 ? '6.5px' : 
+                             productsList.length > 6 ? '7px' : '7.5px';
 
       return `
         <div class="label-page" style="font-size: ${productFontSize};">
@@ -559,43 +585,43 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           @page {
-            size: 76mm auto;
-            margin: 2mm;
+            size: 76mm 92mm;
+            margin: 0;
           }
 
           body {
-            font-family: 'Arial', 'Georgia', sans-serif;
-            font-size: 7px;
-            line-height: 1.2;
+            font-family: 'Arial', sans-serif;
+            font-size: 8px;
+            line-height: 1.3;
             color: #000;
             background: white;
           }
 
           .label-page {
-            width: 72mm;
-            min-height: 88mm;
-            margin-bottom: 4mm;
+            width: 76mm;
+            height: 92mm;
+            margin: 0;
             page-break-after: always;
-            border: 2px solid #000;
-            padding: 2mm;
+            border: 2.5px solid #000;
+            padding: 3mm;
             display: flex;
             flex-direction: column;
             background: white;
+            box-sizing: border-box;
           }
 
           .label-page:last-child {
             page-break-after: auto;
-            margin-bottom: 0;
           }
 
           .header {
             text-align: center;
-            border-bottom: 1px solid #000;
-            padding-bottom: 1mm;
-            margin-bottom: 1.5mm;
-            background: #f8f9fa;
-            padding: 1mm;
-            margin: -2mm -2mm 1.5mm -2mm;
+            border-bottom: 2px solid #000;
+            padding-bottom: 2mm;
+            margin-bottom: 2.5mm;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 2mm;
+            margin: -3mm -3mm 2.5mm -3mm;
             flex-shrink: 0;
           }
 
@@ -603,79 +629,88 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 0.5mm;
+            margin-bottom: 1.5mm;
+            gap: 2mm;
           }
 
           .logo {
-            width: 8mm;
-            height: 6mm;
-            margin-right: 1.5mm;
+            width: 12mm;
+            height: 9mm;
             object-fit: contain;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
           }
 
           .store-name {
-            font-size: 8px;
-            font-weight: bold;
-            color: #2d5a27;
-            letter-spacing: 0.3px;
+            font-size: 11px;
+            font-weight: 900;
+            color: #1a3a15;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
           }
 
           .order-info {
-            font-size: 6px;
+            font-size: 7.5px;
             font-weight: bold;
-            margin-top: 0.5mm;
+            margin-top: 1mm;
             color: #333;
+            line-height: 1.4;
           }
 
           .order-number {
-            font-size: 7px;
-            font-weight: bold;
+            font-size: 9px;
+            font-weight: 900;
             color: #000;
+            letter-spacing: 0.3px;
           }
 
           .section {
-            margin-bottom: 1.2mm;
+            margin-bottom: 2mm;
             flex-shrink: 0;
           }
 
           .section-title {
-            font-size: 7px;
-            font-weight: bold;
-            margin-bottom: 0.8mm;
-            padding-bottom: 0.4mm;
-            border-bottom: 1px solid #333;
-            color: #333;
+            font-size: 8px;
+            font-weight: 900;
+            margin-bottom: 1.5mm;
+            padding-bottom: 0.8mm;
+            border-bottom: 1.5px solid #333;
+            color: #1a1a1a;
             text-transform: uppercase;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.3px;
           }
 
           .customer-info {
-            font-size: 6.5px;
-            line-height: 1.25;
+            font-size: 7.5px;
+            line-height: 1.5;
           }
 
           .customer-name {
-            font-weight: bold;
-            font-size: 7px;
-            margin-bottom: 0.3mm;
+            font-weight: 900;
+            font-size: 8.5px;
+            margin-bottom: 1mm;
+            color: #000;
           }
 
           .info-line {
-            margin-bottom: 0.3mm;
+            margin-bottom: 1mm;
             display: flex;
-            align-items: baseline;
+            align-items: flex-start;
+            gap: 1mm;
           }
 
           .info-label {
-            font-size: 5.5px;
-            color: #666;
-            min-width: 12mm;
+            font-size: 7px;
+            color: #555;
+            font-weight: 600;
+            min-width: 16mm;
             flex-shrink: 0;
           }
 
           .info-value {
-            font-weight: 500;
+            font-weight: 600;
             color: #000;
+            flex: 1;
+            word-wrap: break-word;
           }
 
           .products {
@@ -687,7 +722,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           .products-header {
             flex-shrink: 0;
-            margin-bottom: 0.8mm;
+            margin-bottom: 1.5mm;
           }
 
           .products-list {
@@ -696,95 +731,110 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           .product-item {
-            margin-bottom: 0.6mm;
-            line-height: 1.3;
-            padding-left: 2mm;
+            margin-bottom: 1.2mm;
+            line-height: 1.5;
+            padding-left: 3mm;
             position: relative;
             word-wrap: break-word;
           }
 
           .product-item:before {
-            content: "•";
+            content: "▪";
             position: absolute;
             left: 0;
             font-weight: bold;
-            font-size: 7px;
+            font-size: 9px;
+            color: #2d5a27;
           }
 
           .product-name {
-            font-weight: 500;
+            font-weight: 600;
+            color: #1a1a1a;
           }
 
           .product-quantity {
-            font-weight: bold;
+            font-weight: 900;
             color: #2d5a27;
+            font-size: 105%;
           }
 
           .product-weight {
             color: #666;
             font-size: 95%;
+            font-weight: 500;
           }
 
           .summary-badge {
-            background: #e9ecef;
-            border: 1px solid #dee2e6;
-            padding: 0.6mm 1.2mm;
-            border-radius: 1.5mm;
-            font-size: 5.5px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 1.5px solid #81c784;
+            padding: 1mm 2mm;
+            border-radius: 2mm;
+            font-size: 7px;
             display: inline-block;
-            margin-top: 0.6mm;
-            font-weight: bold;
+            margin-top: 1mm;
+            font-weight: 900;
+            color: #2d5a27;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
           }
 
           .total-info {
-            border-top: 2px solid #000;
-            padding-top: 1.2mm;
+            border-top: 3px solid #000;
+            padding-top: 2mm;
             text-align: center;
-            font-size: 8px;
+            font-size: 9px;
             font-weight: bold;
-            background: #f8f9fa;
-            margin: 1mm -2mm -2mm -2mm;
-            padding: 1.5mm 2mm;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            margin: 2mm -3mm -3mm -3mm;
+            padding: 2.5mm 3mm;
             flex-shrink: 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
           }
 
           .payment-line {
-            font-size: 6px;
-            margin-bottom: 0.4mm;
+            font-size: 7.5px;
+            margin-bottom: 1mm;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 1mm;
+            padding: 0 2mm;
+            font-weight: 700;
           }
 
           .total-amount {
-            font-size: 9px;
-            color: #2d5a27;
+            font-size: 11px;
+            color: #1a3a15;
+            font-weight: 900;
+            letter-spacing: 0.3px;
           }
 
           .payment-method {
-            font-size: 6px;
-            color: #666;
-            margin-top: 0.4mm;
+            font-size: 7px;
+            color: #555;
+            margin-top: 0.8mm;
+            font-weight: 600;
           }
 
           .payment-status {
-            margin-top: 0.6mm;
-            padding: 0.4mm;
-            border-radius: 1mm;
+            margin-top: 1.5mm;
+            padding: 1mm;
+            border-radius: 2mm;
             text-align: center;
-            font-weight: bold;
-            font-size: 6px;
+            font-weight: 900;
+            font-size: 7.5px;
+            letter-spacing: 0.2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
           }
 
           .payment-status.paid {
-            background: #d4edda;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
             color: #155724;
+            border: 1.5px solid #a8d5ba;
           }
 
           .payment-status.pending {
-            background: #fff3cd;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
             color: #856404;
+            border: 1.5px solid #ffd93d;
           }
 
           @media print {
