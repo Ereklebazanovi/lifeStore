@@ -422,7 +422,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               <span class="total-amount">₾${order.totalAmount.toFixed(2)}</span>
             </div>
             <div class="payment-method">
-              ${order.paymentMethod === 'cash' ? '💵 ნაღდი ანგარიშსწორება' : '💳 ონლაინ გადახდა'}
+              ${order.paymentMethod === 'cash' ? 'ნაღდი ანგარიშსწორება' : 'ონლაინ გადახდა'}
             </div>
             ${order.deliveryInfo.shippingCost ? `<div class="payment-method">მიწოდება: ₾${order.deliveryInfo.shippingCost.toFixed(2)}</div>` : ''}
           </div>
@@ -539,7 +539,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               <span class="total-amount">₾${order.totalAmount.toFixed(2)}</span>
             </div>
             <div class="payment-method">
-              ${order.paymentMethod === 'cash' ? '💵 ნაღდი ანგარიშსწორება' : '💳 ონლაინ გადახდა'}
+              ${order.paymentMethod === 'cash' ? 'ნაღდი ანგარიშსწორება' : 'ონლაინ გადახდა'}
             </div>
             ${order.deliveryInfo.shippingCost ? `<div class="payment-method">მიწოდება: ₾${order.deliveryInfo.shippingCost.toFixed(2)}</div>` : ''}
           </div>
