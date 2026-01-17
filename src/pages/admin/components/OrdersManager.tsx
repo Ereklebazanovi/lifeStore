@@ -120,7 +120,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           @page {
-            size: 76mm 92mm;
+            size: 76mm auto;
             margin: 2mm;
           }
 
@@ -130,14 +130,12 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             line-height: 1.2;
             color: #000;
             width: 72mm;
-            height: 88mm;
             padding: 1.5mm;
             background: white;
           }
 
           .label-container {
             width: 100%;
-            height: 100%;
             border: 2px solid #000;
             padding: 2mm;
             display: flex;
@@ -193,7 +191,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           /* Customer Section - Compact */
           .section {
-            margin-bottom: 1.2mm;
+            margin-bottom: 1.5mm;
             flex-shrink: 0;
           }
 
@@ -237,27 +235,24 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             color: #000;
           }
 
-          /* Products Section - Flexible (გაიზრდება საჭიროებისამებრ) */
+          /* Products Section - Natural Flow */
           .products {
             font-size: ${productFontSize};
-            flex-grow: 1;
             display: flex;
             flex-direction: column;
-            min-height: 0;
           }
 
           .products-header {
             flex-shrink: 0;
-            margin-bottom: 0.8mm;
+            margin-bottom: 1mm;
           }
 
           .products-list {
-            flex-grow: 1;
-            overflow: hidden;
+            flex-shrink: 0;
           }
 
           .product-item {
-            margin-bottom: 0.6mm;
+            margin-bottom: 0.8mm;
             line-height: 1.3;
             padding-left: 2mm;
             position: relative;
@@ -289,24 +284,24 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           .summary-badge {
             background: #e9ecef;
             border: 1px solid #dee2e6;
-            padding: 0.6mm 1.2mm;
+            padding: 0.8mm 1.5mm;
             border-radius: 1.5mm;
             font-size: 5.5px;
             display: inline-block;
-            margin-top: 0.6mm;
+            margin-top: 0.8mm;
             font-weight: bold;
           }
 
           /* Footer - Fixed */
           .total-info {
             border-top: 2px solid #000;
-            padding-top: 1.2mm;
+            padding-top: 1.5mm;
             text-align: center;
             font-size: 8px;
             font-weight: bold;
             background: #f8f9fa;
-            margin: 1mm -2mm -2mm -2mm;
-            padding: 1.5mm 2mm;
+            margin: 1.5mm -2mm -2mm -2mm;
+            padding: 2mm;
             flex-shrink: 0;
           }
 
