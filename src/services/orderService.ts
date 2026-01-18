@@ -163,6 +163,7 @@ export class OrderService {
         variantId: item.variantId,
         product: {
           id: item.productId || "manual_entry",
+          productCode: "MANUAL",
           name: item.name,
           description: "Added manually by admin",
           price: item.price,
