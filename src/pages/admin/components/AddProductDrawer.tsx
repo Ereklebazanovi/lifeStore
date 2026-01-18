@@ -5,6 +5,7 @@ import { useProductStore } from "../../../store/productStore";
 import ImageUpload from "../../../components/ui/ImageUpload";
 import { PRIORITY_PRESETS, getPriorityEmoji } from "../../../utils/priority";
 import { showToast } from "../../../components/ui/Toast";
+import ProductService from "../../../services/productService";
 import type { ProductVariant } from "../../../types";
 
 interface AddProductDrawerProps {
@@ -30,6 +31,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
   // ძირითადი ინფორმაცია
   const [productName, setProductName] = useState("");
+  const [productCode, setProductCode] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [images, setImages] = useState<string[]>([]);
@@ -54,13 +56,45 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
   if (!isOpen) return null;
 
+  // Generate product code based on product name
+  const generateProductCode = async () => {
+    if (!productName.trim()) {
+      showToast("ჯერ შეიყვანეთ პროდუქტის სახელი", "error");
+      return;
+    }
+
+    try {
+      const suggestedCode = await ProductService.generateProductCode(productName);
+      setProductCode(suggestedCode);
+      showToast(`მიღებული კოდი: ${suggestedCode}`, "success");
+    } catch (error) {
+      showToast("კოდის გენერირება ვერ მოხერხდა", "error");
+    }
+  };
+
   // ვალიდაცია
-  const validateForm = () => {
+  const validateForm = async () => {
     const newErrors: { [key: string]: string } = {};
 
     // ძირითადი ინფორმაცია
     if (!productName.trim()) {
       newErrors.productName = "პროდუქტის სახელი აუცილებელია";
+    }
+
+    if (!productCode.trim()) {
+      newErrors.productCode = "პროდუქტის კოდი აუცილებელია";
+    } else if (!/^[A-Z0-9]+$/.test(productCode.trim())) {
+      newErrors.productCode = "კოდი უნდა შედგებოდეს მხოლოდ დიდი ასოებისა და რიცხვებისგან";
+    } else {
+      // Check uniqueness
+      try {
+        const isUnique = await ProductService.validateProductCode(productCode.trim());
+        if (!isUnique) {
+          newErrors.productCode = "ეს პროდუქტის კოდი უკვე გამოყენებულია";
+        }
+      } catch (error) {
+        newErrors.productCode = "კოდის შემოწმება ვერ მოხერხდა";
+      }
     }
 
     if (hasVariants) {
@@ -186,7 +220,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!(await validateForm())) {
       showToast("შეავსეთ ყველა აუცილებელი ველი", "error");
       return;
     }
@@ -197,6 +231,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
       const productData = {
         name: productName.trim(),
+        productCode: productCode.trim().toUpperCase(),
         description: description.trim(),
         category: category.trim(),
         images,
@@ -239,6 +274,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
       // ფორმის რესეტი
       setProductName("");
+      setProductCode("");
       setDescription("");
       setCategory("");
       setImages([]);
@@ -317,6 +353,40 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                     {errors.productName}
                   </p>
                 )}
+              </div>
+
+              {/* Product Code */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  პროდუქტის კოდი <span className="text-red-500">*</span>
+                  <span className="text-xs text-gray-500 ml-1">(უნიკალური, ბუღალტრული)</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={productCode}
+                    onChange={(e) => setProductCode(e.target.value.toUpperCase())}
+                    className={`flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                      errors.productCode ? "border-red-300" : "border-gray-300"
+                    }`}
+                    placeholder="მაგ: LC001"
+                  />
+                  <button
+                    type="button"
+                    onClick={generateProductCode}
+                    className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    გენერირება
+                  </button>
+                </div>
+                {errors.productCode && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.productCode}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  კოდი უნდა შედგებოდეს მხოლოდ დიდი ასოებისა და რიცხვებისგან (A-Z, 0-9)
+                </p>
               </div>
 
               {/* Description */}
@@ -480,7 +550,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
                         <div>
                           <label className="block text-sm font-medium text-blue-800 mb-2">
-                            🏷️ ფასდაკლებული ფასი (₾)
+                            ფასდაკლებული ფასი
                           </label>
                           <input
                             type="number"
@@ -691,9 +761,9 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                           {/* Sale Price */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              ფასდაკლებული ფასი (₾)
+                              ფასდაკლებული ფასი
                               <span className="text-xs text-gray-500 ml-1">
-                                (არასავალდებულო)
+                                
                               </span>
                             </label>
                             <input

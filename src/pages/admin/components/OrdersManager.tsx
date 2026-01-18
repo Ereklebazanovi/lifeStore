@@ -64,7 +64,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
   };
 
-  // 🏷️ გაუმჯობესებული ლეიბლის გენერაცია (76x92მმ ოპტიმიზებული)
+  // 🏷️ კურიერებისთვის ოპტიმიზებული ლეიბლის გენერაცია (76x92მმ)
   const generateShippingLabel = (order: Order) => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
@@ -73,7 +73,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       ? order.createdAt
       : new Date(order.createdAt as any)).toLocaleDateString("ka-GE");
 
-    // პროდუქტების ინფორმაცია ინდივიდუალური წონებით - ყველა პროდუქტი
+    // პროდუქტების ინფორმაცია - ყველა პროდუქტი წონების გარეშე
     const productsList = order.items.map(item => {
       let weight = item.product.weight;
       if (item.variantId && item.product.variants) {
@@ -84,13 +84,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       }
 
       const displayName = getOrderItemDisplayName(item);
-      const weightInfo = weight ? ` (${weight}გრ)` : '';
+      const productCode = item.product.productCode;
 
       return {
         name: displayName,
+        productCode: productCode,
         quantity: item.quantity,
         weight: weight,
-        displayText: `${displayName} x${item.quantity}${weightInfo}`
+        displayText: `${productCode ? `[${productCode}] ` : ''}${displayName} x${item.quantity}`
       };
     });
 
@@ -102,10 +103,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     // პროდუქტების რაოდენობის გამოთვლა
     const totalItems = productsList.reduce((sum, p) => sum + p.quantity, 0);
 
-    // დინამიური font-size პროდუქტების რაოდენობის მიხედვით
-    const productFontSize = productsList.length > 12 ? '5.5px' :
-                           productsList.length > 8 ? '6px' :
-                           productsList.length > 5 ? '6.5px' : '7px';
+    // კიდევ უფრო დიდი ფონტები კურიერებისთვის
+    const productFontSize = productsList.length > 12 ? '8px' :
+                           productsList.length > 8 ? '9px' :
+                           productsList.length > 5 ? '10px' : '11px';
 
     const labelContent = `
       <!DOCTYPE html>
@@ -127,8 +128,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           body {
             font-family: 'Arial', sans-serif;
-            font-size: 8px;
-            line-height: 1.2;
+            font-size: 9px;
+            line-height: 1.3;
             color: #000;
             width: 76mm;
             height: 92mm;
@@ -140,23 +141,23 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           .label-container {
             width: 76mm;
             height: 92mm;
-            border: 2.5px solid #000;
-            padding: 2.5mm;
+            border: 1px solid #333;
+            padding: 2mm;
             display: flex;
             flex-direction: column;
             background: white;
             box-sizing: border-box;
           }
 
-          /* Header - Compact & Bold */
+          /* Header - Bold & Clear */
           .header {
             text-align: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 1.5mm;
-            margin-bottom: 2mm;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 1.5mm;
-            margin: -2.5mm -2.5mm 2mm -2.5mm;
+            border-bottom: 1px solid #666;
+            padding-bottom: 0.5mm;
+            margin-bottom: 1mm;
+            background: white;
+            padding: 1mm;
+            margin: -2mm -2mm 1mm -2mm;
             flex-shrink: 0;
           }
 
@@ -164,15 +165,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1mm;
-            gap: 2mm;
+            margin-bottom: 0.3mm;
+            gap: 1.5mm;
           }
 
           .logo {
-            width: 10mm;
-            height: 7.5mm;
+            width: 8mm;
+            height: 6mm;
             object-fit: contain;
-            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
           }
 
           .store-name {
@@ -186,9 +186,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           .order-info {
             font-size: 7px;
             font-weight: bold;
-            margin-top: 0.5mm;
+            margin-top: 0.2mm;
             color: #333;
-            line-height: 1.3;
+            line-height: 1.2;
           }
 
           .order-number {
@@ -198,61 +198,60 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             letter-spacing: 0.2px;
           }
 
-          /* Customer Section - Compact */
+          /* Customer Section - Larger for couriers */
           .section {
-            margin-bottom: 1.5mm;
+            margin-bottom: 1.2mm;
             flex-shrink: 0;
           }
 
           .section-title {
-            font-size: 7px;
+            font-size: 11px;
             font-weight: 900;
             margin-bottom: 1mm;
             padding-bottom: 0.5mm;
-            border-bottom: 1px solid #333;
-            color: #1a1a1a;
+            border-bottom: 1px solid #999;
+            color: #000;
             text-transform: uppercase;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.4px;
           }
 
           .customer-info {
-            font-size: 6.5px;
+            font-size: 8px;
             line-height: 1.4;
           }
 
           .customer-name {
             font-weight: 900;
-            font-size: 7.5px;
-            margin-bottom: 0.8mm;
+            font-size: 12px;
+            margin-bottom: 1mm;
             color: #000;
           }
 
           .info-line {
-            margin-bottom: 0.8mm;
+            margin-bottom: 1mm;
             display: flex;
             align-items: flex-start;
-            gap: 0.8mm;
+            gap: 1mm;
           }
 
           .info-label {
-            font-size: 6px;
-            color: #555;
-            font-weight: 600;
-            min-width: 14mm;
+            font-size: 9px;
+            color: #333;
+            font-weight: 700;
+            min-width: 16mm;
             flex-shrink: 0;
           }
 
           .info-value {
-            font-weight: 600;
+            font-weight: 900;
             color: #000;
             flex: 1;
             word-wrap: break-word;
-            font-size: 6.5px;
+            font-size: 10px;
           }
 
-          /* Products Section - Optimized for many products */
+          /* Products Section - Large fonts for couriers */
           .products {
-            font-size: ${productFontSize};
             flex-grow: 1;
             display: flex;
             flex-direction: column;
@@ -267,16 +266,17 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           .products-list {
             flex-grow: 1;
             overflow: hidden;
-            max-height: 45mm; /* მაქსიმალური სიმაღლე პროდუქტების ლისტისთვის */
+            max-height: 50mm;
           }
 
           .product-item {
-            margin-bottom: 0.8mm;
+            margin-bottom: 1mm;
             line-height: 1.4;
-            padding-left: 2.5mm;
+            padding-left: 3mm;
             position: relative;
             word-wrap: break-word;
             font-size: ${productFontSize};
+            font-weight: 700;
           }
 
           .product-item:before {
@@ -284,76 +284,90 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             position: absolute;
             left: 0;
             font-weight: bold;
-            font-size: calc(${productFontSize} + 1px);
+            font-size: calc(${productFontSize} + 2px);
             color: #2d5a27;
           }
 
+          .product-code {
+            font-weight: 900;
+            color: #2d5a27;
+            font-size: calc(${productFontSize} - 1px);
+            background: #f0f4f0;
+            padding: 0.2mm 0.5mm;
+            border-radius: 0.5mm;
+            margin-right: 1mm;
+          }
+
           .product-name {
-            font-weight: 600;
-            color: #1a1a1a;
+            font-weight: 700;
+            color: #000;
           }
 
           .product-quantity {
             font-weight: 900;
             color: #2d5a27;
-            font-size: calc(${productFontSize} + 0.3px);
-          }
-
-          .product-weight {
-            color: #666;
-            font-size: calc(${productFontSize} - 0.2px);
-            font-weight: 500;
+            font-size: calc(${productFontSize} + 1px);
           }
 
           .summary-badge {
-            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-            border: 1.5px solid #81c784;
+            background: white;
+            border: 1px solid #333;
             padding: 0.8mm 1.5mm;
-            border-radius: 1.5mm;
-            font-size: 6.5px;
+            border-radius: 1mm;
+            font-size: 8px;
             display: inline-block;
-            margin-top: 0.5mm;
-            font-weight: 900;
-            color: #2d5a27;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-top: 0.8mm;
+            font-weight: 700;
+            color: #000;
           }
 
-          /* Footer - Simplified and compact */
+          .total-weight {
+            margin-top: 1mm;
+            padding: 0.5mm 1mm;
+            background: white;
+            border: 1px solid #333;
+            border-radius: 1mm;
+            font-size: 7px;
+            font-weight: 700;
+            color: #000;
+            text-align: center;
+          }
+
+          /* Footer - Large and clear */
           .total-info {
-            border-top: 2px solid #000;
+            border-top: 1px solid #666;
             padding-top: 1.5mm;
             text-align: center;
-            font-size: 8px;
+            font-size: 10px;
             font-weight: bold;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            margin: 1.5mm -2.5mm -2.5mm -2.5mm;
-            padding: 2mm 2.5mm;
+            background: white;
+            margin: 1.5mm -2mm -2mm -2mm;
+            padding: 2mm;
             flex-shrink: 0;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
           }
 
           .payment-line {
-            font-size: 7px;
-            margin-bottom: 0.8mm;
+            font-size: 11px;
+            margin-bottom: 1mm;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 1.5mm;
-            font-weight: 700;
+            padding: 0 1mm;
+            font-weight: 900;
           }
 
           .total-amount {
-            font-size: 10px;
+            font-size: 14px;
             color: #1a3a15;
             font-weight: 900;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.4px;
           }
 
           .payment-method {
-            font-size: 6.5px;
-            color: #555;
-            margin-top: 0.5mm;
-            font-weight: 600;
+            font-size: 9px;
+            color: #333;
+            margin-top: 0.8mm;
+            font-weight: 700;
           }
 
           @media print {
@@ -380,7 +394,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           <!-- Customer Info -->
           <div class="section">
-            <div class="section-title">✉ მიმღები</div>
+            <div class="section-title">მიმღები</div>
             <div class="customer-info">
               <div class="customer-name">${(order.customerInfo.firstName + ' ' + order.customerInfo.lastName).trim() || 'სახელი მითითებული არ არის'}</div>
 
@@ -399,20 +413,27 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           <!-- Products -->
           <div class="products">
             <div class="products-header">
-              <div class="section-title">📦 შეკვეთა</div>
+              <div class="section-title">შეკვეთა</div>
               <div class="summary-badge">
-                ${totalItems} ცალი${totalWeight > 0 ? ` | ${totalWeight}გრ` : ''}
+                ${totalItems} ცალი
               </div>
             </div>
 
             <div class="products-list">
               ${productsList.map(product =>
                 `<div class="product-item">
+                  ${product.productCode ? `<span class="product-code">[${product.productCode}] </span>` : ''}
                   <span class="product-name">${product.name}</span>
-                  <span class="product-quantity"> x${product.quantity}</span>${product.weight ? `<span class="product-weight"> (${product.weight}გრ)</span>` : ''}
+                  <span class="product-quantity"> x${product.quantity}</span>
                 </div>`
               ).join('')}
             </div>
+
+            ${totalWeight > 0 ? `
+            <div class="total-weight">
+              წონა: ${totalWeight}გრ
+            </div>
+            ` : ''}
           </div>
 
           <!-- Payment & Total - Simplified -->
@@ -466,13 +487,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         }
 
         const displayName = getOrderItemDisplayName(item);
-        const weightInfo = weight ? ` (${weight}გრ)` : '';
+        const productCode = item.product.productCode;
 
         return {
           name: displayName,
+          productCode: productCode,
           quantity: item.quantity,
           weight: weight,
-          displayText: `${displayName} x${item.quantity}${weightInfo}`
+          displayText: `${productCode ? `[${productCode}] ` : ''}${displayName} x${item.quantity}`
         };
       });
 
@@ -481,9 +503,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       );
 
       const totalItems = productsList.reduce((sum, p) => sum + p.quantity, 0);
-      const productFontSize = productsList.length > 12 ? '5.5px' :
-                             productsList.length > 8 ? '6px' :
-                             productsList.length > 5 ? '6.5px' : '7px';
+      const productFontSize = productsList.length > 12 ? '7px' :
+                             productsList.length > 8 ? '7.5px' :
+                             productsList.length > 5 ? '8px' : '8.5px';
 
       return `
         <div class="label-page" style="font-size: ${productFontSize};">
@@ -499,7 +521,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           </div>
 
           <div class="section">
-            <div class="section-title">✉ მიმღები</div>
+            <div class="section-title">მიმღები</div>
             <div class="customer-info">
               <div class="customer-name">${(order.customerInfo.firstName + ' ' + order.customerInfo.lastName).trim() || 'სახელი მითითებული არ არის'}</div>
 
@@ -517,20 +539,27 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           <div class="products">
             <div class="products-header">
-              <div class="section-title">📦 შეკვეთა</div>
+              <div class="section-title">შეკვეთა</div>
               <div class="summary-badge">
-                ${totalItems} ცალი${totalWeight > 0 ? ` | ${totalWeight}გრ` : ''}
+                ${totalItems} ცალი
               </div>
             </div>
 
             <div class="products-list">
               ${productsList.map(product =>
                 `<div class="product-item">
+                  ${product.productCode ? `<span class="product-code">[${product.productCode}] </span>` : ''}
                   <span class="product-name">${product.name}</span>
-                  <span class="product-quantity"> x${product.quantity}</span>${product.weight ? `<span class="product-weight"> (${product.weight}გრ)</span>` : ''}
+                  <span class="product-quantity"> x${product.quantity}</span>
                 </div>`
               ).join('')}
             </div>
+
+            ${totalWeight > 0 ? `
+            <div class="total-weight">
+              წონა: ${totalWeight}გრ
+            </div>
+            ` : ''}
           </div>
 
           <div class="total-info">
@@ -567,8 +596,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           body {
             font-family: 'Arial', sans-serif;
-            font-size: 8px;
-            line-height: 1.2;
+            font-size: 9px;
+            line-height: 1.3;
             color: #000;
             background: white;
           }
@@ -578,8 +607,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             height: 92mm;
             margin: 0;
             page-break-after: always;
-            border: 2.5px solid #000;
-            padding: 2.5mm;
+            border: 1px solid #333;
+            padding: 2mm;
             display: flex;
             flex-direction: column;
             background: white;
@@ -592,12 +621,12 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           .header {
             text-align: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 1.5mm;
-            margin-bottom: 2mm;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 1.5mm;
-            margin: -2.5mm -2.5mm 2mm -2.5mm;
+            border-bottom: 1px solid #666;
+            padding-bottom: 0.5mm;
+            margin-bottom: 1mm;
+            background: white;
+            padding: 1mm;
+            margin: -2mm -2mm 1mm -2mm;
             flex-shrink: 0;
           }
 
@@ -605,15 +634,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1mm;
-            gap: 2mm;
+            margin-bottom: 0.3mm;
+            gap: 1.5mm;
           }
 
           .logo {
-            width: 10mm;
-            height: 7.5mm;
+            width: 8mm;
+            height: 6mm;
             object-fit: contain;
-            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
           }
 
           .store-name {
@@ -627,9 +655,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           .order-info {
             font-size: 7px;
             font-weight: bold;
-            margin-top: 0.5mm;
+            margin-top: 0.2mm;
             color: #333;
-            line-height: 1.3;
+            line-height: 1.2;
           }
 
           .order-number {
@@ -640,54 +668,54 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           .section {
-            margin-bottom: 1.5mm;
+            margin-bottom: 1.2mm;
             flex-shrink: 0;
           }
 
           .section-title {
-            font-size: 7px;
+            font-size: 11px;
             font-weight: 900;
             margin-bottom: 1mm;
             padding-bottom: 0.5mm;
-            border-bottom: 1px solid #333;
-            color: #1a1a1a;
+            border-bottom: 1px solid #999;
+            color: #000;
             text-transform: uppercase;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.4px;
           }
 
           .customer-info {
-            font-size: 6.5px;
+            font-size: 8px;
             line-height: 1.4;
           }
 
           .customer-name {
             font-weight: 900;
-            font-size: 7.5px;
-            margin-bottom: 0.8mm;
+            font-size: 12px;
+            margin-bottom: 1mm;
             color: #000;
           }
 
           .info-line {
-            margin-bottom: 0.8mm;
+            margin-bottom: 1mm;
             display: flex;
             align-items: flex-start;
-            gap: 0.8mm;
+            gap: 1mm;
           }
 
           .info-label {
-            font-size: 6px;
-            color: #555;
-            font-weight: 600;
-            min-width: 14mm;
+            font-size: 9px;
+            color: #333;
+            font-weight: 700;
+            min-width: 16mm;
             flex-shrink: 0;
           }
 
           .info-value {
-            font-weight: 600;
+            font-weight: 900;
             color: #000;
             flex: 1;
             word-wrap: break-word;
-            font-size: 6.5px;
+            font-size: 10px;
           }
 
           .products {
@@ -705,15 +733,16 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           .products-list {
             flex-grow: 1;
             overflow: hidden;
-            max-height: 45mm;
+            max-height: 50mm;
           }
 
           .product-item {
-            margin-bottom: 0.8mm;
+            margin-bottom: 1mm;
             line-height: 1.4;
-            padding-left: 2.5mm;
+            padding-left: 3mm;
             position: relative;
             word-wrap: break-word;
+            font-weight: 700;
           }
 
           .product-item:before {
@@ -721,75 +750,79 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             position: absolute;
             left: 0;
             font-weight: bold;
-            font-size: 8px;
+            font-size: 10px;
             color: #2d5a27;
           }
 
           .product-name {
-            font-weight: 600;
-            color: #1a1a1a;
+            font-weight: 700;
+            color: #000;
           }
 
           .product-quantity {
             font-weight: 900;
             color: #2d5a27;
-            font-size: 105%;
-          }
-
-          .product-weight {
-            color: #666;
-            font-size: 95%;
-            font-weight: 500;
+            font-size: 110%;
           }
 
           .summary-badge {
-            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-            border: 1.5px solid #81c784;
+            background: white;
+            border: 1px solid #333;
             padding: 0.8mm 1.5mm;
-            border-radius: 1.5mm;
-            font-size: 6.5px;
+            border-radius: 1mm;
+            font-size: 8px;
             display: inline-block;
-            margin-top: 0.5mm;
-            font-weight: 900;
-            color: #2d5a27;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-top: 0.8mm;
+            font-weight: 700;
+            color: #000;
+          }
+
+          .total-weight {
+            margin-top: 1mm;
+            padding: 0.5mm 1mm;
+            background: white;
+            border: 1px solid #333;
+            border-radius: 1mm;
+            font-size: 7px;
+            font-weight: 700;
+            color: #000;
+            text-align: center;
           }
 
           .total-info {
-            border-top: 2px solid #000;
+            border-top: 1px solid #666;
             padding-top: 1.5mm;
             text-align: center;
-            font-size: 8px;
+            font-size: 10px;
             font-weight: bold;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            margin: 1.5mm -2.5mm -2.5mm -2.5mm;
-            padding: 2mm 2.5mm;
+            background: white;
+            margin: 1.5mm -2mm -2mm -2mm;
+            padding: 2mm;
             flex-shrink: 0;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
           }
 
           .payment-line {
-            font-size: 7px;
-            margin-bottom: 0.8mm;
+            font-size: 11px;
+            margin-bottom: 1mm;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 1.5mm;
-            font-weight: 700;
+            padding: 0 1mm;
+            font-weight: 900;
           }
 
           .total-amount {
-            font-size: 10px;
+            font-size: 14px;
             color: #1a3a15;
             font-weight: 900;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.4px;
           }
 
           .payment-method {
-            font-size: 6.5px;
-            color: #555;
-            margin-top: 0.5mm;
-            font-weight: 600;
+            font-size: 9px;
+            color: #333;
+            margin-top: 0.8mm;
+            font-weight: 700;
           }
 
           @media print {

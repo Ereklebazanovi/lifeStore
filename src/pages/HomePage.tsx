@@ -44,9 +44,10 @@ const HERO_IMAGES = [
 ];
 
 const HomePage: React.FC = () => {
-  const { products, fetchProducts, isLoading } = useProductStore();
+  const { products, categories, fetchProducts, isLoading } = useProductStore();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [displayCount, setDisplayCount] = useState(12);
 
@@ -68,12 +69,20 @@ const HomePage: React.FC = () => {
   const getFilteredProducts = () => {
     let filtered = products.filter((product) => product.isActive !== false);
 
+    // Filter by category
+    if (selectedCategory && selectedCategory !== "all") {
+      filtered = filtered.filter((product) => product.category === selectedCategory);
+    }
+
+    // Filter by search term
     if (searchTerm.trim()) {
       filtered = filtered.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.productCode && product.productCode.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
+    // Filter by status
     switch (selectedFilter) {
       case "popular":
         return filtered.filter((product) => product.priority === 100);
@@ -101,7 +110,7 @@ const HomePage: React.FC = () => {
   // Reset display count when filters change
   useEffect(() => {
     setDisplayCount(12);
-  }, [selectedFilter, searchTerm]);
+  }, [selectedFilter, selectedCategory, searchTerm]);
 
   // Helper to count items for filters
   const getCount = (type: string) => {
@@ -283,50 +292,84 @@ const HomePage: React.FC = () => {
 
             {/* 🔥 NEW COMPACT FILTER BAR 🔥 */}
             <div className="sticky top-0 z-20 md:static bg-stone-50 md:bg-transparent pb-4 md:pb-8 pt-2">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                {/* Filter Tabs - Horizontal Scroll on Mobile */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                  {filterOptions.map((option) => {
-                    const isActive = selectedFilter === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        onClick={() => setSelectedFilter(option.value)}
-                        className={`whitespace-nowrap flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border
-                                        ${
-                                          isActive
-                                            ? "bg-stone-900 text-white border-stone-900 shadow-md shadow-stone-200"
-                                            : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
-                                        }`}
-                      >
-                        {option.label}
-                        <span
-                          className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                            isActive
-                              ? "bg-white/20 text-white"
-                              : "bg-stone-100 text-stone-500"
-                          }`}
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  {/* Filter Tabs - Horizontal Scroll on Mobile */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                    {filterOptions.map((option) => {
+                      const isActive = selectedFilter === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          onClick={() => setSelectedFilter(option.value)}
+                          className={`whitespace-nowrap flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border
+                                          ${
+                                            isActive
+                                              ? "bg-stone-900 text-white border-stone-900 shadow-md shadow-stone-200"
+                                              : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                                          }`}
                         >
-                          {getCount(option.value)}
-                        </span>
-                      </button>
-                    );
-                  })}
+                          {option.label}
+                          <span
+                            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              isActive
+                                ? "bg-white/20 text-white"
+                                : "bg-stone-100 text-stone-500"
+                            }`}
+                          >
+                            {getCount(option.value)}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Search Input - Compact */}
+                  <div className="relative w-full md:w-64 lg:w-72 flex-shrink-0">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                      <Search className="h-4 w-4 text-stone-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="ძებნა..."
+                      className="w-full bg-white pl-10 pr-4 py-2.5 rounded-full border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-sm text-stone-900 placeholder:text-stone-400 transition-all shadow-sm"
+                    />
+                  </div>
                 </div>
 
-                {/* Search Input - Compact */}
-                <div className="relative w-full md:w-64 lg:w-72 flex-shrink-0">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Search className="h-4 w-4 text-stone-400" />
+                {/* Category Filter */}
+                {categories.length > 0 && (
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                    <span className="text-sm font-medium text-stone-700 whitespace-nowrap mr-2">კატეგორიები:</span>
+                    <button
+                      onClick={() => setSelectedCategory("all")}
+                      className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 border
+                                  ${
+                                    selectedCategory === "all"
+                                      ? "bg-emerald-600 text-white border-emerald-600"
+                                      : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                                  }`}
+                    >
+                      ყველა
+                    </button>
+                    {categories.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => setSelectedCategory(category)}
+                        className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 border
+                                    ${
+                                      selectedCategory === category
+                                        ? "bg-emerald-600 text-white border-emerald-600"
+                                        : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                                    }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
                   </div>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="ძებნა..."
-                    className="w-full bg-white pl-10 pr-4 py-2.5 rounded-full border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-sm text-stone-900 placeholder:text-stone-400 transition-all shadow-sm"
-                  />
-                </div>
+                )}
               </div>
             </div>
 
@@ -359,10 +402,11 @@ const HomePage: React.FC = () => {
                     ? `სცადეთ სხვა სიტყვა ან შეცვალეთ ფილტრი`
                     : "ამ კატეგორიაში პროდუქტები ჯერ არ არის"}
                 </p>
-                {(searchTerm || selectedFilter !== "all") && (
+                {(searchTerm || selectedFilter !== "all" || selectedCategory !== "all") && (
                   <button
                     onClick={() => {
                       setSelectedFilter("all");
+                      setSelectedCategory("all");
                       setSearchTerm("");
                     }}
                     className="mt-4 px-6 py-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-full transition-colors"

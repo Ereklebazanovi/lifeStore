@@ -593,7 +593,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
                         <div>
                           <label className="block text-sm font-medium text-blue-800 mb-2">
-                            🏷️ ფასდაკლებული ფასი (₾)
+                            ფასდაკლებული ფასი 
                           </label>
                           <input
                             type="number"
@@ -832,7 +832,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                           {/* Sale Price */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              🏷️ ფასდაკლებული ფასი (₾)
+                              ფასდაკლებული ფასი 
                             </label>
                             <input
                               type="number"

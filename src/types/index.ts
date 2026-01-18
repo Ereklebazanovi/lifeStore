@@ -26,6 +26,7 @@ export interface ProductVariant {
 export interface Product {
   id: string;
   name: string; // Base product name (e.g., "Lunchbox", "Glass Container Set")
+  productCode: string; // Unique product code for accounting (e.g., "LC001", "GCS002")
   description: string;
   images: string[];
   category: string;
@@ -59,6 +60,10 @@ export interface Category {
   name: string;
   description?: string;
   image?: string;
+  isActive?: boolean;
+  priority?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface CartItem {
