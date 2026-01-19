@@ -4,8 +4,8 @@ import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
 import { getOrderItemDisplayName } from "../../../utils/displayHelpers";
+import { exportSingleOrderToExcel, exportMultipleOrdersToExcel } from "../../../utils/excelExporter";
 import CreateManualOrderModal from "./CreateManualOrderModal";
-import * as XLSX from "xlsx";
 
 import {
   Package,
@@ -474,276 +474,33 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }, 500);
   };
 
-  // 📊 Excel Export - Single order (1 row = 1 order item)
-  const exportSingleOrderToExcel = (order: Order) => {
-    try {
-      const flattenedData: any[] = [];
-
-      const orderDate = order.createdAt instanceof Date
-        ? order.createdAt
-        : new Date(order.createdAt as any);
-
-      const formattedDate = orderDate.toLocaleDateString("ka-GE");
-      const address = `${order.deliveryInfo.city}, ${order.deliveryInfo.address}`;
-      const customerName = `${order.customerInfo.firstName} ${order.customerInfo.lastName}`.trim();
-      const paymentMethodText =
-        order.paymentMethod === "cash"
-          ? "ნაღდი ფული"
-          : order.paymentMethod === "tbc_bank"
-          ? "TBC ბანკი"
-          : order.paymentMethod === "flitt"
-          ? "Flitt"
-          : order.paymentMethod === "visa"
-          ? "Visa"
-          : order.paymentMethod === "mastercard"
-          ? "MasterCard"
-          : "ბანკის გადარიცხვა";
-
-      order.items.forEach((item) => {
-        const sku = item.product.productCode || "-";
-        const productName = getOrderItemDisplayName(item);
-        const quantity = item.quantity;
-        const unitPrice = item.price;
-        const totalPrice = item.total;
-        const shippingCost = order.deliveryInfo.shippingCost || 0;
-
-        flattenedData.push({
-          "თარიღი": formattedDate,
-          "შეკვეთის №": order.orderNumber,
-          "სტატუსი": order.orderStatus,
-          "SKU": sku,
-          "პროდუქტი": productName,
-          "რაოდენობა": quantity,
-          "ერთეულის ფასი": unitPrice,
-          "სულ": totalPrice,
-          "გადახდა": paymentMethodText,
-          "კლიენტი": customerName,
-          "ტელეფონი": order.customerInfo.phone,
-          "მისამართი": address,
-          "მიწოდება": shippingCost,
-        });
-      });
-
-      const worksheet = XLSX.utils.json_to_sheet(flattenedData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, order.orderNumber);
-
-      const colWidths = [
-        { wch: 14 },
-        { wch: 16 },
-        { wch: 14 },
-        { wch: 12 },
-        { wch: 32 },
-        { wch: 11 },
-        { wch: 15 },
-        { wch: 12 },
-        { wch: 16 },
-        { wch: 22 },
-        { wch: 15 },
-        { wch: 35 },
-        { wch: 12 },
-      ];
-      worksheet["!cols"] = colWidths;
-
-      const headerStyle = {
-        font: { bold: true, color: { rgb: "FFFFFF" } },
-        fill: { fgColor: { rgb: "366092" } },
-        alignment: { horizontal: "center", vertical: "center", wrapText: true },
-      };
-
-      const headerRange = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
-      for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
-        const address = XLSX.utils.encode_col(C) + "1";
-        if (!worksheet[address]) continue;
-        worksheet[address].s = headerStyle;
-      }
-
-      const numberColumns = ["F", "G", "H", "M"];
-      const numberStyle = {
-        alignment: { horizontal: "right" },
-        numFmt: "#,##0.00",
-      };
-
-      for (let row = 2; row <= flattenedData.length + 1; row++) {
-        numberColumns.forEach((col) => {
-          const cellAddress = col + row;
-          if (worksheet[cellAddress]) {
-            worksheet[cellAddress].s = numberStyle;
-          }
-        });
-      }
-
-      const totalStyle = {
-        alignment: { horizontal: "right" },
-        numFmt: "#,##0.00",
-        fill: { fgColor: { rgb: "FFFFCC" } },
-        font: { bold: true },
-      };
-
-      for (let row = 2; row <= flattenedData.length + 1; row++) {
-        const cellAddress = "H" + row;
-        if (worksheet[cellAddress]) {
-          worksheet[cellAddress].s = totalStyle;
-        }
-      }
-
-      worksheet["!rows"] = [{ hpx: 30 }];
-      worksheet["!freeze"] = { xSplit: 0, ySplit: 1 };
-
-      const filename = `შეკვეთა_${order.orderNumber}_${new Date().toISOString().split("T")[0]}.xlsx`;
-      XLSX.writeFile(workbook, filename);
-
+  // 📊 Excel Export - Single order wrapper
+  const handleExportSingleOrder = (order: Order) => {
+    const success = exportSingleOrderToExcel(order);
+    if (success) {
       showToast(`შეკვეთა ${order.orderNumber} ექსპორტირდა`, "success");
-    } catch (error) {
-      console.error("Excel export error:", error);
+    } else {
       showToast("ექსპორტი ვერ მოხერხდა", "error");
     }
   };
 
-  // 📊 Excel Export - Flattened structure (1 row = 1 order item)
-  const exportToExcel = () => {
+  const handleExportMultipleOrders = () => {
     if (selectedOrderIds.length === 0) {
       showToast("მონიშნეთ შეკვეთები ექსპორტისთვის", "error");
       return;
     }
 
-    try {
-      const selectedOrders = orders.filter((order) =>
-        selectedOrderIds.includes(order.id)
-      );
+    const selectedOrders = orders.filter((order) =>
+      selectedOrderIds.includes(order.id)
+    );
 
-      const flattenedData: any[] = [];
-
-      selectedOrders.forEach((order) => {
-        const orderDate = order.createdAt instanceof Date
-          ? order.createdAt
-          : new Date(order.createdAt as any);
-
-        const formattedDate = orderDate.toLocaleDateString("ka-GE");
-        const address = `${order.deliveryInfo.city}, ${order.deliveryInfo.address}`;
-        const customerName = `${order.customerInfo.firstName} ${order.customerInfo.lastName}`.trim();
-        const paymentMethodText =
-          order.paymentMethod === "cash"
-            ? "ნაღდი ფული"
-            : order.paymentMethod === "tbc_bank"
-            ? "TBC ბანკი"
-            : order.paymentMethod === "flitt"
-            ? "Flitt"
-            : order.paymentMethod === "visa"
-            ? "Visa"
-            : order.paymentMethod === "mastercard"
-            ? "MasterCard"
-            : "ბანკის გადარიცხვა";
-
-        order.items.forEach((item) => {
-          const sku = item.product.productCode || "-";
-          const productName = getOrderItemDisplayName(item);
-          const quantity = item.quantity;
-          const unitPrice = item.price;
-          const totalPrice = item.total;
-          const shippingCost = order.deliveryInfo.shippingCost || 0;
-
-          flattenedData.push({
-            "თარიღი": formattedDate,
-            "შეკვეთის №": order.orderNumber,
-            "სტატუსი": order.orderStatus,
-            "კოდი": sku,
-            "პროდუქტი": productName,
-            "რაოდენობა": quantity,
-            "ერთეულის ფასი": unitPrice,
-            "სულ": totalPrice,
-            "გადახდა": paymentMethodText,
-            "კლიენტი": customerName,
-            "ტელეფონი": order.customerInfo.phone,
-            "მისამართი": address,
-            "მიწოდება": shippingCost,
-          });
-        });
-      });
-
-      const worksheet = XLSX.utils.json_to_sheet(flattenedData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "შეკვეთები");
-
-      // Set column widths (optimized for Georgian text)
-      const colWidths = [
-        { wch: 14 }, // თარიღი
-        { wch: 16 }, // შეკვეთის №
-        { wch: 14 }, // სტატუსი
-        { wch: 12 }, // SKU
-        { wch: 32 }, // პროდუქტი
-        { wch: 11 }, // რაოდენობა
-        { wch: 15 }, // ერთეულის ფასი
-        { wch: 12 }, // სულ
-        { wch: 16 }, // გადახდა
-        { wch: 22 }, // კლიენტი
-        { wch: 15 }, // ტელეფონი
-        { wch: 35 }, // მისამართი
-        { wch: 12 }, // მიწოდება
-      ];
-      worksheet["!cols"] = colWidths;
-
-      // Style header row (bold + background)
-      const headerStyle = {
-        font: { bold: true, color: { rgb: "FFFFFF" } },
-        fill: { fgColor: { rgb: "366092" } },
-        alignment: { horizontal: "center", vertical: "center", wrapText: true },
-      };
-
-      // Apply header styling
-      const headerRange = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
-      for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
-        const address = XLSX.utils.encode_col(C) + "1";
-        if (!worksheet[address]) continue;
-        worksheet[address].s = headerStyle;
-      }
-
-      // Style number columns (right align)
-      const numberColumns = ["F", "G", "H", "M"]; // რაოდენობა, ერთეულის ფასი, სულ, მიწოდება
-      const numberStyle = {
-        alignment: { horizontal: "right" },
-        numFmt: "#,##0.00",
-      };
-
-      for (let row = 2; row <= flattenedData.length + 1; row++) {
-        numberColumns.forEach((col) => {
-          const cellAddress = col + row;
-          if (worksheet[cellAddress]) {
-            worksheet[cellAddress].s = numberStyle;
-          }
-        });
-      }
-
-      // Highlight total column (column H - yellow)
-      const totalStyle = {
-        alignment: { horizontal: "right" },
-        numFmt: "#,##0.00",
-        fill: { fgColor: { rgb: "FFFFCC" } },
-        font: { bold: true },
-      };
-
-      for (let row = 2; row <= flattenedData.length + 1; row++) {
-        const cellAddress = "H" + row;
-        if (worksheet[cellAddress]) {
-          worksheet[cellAddress].s = totalStyle;
-        }
-      }
-
-      // Set row height for header
-      worksheet["!rows"] = [{ hpx: 30 }];
-
-      // Freeze header row
-      worksheet["!freeze"] = { xSplit: 0, ySplit: 1 };
-
-      const filename = `შეკვეთები_ექსპორტი_${new Date().toISOString().split("T")[0]}.xlsx`;
-      XLSX.writeFile(workbook, filename);
-
+    const success = exportMultipleOrdersToExcel(selectedOrders);
+    if (success) {
       showToast(
-        `${selectedOrders.length} შეკვეთა ${flattenedData.length} ნივთით ექსპორტირდა`,
+        `${selectedOrders.length} შეკვეთა ექსპორტირდა`,
         "success"
       );
-    } catch (error) {
-      console.error("Excel export error:", error);
+    } else {
       showToast("ექსპორტი ვერ მოხერხდა", "error");
     }
   };
@@ -1438,7 +1195,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               {selectedOrderIds.length > 0 && (
                 <>
                   <button
-                    onClick={exportToExcel}
+                    onClick={handleExportMultipleOrders}
                     className="flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium"
                     title={`${selectedOrderIds.length} შეკვეთის ექსპორტი Excel-ში`}
                   >
@@ -1744,7 +1501,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => exportSingleOrderToExcel(order)}
+                            onClick={() => handleExportSingleOrder(order)}
                             className="text-green-600 hover:text-green-700 p-1 rounded hover:bg-green-50"
                             title="ექსელში ჩამოტვირთვა"
                           >
@@ -1915,7 +1672,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       <span>ნახვა</span>
                     </button>
                     <button
-                      onClick={() => exportSingleOrderToExcel(order)}
+                      onClick={() => handleExportSingleOrder(order)}
                       className="flex items-center space-x-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
                       title="ექსელში ჩამოტვირთვა"
                     >
