@@ -202,45 +202,45 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           /* Customer Section - Larger for couriers */
           .section {
-            margin-bottom: 1.2mm;
+            margin-bottom: 0.8mm;
             flex-shrink: 0;
           }
 
           .section-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 900;
-            margin-bottom: 1mm;
-            padding-bottom: 0.5mm;
+            margin-bottom: 0.6mm;
+            padding-bottom: 0.4mm;
             border-bottom: 1px solid #999;
             color: #000;
             text-transform: uppercase;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.3px;
           }
 
           .customer-info {
-            font-size: 8px;
-            line-height: 1.4;
+            font-size: 9px;
+            line-height: 1.3;
           }
 
           .customer-name {
             font-weight: 900;
-            font-size: 12px;
-            margin-bottom: 1mm;
+            font-size: 11px;
+            margin-bottom: 0.6mm;
             color: #000;
           }
 
           .info-line {
-            margin-bottom: 1mm;
+            margin-bottom: 0.6mm;
             display: flex;
             align-items: flex-start;
-            gap: 1mm;
+            gap: 0.8mm;
           }
 
           .info-label {
-            font-size: 9px;
+            font-size: 8px;
             color: #333;
             font-weight: 700;
-            min-width: 16mm;
+            min-width: 14mm;
             flex-shrink: 0;
           }
 
@@ -249,7 +249,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             color: #000;
             flex: 1;
             word-wrap: break-word;
-            font-size: 10px;
+            font-size: 9px;
           }
 
           /* Products Section - Large fonts for couriers */
@@ -262,18 +262,19 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           .products-header {
             flex-shrink: 0;
-            margin-bottom: 1mm;
+            margin-bottom: 0.8mm;
           }
 
           .products-list {
             flex-grow: 1;
-            overflow: hidden;
-            max-height: 50mm;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
           }
 
           .product-item {
-            margin-bottom: 0.8mm;
-            line-height: 1.2;
+            margin-bottom: 0.5mm;
+            line-height: 1.1;
             padding-left: 2.5mm;
             position: relative;
             word-wrap: break-word;
@@ -297,9 +298,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             color: #2d5a27;
             font-size: calc(${productFontSize} - 1px);
             background: #f0f4f0;
-            padding: 0.2mm 0.5mm;
+            padding: 0.2mm 0.4mm;
             border-radius: 0.5mm;
-            margin-right: 1mm;
+            margin-right: 0.8mm;
+            display: inline-block;
           }
 
           .product-name {
@@ -307,8 +309,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             color: #000;
             font-size: calc(${productFontSize} + 2.5px);
             display: block;
-            margin-bottom: 0.2mm;
-            line-height: 1.2;
+            margin-bottom: 0.1mm;
+            line-height: 1.15;
           }
 
           .product-quantity {
@@ -316,7 +318,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             color: #2d5a27;
             font-size: calc(${productFontSize} - 0.5px);
             display: block;
-            margin-bottom: 0.2mm;
+            margin-bottom: 0.1mm;
           }
 
           .product-code-info {
@@ -339,27 +341,28 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           .total-weight {
-            margin-top: 1mm;
-            padding: 0.5mm 1mm;
+            margin-top: 0.3mm;
+            padding: 0.2mm 0.5mm;
             background: white;
-            border: 1px solid #333;
-            border-radius: 1mm;
-            font-size: 7px;
-            font-weight: 700;
-            color: #000;
+            border: 1px solid #999;
+            border-radius: 0.5mm;
+            font-size: 6px;
+            font-weight: 600;
+            color: #333;
             text-align: center;
+            display: inline-block;
           }
 
           /* Footer - Large and clear */
           .total-info {
             border-top: 1px solid #666;
-            padding-top: 1.5mm;
+            padding-top: 0.8mm;
             text-align: center;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: bold;
             background: white;
-            margin: 1.5mm -2mm -2mm -2mm;
-            padding: 2mm;
+            margin: 0.8mm -2mm -2mm -2mm;
+            padding: 1.2mm;
             flex-shrink: 0;
           }
 
@@ -713,45 +716,45 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           .section {
-            margin-bottom: 1.2mm;
+            margin-bottom: 0.8mm;
             flex-shrink: 0;
           }
 
           .section-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 900;
-            margin-bottom: 1mm;
-            padding-bottom: 0.5mm;
+            margin-bottom: 0.6mm;
+            padding-bottom: 0.4mm;
             border-bottom: 1px solid #999;
             color: #000;
             text-transform: uppercase;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.3px;
           }
 
           .customer-info {
-            font-size: 8px;
-            line-height: 1.4;
+            font-size: 9px;
+            line-height: 1.3;
           }
 
           .customer-name {
             font-weight: 900;
-            font-size: 12px;
-            margin-bottom: 1mm;
+            font-size: 11px;
+            margin-bottom: 0.6mm;
             color: #000;
           }
 
           .info-line {
-            margin-bottom: 1mm;
+            margin-bottom: 0.6mm;
             display: flex;
             align-items: flex-start;
-            gap: 1mm;
+            gap: 0.8mm;
           }
 
           .info-label {
-            font-size: 9px;
+            font-size: 8px;
             color: #333;
             font-weight: 700;
-            min-width: 16mm;
+            min-width: 14mm;
             flex-shrink: 0;
           }
 
@@ -760,7 +763,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             color: #000;
             flex: 1;
             word-wrap: break-word;
-            font-size: 10px;
+            font-size: 9px;
           }
 
           .products {
@@ -772,18 +775,19 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
           .products-header {
             flex-shrink: 0;
-            margin-bottom: 1mm;
+            margin-bottom: 0.8mm;
           }
 
           .products-list {
             flex-grow: 1;
-            overflow: hidden;
-            max-height: 50mm;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
           }
 
           .product-item {
-            margin-bottom: 0.8mm;
-            line-height: 1.2;
+            margin-bottom: 0.5mm;
+            line-height: 1.1;
             padding-left: 2.5mm;
             position: relative;
             word-wrap: break-word;
@@ -806,8 +810,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             color: #000;
             font-size: 11px;
             display: block;
-            margin-bottom: 0.2mm;
-            line-height: 1.2;
+            margin-bottom: 0.1mm;
+            line-height: 1.15;
           }
 
           .product-quantity {
@@ -815,7 +819,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             color: #2d5a27;
             font-size: 8.5px;
             display: block;
-            margin-bottom: 0.2mm;
+            margin-bottom: 0.1mm;
           }
 
           .product-code-info {
@@ -840,15 +844,16 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           .total-weight {
-            margin-top: 1mm;
-            padding: 0.5mm 1mm;
+            margin-top: 0.3mm;
+            padding: 0.2mm 0.5mm;
             background: white;
-            border: 1px solid #333;
-            border-radius: 1mm;
-            font-size: 7px;
-            font-weight: 700;
-            color: #000;
+            border: 1px solid #999;
+            border-radius: 0.5mm;
+            font-size: 6px;
+            font-weight: 600;
+            color: #333;
             text-align: center;
+            display: inline-block;
           }
 
           .total-info {
@@ -1813,6 +1818,16 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           {selectedOrder.deliveryInfo.address}
                         </span>
                       </div>
+                      {selectedOrder.deliveryInfo.comment && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <span className="text-sm font-medium text-gray-700">
+                            კომენტარი:
+                          </span>
+                          <p className="text-sm text-gray-900 mt-1 bg-blue-50 p-2 rounded border border-blue-100">
+                            {selectedOrder.deliveryInfo.comment}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
