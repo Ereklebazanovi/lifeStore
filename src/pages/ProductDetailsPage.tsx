@@ -184,7 +184,7 @@ const ProductDetailsPage: React.FC = () => {
     // Different URLs for different purposes
     const regularUrl = `https://lifestore.ge/product/${product.id}`;
     const facebookUrl = `https://lifestore.ge/api/og/${product.id}`; // Special URL for Facebook bot
-    const shareText = `🛍️ ${product.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n✅ მარაგშია ${getCurrentStock()} ცალი\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
+    const shareText = `🛍️ ${product.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
 
     // Enhanced Facebook Share URL with detailed quote + cache buster
     const cacheBuster = Date.now(); // Current timestamp to bust Facebook cache
@@ -192,7 +192,6 @@ const ProductDetailsPage: React.FC = () => {
 
     const detailedQuote = `🛍️ ${product.name}
 💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
-✅ მარაგშია: ${getCurrentStock()} ცალი
 📦 კატეგორია: ${product.category}${getCurrentWeight() ? `\n⚖️ წონა: ${getCurrentWeight()}გრ` : ''}
 
 ${product.description}
@@ -264,7 +263,7 @@ ${product.description}
     <>
       <SEOHead
         title={`${product.name} - ₾${getCurrentPrice().toFixed(2)} | Life Store`}
-        description={`${product.description.slice(0, 140)} ✅ მარაგშია ${getCurrentStock()} ცალი`}
+        description={`${product.description.slice(0, 140)}`}
         keywords={`${product.name}, ეკო პროდუქტები, ${product.category}`}
         ogImage={product.images?.[0] || "https://lifestore.ge/Screenshot 2025-12-10 151703.png"}
         ogType="product"
@@ -429,7 +428,7 @@ ${product.description}
                   <div className="flex items-center gap-3">
                       <div className={`flex items-center gap-1.5 text-sm font-medium ${outOfStock ? "text-red-600" : "text-emerald-700"}`}>
                           <div className={`w-2 h-2 rounded-full ${outOfStock ? "bg-red-500" : "bg-emerald-500"}`}></div>
-                          <span>{outOfStock ? "მარაგში არ არის" : `მარაგშია: ${currentStock}`}</span>
+                          <span>{outOfStock ? "მარაგში არ არის" : "მარაგშია"}</span>
                       </div>
                       {getCurrentWeight() && (
                           <div className="flex items-center gap-1.5 text-sm font-medium text-stone-600">
@@ -714,7 +713,6 @@ ${product.description}
                   const shareUrl = `https://lifestore.ge/product/${product.id}?v=${cacheBuster}`;
                   const detailedQuote = `🛍️ ${product.name}
 💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
-✅ მარაგშია: ${getCurrentStock()} ცალი
 📦 კატეგორია: ${product.category}${getCurrentWeight() ? `\n⚖️ წონა: ${getCurrentWeight()}გრ` : ''}
 
 ${product.description}
@@ -741,7 +739,7 @@ ${product.description}
 
               <button
                 onClick={() => {
-                  const shareText = `🛍️ ${product?.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n✅ მარაგშია ${getCurrentStock()} ცალი\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
+                  const shareText = `🛍️ ${product?.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
                   const regularUrl = `https://lifestore.ge/product/${product?.id}`;
                   const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText}\n${regularUrl}`)}`;
                   window.open(whatsappUrl, '_blank');

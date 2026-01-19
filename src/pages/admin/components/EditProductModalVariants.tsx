@@ -35,6 +35,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
   // ძირითადი ინფორმაცია
   const [productName, setProductName] = useState("");
+  const [productCode, setProductCode] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [images, setImages] = useState<string[]>([]);
@@ -64,6 +65,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
   useEffect(() => {
     if (product && isOpen) {
       setProductName(product.name || "");
+      setProductCode(product.productCode || "");
       setDescription(product.description || "");
       setCategory(product.category || "");
       setImages(product.images || []);
@@ -121,6 +123,12 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
     // ძირითადი ინფორმაცია
     if (!productName.trim()) {
       newErrors.productName = "პროდუქტის სახელი აუცილებელია";
+    }
+
+    if (!productCode.trim()) {
+      newErrors.productCode = "პროდუქტის კოდი აუცილებელია";
+    } else if (!/^[A-Z0-9-]+$/.test(productCode.trim())) {
+      newErrors.productCode = "კოდი უნდა შედგებოდეს მხოლოდ დიდი ასოებისა, რიცხვებისა და ნიშნის (-) გამოყენებით";
     }
 
     if (hasVariants) {
@@ -268,6 +276,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
       // Construct base product data
       const productData: any = {
         name: productName.trim(),
+        productCode: productCode.trim().toUpperCase(),
         description: description.trim(),
         category: category.trim(),
         images,
@@ -412,6 +421,31 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                     {errors.productName}
                   </p>
                 )}
+              </div>
+
+              {/* Product Code */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  პროდუქტის კოდი <span className="text-red-500">*</span>
+                  <span className="text-xs text-gray-500 ml-1">(უნიკალური, ბუღალტრული)</span>
+                </label>
+                <input
+                  type="text"
+                  value={productCode}
+                  onChange={(e) => setProductCode(e.target.value.toUpperCase())}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.productCode ? "border-red-300" : "border-gray-300"
+                  }`}
+                  placeholder="მაგ: LFC-123"
+                />
+                {errors.productCode && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.productCode}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  კოდი უნდა შედგებოდეს მხოლოდ დიდი ასოებისა, რიცხვებისა და ნიშნის (-) გამოყენებით (A-Z, 0-9, -)
+                </p>
               </div>
 
               {/* Description */}

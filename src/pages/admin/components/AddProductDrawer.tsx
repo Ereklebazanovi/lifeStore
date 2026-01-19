@@ -56,21 +56,6 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
   if (!isOpen) return null;
 
-  // Generate product code based on product name
-  const generateProductCode = async () => {
-    if (!productName.trim()) {
-      showToast("ჯერ შეიყვანეთ პროდუქტის სახელი", "error");
-      return;
-    }
-
-    try {
-      const suggestedCode = await ProductService.generateProductCode(productName);
-      setProductCode(suggestedCode);
-      showToast(`მიღებული კოდი: ${suggestedCode}`, "success");
-    } catch (error) {
-      showToast("კოდის გენერირება ვერ მოხერხდა", "error");
-    }
-  };
 
   // ვალიდაცია
   const validateForm = async () => {
@@ -83,8 +68,8 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
     if (!productCode.trim()) {
       newErrors.productCode = "პროდუქტის კოდი აუცილებელია";
-    } else if (!/^[A-Z0-9]+$/.test(productCode.trim())) {
-      newErrors.productCode = "კოდი უნდა შედგებოდეს მხოლოდ დიდი ასოებისა და რიცხვებისგან";
+    } else if (!/^[A-Z0-9-]+$/.test(productCode.trim())) {
+      newErrors.productCode = "კოდი უნდა შედგებოდეს მხოლოდ დიდი ასოებისა, რიცხვებისა და ნიშნის (-) გამოყენებით";
     } else {
       // Check uniqueness
       try {
@@ -361,31 +346,22 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
                   პროდუქტის კოდი <span className="text-red-500">*</span>
                   <span className="text-xs text-gray-500 ml-1">(უნიკალური, ბუღალტრული)</span>
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={productCode}
-                    onChange={(e) => setProductCode(e.target.value.toUpperCase())}
-                    className={`flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
-                      errors.productCode ? "border-red-300" : "border-gray-300"
-                    }`}
-                    placeholder="მაგ: LC001"
-                  />
-                  <button
-                    type="button"
-                    onClick={generateProductCode}
-                    className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                  >
-                    გენერირება
-                  </button>
-                </div>
+                <input
+                  type="text"
+                  value={productCode}
+                  onChange={(e) => setProductCode(e.target.value.toUpperCase())}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                    errors.productCode ? "border-red-300" : "border-gray-300"
+                  }`}
+                  placeholder="მაგ: LFC-123"
+                />
                 {errors.productCode && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.productCode}
                   </p>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
-                  კოდი უნდა შედგებოდეს მხოლოდ დიდი ასოებისა და რიცხვებისგან (A-Z, 0-9)
+                  კოდი უნდა შედგებოდეს მხოლოდ დიდი ასოებისა, რიცხვებისა და ნიშნის (-) გამოყენებით (A-Z, 0-9, -)
                 </p>
               </div>
 

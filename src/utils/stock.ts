@@ -30,19 +30,18 @@ export const getStockStatus = (product: Product): StockStatus => {
 };
 
 /**
- * მარაგის ტექსტის გენერაცია (variant-aware)
+ * მარაგის ტექსტის გენერაცია (variant-aware) - მხოლოდ სტატუსი, რაოდენობა არ ჩანს
  */
 export const getStockText = (product: Product): string => {
   const status = getStockStatus(product);
-  const totalStock = getTotalStock(product);
 
   switch (status) {
     case 'out_of_stock':
       return 'მარაგში არ არის';
     case 'low_stock':
-      return `სულ: ${totalStock} ცალი`;
+      return 'მარაგშია';
     case 'in_stock':
-      return totalStock > 20 ? 'მარაგშია' : `სულ: ${totalStock} ცალი`;
+      return 'მარაგშია';
   }
 };
 
