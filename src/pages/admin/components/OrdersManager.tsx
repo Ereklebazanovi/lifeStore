@@ -104,7 +104,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     const totalItems = productsList.reduce((sum, p) => sum + p.quantity, 0);
 
     // კიდევ უფრო დიდი ფონტები კურიერებისთვის
-    const productFontSize = productsList.length > 12 ? '8px' :
+    const productFontSize = productsList.length > 12 ? '12px' :
                            productsList.length > 8 ? '9px' :
                            productsList.length > 5 ? '10px' : '11px';
 
@@ -270,13 +270,15 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           .product-item {
-            margin-bottom: 1mm;
-            line-height: 1.4;
-            padding-left: 3mm;
+            margin-bottom: 0.8mm;
+            line-height: 1.2;
+            padding-left: 2.5mm;
             position: relative;
             word-wrap: break-word;
             font-size: ${productFontSize};
             font-weight: 700;
+            display: flex;
+            flex-direction: column;
           }
 
           .product-item:before {
@@ -284,7 +286,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             position: absolute;
             left: 0;
             font-weight: bold;
-            font-size: calc(${productFontSize} + 2px);
+            font-size: calc(${productFontSize} + 1.5px);
             color: #2d5a27;
           }
 
@@ -299,17 +301,30 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           .product-name {
-            font-weight: 700;
+            font-weight: 900;
             color: #000;
+            font-size: calc(${productFontSize} + 2.5px);
+            display: block;
+            margin-bottom: 0.2mm;
+            line-height: 1.2;
           }
 
           .product-quantity {
-            font-weight: 900;
+            font-weight: 600;
             color: #2d5a27;
-            font-size: calc(${productFontSize} + 1px);
+            font-size: calc(${productFontSize} - 0.5px);
+            display: block;
+            margin-bottom: 0.2mm;
           }
 
-          .summary-badge {
+          .product-code-info {
+            font-weight: 500;
+            color: #666;
+            font-size: calc(${productFontSize} - 2px);
+            padding-left: 0.5mm;
+            border-left: none;
+            margin-top: 0;
+          }
             background: white;
             border: 1px solid #333;
             padding: 0.8mm 1.5mm;
@@ -413,18 +428,15 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           <!-- Products -->
           <div class="products">
             <div class="products-header">
-              <div class="section-title">შეკვეთა</div>
-              <div class="summary-badge">
-                ${totalItems} ცალი
-              </div>
+              <div class="section-title">შეკვეთა (${totalItems} ცალი)</div>
             </div>
 
             <div class="products-list">
               ${productsList.map(product =>
                 `<div class="product-item">
-                  ${product.productCode ? `<span class="product-code">[${product.productCode}] </span>` : ''}
                   <span class="product-name">${product.name}</span>
-                  <span class="product-quantity"> x${product.quantity}</span>
+                  <span class="product-quantity"> ${product.quantity} ცალი</span>
+                  ${product.productCode ? `<div class="product-code-info">პროდუქტის კოდი: ${product.productCode}</div>` : ''}
                 </div>`
               ).join('')}
             </div>
@@ -548,9 +560,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             <div class="products-list">
               ${productsList.map(product =>
                 `<div class="product-item">
-                  ${product.productCode ? `<span class="product-code">[${product.productCode}] </span>` : ''}
                   <span class="product-name">${product.name}</span>
-                  <span class="product-quantity"> x${product.quantity}</span>
+                  <span class="product-quantity"> ${product.quantity} ცალი</span>
+                  ${product.productCode ? `<div class="product-code-info">პროდუქტის კოდი: ${product.productCode}</div>` : ''}
                 </div>`
               ).join('')}
             </div>
@@ -737,12 +749,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           }
 
           .product-item {
-            margin-bottom: 1mm;
-            line-height: 1.4;
-            padding-left: 3mm;
+            margin-bottom: 0.8mm;
+            line-height: 1.2;
+            padding-left: 2.5mm;
             position: relative;
             word-wrap: break-word;
             font-weight: 700;
+            display: flex;
+            flex-direction: column;
           }
 
           .product-item:before {
@@ -750,19 +764,34 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             position: absolute;
             left: 0;
             font-weight: bold;
-            font-size: 10px;
+            font-size: 9px;
             color: #2d5a27;
           }
 
           .product-name {
-            font-weight: 700;
+            font-weight: 900;
             color: #000;
+            font-size: 11px;
+            display: block;
+            margin-bottom: 0.2mm;
+            line-height: 1.2;
           }
 
           .product-quantity {
-            font-weight: 900;
+            font-weight: 600;
             color: #2d5a27;
-            font-size: 110%;
+            font-size: 8.5px;
+            display: block;
+            margin-bottom: 0.2mm;
+          }
+
+          .product-code-info {
+            font-weight: 500;
+            color: #666;
+            font-size: 7px;
+            padding-left: 0.5mm;
+            border-left: none;
+            margin-top: 0;
           }
 
           .summary-badge {

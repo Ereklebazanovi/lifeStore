@@ -139,15 +139,20 @@ export class OrderService {
               variant = productData.variants.find((v: ProductVariant) => v.id === item.variantId);
             }
 
-            orderItems.push({
+            const orderItem: OrderItem = {
               productId: item.productId,
-              variantId: item.variantId,
               product: productData,
-              variant: variant,
               quantity: item.quantity,
               price: item.price,
               total: item.quantity * item.price,
-            });
+            };
+            if (item.variantId) {
+              orderItem.variantId = item.variantId;
+            }
+            if (variant) {
+              orderItem.variant = variant;
+            }
+            orderItems.push(orderItem);
             continue;
           }
         } catch (error) {
@@ -156,11 +161,10 @@ export class OrderService {
       }
 
       // Fallback for manual entries or failed product fetches
-      orderItems.push({
+      const manualOrderItem: OrderItem = {
         productId:
           item.productId ||
           `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        variantId: item.variantId,
         product: {
           id: item.productId || "manual_entry",
           productCode: "MANUAL",
@@ -171,7 +175,7 @@ export class OrderService {
           category: "manual",
           stock: 0,
           hasVariants: false,
-          weight: item.weight, // ✅ ვამატებთ წონის ინფორმაციას
+          weight: item.weight,
           createdAt: new Date(),
           updatedAt: new Date(),
           isActive: true,
@@ -179,7 +183,11 @@ export class OrderService {
         quantity: item.quantity,
         price: item.price,
         total: item.quantity * item.price,
-      });
+      };
+      if (item.variantId) {
+        manualOrderItem.variantId = item.variantId;
+      }
+      orderItems.push(manualOrderItem);
     }
 
     return orderItems;
