@@ -23,6 +23,7 @@ import {
 } from "../utils/productHelpers";
 import { getStockText, getStockColorClassesCompact } from "../utils/stock";
 import SEOHead from "../components/SEOHead";
+import CategoryGrid from "../components/CategoryGrid";
 
 // ფოტოები: სამზარეულო, ხე, კერამიკა, ეკო-ნივთები (არა ავეჯი)
 const HERO_IMAGES = [
@@ -222,6 +223,9 @@ const HomePage: React.FC = () => {
             ))}
           </div>
         </section>
+
+        {/* --- CATEGORIES GRID --- */}
+        <CategoryGrid />
 
         {/* --- BRAND VALUES --- */}
         <section className="py-6 lg:py-10 bg-white border-b border-stone-100">

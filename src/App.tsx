@@ -29,6 +29,7 @@ import PageTransition from "./components/PageTransition";
 import RefundPolicy from "./pages/RefundPolicy";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CategoryPage from "./pages/CategoryPage";
 import { useAuthStore } from "./store/authStore";
 import { useCartStore } from "./store/cartStore";
 import { ToastContainer } from "./components/ui/Toast";
@@ -83,6 +84,14 @@ const AnimatedRoutes: React.FC = () => {
           element={
             <PageTransition>
               <ProductsPage />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/category/:slug"
+          element={
+            <PageTransition>
+              <CategoryPage />
             </PageTransition>
           }
         />
