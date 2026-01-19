@@ -331,7 +331,7 @@ ${product.description}
             {/* --- LEFT COLUMN: IMAGES (Compact & Fixed Height) --- */}
             <div className="lg:col-span-7 bg-white relative">
                {/* Main Image Container */}
-              <div className="relative w-full h-80 lg:h-[500px] bg-stone-50 flex items-center justify-center overflow-hidden group">
+              <div className="relative w-full h-80 lg:h-96 bg-stone-50 flex items-center justify-center overflow-hidden group rounded-2xl lg:rounded-3xl border border-stone-100">
                 {/* Badges */}
                 <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
                   {outOfStock ? (
@@ -385,28 +385,29 @@ ${product.description}
                       )}
                     </div>
 
-                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 lg:mx-0 lg:px-0">
                       {product.images.map((img, index) => (
                         <button
                           key={index}
                           onClick={() => setSelectedImage(img)}
-                          className={`relative flex-shrink-0 w-20 h-20 lg:w-24 lg:h-24 rounded-xl border-2 overflow-hidden transition-all duration-200 ${
+                          className={`relative flex-shrink-0 w-20 h-20 lg:w-24 lg:h-24 rounded-lg border-2 overflow-hidden transition-all duration-200 cursor-pointer ${
                             selectedImage === img
                               ? "border-emerald-500 ring-2 ring-emerald-100 opacity-100 transform scale-105"
-                              : "border-stone-200 opacity-80 hover:opacity-100 hover:border-emerald-300 hover:transform hover:scale-102"
+                              : "border-stone-200 opacity-70 hover:opacity-100 hover:border-emerald-300 hover:scale-110"
                           }`}
                         >
                           <img
                             src={img}
                             alt={`${product.name} - სურათი ${index + 1}`}
                             className="w-full h-full object-cover"
+                            loading="lazy"
                           />
                           <div className="absolute bottom-1 right-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
                             {index + 1}
                           </div>
                           {selectedImage === img && (
                             <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
-                              <Check className="w-4 h-4 text-emerald-600" />
+                              <Check className="w-5 h-5 text-emerald-600" />
                             </div>
                           )}
                         </button>
@@ -631,10 +632,10 @@ ${product.description}
 
       {/* Fullscreen Image Modal */}
       {isImageModalOpen && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-          <div className="relative max-w-screen-lg w-full h-full flex flex-col">
+        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
+          <div className="relative max-w-6xl w-full h-screen flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 text-white">
+            <div className="flex items-center justify-between p-4 text-white flex-shrink-0">
               <div>
                 <h3 className="text-lg font-semibold">{product?.name}</h3>
                 <p className="text-sm opacity-75">
@@ -649,8 +650,8 @@ ${product.description}
               </button>
             </div>
 
-            {/* Image */}
-            <div className="flex-1 flex items-center justify-center">
+            {/* Image - Limited Height */}
+            <div className="flex-1 flex items-center justify-center min-h-0 py-4">
               <img
                 src={selectedImage}
                 alt={product?.name || ""}
@@ -658,17 +659,17 @@ ${product.description}
               />
             </div>
 
-            {/* Thumbnails Navigation */}
+            {/* Thumbnails Navigation - Always Visible at Bottom */}
             {product?.images && product.images.length > 1 && (
-              <div className="p-4">
+              <div className="p-4 border-t border-white/20 flex-shrink-0">
                 <div className="flex gap-2 justify-center overflow-x-auto">
                   {product.images.map((img, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImage(img)}
-                      className={`flex-shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${
+                      className={`flex-shrink-0 w-20 h-20 lg:w-24 lg:h-24 rounded-lg border-2 overflow-hidden transition-all ${
                         selectedImage === img
-                          ? "border-emerald-400 opacity-100"
+                          ? "border-emerald-400 opacity-100 scale-105"
                           : "border-white/30 opacity-60 hover:opacity-100"
                       }`}
                     >
@@ -677,6 +678,9 @@ ${product.description}
                         alt=""
                         className="w-full h-full object-cover"
                       />
+                      <span className="absolute bottom-1 right-1 bg-black/60 text-white text-xs px-1 py-0.5 rounded">
+                        {index + 1}
+                      </span>
                     </button>
                   ))}
                 </div>
