@@ -474,6 +474,132 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }, 500);
   };
 
+  // 📊 Excel Export - Single order (1 row = 1 order item)
+  const exportSingleOrderToExcel = (order: Order) => {
+    try {
+      const flattenedData: any[] = [];
+
+      const orderDate = order.createdAt instanceof Date
+        ? order.createdAt
+        : new Date(order.createdAt as any);
+
+      const formattedDate = orderDate.toLocaleDateString("ka-GE");
+      const address = `${order.deliveryInfo.city}, ${order.deliveryInfo.address}`;
+      const customerName = `${order.customerInfo.firstName} ${order.customerInfo.lastName}`.trim();
+      const paymentMethodText =
+        order.paymentMethod === "cash"
+          ? "ნაღდი ფული"
+          : order.paymentMethod === "tbc_bank"
+          ? "TBC ბანკი"
+          : order.paymentMethod === "flitt"
+          ? "Flitt"
+          : order.paymentMethod === "visa"
+          ? "Visa"
+          : order.paymentMethod === "mastercard"
+          ? "MasterCard"
+          : "ბანკის გადარიცხვა";
+
+      order.items.forEach((item) => {
+        const sku = item.product.productCode || "-";
+        const productName = getOrderItemDisplayName(item);
+        const quantity = item.quantity;
+        const unitPrice = item.price;
+        const totalPrice = item.total;
+        const shippingCost = order.deliveryInfo.shippingCost || 0;
+
+        flattenedData.push({
+          "თარიღი": formattedDate,
+          "შეკვეთის №": order.orderNumber,
+          "სტატუსი": order.orderStatus,
+          "SKU": sku,
+          "პროდუქტი": productName,
+          "რაოდენობა": quantity,
+          "ერთეულის ფასი": unitPrice,
+          "სულ": totalPrice,
+          "გადახდა": paymentMethodText,
+          "კლიენტი": customerName,
+          "ტელეფონი": order.customerInfo.phone,
+          "მისამართი": address,
+          "მიწოდება": shippingCost,
+        });
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(flattenedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, order.orderNumber);
+
+      const colWidths = [
+        { wch: 14 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 12 },
+        { wch: 32 },
+        { wch: 11 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 16 },
+        { wch: 22 },
+        { wch: 15 },
+        { wch: 35 },
+        { wch: 12 },
+      ];
+      worksheet["!cols"] = colWidths;
+
+      const headerStyle = {
+        font: { bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "366092" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      };
+
+      const headerRange = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
+      for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
+        const address = XLSX.utils.encode_col(C) + "1";
+        if (!worksheet[address]) continue;
+        worksheet[address].s = headerStyle;
+      }
+
+      const numberColumns = ["F", "G", "H", "M"];
+      const numberStyle = {
+        alignment: { horizontal: "right" },
+        numFmt: "#,##0.00",
+      };
+
+      for (let row = 2; row <= flattenedData.length + 1; row++) {
+        numberColumns.forEach((col) => {
+          const cellAddress = col + row;
+          if (worksheet[cellAddress]) {
+            worksheet[cellAddress].s = numberStyle;
+          }
+        });
+      }
+
+      const totalStyle = {
+        alignment: { horizontal: "right" },
+        numFmt: "#,##0.00",
+        fill: { fgColor: { rgb: "FFFFCC" } },
+        font: { bold: true },
+      };
+
+      for (let row = 2; row <= flattenedData.length + 1; row++) {
+        const cellAddress = "H" + row;
+        if (worksheet[cellAddress]) {
+          worksheet[cellAddress].s = totalStyle;
+        }
+      }
+
+      worksheet["!rows"] = [{ hpx: 30 }];
+      worksheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+
+      const filename = `შეკვეთა_${order.orderNumber}_${new Date().toISOString().split("T")[0]}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+
+      showToast(`შეკვეთა ${order.orderNumber} ექსპორტირდა`, "success");
+    } catch (error) {
+      console.error("Excel export error:", error);
+      showToast("ექსპორტი ვერ მოხერხდა", "error");
+    }
+  };
+
   // 📊 Excel Export - Flattened structure (1 row = 1 order item)
   const exportToExcel = () => {
     if (selectedOrderIds.length === 0) {
@@ -500,7 +626,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           order.paymentMethod === "cash"
             ? "ნაღდი ფული"
             : order.paymentMethod === "tbc_bank"
-            ? "TBC Bank"
+            ? "TBC ბანკი"
             : order.paymentMethod === "flitt"
             ? "Flitt"
             : order.paymentMethod === "visa"
@@ -518,46 +644,98 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           const shippingCost = order.deliveryInfo.shippingCost || 0;
 
           flattenedData.push({
-            "თარიღი (Date)": formattedDate,
-            "შეკვეთის № (Order Number)": order.orderNumber,
-            "სტატუსი (Status)": order.orderStatus,
-            "პროდუქტის კოდი (SKU)": sku,
-            "პროდუქტის დასახელება (Product Name)": productName,
-            "რაოდენობა (Quantity)": quantity,
-            "ფასი - ერთეული (Unit Price)": unitPrice,
-            "სულ (Total Price)": totalPrice,
-            "გადახდის მეთოდი (Payment Method)": paymentMethodText,
-            "მომხმარებელი (Customer Name)": customerName,
-            "ტელეფონი (Phone Number)": order.customerInfo.phone,
-            "მისამართი (Address)": address,
-            "მიტანის ღირებულება (Shipping Cost)": shippingCost,
+            "თარიღი": formattedDate,
+            "შეკვეთის №": order.orderNumber,
+            "სტატუსი": order.orderStatus,
+            "კოდი": sku,
+            "პროდუქტი": productName,
+            "რაოდენობა": quantity,
+            "ერთეულის ფასი": unitPrice,
+            "სულ": totalPrice,
+            "გადახდა": paymentMethodText,
+            "კლიენტი": customerName,
+            "ტელეფონი": order.customerInfo.phone,
+            "მისამართი": address,
+            "მიწოდება": shippingCost,
           });
         });
       });
 
       const worksheet = XLSX.utils.json_to_sheet(flattenedData);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+      XLSX.utils.book_append_sheet(workbook, worksheet, "შეკვეთები");
 
-      // Set column widths
+      // Set column widths (optimized for Georgian text)
       const colWidths = [
-        { wch: 15 }, // თარიღი
-        { wch: 15 }, // შეკვეთის №
-        { wch: 12 }, // სტატუსი
+        { wch: 14 }, // თარიღი
+        { wch: 16 }, // შეკვეთის №
+        { wch: 14 }, // სტატუსი
         { wch: 12 }, // SKU
-        { wch: 25 }, // პროდუქტის სახელი
-        { wch: 10 }, // რაოდენობა
-        { wch: 12 }, // ფასი
+        { wch: 32 }, // პროდუქტი
+        { wch: 11 }, // რაოდენობა
+        { wch: 15 }, // ერთეულის ფასი
         { wch: 12 }, // სულ
-        { wch: 18 }, // გადახდის მეთოდი
-        { wch: 20 }, // მომხმარებელი
+        { wch: 16 }, // გადახდა
+        { wch: 22 }, // კლიენტი
         { wch: 15 }, // ტელეფონი
-        { wch: 30 }, // მისამართი
-        { wch: 15 }, // მიტანის ღირებულება
+        { wch: 35 }, // მისამართი
+        { wch: 12 }, // მიწოდება
       ];
       worksheet["!cols"] = colWidths;
 
-      const filename = `Orders_Export_${new Date().toISOString().split("T")[0]}.xlsx`;
+      // Style header row (bold + background)
+      const headerStyle = {
+        font: { bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "366092" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      };
+
+      // Apply header styling
+      const headerRange = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
+      for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
+        const address = XLSX.utils.encode_col(C) + "1";
+        if (!worksheet[address]) continue;
+        worksheet[address].s = headerStyle;
+      }
+
+      // Style number columns (right align)
+      const numberColumns = ["F", "G", "H", "M"]; // რაოდენობა, ერთეულის ფასი, სულ, მიწოდება
+      const numberStyle = {
+        alignment: { horizontal: "right" },
+        numFmt: "#,##0.00",
+      };
+
+      for (let row = 2; row <= flattenedData.length + 1; row++) {
+        numberColumns.forEach((col) => {
+          const cellAddress = col + row;
+          if (worksheet[cellAddress]) {
+            worksheet[cellAddress].s = numberStyle;
+          }
+        });
+      }
+
+      // Highlight total column (column H - yellow)
+      const totalStyle = {
+        alignment: { horizontal: "right" },
+        numFmt: "#,##0.00",
+        fill: { fgColor: { rgb: "FFFFCC" } },
+        font: { bold: true },
+      };
+
+      for (let row = 2; row <= flattenedData.length + 1; row++) {
+        const cellAddress = "H" + row;
+        if (worksheet[cellAddress]) {
+          worksheet[cellAddress].s = totalStyle;
+        }
+      }
+
+      // Set row height for header
+      worksheet["!rows"] = [{ hpx: 30 }];
+
+      // Freeze header row
+      worksheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+
+      const filename = `შეკვეთები_ექსპორტი_${new Date().toISOString().split("T")[0]}.xlsx`;
       XLSX.writeFile(workbook, filename);
 
       showToast(
@@ -1097,19 +1275,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       switch (tab) {
         case "active":
           return (
-            (order.paymentStatus === "paid" &&
-              !["shipped", "delivered", "cancelled"].includes(
-                order.orderStatus
-              )) ||
-            (order.orderStatus === "confirmed" &&
-              !["shipped", "delivered", "cancelled"].includes(
-                order.orderStatus
-              )) ||
-            (order.adminNotes?.includes("Manually added via Admin Panel") &&
-              !["cancelled"].includes(order.orderStatus)) ||
-            (order.paymentMethod === "cash" &&
-              order.orderStatus === "pending" &&
-              !order.adminNotes?.includes("Manually added via Admin Panel"))
+            !["shipped", "delivered", "cancelled"].includes(order.orderStatus) &&
+            (order.paymentStatus === "paid" ||
+              order.paymentMethod === "cash" ||
+              order.adminNotes?.includes("Manually added via Admin Panel"))
           );
 
         case "live":
@@ -1566,13 +1735,20 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1">
                           <button
                             onClick={() => setSelectedOrder(order)}
                             className="text-blue-600 hover:text-blue-700 p-1 rounded hover:bg-blue-50"
                             title="დეტალების ნახვა"
                           >
                             <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => exportSingleOrderToExcel(order)}
+                            className="text-green-600 hover:text-green-700 p-1 rounded hover:bg-green-50"
+                            title="ექსელში ჩამოტვირთვა"
+                          >
+                            <FileSpreadsheet className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => generateShippingLabel(order)}
@@ -1729,7 +1905,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center space-x-4">
+                  <div className="flex items-center justify-center space-x-3">
                     <button
                       onClick={() => setSelectedOrder(order)}
                       className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
@@ -1737,6 +1913,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     >
                       <Eye className="w-4 h-4" />
                       <span>ნახვა</span>
+                    </button>
+                    <button
+                      onClick={() => exportSingleOrderToExcel(order)}
+                      className="flex items-center space-x-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+                      title="ექსელში ჩამოტვირთვა"
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      <span>Excel</span>
                     </button>
                     <button
                       onClick={() => generateShippingLabel(order)}
