@@ -61,6 +61,12 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     "cash" | "other" | "bank_transfer"
   >("cash");
   const [shippingCost, setShippingCost] = useState(0);
+  const [isShippingCostManuallySet, setIsShippingCostManuallySet] = useState(false);
+
+  const calculateShippingCost = (city: string): number => {
+    if (city === "თბილისი" || city === "რუსთავი") return 5;
+    return 10;
+  };
 
   // --- Calculations ---
   const subtotal = items.reduce(
@@ -77,7 +83,8 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       setSource("instagram");
       setStatus("pending");
       setPaymentMethod("cash");
-      setShippingCost(0);
+      setShippingCost(5);
+      setIsShippingCostManuallySet(false);
     }
   }, [isOpen]);
 
@@ -141,8 +148,12 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       showToast("ტელეფონის ნომერი არასწორია (საჭიროა 9 ციფრი)", "error");
       return;
     }
-    if (items.some((item) => !item.name || item.price < 0)) {
+    if (items.some((item) => item.name && item.price <= 0)) {
       showToast("შეავსეთ პროდუქტის მონაცემები სწორად", "error");
+      return;
+    }
+    if (items.filter((item) => item.name).length === 0) {
+      showToast("დაამატეთ მინიმუმ ერთი პროდუქტი", "error");
       return;
     }
     // ✅ Enhanced Stock Validation - Support variants
@@ -362,16 +373,20 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                 <div className="space-y-4">
                   <select
                     value={deliveryInfo.city}
-                    onChange={(e) =>
-                      setDeliveryInfo({ ...deliveryInfo, city: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const newCity = e.target.value;
+                      setDeliveryInfo({ ...deliveryInfo, city: newCity });
+                      if (!isShippingCostManuallySet) {
+                        setShippingCost(calculateShippingCost(newCity));
+                      }
+                    }}
                     className="w-full px-4 py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
                   >
-                    <option value="თბილისი">თბილისი</option>
-                    <option value="რუსთავი">რუსთავი</option>
-                    <option value="ბათუმი">ბათუმი</option>
-                    <option value="ქუთაისი">ქუთაისი</option>
-                    <option value="სხვა">სხვა რეგიონი</option>
+                    <option value="თბილისი">თბილისი (5 ₾)</option>
+                    <option value="რუსთავი">რუსთავი (5 ₾)</option>
+                    <option value="ბათუმი">ბათუმი (10 ₾)</option>
+                    <option value="ქუთაისი">ქუთაისი (10 ₾)</option>
+                    <option value="სხვა">სხვა რეგიონი (10 ₾)</option>
                   </select>
                   <textarea
                     placeholder="მისამართი *"
@@ -596,7 +611,10 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                       type="number"
                       min="0"
                       value={shippingCost}
-                      onChange={(e) => setShippingCost(Number(e.target.value))}
+                      onChange={(e) => {
+                        setShippingCost(Number(e.target.value));
+                        setIsShippingCostManuallySet(true);
+                      }}
                       className="w-24 px-3 py-1 text-right text-base border border-stone-200 rounded bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                   </div>
