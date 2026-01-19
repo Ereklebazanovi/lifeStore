@@ -5,6 +5,7 @@ import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
 import { getOrderItemDisplayName } from "../../../utils/displayHelpers";
 import CreateManualOrderModal from "./CreateManualOrderModal";
+import * as XLSX from "xlsx";
 
 import {
   Package,
@@ -27,6 +28,7 @@ import {
   Facebook,
   Globe,
   Tags,
+  FileSpreadsheet,
 } from "lucide-react";
 
 interface OrdersManagerProps {
@@ -470,6 +472,102 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     setTimeout(() => {
       printWindow.print();
     }, 500);
+  };
+
+  // 📊 Excel Export - Flattened structure (1 row = 1 order item)
+  const exportToExcel = () => {
+    if (selectedOrderIds.length === 0) {
+      showToast("მონიშნეთ შეკვეთები ექსპორტისთვის", "error");
+      return;
+    }
+
+    try {
+      const selectedOrders = orders.filter((order) =>
+        selectedOrderIds.includes(order.id)
+      );
+
+      const flattenedData: any[] = [];
+
+      selectedOrders.forEach((order) => {
+        const orderDate = order.createdAt instanceof Date
+          ? order.createdAt
+          : new Date(order.createdAt as any);
+
+        const formattedDate = orderDate.toLocaleDateString("ka-GE");
+        const address = `${order.deliveryInfo.city}, ${order.deliveryInfo.address}`;
+        const customerName = `${order.customerInfo.firstName} ${order.customerInfo.lastName}`.trim();
+        const paymentMethodText =
+          order.paymentMethod === "cash"
+            ? "ნაღდი ფული"
+            : order.paymentMethod === "tbc_bank"
+            ? "TBC Bank"
+            : order.paymentMethod === "flitt"
+            ? "Flitt"
+            : order.paymentMethod === "visa"
+            ? "Visa"
+            : order.paymentMethod === "mastercard"
+            ? "MasterCard"
+            : "ბანკის გადარიცხვა";
+
+        order.items.forEach((item) => {
+          const sku = item.product.productCode || "-";
+          const productName = getOrderItemDisplayName(item);
+          const quantity = item.quantity;
+          const unitPrice = item.price;
+          const totalPrice = item.total;
+          const shippingCost = order.deliveryInfo.shippingCost || 0;
+
+          flattenedData.push({
+            "თარიღი (Date)": formattedDate,
+            "შეკვეთის № (Order Number)": order.orderNumber,
+            "სტატუსი (Status)": order.orderStatus,
+            "პროდუქტის კოდი (SKU)": sku,
+            "პროდუქტის დასახელება (Product Name)": productName,
+            "რაოდენობა (Quantity)": quantity,
+            "ფასი - ერთეული (Unit Price)": unitPrice,
+            "სულ (Total Price)": totalPrice,
+            "გადახდის მეთოდი (Payment Method)": paymentMethodText,
+            "მომხმარებელი (Customer Name)": customerName,
+            "ტელეფონი (Phone Number)": order.customerInfo.phone,
+            "მისამართი (Address)": address,
+            "მიტანის ღირებულება (Shipping Cost)": shippingCost,
+          });
+        });
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(flattenedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+
+      // Set column widths
+      const colWidths = [
+        { wch: 15 }, // თარიღი
+        { wch: 15 }, // შეკვეთის №
+        { wch: 12 }, // სტატუსი
+        { wch: 12 }, // SKU
+        { wch: 25 }, // პროდუქტის სახელი
+        { wch: 10 }, // რაოდენობა
+        { wch: 12 }, // ფასი
+        { wch: 12 }, // სულ
+        { wch: 18 }, // გადახდის მეთოდი
+        { wch: 20 }, // მომხმარებელი
+        { wch: 15 }, // ტელეფონი
+        { wch: 30 }, // მისამართი
+        { wch: 15 }, // მიტანის ღირებულება
+      ];
+      worksheet["!cols"] = colWidths;
+
+      const filename = `Orders_Export_${new Date().toISOString().split("T")[0]}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+
+      showToast(
+        `${selectedOrders.length} შეკვეთა ${flattenedData.length} ნივთით ექსპორტირდა`,
+        "success"
+      );
+    } catch (error) {
+      console.error("Excel export error:", error);
+      showToast("ექსპორტი ვერ მოხერხდა", "error");
+    }
   };
 
   // 🏷️ მონიშნული შეკვეთების ლეიბლების დაბეჭდვა
@@ -1169,14 +1267,25 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             {/* Mobile Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               {selectedOrderIds.length > 0 && (
-                <button
-                  onClick={generateMultipleLabels}
-                  className="flex items-center justify-center space-x-2 bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors duration-200 text-sm font-medium"
-                  title={`${selectedOrderIds.length} შეკვეთის ლეიბლების დაბეჭდვა (76x92მმ)`}
-                >
-                  <Tags className="w-4 h-4" />
-                  <span>ლეიბლები ({selectedOrderIds.length})</span>
-                </button>
+                <>
+                  <button
+                    onClick={exportToExcel}
+                    className="flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium"
+                    title={`${selectedOrderIds.length} შეკვეთის ექსპორტი Excel-ში`}
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    <span>Excel Export ({selectedOrderIds.length})</span>
+                  </button>
+
+                  <button
+                    onClick={generateMultipleLabels}
+                    className="flex items-center justify-center space-x-2 bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors duration-200 text-sm font-medium"
+                    title={`${selectedOrderIds.length} შეკვეთის ლეიბლების დაბეჭდვა (76x92მმ)`}
+                  >
+                    <Tags className="w-4 h-4" />
+                    <span>ლეიბლები ({selectedOrderIds.length})</span>
+                  </button>
+                </>
               )}
 
               <button
