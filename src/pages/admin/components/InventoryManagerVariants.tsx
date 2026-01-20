@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useProductStore } from "../../../store/productStore";
 import { showToast } from "../../../components/ui/Toast";
 import type { Product, ProductVariant } from "../../../types";
+import { exportInventoryToExcel } from "../../../utils/excelExporter";
 import {
   Plus,
   Minus,
@@ -12,6 +13,10 @@ import {
   ChevronDown,
   ChevronRight,
   Box,
+  Download,
+  Calendar,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 
 interface VariantStockModalProps {
@@ -324,7 +329,9 @@ const SimpleStockModal: React.FC<SimpleStockModalProps> = ({
 interface ProductRowProps {
   product: Product;
   isExpanded: boolean;
+  isSelected: boolean;
   onToggleExpand: () => void;
+  onSelectProduct: (productId: string) => void;
   onStockAdjustment: (
     productId: string,
     productName: string,
@@ -342,7 +349,9 @@ interface ProductRowProps {
 const ProductRow: React.FC<ProductRowProps> = ({
   product,
   isExpanded,
+  isSelected,
   onToggleExpand,
+  onSelectProduct,
   onStockAdjustment,
   onVariantStockAdjustment,
 }) => {
@@ -375,6 +384,18 @@ const ProductRow: React.FC<ProductRowProps> = ({
   return (
     <>
       <tr className="border-b border-gray-200 hover:bg-gray-50/30 transition-colors">
+        <td className="px-4 py-3 text-center">
+          <button
+            onClick={() => onSelectProduct(product.id)}
+            className="flex items-center justify-center w-full"
+          >
+            {isSelected ? (
+              <CheckSquare className="w-4 h-4 text-emerald-600" />
+            ) : (
+              <Square className="w-4 h-4 text-gray-400" />
+            )}
+          </button>
+        </td>
         <td className="px-4 py-3">
           <div className="flex items-center gap-3">
             {product.images && product.images.length > 0 ? (
@@ -479,7 +500,7 @@ const ProductRow: React.FC<ProductRowProps> = ({
       {/* Mobile-First Responsive Variants Layout */}
       {product.hasVariants && isExpanded && (
         <tr>
-          <td colSpan={5} className="p-0">
+          <td colSpan={6} className="p-0">
             <div className="bg-blue-50/20 border-l-4 border-blue-200">
               <div className="p-4">
                 {/* Header - Compact on mobile */}
@@ -573,7 +594,9 @@ const ProductRow: React.FC<ProductRowProps> = ({
 interface ProductCardProps {
   product: Product;
   isExpanded: boolean;
+  isSelected: boolean;
   onToggleExpand: () => void;
+  onSelectProduct: (productId: string) => void;
   onStockAdjustment: (
     productId: string,
     productName: string,
@@ -591,7 +614,9 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
   isExpanded,
+  isSelected,
   onToggleExpand,
+  onSelectProduct,
   onStockAdjustment,
   onVariantStockAdjustment,
 }) => {
@@ -626,6 +651,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
       {/* Card Header */}
       <div className="p-4">
         <div className="flex items-start gap-3 mb-3">
+          {/* Selection Checkbox */}
+          <button
+            onClick={() => onSelectProduct(product.id)}
+            className="flex items-center justify-center mt-1"
+          >
+            {isSelected ? (
+              <CheckSquare className="w-5 h-5 text-emerald-600" />
+            ) : (
+              <Square className="w-5 h-5 text-gray-400" />
+            )}
+          </button>
           {/* Product Image */}
           {product.images && product.images.length > 0 ? (
             <img
@@ -848,6 +884,14 @@ const InventoryManagerVariants: React.FC = () => {
     adjustmentType: "add" | "remove";
   } | null>(null);
 
+  // Export functionality states
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportDateRange, setExportDateRange] = useState({
+    startDate: "",
+    endDate: "",
+  });
+
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
@@ -883,6 +927,55 @@ const InventoryManagerVariants: React.FC = () => {
   const closeModals = () => {
     setSelectedProduct(null);
     setSelectedVariant(null);
+  };
+
+  // Export functionality
+  const handleSelectProduct = (productId: string) => {
+    const newSelected = new Set(selectedProducts);
+    if (newSelected.has(productId)) {
+      newSelected.delete(productId);
+    } else {
+      newSelected.add(productId);
+    }
+    setSelectedProducts(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedProducts.size === filteredProducts.length) {
+      setSelectedProducts(new Set());
+    } else {
+      setSelectedProducts(new Set(filteredProducts.map(p => p.id)));
+    }
+  };
+
+  const handleExport = () => {
+    try {
+      let dateRange: { startDate: Date; endDate: Date } | undefined;
+
+      if (exportDateRange.startDate && exportDateRange.endDate) {
+        dateRange = {
+          startDate: new Date(exportDateRange.startDate),
+          endDate: new Date(exportDateRange.endDate),
+        };
+      }
+
+      const result = exportInventoryToExcel(products, selectedProducts, dateRange);
+
+      if (result.success) {
+        showToast(
+          `ექსპორტი წარმატებით დასრულდა!\n${result.exportedProducts} პროდუქტი, ${result.totalStock} ცალი, ₾${(result.totalValue || 0).toFixed(2)} ღირებულება`,
+          "success"
+        );
+        setIsExportModalOpen(false);
+        setSelectedProducts(new Set());
+        setExportDateRange({ startDate: "", endDate: "" });
+      } else {
+        showToast("ექსპორტის შეცდომა", "error");
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      showToast("ექსპორტის შეცდომა", "error");
+    }
   };
 
   // Filter and sort products
@@ -938,17 +1031,35 @@ const InventoryManagerVariants: React.FC = () => {
 
   const variantProductsCount = filteredProducts.filter(p => p.hasVariants).length;
 
+  // Calculate total inventory value
+  const totalInventoryValue = filteredProducts.reduce((sum, product) => {
+    if (product.hasVariants && product.variants) {
+      return sum + product.variants.reduce((varSum, variant) =>
+        varSum + (variant.price * (variant.stock || 0)), 0);
+    }
+    return sum + ((product.price || 0) * (product.stock || 0));
+  }, 0);
+
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Compact Header */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h1 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2 mb-3">
-          <Package className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
-          საწყობი (მარაგის მართვა)
-        </h1>
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
+            <Package className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
+            საწყობი (მარაგის მართვა)
+          </h1>
+          <button
+            onClick={() => setIsExportModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm"
+          >
+            <Download className="w-4 h-4" />
+            Excel ექსპორტი
+          </button>
+        </div>
 
-        {/* Summary Cards - Mobile: 2x2, Desktop: 1x4 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        {/* Summary Cards - Mobile: 2x3, Desktop: 1x5 */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
           <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
             <p className="text-2xl font-bold text-blue-600">{totalProducts}</p>
             <p className="text-xs text-blue-700">პროდუქტი</p>
@@ -956,6 +1067,10 @@ const InventoryManagerVariants: React.FC = () => {
           <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
             <p className="text-2xl font-bold text-emerald-600">{totalStock}</p>
             <p className="text-xs text-emerald-700">ჯამური მარაგი</p>
+          </div>
+          <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+            <p className="text-xl font-bold text-purple-600">₾{totalInventoryValue.toFixed(2)}</p>
+            <p className="text-xs text-purple-700">ღირებულება</p>
           </div>
           <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
             <p className="text-2xl font-bold text-yellow-600">{lowStockProducts}</p>
@@ -1012,6 +1127,18 @@ const InventoryManagerVariants: React.FC = () => {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      <button
+                        onClick={handleSelectAll}
+                        className="flex items-center justify-center w-full"
+                      >
+                        {selectedProducts.size === filteredProducts.length && filteredProducts.length > 0 ? (
+                          <CheckSquare className="w-4 h-4 text-emerald-600" />
+                        ) : (
+                          <Square className="w-4 h-4 text-gray-400" />
+                        )}
+                      </button>
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       პროდუქტი
                     </th>
@@ -1035,7 +1162,9 @@ const InventoryManagerVariants: React.FC = () => {
                       key={product.id}
                       product={product}
                       isExpanded={expandedProducts.has(product.id)}
+                      isSelected={selectedProducts.has(product.id)}
                       onToggleExpand={() => toggleProductExpand(product.id)}
+                      onSelectProduct={handleSelectProduct}
                       onStockAdjustment={handleStockAdjustment}
                       onVariantStockAdjustment={handleVariantStockAdjustment}
                     />
@@ -1051,7 +1180,9 @@ const InventoryManagerVariants: React.FC = () => {
                   key={product.id}
                   product={product}
                   isExpanded={expandedProducts.has(product.id)}
+                  isSelected={selectedProducts.has(product.id)}
                   onToggleExpand={() => toggleProductExpand(product.id)}
+                  onSelectProduct={handleSelectProduct}
                   onStockAdjustment={handleStockAdjustment}
                   onVariantStockAdjustment={handleVariantStockAdjustment}
                 />
@@ -1090,6 +1221,102 @@ const InventoryManagerVariants: React.FC = () => {
             closeModals();
           }}
         />
+      )}
+
+      {/* Export Modal */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md shadow-xl">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Excel ექსპორტი
+              </h3>
+
+              <div className="space-y-4">
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-700 mb-2">შერჩეული პროდუქტები:</p>
+                  <p className="font-medium text-gray-900">
+                    {selectedProducts.size === 0
+                      ? `ყველა (${filteredProducts.length} პროდუქტი)`
+                      : `${selectedProducts.size} პროდუქტი`
+                    }
+                  </p>
+                </div>
+
+                {/* Date Range Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Calendar className="w-4 h-4 inline mr-2" />
+                    თარიღის ფილტრი (არასავალდებულო)
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">საწყისი თარიღი</label>
+                      <input
+                        type="date"
+                        value={exportDateRange.startDate}
+                        onChange={(e) => setExportDateRange(prev => ({
+                          ...prev,
+                          startDate: e.target.value
+                        }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">საბოლოო თარიღი</label>
+                      <input
+                        type="date"
+                        value={exportDateRange.endDate}
+                        onChange={(e) => setExportDateRange(prev => ({
+                          ...prev,
+                          endDate: e.target.value
+                        }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    რომ მოხვდეს მხოლოდ მითითებულ პერიოდში განახლებული პროდუქტები
+                  </p>
+                </div>
+
+                {/* Export Summary */}
+                <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                  <h4 className="text-sm font-semibold text-emerald-800 mb-2">ექსპორტის შედეგი შეიცავს:</h4>
+                  <ul className="text-xs text-emerald-700 space-y-1">
+                    <li>• პროდუქტების სია (ID, სახელი, კოდი, კატეგორია)</li>
+                    <li>• ვარიანტების ინფორმაცია (თუ არის)</li>
+                    <li>• მარაგის რაოდენობა და ღირებულება</li>
+                    <li>• ჯამური მარაგის ღირებულება</li>
+                    {/* <li>• შექმნის/განახლების თარიღები</li> */}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsExportModalOpen(false);
+                    setSelectedProducts(new Set());
+                    setExportDateRange({ startDate: "", endDate: "" });
+                  }}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  გაუქმება
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  className="flex-1 px-4 py-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  ექსპორტი
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

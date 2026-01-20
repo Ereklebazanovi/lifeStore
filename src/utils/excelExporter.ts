@@ -1,5 +1,6 @@
+//excelExporter.ts
 import * as XLSX from "xlsx-js-style";
-import type { Order } from "../types";
+import type { Order, Product, ProductVariant } from "../types";
 import { getOrderItemDisplayName } from "./displayHelpers";
 
 export const exportSingleOrderToExcel = (order: Order) => {
@@ -310,5 +311,238 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
   } catch (error) {
     console.error("Excel export error:", error);
     return false;
+  }
+};
+
+// ინვენტარის ექსპორტი
+export interface InventoryExportData {
+  productId: string;
+  productName: string;
+  productCode?: string;
+  category?: string;
+  variantName?: string;
+  price: number;
+  stock: number;
+  totalValue: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+
+export const exportInventoryToExcel = (
+  products: Product[],
+  selectedProductIds: Set<string>,
+  dateRange?: { startDate: Date; endDate: Date }
+) => {
+  try {
+    const flattenedData: any[] = [];
+    
+    // 1. მონაცემების ფილტრაცია
+    const productsToExport = selectedProductIds.size > 0 
+      ? products.filter(p => selectedProductIds.has(p.id))
+      : products; 
+
+    // 2. სათაურის ტექსტის მომზადება
+    const todayStr = new Date().toLocaleDateString("ka-GE");
+    const reportTitle = dateRange 
+      ? `მარაგის ანგარიში: ${dateRange.startDate.toLocaleDateString("ka-GE")} - ${dateRange.endDate.toLocaleDateString("ka-GE")}`
+      : `მიმდინარე ნაშთი (LIVE): ${todayStr}`;
+
+    let grandTotalStock = 0;
+    let grandTotalValue = 0;
+
+    // 3. მონაცემების დამუშავება
+    productsToExport.forEach((product) => {
+      // ვარიანტებიანი პროდუქტი
+      if (product.hasVariants && product.variants && product.variants.length > 0) {
+        product.variants.forEach((variant) => {
+           const stock = variant.stock || 0;
+           const price = variant.price || 0;
+           const totalValue = stock * price;
+
+           grandTotalStock += stock;
+           grandTotalValue += totalValue;
+
+           flattenedData.push({
+             "პროდუქტის დასახელება": product.name,
+             "კოდი (SKU)": product.productCode || "-",
+             "კატეგორია": product.category || "-",
+             "ვარიანტი": variant.name,
+             "ერთეულის ფასი (₾)": price,
+             "მარაგი (ცალი)": stock,
+             "ჯამური ღირებულება (₾)": totalValue,
+           });
+        });
+      } else {
+        // მარტივი პროდუქტი
+        const stock = product.stock || 0;
+        const price = product.price || 0;
+        const totalValue = stock * price;
+
+        grandTotalStock += stock;
+        grandTotalValue += totalValue;
+
+        flattenedData.push({
+          "პროდუქტის დასახელება": product.name,
+          "კოდი (SKU)": product.productCode || "-",
+          "კატეგორია": product.category || "-",
+          "ვარიანტი": "-",
+          "ერთეულის ფასი (₾)": price,
+          "მარაგი (ცალი)": stock,
+          "ჯამური ღირებულება (₾)": totalValue,
+        });
+      }
+    });
+
+    // 4. ჯამური სტრიქონის დამატება
+    flattenedData.push({
+      "პროდუქტის დასახელება": "სულ ჯამში:",
+      "კოდი (SKU)": "",
+      "კატეგორია": "",
+      "ვარიანტი": "",
+      "ერთეულის ფასი (₾)": "",
+      "მარაგი (ცალი)": grandTotalStock,
+      "ჯამური ღირებულება (₾)": grandTotalValue,
+    });
+
+    // 5. ექსელის აწყობა
+    // ვიყენებთ origin: "A2"-ს, რადგან A1-ში სათაური უნდა ჩავსვათ
+    const worksheet = XLSX.utils.json_to_sheet(flattenedData, { origin: "A2" });
+    const workbook = XLSX.utils.book_new();
+
+    // სათაურის დამატება A1 უჯრაში
+    XLSX.utils.sheet_add_aoa(worksheet, [[reportTitle]], { origin: "A1" });
+
+    // A1 უჯრის გაერთიანება (Merge) მთელ სიგანეზე (A-დან G-მდე)
+    if(!worksheet["!merges"]) worksheet["!merges"] = [];
+    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }); // Row 0, Col 0 to Col 6
+
+    // 6. სვეტების სიგანეები
+    const colWidths = [
+      { wch: 30 }, // A: სახელი
+      { wch: 15 }, // B: SKU
+      { wch: 15 }, // C: კატეგორია
+      { wch: 15 }, // D: ვარიანტი
+      { wch: 15 }, // E: ფასი
+      { wch: 15 }, // F: მარაგი
+      { wch: 20 }, // G: ჯამი
+    ];
+    worksheet["!cols"] = colWidths;
+
+    // 7. სტილები
+    const borderStyle = {
+      top: { style: "thin", color: { rgb: "000000" } },
+      bottom: { style: "thin", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } },
+    };
+
+    // სტილი მთავარი სათაურისთვის (Row 1)
+    const titleStyle = {
+      font: { bold: true, sz: 14, color: { rgb: "4472C4" } }, // ლურჯი ტექსტი
+      alignment: { horizontal: "center", vertical: "center" },
+      fill: { fgColor: { rgb: "FFFFFF" } } // თეთრი ფონი
+    };
+
+    // სტილი ჰედერისთვის (Row 2) - მუქი ლურჯი
+    const headerStyle = {
+      font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
+      fill: { fgColor: { rgb: "4472C4" } }, 
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: borderStyle,
+    };
+
+    // სტილი ჯამური სტრიქონისთვის (ბოლო რიგი)
+    const summaryStyle = {
+      font: { bold: true },
+      fill: { fgColor: { rgb: "E2EFDA" } }, // ღია მწვანე/ყვითელი
+      border: borderStyle,
+      alignment: { horizontal: "right" }
+    };
+
+    // ყვითელი სვეტი ფულისთვის
+    const currencyYellowStyle = {
+      alignment: { horizontal: "right", vertical: "center" },
+      numFmt: "#,##0.00",
+      fill: { fgColor: { rgb: "FFF9C4" } },
+      border: borderStyle
+    };
+
+    const currencyStyle = {
+      alignment: { horizontal: "right", vertical: "center" },
+      numFmt: "#,##0.00",
+      border: borderStyle
+    };
+
+    const centerStyle = {
+      alignment: { horizontal: "center", vertical: "center" },
+      border: borderStyle
+    };
+
+    const leftStyle = {
+      alignment: { horizontal: "left", vertical: "center" },
+      border: borderStyle
+    };
+
+    // სათაურის სტილის დადება (A1)
+    if(!worksheet["A1"].s) worksheet["A1"].s = {};
+    worksheet["A1"].s = titleStyle;
+    // სიმაღლე სათაურისთვის
+    if(!worksheet["!rows"]) worksheet["!rows"] = [];
+    worksheet["!rows"][0] = { hpx: 30 };
+    worksheet["!rows"][1] = { hpx: 25 }; // Header height
+
+    const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
+    const lastRowIndex = range.e.r;
+
+    // ციკლი ყველა უჯრაზე
+    for (let R = 1; R <= lastRowIndex; ++R) { // ვიწყებთ 1-დან (Row 2), რადგან 0 არის სათაური
+      for (let C = 0; C <= 6; ++C) {
+        const address = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!worksheet[address]) continue;
+
+        // 1. ჰედერის სტილი (Row 2)
+        if (R === 1) {
+          worksheet[address].s = headerStyle;
+        } 
+        // 2. ბოლო რიგის (ჯამების) სტილი
+        else if (R === lastRowIndex) {
+          worksheet[address].s = summaryStyle;
+          // ფულის ფორმატი ბოლო რიგში
+          if (C === 4 || C === 6) worksheet[address].s.numFmt = "#,##0.00";
+        } 
+        // 3. ჩვეულებრივი მონაცემები
+        else {
+          const colLetter = XLSX.utils.encode_col(C);
+          
+          if (colLetter === "G") { // Total Value (Column G)
+             worksheet[address].s = currencyYellowStyle;
+          } else if (colLetter === "E") { // Price (Column E)
+             worksheet[address].s = currencyStyle;
+          } else if (colLetter === "F") { // Stock (Column F)
+             worksheet[address].s = centerStyle;
+          } else if (colLetter === "A") { // Name
+             worksheet[address].s = leftStyle;
+          } else {
+             worksheet[address].s = centerStyle;
+          }
+        }
+      }
+    }
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+    const filename = `Inventory_Report_${new Date().toISOString().split("T")[0]}.xlsx`;
+    XLSX.writeFile(workbook, filename);
+
+    return {
+        success: true,
+        totalStock: grandTotalStock,
+        totalValue: grandTotalValue,
+        exportedProducts: flattenedData.length - 1 // -1 გამოვაკლოთ Summary Row
+    };
+
+  } catch (error) {
+    console.error("Inventory export error:", error);
+    return { success: false, error: error };
   }
 };
