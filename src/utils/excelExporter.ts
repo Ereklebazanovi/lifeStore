@@ -365,7 +365,7 @@ export const exportInventoryToExcel = (
 
            flattenedData.push({
              "პროდუქტის დასახელება": product.name,
-             "კოდი (SKU)": product.productCode || "-",
+             "პროდუქტის კოდი": product.productCode || "-",
              "კატეგორია": product.category || "-",
              "ვარიანტი": variant.name,
              "ერთეულის ფასი (₾)": price,
@@ -384,7 +384,7 @@ export const exportInventoryToExcel = (
 
         flattenedData.push({
           "პროდუქტის დასახელება": product.name,
-          "კოდი (SKU)": product.productCode || "-",
+          "პროდუქტის კოდი": product.productCode || "-",
           "კატეგორია": product.category || "-",
           "ვარიანტი": "-",
           "ერთეულის ფასი (₾)": price,
@@ -397,7 +397,7 @@ export const exportInventoryToExcel = (
     // 4. ჯამური სტრიქონის დამატება
     flattenedData.push({
       "პროდუქტის დასახელება": "სულ ჯამში:",
-      "კოდი (SKU)": "",
+      "პროდუქტის კოდი": "",
       "კატეგორია": "",
       "ვარიანტი": "",
       "ერთეულის ფასი (₾)": "",
