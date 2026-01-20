@@ -406,12 +406,13 @@ export const exportInventoryToExcel = (
     });
 
     // 5. ექსელის აწყობა
-    // ვიყენებთ origin: "A2"-ს, რადგან A1-ში სათაური უნდა ჩავსვათ
-    const worksheet = XLSX.utils.json_to_sheet(flattenedData, { origin: "A2" });
-    const workbook = XLSX.utils.book_new();
+    // ჯერ სათაური A1-ში
+    const worksheet = XLSX.utils.aoa_to_sheet([[reportTitle]]);
 
-    // სათაურის დამატება A1 უჯრაში
-    XLSX.utils.sheet_add_aoa(worksheet, [[reportTitle]], { origin: "A1" });
+    // შემდეგ მონაცემები A2-დან
+    XLSX.utils.sheet_add_json(worksheet, flattenedData, { origin: "A2" });
+
+    const workbook = XLSX.utils.book_new();
 
     // A1 უჯრის გაერთიანება (Merge) მთელ სიგანეზე (A-დან G-მდე)
     if(!worksheet["!merges"]) worksheet["!merges"] = [];
