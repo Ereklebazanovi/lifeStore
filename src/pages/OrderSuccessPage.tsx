@@ -239,13 +239,7 @@ const OrderSuccessPage: React.FC = () => {
                 <h2 className="text-xl font-bold text-stone-900 print:text-lg">
                   შეკვეთის დეტალები
                 </h2>
-                <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
-                    order.orderStatus
-                  )} print:border-stone-300 print:bg-transparent print:text-stone-900`}
-                >
-                  {getStatusText(order.orderStatus)}
-                </span>
+               
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4 print:grid-cols-2 print:gap-y-2">
