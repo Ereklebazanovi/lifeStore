@@ -131,12 +131,47 @@ export const useProductStore = create<ProductState & ProductActions>(
           calculatedTotalStock = calculatedStock;
         }
 
+        // Initialize stock history for the new product
+        const now = new Date();
+        let stockHistoryForProduct: StockHistory[] = [];
+        let stockHistoryForVariants: StockHistory[] = [];
+
+        // Create initial stock history entry
+        const initialHistoryEntry: StockHistory = {
+          timestamp: now,
+          quantity: calculatedStock,
+          reason: "Initial stock",
+          notes: "Product creation - initial stock set"
+        };
+
+        stockHistoryForProduct.push(initialHistoryEntry);
+
+        // If product has variants, create stock history for each variant
+        let updatedVariants = productData.variants;
+        if (productData.hasVariants && productData.variants) {
+          updatedVariants = productData.variants.map(variant => {
+            const variantStock = variant.stock || 0;
+            const variantHistoryEntry: StockHistory = {
+              timestamp: now,
+              quantity: variantStock,
+              reason: "Initial stock",
+              notes: `Variant creation - initial stock set for ${variant.name}`
+            };
+            return {
+              ...variant,
+              stockHistory: [variantHistoryEntry]
+            };
+          });
+        }
+
         const newProduct = {
           ...productData,
+          variants: updatedVariants,
           stock: calculatedStock,
           totalStock: calculatedTotalStock,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          stockHistory: stockHistoryForProduct,
+          createdAt: now,
+          updatedAt: now,
         };
 
         await addDoc(productsRef, newProduct);
