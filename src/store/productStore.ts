@@ -147,7 +147,7 @@ export const useProductStore = create<ProductState & ProductActions>(
         stockHistoryForProduct.push(initialHistoryEntry);
 
         // If product has variants, create stock history for each variant
-        let updatedVariants = productData.variants;
+        let updatedVariants = undefined;
         if (productData.hasVariants && productData.variants) {
           updatedVariants = productData.variants.map(variant => {
             const variantStock = variant.stock || 0;
@@ -164,15 +164,20 @@ export const useProductStore = create<ProductState & ProductActions>(
           });
         }
 
-        const newProduct = {
+        // Build new product object without undefined fields
+        const newProduct: any = {
           ...productData,
-          variants: updatedVariants,
           stock: calculatedStock,
           totalStock: calculatedTotalStock,
           stockHistory: stockHistoryForProduct,
           createdAt: now,
           updatedAt: now,
         };
+
+        // Only add variants if they exist (avoid undefined fields in Firestore)
+        if (updatedVariants !== undefined) {
+          newProduct.variants = updatedVariants;
+        }
 
         await addDoc(productsRef, newProduct);
 
