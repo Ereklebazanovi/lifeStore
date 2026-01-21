@@ -12,9 +12,9 @@ const getStockAtDate = (stockHistory: StockHistory[] | undefined, targetDate: Da
     // Handle Firebase Timestamp objects
     const historyDate = h.timestamp instanceof Date
       ? h.timestamp
-      : h.timestamp?.toDate
-        ? h.timestamp.toDate()
-        : new Date(h.timestamp);
+      : typeof h.timestamp === 'object' && h.timestamp !== null && 'toDate' in h.timestamp
+        ? (h.timestamp as any).toDate()
+        : new Date(h.timestamp as any);
 
     return historyDate <= targetDate;
   });
@@ -24,8 +24,8 @@ const getStockAtDate = (stockHistory: StockHistory[] | undefined, targetDate: Da
   }
 
   relevantHistory.sort((a, b) => {
-    const dateA = a.timestamp instanceof Date ? a.timestamp : a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-    const dateB = b.timestamp instanceof Date ? b.timestamp : b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+    const dateA = a.timestamp instanceof Date ? a.timestamp : typeof a.timestamp === 'object' && a.timestamp !== null && 'toDate' in a.timestamp ? (a.timestamp as any).toDate() : new Date(a.timestamp as any);
+    const dateB = b.timestamp instanceof Date ? b.timestamp : typeof b.timestamp === 'object' && b.timestamp !== null && 'toDate' in b.timestamp ? (b.timestamp as any).toDate() : new Date(b.timestamp as any);
     return dateB.getTime() - dateA.getTime();
   });
 
