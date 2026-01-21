@@ -21,12 +21,13 @@ import { ADMIN_CONFIG, SITE_CONFIG } from "../config/constants";
 import type {
   Order,
   CreateOrderRequest,
-  CreateManualOrderRequest, // ✅ დაემატა
+  CreateManualOrderRequest,
   CartItem,
   OrderItem,
-  ManualOrderItem, // ✅ დაემატა
+  ManualOrderItem,
   Product,
   ProductVariant,
+  StockHistory,
 } from "../types";
 
 export class OrderService {
@@ -205,7 +206,8 @@ export class OrderService {
    * გამოიყენება როგორც website orders-ისთვის, ასევე manual orders-ისთვის
    */
   private static async updateProductInventory(
-    items: { productId: string; quantity: number; variantId?: string }[]
+    items: { productId: string; quantity: number; variantId?: string }[],
+    orderNumber?: string
   ): Promise<void> {
     // ვაგზავნით batch transaction-ს მხოლოდ ნამდვილი productId-ებისთვის
     const realProducts = items.filter(
@@ -286,11 +288,21 @@ export class OrderService {
                 );
               }
 
+              // Add stock history entry for this variant
+              const existingVariantHistory = variants[variantIndex].stockHistory || [];
+              const newHistoryEntry: StockHistory = {
+                timestamp: new Date(),
+                quantity: newVariantStock,
+                reason: orderNumber ? `Order #${orderNumber}` : "Stock reduction",
+                notes: `Stock reduced by ${item.quantity} (order completion)`
+              };
+
               // განვაახლოთ ვარიანტის stock
               variants[variantIndex] = {
                 ...variants[variantIndex],
                 stock: newVariantStock,
                 updatedAt: Timestamp.now(),
+                stockHistory: [...existingVariantHistory, newHistoryEntry]
               };
             });
 
@@ -320,8 +332,18 @@ export class OrderService {
               );
             }
 
+            // Add stock history for simple product
+            const existingProductHistory = productData.stockHistory || [];
+            const newProductHistoryEntry: StockHistory = {
+              timestamp: new Date(),
+              quantity: newStock,
+              reason: orderNumber ? `Order #${orderNumber}` : "Stock reduction",
+              notes: `Stock reduced by ${totalQuantityToDeduct} (order completion)`
+            };
+
             updateData.stock = newStock;
             updateData.totalStock = newStock; // Keep consistency for simple products
+            updateData.stockHistory = [...existingProductHistory, newProductHistoryEntry];
           }
 
           // ერთიანი update ამ პროდუქტისთვის
@@ -750,7 +772,7 @@ export class OrderService {
       const accessToken = this.generateAccessToken(); // ✅ უნიქალური token
 
       // ✅ 1. TRANSACTION: Update inventory first
-      await this.updateProductInventory(inventoryItems);
+      await this.updateProductInventory(inventoryItems, orderNumber);
 
       // ✅ 2. Create order
       const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
@@ -866,7 +888,7 @@ export class OrderService {
 
       // ✅ 2. TRANSACTION: Update inventory
       if (inventoryItems.length > 0) {
-        await this.updateProductInventory(inventoryItems);
+        await this.updateProductInventory(inventoryItems, orderNumber);
       }
 
       // 3. Create Order Object
