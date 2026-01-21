@@ -15,7 +15,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { sortProductsByPriority } from "../utils/priority";
-import type { ProductState, Product, ProductVariant } from "../types";
+import type { ProductState, Product, ProductVariant, StockHistory } from "../types";
 
 interface ProductActions {
   fetchProducts: () => Promise<void>;
@@ -207,9 +207,25 @@ export const useProductStore = create<ProductState & ProductActions>(
         set({ isLoading: true });
         const productRef = doc(db, "products", id);
 
+        // Get current product to get existing stockHistory
+        const currentProduct = await getDoc(productRef);
+        const currentData = currentProduct.data() as Product;
+        const existingHistory = currentData.stockHistory || [];
+
+        // Add new history entry
+        const newHistoryEntry: StockHistory = {
+          timestamp: new Date(),
+          quantity: newStock,
+          reason: reason || "Stock update",
+          notes: `Stock changed to ${newStock}`
+        };
+
+        const updatedHistory = [...existingHistory, newHistoryEntry];
+
         await updateDoc(productRef, {
           stock: newStock,
           updatedAt: new Date(),
+          stockHistory: updatedHistory,
           ...(reason && { lastStockReason: reason }),
         });
 
@@ -217,13 +233,13 @@ export const useProductStore = create<ProductState & ProductActions>(
         set({
           products: get().products.map((product) =>
             product.id === id
-              ? { ...product, stock: newStock, updatedAt: new Date() }
+              ? { ...product, stock: newStock, updatedAt: new Date(), stockHistory: updatedHistory }
               : product
           ),
           isLoading: false,
         });
 
-        console.log(`✅ Stock updated: ${id} → ${newStock} (${reason || 'No reason'})`);
+        console.log(`✅ Stock updated: ${id} → ${newStock} (${reason || 'No reason'}) - History logged`);
       } catch (error) {
         console.error("Error updating stock:", error);
         set({ isLoading: false });
@@ -247,12 +263,27 @@ export const useProductStore = create<ProductState & ProductActions>(
           throw new Error("Product does not have variants");
         }
 
-        // Update the specific variant's stock
-        const updatedVariants = productData.variants.map(variant =>
-          variant.id === variantId
-            ? { ...variant, stock: newStock, updatedAt: new Date() }
-            : variant
-        );
+        // Update the specific variant's stock and add history
+        const updatedVariants = productData.variants.map(variant => {
+          if (variant.id === variantId) {
+            const existingHistory = variant.stockHistory || [];
+            const newHistoryEntry: StockHistory = {
+              timestamp: new Date(),
+              quantity: newStock,
+              reason: reason || "Variant stock update",
+              notes: `Variant ${variant.name} stock changed to ${newStock}`
+            };
+            const updatedHistory = [...existingHistory, newHistoryEntry];
+
+            return {
+              ...variant,
+              stock: newStock,
+              updatedAt: new Date(),
+              stockHistory: updatedHistory
+            };
+          }
+          return variant;
+        });
 
         // Calculate new total stock
         const totalStock = updatedVariants.reduce((sum, variant) => sum + variant.stock, 0);

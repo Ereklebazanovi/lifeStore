@@ -1,7 +1,15 @@
 //excelExporter.ts
 import * as XLSX from "xlsx-js-style";
-import type { Order, Product, ProductVariant } from "../types";
+import type { Order, Product, ProductVariant, StockHistory } from "../types";
 import { getOrderItemDisplayName } from "./displayHelpers";
+
+const getStockAtDate = (stockHistory: StockHistory[] | undefined, targetDate: Date): number => {
+  if (!stockHistory || stockHistory.length === 0) return 0;
+  const relevantHistory = stockHistory.filter(h => new Date(h.timestamp) <= targetDate);
+  if (relevantHistory.length === 0) return 0;
+  relevantHistory.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return relevantHistory[0].quantity;
+};
 
 export const exportSingleOrderToExcel = (order: Order) => {
   try {
@@ -356,7 +364,7 @@ export const exportInventoryToExcel = (
       // ვარიანტებიანი პროდუქტი
       if (product.hasVariants && product.variants && product.variants.length > 0) {
         product.variants.forEach((variant) => {
-           const stock = variant.stock || 0;
+           const stock = dateRange ? getStockAtDate(variant.stockHistory, dateRange.endDate) : (variant.stock || 0);
            const price = variant.price || 0;
            const totalValue = stock * price;
 
@@ -375,7 +383,7 @@ export const exportInventoryToExcel = (
         });
       } else {
         // მარტივი პროდუქტი
-        const stock = product.stock || 0;
+        const stock = dateRange ? getStockAtDate(product.stockHistory, dateRange.endDate) : (product.stock || 0);
         const price = product.price || 0;
         const totalValue = stock * price;
 

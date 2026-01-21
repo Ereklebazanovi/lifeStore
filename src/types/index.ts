@@ -9,17 +9,25 @@ export type OrderSource =
   | "personal"
   | "other";
 
-// Variant represents a specific variation of a product (e.g., "Round 500ml", "Square 850ml")
+export interface StockHistory {
+  timestamp: Date;
+  quantity: number;
+  reason: string;
+  orderId?: string;
+  notes?: string;
+}
+
 export interface ProductVariant {
-  id: string; // Unique ID for each variant (e.g., "var_123abc")
-  name: string; // User-defined name (e.g., "Round 500ml", "Bamboo Lid", "3-Piece Set")
-  price: number; // Variant-specific regular price
-  salePrice?: number; // Optional discounted price (when on sale)
-  stock: number; // Variant-specific stock
-  weight?: number; // Weight in grams (გრ)
-  isActive: boolean; // Can be disabled without deleting
+  id: string;
+  name: string;
+  price: number;
+  salePrice?: number;
+  stock: number;
+  weight?: number;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  stockHistory?: StockHistory[];
 }
 
 // Main Product acts as a container for variants or standalone item
@@ -36,16 +44,17 @@ export interface Product {
   variants?: ProductVariant[]; // Array of variants (only if hasVariants=true)
 
   // For non-variant products (simple products) - Backward compatible
-  price: number; // Always present for backward compatibility
-  salePrice?: number; // Optional discounted price for simple products
+  price: number;
+  salePrice?: number;
   originalPrice?: number;
-  stock: number; // Always present for backward compatibility
-  weight?: number; // Weight in grams (გრ) for simple products
+  stock: number;
+  weight?: number;
+  stockHistory?: StockHistory[];
 
   // Computed fields (read-only)
-  totalStock?: number; // Sum of all variant stocks (auto-calculated)
-  minPrice?: number; // Lowest price among variants (auto-calculated)
-  maxPrice?: number; // Highest price among variants (auto-calculated)
+  totalStock?: number;
+  minPrice?: number;
+  maxPrice?: number;
 
   // Meta
   featured?: boolean;
