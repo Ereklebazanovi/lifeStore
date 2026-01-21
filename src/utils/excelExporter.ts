@@ -364,7 +364,7 @@ export const exportInventoryToExcel = (
     });
 
     // 5. ექსელის აწყობა
-    const worksheet = XLSX.utils.json_to_sheet(flattenedData, { origin: "A2" });
+    const worksheet = XLSX.utils.json_to_sheet(flattenedData);
     const workbook = XLSX.utils.book_new();
 
     XLSX.utils.sheet_add_aoa(worksheet, [[reportTitle]], { origin: "A1" });
