@@ -1,40 +1,34 @@
-// src/utils/excelExporter.ts
+//excelExporter.ts
 import * as XLSX from "xlsx-js-style";
-import type { Order, Product, StockHistory } from "../types";
+import type { Order, Product, ProductVariant, StockHistory } from "../types";
 import { getOrderItemDisplayName } from "./displayHelpers";
 
-// ✅ შესწორებული: იღებს currentStock-ს და აბრუნებს მას, თუ ისტორია არ არის
-const getStockAtDate = (
-  currentStock: number, 
-  stockHistory: StockHistory[] | undefined, 
-  targetDate: Date
-): number => {
-  // 1. თუ ისტორია საერთოდ არ გვაქვს, ვაბრუნებთ იმას, რაც ახლაა
+const getStockAtDate = (stockHistory: StockHistory[] | undefined, targetDate: Date): number => {
   if (!stockHistory || stockHistory.length === 0) {
-    return currentStock;
+    return 0;
   }
 
-  // 2. ვფილტრავთ: გვინდა მხოლოდ ის ჩანაწერები, რომლებიც მოხდა "targetDate"-ამდე
-  const relevantHistory = stockHistory.filter(entry => {
-    const entryDate = entry.timestamp instanceof Date 
-      ? entry.timestamp 
-      : new Date(entry.timestamp);
-    return entryDate.getTime() <= targetDate.getTime();
+  const relevantHistory = stockHistory.filter(h => {
+    // Handle Firebase Timestamp objects
+    const historyDate = h.timestamp instanceof Date
+      ? h.timestamp
+      : h.timestamp?.toDate
+        ? h.timestamp.toDate()
+        : new Date(h.timestamp);
+
+    return historyDate <= targetDate;
   });
 
-  // 3. თუ ძველი ჩანაწერი არ არსებობს, მაინც ვაბრუნებთ მიმდინარეს
   if (relevantHistory.length === 0) {
-    return currentStock; 
+    return 0;
   }
 
-  // 4. ვალაგებთ თარიღის მიხედვით (ახლიდან - ძველისკენ)
   relevantHistory.sort((a, b) => {
-    const dateA = a.timestamp instanceof Date ? a.timestamp : new Date(a.timestamp);
-    const dateB = b.timestamp instanceof Date ? b.timestamp : new Date(b.timestamp);
+    const dateA = a.timestamp instanceof Date ? a.timestamp : a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+    const dateB = b.timestamp instanceof Date ? b.timestamp : b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
     return dateB.getTime() - dateA.getTime();
   });
 
-  // 5. ვიღებთ Snapshot-ს
   return relevantHistory[0].quantity;
 };
 
@@ -94,13 +88,26 @@ export const exportSingleOrderToExcel = (order: Order) => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, order.orderNumber);
 
+    // Auto-fit columns
     const colWidths = [
-      { wch: 16 }, { wch: 18 }, { wch: 14 }, { wch: 15 }, { wch: 30 },
-      { wch: 12 }, { wch: 15 }, { wch: 16 }, { wch: 14 }, { wch: 16 },
-      { wch: 18 }, { wch: 16 }, { wch: 28 }, { wch: 28 },
+      { wch: 16 }, // თარიღი
+      { wch: 18 }, // შეკვეთის ნომერი
+      { wch: 14 }, // სტატუსი
+      { wch: 15 }, // პროდუქტის კოდი
+      { wch: 30 }, // პროდუქტის დასახელება
+      { wch: 12 }, // რაოდენობა
+      { wch: 15 }, // ერთეულის ფასი
+      { wch: 16 }, // საკურიერო თანხა
+      { wch: 14 }, // სულ თანხა
+      { wch: 16 }, // გადახდის მეთოდი
+      { wch: 18 }, // მყიდველი
+      { wch: 16 }, // ტელეფონის ნომერი
+      { wch: 28 }, // მისამართი
+      { wch: 28 }, // კომენტარი
     ];
     worksheet["!cols"] = colWidths;
 
+    // Header style - Bold with light gray background
     const headerStyle = {
       font: { bold: true, sz: 12, color: { rgb: "000000" } },
       fill: { fgColor: { rgb: "D9E1F2" } },
@@ -113,6 +120,7 @@ export const exportSingleOrderToExcel = (order: Order) => {
       },
     };
 
+    // Apply header styling
     const headerRange = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
     for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
       const address = XLSX.utils.encode_col(C) + "1";
@@ -120,21 +128,35 @@ export const exportSingleOrderToExcel = (order: Order) => {
       worksheet[address].s = headerStyle;
     }
 
+    // Apply data row styling - all rows same color for single order
     for (let row = 2; row <= flattenedData.length + 1; row++) {
       for (let col = 0; col < 14; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row - 1, c: col });
         if (!worksheet[cellAddress]) continue;
         if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
 
-        worksheet[cellAddress].s.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+        // Center alignment for most columns
+        worksheet[cellAddress].s.alignment = {
+          horizontal: "center",
+          vertical: "center",
+          wrapText: true,
+        };
 
+        // Right alignment for numeric columns (F, G, H, I)
         const colLetter = XLSX.utils.encode_col(col);
         if (["F", "G", "H", "I"].includes(colLetter)) {
-          worksheet[cellAddress].s.alignment = { horizontal: "right", vertical: "center", wrapText: true };
+          worksheet[cellAddress].s.alignment = {
+            horizontal: "right",
+            vertical: "center",
+            wrapText: true,
+          };
+          // Number format for these columns
           if (worksheet[cellAddress].v !== "" && worksheet[cellAddress].v !== undefined) {
             worksheet[cellAddress].s.numFmt = "#,##0.00";
           }
         }
+
+        // Borders for all cells
         worksheet[cellAddress].s.border = {
           top: { style: "thin", color: { rgb: "000000" } },
           bottom: { style: "thin", color: { rgb: "000000" } },
@@ -162,11 +184,26 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
     const flattenedData: any[] = [];
 
     orders.forEach((order) => {
-      const orderDate = order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt as any);
+      const orderDate = order.createdAt instanceof Date
+        ? order.createdAt
+        : new Date(order.createdAt as any);
+
       const formattedDate = orderDate.toLocaleDateString("ka-GE");
       const address = `${order.deliveryInfo.city}, ${order.deliveryInfo.address}`;
       const customerName = `${order.customerInfo.firstName} ${order.customerInfo.lastName}`.trim();
-      const paymentMethodText = order.paymentMethod === "cash" ? "ნაღდი ფული" : order.paymentMethod === "tbc_bank" ? "TBC ბანკი" : "ბარათით";
+      const paymentMethodText =
+        order.paymentMethod === "cash"
+          ? "ნაღდი ფული"
+          : order.paymentMethod === "tbc_bank"
+          ? "TBC ბანკი"
+          : order.paymentMethod === "flitt"
+          ? "Flitt"
+          : order.paymentMethod === "visa"
+          ? "Visa"
+          : order.paymentMethod === "mastercard"
+          ? "MasterCard"
+          : "საბანკო გადარიცხვა";
+
       const shippingCost = order.deliveryInfo.shippingCost || 0;
       const totalAllItems = order.items.reduce((sum, item) => sum + item.total, 0);
       const orderGrandTotal = totalAllItems + shippingCost;
@@ -201,12 +238,24 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
     XLSX.utils.book_append_sheet(workbook, worksheet, "შეკვეთები");
 
     const colWidths = [
-        { wch: 16 }, { wch: 18 }, { wch: 14 }, { wch: 15 }, { wch: 30 },
-        { wch: 12 }, { wch: 15 }, { wch: 16 }, { wch: 14 }, { wch: 16 },
-        { wch: 18 }, { wch: 16 }, { wch: 28 }, { wch: 28 },
+      { wch: 16 }, // თარიღი
+      { wch: 18 }, // შეკვეთის ნომერი
+      { wch: 14 }, // სტატუსი
+      { wch: 15 }, // პროდუქტის კოდი
+      { wch: 30 }, // პროდუქტის დასახელება
+      { wch: 12 }, // რაოდენობა
+      { wch: 15 }, // ერთეულის ფასი
+      { wch: 16 }, // საკურიერო თანხა
+      { wch: 14 }, // სულ თანხა
+      { wch: 16 }, // გადახდის მეთოდი
+      { wch: 18 }, // მყიდველი
+      { wch: 16 }, // ტელეფონის ნომერი
+      { wch: 28 }, // მისამართი
+      { wch: 28 }, // კომენტარი
     ];
     worksheet["!cols"] = colWidths;
 
+    // Header style - Bold with light gray background
     const headerStyle = {
       font: { bold: true, sz: 12, color: { rgb: "000000" } },
       fill: { fgColor: { rgb: "D9E1F2" } },
@@ -226,29 +275,52 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
       worksheet[address].s = headerStyle;
     }
 
-    const yellowFill = { fgColor: { rgb: "FFFF99" } };
+    // Highlight order number column when order changes
+    const yellowFill = { fgColor: { rgb: "FFFF99" } }; // ყვითალი
     let lastOrderNumber = null;
 
     for (let row = 2; row <= flattenedData.length + 1; row++) {
       const orderNumberCell = "B" + row;
       const currentOrderNumber = worksheet[orderNumberCell]?.v;
       const isNewOrder = currentOrderNumber !== lastOrderNumber;
-      if (isNewOrder) lastOrderNumber = currentOrderNumber;
 
+      if (isNewOrder) {
+        lastOrderNumber = currentOrderNumber;
+      }
+
+      // ვასტილავთ მთელ რიგს
       for (let col = 0; col < 14; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row - 1, c: col });
         if (!worksheet[cellAddress]) continue;
         if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
-        if (col === 1 && isNewOrder) worksheet[cellAddress].s.fill = yellowFill;
 
-        worksheet[cellAddress].s.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+        // ყვითალი ფერი მხოლოდ სვეტი B-ში (შეკვეთის ნომერი) როდესაც იწყება ახალი შეკვეთა
+        if (col === 1 && isNewOrder) { // col 1 = column B
+          worksheet[cellAddress].s.fill = yellowFill;
+        }
+
+        // Center alignment for most columns
+        worksheet[cellAddress].s.alignment = {
+          horizontal: "center",
+          vertical: "center",
+          wrapText: true,
+        };
+
+        // Right alignment for numeric columns (F, G, H, I)
         const colLetter = XLSX.utils.encode_col(col);
         if (["F", "G", "H", "I"].includes(colLetter)) {
-          worksheet[cellAddress].s.alignment = { horizontal: "right", vertical: "center", wrapText: true };
+          worksheet[cellAddress].s.alignment = {
+            horizontal: "right",
+            vertical: "center",
+            wrapText: true,
+          };
+          // Number format for these columns
           if (worksheet[cellAddress].v !== "" && worksheet[cellAddress].v !== undefined) {
-             worksheet[cellAddress].s.numFmt = "#,##0.00";
+            worksheet[cellAddress].s.numFmt = "#,##0.00";
           }
         }
+
+        // Borders for all cells
         worksheet[cellAddress].s.border = {
           top: { style: "thin", color: { rgb: "000000" } },
           bottom: { style: "thin", color: { rgb: "000000" } },
@@ -263,6 +335,7 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
 
     const filename = `შეკვეთები_ექსპორტი_${new Date().toISOString().split("T")[0]}.xlsx`;
     XLSX.writeFile(workbook, filename);
+
     return true;
   } catch (error) {
     console.error("Excel export error:", error);
@@ -270,7 +343,21 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
   }
 };
 
-// ✅ განახლებული ინვენტარის ექსპორტი
+// ინვენტარის ექსპორტი
+export interface InventoryExportData {
+  productId: string;
+  productName: string;
+  productCode?: string;
+  category?: string;
+  variantName?: string;
+  price: number;
+  stock: number;
+  totalValue: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+
 export const exportInventoryToExcel = (
   products: Product[],
   selectedProductIds: Set<string>,
@@ -284,7 +371,7 @@ export const exportInventoryToExcel = (
       ? products.filter(p => selectedProductIds.has(p.id))
       : products; 
 
-    // ✅ შესწორება: დროის გასწორება დღის ბოლომდე
+      // ✅ შესწორება: დროის გასწორება დღის ბოლომდე
     let adjustedEndDate: Date | undefined;
     if (dateRange) {
       adjustedEndDate = new Date(dateRange.endDate);
@@ -306,11 +393,7 @@ export const exportInventoryToExcel = (
       // ვარიანტებიანი პროდუქტი
       if (product.hasVariants && product.variants && product.variants.length > 0) {
         product.variants.forEach((variant) => {
-           // ✅ ვიყენებთ adjustedEndDate-ს და ვაწვდით currentStock-ს
-           const stock = dateRange && adjustedEndDate
-             ? getStockAtDate(variant.stock || 0, variant.stockHistory, adjustedEndDate) 
-             : (variant.stock || 0);
-             
+           const stock = dateRange && adjustedEndDate ? getStockAtDate(variant.stockHistory, adjustedEndDate) : (variant.stock || 0);
            const price = variant.price || 0;
            const totalValue = stock * price;
 
@@ -319,7 +402,7 @@ export const exportInventoryToExcel = (
 
            flattenedData.push({
              "პროდუქტის დასახელება": product.name,
-             "კოდი (SKU)": product.productCode || "-",
+             "პროდუქტის კოდი": product.productCode || "-",
              "კატეგორია": product.category || "-",
              "ვარიანტი": variant.name,
              "ერთეულის ფასი (₾)": price,
@@ -329,11 +412,7 @@ export const exportInventoryToExcel = (
         });
       } else {
         // მარტივი პროდუქტი
-        // ✅ ვიყენებთ adjustedEndDate-ს და ვაწვდით currentStock-ს
-        const stock = dateRange && adjustedEndDate
-           ? getStockAtDate(product.stock || 0, product.stockHistory, adjustedEndDate) 
-           : (product.stock || 0);
-
+        const stock = dateRange && adjustedEndDate ? getStockAtDate(product.stockHistory, adjustedEndDate) : (product.stock || 0);
         const price = product.price || 0;
         const totalValue = stock * price;
 
@@ -342,7 +421,7 @@ export const exportInventoryToExcel = (
 
         flattenedData.push({
           "პროდუქტის დასახელება": product.name,
-          "კოდი (SKU)": product.productCode || "-",
+          "პროდუქტის კოდი": product.productCode || "-",
           "კატეგორია": product.category || "-",
           "ვარიანტი": "-",
           "ერთეულის ფასი (₾)": price,
@@ -355,7 +434,7 @@ export const exportInventoryToExcel = (
     // 4. ჯამური სტრიქონის დამატება
     flattenedData.push({
       "პროდუქტის დასახელება": "სულ ჯამში:",
-      "კოდი (SKU)": "",
+      "პროდუქტის კოდი": "",
       "კატეგორია": "",
       "ვარიანტი": "",
       "ერთეულის ფასი (₾)": "",
@@ -364,19 +443,31 @@ export const exportInventoryToExcel = (
     });
 
     // 5. ექსელის აწყობა
-    const worksheet = XLSX.utils.json_to_sheet(flattenedData);
+    // ჯერ სათაური A1-ში
+    const worksheet = XLSX.utils.aoa_to_sheet([[reportTitle]]);
+
+    // შემდეგ მონაცემები A2-დან
+    XLSX.utils.sheet_add_json(worksheet, flattenedData, { origin: "A2" });
+
     const workbook = XLSX.utils.book_new();
 
-    XLSX.utils.sheet_add_aoa(worksheet, [[reportTitle]], { origin: "A1" });
-
+    // A1 უჯრის გაერთიანება (Merge) მთელ სიგანეზე (A-დან G-მდე)
     if(!worksheet["!merges"]) worksheet["!merges"] = [];
-    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
+    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }); // Row 0, Col 0 to Col 6
 
+    // 6. სვეტების სიგანეები
     const colWidths = [
-      { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 },
+      { wch: 30 }, // A: სახელი
+      { wch: 15 }, // B: SKU
+      { wch: 15 }, // C: კატეგორია
+      { wch: 15 }, // D: ვარიანტი
+      { wch: 15 }, // E: ფასი
+      { wch: 15 }, // F: მარაგი
+      { wch: 20 }, // G: ჯამი
     ];
     worksheet["!cols"] = colWidths;
 
+    // 7. სტილები
     const borderStyle = {
       top: { style: "thin", color: { rgb: "000000" } },
       bottom: { style: "thin", color: { rgb: "000000" } },
@@ -384,12 +475,14 @@ export const exportInventoryToExcel = (
       right: { style: "thin", color: { rgb: "000000" } },
     };
 
+    // სტილი მთავარი სათაურისთვის (Row 1)
     const titleStyle = {
-      font: { bold: true, sz: 14, color: { rgb: "4472C4" } },
+      font: { bold: true, sz: 14, color: { rgb: "4472C4" } }, // ლურჯი ტექსტი
       alignment: { horizontal: "center", vertical: "center" },
-      fill: { fgColor: { rgb: "FFFFFF" } }
+      fill: { fgColor: { rgb: "FFFFFF" } } // თეთრი ფონი
     };
 
+    // სტილი ჰედერისთვის (Row 2) - მუქი ლურჯი
     const headerStyle = {
       font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
       fill: { fgColor: { rgb: "4472C4" } }, 
@@ -397,13 +490,15 @@ export const exportInventoryToExcel = (
       border: borderStyle,
     };
 
+    // სტილი ჯამური სტრიქონისთვის (ბოლო რიგი)
     const summaryStyle = {
       font: { bold: true },
-      fill: { fgColor: { rgb: "E2EFDA" } },
+      fill: { fgColor: { rgb: "E2EFDA" } }, // ღია მწვანე/ყვითელი
       border: borderStyle,
       alignment: { horizontal: "right" }
     };
 
+    // ყვითელი სვეტი ფულისთვის
     const currencyYellowStyle = {
       alignment: { horizontal: "right", vertical: "center" },
       numFmt: "#,##0.00",
@@ -427,32 +522,48 @@ export const exportInventoryToExcel = (
       border: borderStyle
     };
 
+    // სათაურის სტილის დადება (A1)
     if(!worksheet["A1"].s) worksheet["A1"].s = {};
     worksheet["A1"].s = titleStyle;
+    // სიმაღლე სათაურისთვის
     if(!worksheet["!rows"]) worksheet["!rows"] = [];
     worksheet["!rows"][0] = { hpx: 30 };
-    worksheet["!rows"][1] = { hpx: 25 };
+    worksheet["!rows"][1] = { hpx: 25 }; // Header height
 
     const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
     const lastRowIndex = range.e.r;
 
-    for (let R = 1; R <= lastRowIndex; ++R) {
+    // ციკლი ყველა უჯრაზე
+    for (let R = 1; R <= lastRowIndex; ++R) { // ვიწყებთ 1-დან (Row 2), რადგან 0 არის სათაური
       for (let C = 0; C <= 6; ++C) {
         const address = XLSX.utils.encode_cell({ r: R, c: C });
         if (!worksheet[address]) continue;
 
+        // 1. ჰედერის სტილი (Row 2)
         if (R === 1) {
           worksheet[address].s = headerStyle;
-        } else if (R === lastRowIndex) {
+        } 
+        // 2. ბოლო რიგის (ჯამების) სტილი
+        else if (R === lastRowIndex) {
           worksheet[address].s = summaryStyle;
+          // ფულის ფორმატი ბოლო რიგში
           if (C === 4 || C === 6) worksheet[address].s.numFmt = "#,##0.00";
-        } else {
+        } 
+        // 3. ჩვეულებრივი მონაცემები
+        else {
           const colLetter = XLSX.utils.encode_col(C);
-          if (colLetter === "G") worksheet[address].s = currencyYellowStyle;
-          else if (colLetter === "E") worksheet[address].s = currencyStyle;
-          else if (colLetter === "F") worksheet[address].s = centerStyle;
-          else if (colLetter === "A") worksheet[address].s = leftStyle;
-          else worksheet[address].s = centerStyle;
+          
+          if (colLetter === "G") { // Total Value (Column G)
+             worksheet[address].s = currencyYellowStyle;
+          } else if (colLetter === "E") { // Price (Column E)
+             worksheet[address].s = currencyStyle;
+          } else if (colLetter === "F") { // Stock (Column F)
+             worksheet[address].s = centerStyle;
+          } else if (colLetter === "A") { // Name
+             worksheet[address].s = leftStyle;
+          } else {
+             worksheet[address].s = centerStyle;
+          }
         }
       }
     }
@@ -465,7 +576,7 @@ export const exportInventoryToExcel = (
         success: true,
         totalStock: grandTotalStock,
         totalValue: grandTotalValue,
-        exportedProducts: flattenedData.length - 1 
+        exportedProducts: flattenedData.length - 1 // -1 გამოვაკლოთ Summary Row
     };
 
   } catch (error) {
