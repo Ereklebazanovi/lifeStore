@@ -62,6 +62,12 @@ export default async function handler(
         return false;
       }
 
+      // ⚠️ CRITICAL: Never expire manual orders - admin manages them manually
+      if (orderData.source && orderData.source !== "website") {
+        console.log(`🛠️ Skipping manual order: ${orderData.orderNumber} (source: ${orderData.source})`);
+        return false;
+      }
+
       // Only card orders should expire after 15 minutes
       return orderData.createdAt.toDate() <= cutoffTime;
     });
