@@ -520,14 +520,10 @@ export class OrderService {
         return;
       }
 
-      // 3. Rollback inventory
-      const inventoryItems = orderData.items.map((item: any) => ({
-        productId: item.productId,
-        variantId: item.variantId,
-        quantity: item.quantity,
-      }));
-
-      await this.rollbackProductInventory(inventoryItems);
+      // 3. No inventory rollback for manual cancellations
+      // Only automated expired order cleanup should rollback inventory
+      console.log(`⚠️ Manual cancellation - inventory NOT restored automatically`);
+      console.log(`📋 Admin should manually restore inventory if needed`);
 
       // 4. Update order status
       await updateDoc(orderDoc.ref, {
@@ -657,7 +653,7 @@ export class OrderService {
 
   /**
    * ✅ Rollback Product Inventory (Emergency Recovery)
-   * გამოიყენება თუ order creation-ის შემდეგ რაიმე შეცდომა მოხდება
+   * With History Logging!
    */
   private static async rollbackProductInventory(
     items: { productId: string; quantity: number; variantId?: string }[]
@@ -669,14 +665,13 @@ export class OrderService {
         item.productId !== "manual_entry"
     );
 
-    if (realProducts.length === 0) {
-      return;
-    }
+    if (realProducts.length === 0) return;
 
     try {
       const batch = writeBatch(db);
+      const timestamp = new Date(); // დროის ფიქსაცია
 
-      // Group items by productId for efficient rollback
+      // დაჯგუფება
       const groupedByProduct = new Map<string, typeof realProducts>();
       realProducts.forEach((item) => {
         if (!groupedByProduct.has(item.productId)) {
@@ -685,65 +680,92 @@ export class OrderService {
         groupedByProduct.get(item.productId)!.push(item);
       });
 
+      // თითოეული პროდუქტისთვის
       for (const [productId, itemsForProduct] of groupedByProduct) {
         const productRef = doc(db, "products", productId);
-
-        // დავაბრუნოთ უკან stock (დავამატოთ რაოდენობა)
         const productDoc = await getDoc(productRef);
+
         if (productDoc.exists()) {
-          const productData = productDoc.data();
+          const productData = productDoc.data() as Product;
           let updateData: any = { updatedAt: Timestamp.now() };
 
-          // Handle variants and simple products
+          let currentHistory: StockHistory[] = productData.stockHistory || [];
+
+          // Variants handling
           const variantItems = itemsForProduct.filter((item) => item.variantId);
           const simpleItems = itemsForProduct.filter((item) => !item.variantId);
 
-          // Rollback variant stocks
+          // 1. ვარიანტების უკან დაბრუნება
           if (variantItems.length > 0) {
             const variants = [...(productData.variants || [])];
+
             variantItems.forEach((item) => {
-              const variantIndex = variants.findIndex(
-                (v) => v.id === item.variantId
-              );
+              const variantIndex = variants.findIndex((v) => v.id === item.variantId);
+
               if (variantIndex !== -1) {
+                const oldStock = variants[variantIndex].stock || 0;
+                const newStock = oldStock + item.quantity;
+
+                // ✅ ისტორიის ჩანაწერი ვარიანტისთვის
+                const historyEntry: StockHistory = {
+                  timestamp: timestamp,
+                  quantity: newStock,
+                  reason: "Rollback (Error)",
+                  notes: `System rollback: +${item.quantity} returned (create failed)`
+                };
+
+                const variantHistory = variants[variantIndex].stockHistory || [];
+
                 variants[variantIndex] = {
                   ...variants[variantIndex],
-                  stock: (variants[variantIndex].stock || 0) + item.quantity,
-                  updatedAt: Timestamp.now(),
+                  stock: newStock,
+                  stockHistory: [...variantHistory, historyEntry] // ვამატებთ ისტორიას
                 };
               }
             });
             updateData.variants = variants;
 
-            // Calculate and update parent stock fields for consistency
-            const totalStock = variants.reduce(
-              (sum, variant) => sum + (variant.stock || 0),
-              0
-            );
+            // მშობლის სტოკების განახლება
+            const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
             updateData.stock = totalStock;
             updateData.totalStock = totalStock;
           }
 
-          // Rollback simple product stock
+          // 2. მარტივი პროდუქტის უკან დაბრუნება
           if (simpleItems.length > 0) {
             const totalQuantityToRestore = simpleItems.reduce(
               (sum, item) => sum + item.quantity,
               0
             );
+
             const currentStock = productData.stock || 0;
-            updateData.stock = currentStock + totalQuantityToRestore;
-            updateData.totalStock = currentStock + totalQuantityToRestore; // Keep consistency for simple products
+            const newStock = currentStock + totalQuantityToRestore;
+
+            // ✅ ისტორიის ჩანაწერი!
+            const historyEntry: StockHistory = {
+               timestamp: timestamp,
+               quantity: newStock,
+               reason: "Rollback (Error)",
+               notes: `System rollback: +${totalQuantityToRestore} returned (create failed)`
+            };
+
+            currentHistory.push(historyEntry);
+
+            updateData.stock = newStock;
+            updateData.totalStock = newStock;
           }
+
+          // ისტორიის განახლება
+          updateData.stockHistory = currentHistory;
 
           batch.update(productRef, updateData);
         }
       }
 
       await batch.commit();
-      console.log("🔄 Product inventory rollback completed");
+      console.log("🔄 Product inventory rollback completed WITH HISTORY");
     } catch (error) {
       console.error("❌ Error during inventory rollback:", error);
-      // ეს არ უნდა fail-დეს, მაგრამ უნდა ვიცოდეთ რა მოხდა
     }
   }
 

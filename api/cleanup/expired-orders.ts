@@ -136,7 +136,21 @@ export default async function handler(
                 const variantIndex = variants.findIndex((v: any) => v.id === item.variantId);
                 if (variantIndex !== -1) {
                   // ვაბრუნებთ მარაგს კონკრეტულ ვარიანტში
-                  variants[variantIndex].stock = (variants[variantIndex].stock || 0) + item.quantity;
+                  const oldVariantStock = variants[variantIndex].stock || 0;
+                  const newVariantStock = oldVariantStock + item.quantity;
+
+                  // Add stock history entry for variant rollback
+                  const variantHistory = variants[variantIndex].stockHistory || [];
+                  const variantRollbackEntry = {
+                    timestamp: new Date(),
+                    quantity: newVariantStock,
+                    reason: "Order expired (auto rollback)",
+                    notes: `Variant stock restored by ${item.quantity} (payment timeout - 15 min)`
+                  };
+
+                  variants[variantIndex].stock = newVariantStock;
+                  variants[variantIndex].stockHistory = [...variantHistory, variantRollbackEntry];
+                  variants[variantIndex].updatedAt = FieldValue.serverTimestamp();
                   variantsUpdated = true;
                   console.log(`📦 Variant restored: ${item.productId} / ${item.variantId} (+${item.quantity})`);
                 }
@@ -150,6 +164,15 @@ export default async function handler(
               totalStock: FieldValue.increment(totalQuantityRestored),
               updatedAt: FieldValue.serverTimestamp(),
             };
+
+            // Add stock history entry for rollback tracking
+            const rollbackHistoryEntry = {
+              timestamp: new Date(),
+              quantity: (productData.stock || 0) + totalQuantityRestored, // New stock level
+              reason: "Order expired (auto rollback)",
+              notes: `Stock restored by ${totalQuantityRestored} (payment timeout - 15 min)`
+            };
+            updatePayload.stockHistory = FieldValue.arrayUnion(rollbackHistoryEntry);
 
             // ვარიანტებს ვანახლებთ მთლიანი მასივით
             if (variantsUpdated) {

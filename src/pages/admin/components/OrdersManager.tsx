@@ -1139,7 +1139,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
     try {
       await OrderService.cancelOrder(orderToCancel, cancelReason);
-      showToast("შეკვეთა გაუქმდა და პროდუქტები დაბრუნდა", "success");
+      showToast("შეკვეთა გაუქმდა. მარაგი ხელით აღადგინეთ საწყობში.", "success");
       setShowCancelModal(false);
       setOrderToCancel(null);
       setCancelReason("");
