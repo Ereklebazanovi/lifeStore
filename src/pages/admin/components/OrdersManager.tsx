@@ -1062,9 +1062,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   };
 
   const getFilteredOrders = () => {
-    let filteredByTab = getTabFilteredOrders(activeTab);
+    // If specific status is selected, override tab filtering
+    let baseOrders = statusFilter !== "all" ? orders : getTabFilteredOrders(activeTab);
 
-    return filteredByTab.filter((order) => {
+    return baseOrders.filter((order) => {
       const matchesSearch =
         order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.customerInfo.firstName
@@ -1143,6 +1144,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       setShowCancelModal(false);
       setOrderToCancel(null);
       setCancelReason("");
+      // Auto-switch to history tab to show cancelled orders
+      setActiveTab("history");
       onRefresh();
     } catch (error) {
       console.error("Error cancelling order:", error);
