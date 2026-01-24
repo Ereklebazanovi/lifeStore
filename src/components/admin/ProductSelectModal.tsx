@@ -204,6 +204,13 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
       };
     }
 
+    console.log("📦 ProductSelectModal.handleConfirm - onProductSelect called", {
+      productName: selectedProduct.name,
+      quantity,
+      stock,
+      variantId: selectedVariant?.id
+    });
+
     onProductSelect(selection, quantity);
     onClose();
   };

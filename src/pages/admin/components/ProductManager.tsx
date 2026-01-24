@@ -311,7 +311,7 @@ const ProductManager: React.FC = () => {
                     <div className="mt-3 flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="flex items-center">
-                          <DollarSign className="w-4 h-4 text-gray-400" />
+                         
                           <span className="text-sm font-semibold text-gray-900">
                             ₾{product.price.toFixed(2)}
                           </span>

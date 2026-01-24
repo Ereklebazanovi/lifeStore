@@ -147,6 +147,12 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    console.log("🔴 CreateManualOrderModal.handleSubmit called!", {
+      itemsCount: items.length,
+      items: items.map(i => ({ name: i.name, qty: i.quantity })),
+      timestamp: new Date().toISOString()
+    });
+
     // Validation
     if (!customerInfo.firstName || !customerInfo.phone) {
       showToast("შეავსეთ კლიენტის სახელი და ტელეფონი", "error");
