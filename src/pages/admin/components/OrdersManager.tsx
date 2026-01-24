@@ -1,5 +1,5 @@
 // src/pages/admin/components/OrdersManager.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
@@ -46,6 +46,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     "active"
   );
 
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -55,6 +57,11 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+
+  // Update last updated timestamp when orders change
+  useEffect(() => {
+    setLastUpdated(new Date());
+  }, [orders]);
 
   const getSourceIcon = (source?: string) => {
     switch (source) {
@@ -1190,12 +1197,27 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               </p>
             </div>
 
-            {/* Stats Badge */}
-            <div className="bg-gray-100 rounded-lg px-3 py-2 text-xs md:text-sm w-fit">
-              <span className="text-gray-600">სულ: </span>
-              <span className="font-semibold text-gray-900">
-                {filteredOrders.length} / {orders.length} შეკვეთა
-              </span>
+            {/* Stats Badge with Live Indicator */}
+            <div className="flex items-center gap-3">
+              <div className="bg-gray-100 rounded-lg px-3 py-2 text-xs md:text-sm w-fit">
+                <span className="text-gray-600">სულ: </span>
+                <span className="font-semibold text-gray-900">
+                  {filteredOrders.length} / {orders.length} შეკვეთა
+                </span>
+              </div>
+
+              {/* Live update indicator */}
+              {activeTab === "live" && (
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs">
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                  <span className="text-green-700 font-medium">რეალური დრო</span>
+                  {lastUpdated && (
+                    <span className="text-green-600 text-xs">
+                      {lastUpdated.toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Mobile Action Buttons */}
@@ -1236,46 +1258,51 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         {/* Tab Navigation */}
         <div className="border-b border-gray-200 mb-4">
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-            {[
-              {
-                id: "active",
-                name: "🟢 შესასრულებელი",
-                count: getTabFilteredOrders("active").length,
-              },
-              {
-                id: "live",
-                name: "🟡 ლაივ რეჟიმი",
-                count: getTabFilteredOrders("live").length,
-              },
-              {
-                id: "history",
-                name: "🔵 ისტორია",
-                count: getTabFilteredOrders("history").length,
-              },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                {tab.name}
-                {tab.count > 0 && (
-                  <span
-                    className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
-                      activeTab === tab.id
-                        ? "bg-blue-100 text-blue-600"
-                        : "bg-gray-100 text-gray-900"
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            ))}
+            {(() => {
+              // Calculate tab counts dynamically for real-time updates
+              const tabs = [
+                {
+                  id: "active",
+                  name: "🟢 შესასრულებელი",
+                  count: getTabFilteredOrders("active").length,
+                },
+                {
+                  id: "live",
+                  name: "🟡 ლაივ რეჟიმი",
+                  count: getTabFilteredOrders("live").length,
+                },
+                {
+                  id: "history",
+                  name: "🔵 ისტორია",
+                  count: getTabFilteredOrders("history").length,
+                },
+              ];
+
+              return tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  {tab.name}
+                  {tab.count > 0 && (
+                    <span
+                      className={`ml-2 py-0.5 px-2 rounded-full text-xs transition-all duration-200 ${
+                        activeTab === tab.id
+                          ? "bg-blue-100 text-blue-600"
+                          : "bg-gray-100 text-gray-900"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ));
+            })()}
           </nav>
         </div>
 

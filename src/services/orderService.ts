@@ -15,6 +15,7 @@ import {
   runTransaction,
   writeBatch,
   limit,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { ADMIN_CONFIG, SITE_CONFIG } from "../config/constants";
@@ -1050,6 +1051,52 @@ export class OrderService {
     } catch (error) {
       console.error("❌ Error getting all orders:", error);
       throw new Error("შეკვეთების მოძიება ვერ მოხერხდა");
+    }
+  }
+
+  /**
+   * Subscribe to real-time orders updates
+   */
+  static subscribeToOrders(
+    callback: (orders: Order[]) => void,
+    errorCallback?: (error: Error) => void
+  ): () => void {
+    try {
+      const ordersRef = collection(db, this.COLLECTION_NAME);
+      const allQuery = query(ordersRef, orderBy("createdAt", "desc"));
+
+      const unsubscribe = onSnapshot(
+        allQuery,
+        (snapshot) => {
+          const orders = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              ...data,
+              createdAt: data.createdAt.toDate(),
+              updatedAt: data.updatedAt.toDate(),
+              paidAt: data.paidAt ? data.paidAt.toDate() : undefined,
+              deliveredAt: data.deliveredAt ? data.deliveredAt.toDate() : undefined,
+              cancelledAt: data.cancelledAt ? data.cancelledAt.toDate() : undefined,
+              id: doc.id,
+            } as Order;
+          });
+          callback(orders);
+        },
+        (error) => {
+          console.error("❌ Error in orders subscription:", error);
+          if (errorCallback) {
+            errorCallback(error);
+          }
+        }
+      );
+
+      return unsubscribe;
+    } catch (error) {
+      console.error("❌ Error setting up orders subscription:", error);
+      if (errorCallback) {
+        errorCallback(error as Error);
+      }
+      return () => {}; // Return empty unsubscribe function
     }
   }
 

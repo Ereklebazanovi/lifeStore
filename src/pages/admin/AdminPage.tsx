@@ -17,7 +17,6 @@ import { showToast } from "../../components/ui/Toast";
 
 import {
   Plus,
-  RefreshCw,
   AlertTriangle,
   Package,
   ShoppingBag,
@@ -29,50 +28,51 @@ import type { Order } from "../../types";
 
 const AdminPage: React.FC = () => {
   const { user, isLoading } = useAuthStore();
-  const { products, fetchProducts } = useProductStore();
+  const { products, subscribeToProducts } = useProductStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("dashboard");
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
-  // Fetch data when admin or manager logs in
+  // Set up real-time listeners when admin or manager logs in
   useEffect(() => {
     if (user?.role === "admin" || user?.role === "manager") {
-      fetchProducts();
-      fetchOrdersData();
+      // Set up real-time products listener
+      const unsubscribeProducts = subscribeToProducts();
+
+      // Set up real-time orders listener
+      const unsubscribeOrders = OrderService.subscribeToOrders(
+        (newOrders) => {
+          console.log("🔥 Real-time orders update received:", newOrders.length, "orders");
+          setOrders(newOrders);
+          setOrdersLoading(false);
+        },
+        (error) => {
+          console.error("Orders subscription error:", error);
+          setOrdersLoading(false);
+        }
+      );
 
       // Manager-ისთვის automatic redirect Orders page-ზე
       if (user?.role === "manager") {
         setActiveSection("orders");
       }
-    }
-  }, [user, fetchProducts]);
 
-  const fetchOrdersData = async () => {
-    try {
-      setOrdersLoading(true);
-      const allOrders = await OrderService.getAllOrders();
-      setOrders(allOrders);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally {
-      setOrdersLoading(false);
+      // Cleanup function
+      return () => {
+        unsubscribeProducts();
+        unsubscribeOrders();
+      };
     }
-  };
+  }, [user, subscribeToProducts]);
+
+
 
   if (isLoading) {
     return <LoadingSpinner />;
   }
 
-  // Quick action handlers
-  const handleRefreshData = () => {
-    console.log("🔄 Refreshing all data...");
-    fetchProducts(); // from useProductStore
-    fetchOrdersData(); // local function
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    showToast && showToast("მონაცემები განახლდა", "success");
-  };
 
   // Content renderer based on active section
 
@@ -103,11 +103,11 @@ const AdminPage: React.FC = () => {
                     <span className="text-sm text-gray-700">შეკვეთები</span>
                   </button>
                   <button
-                    onClick={handleRefreshData}
+                    onClick={() => setActiveSection("analytics")}
                     className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm"
                   >
-                    <RefreshCw className="w-5 h-5 text-indigo-600" />
-                    <span className="text-sm text-gray-700">განახლება</span>
+                    <TrendingDown className="w-5 h-5 text-indigo-600" />
+                    <span className="text-sm text-gray-700">ანალიტიკა</span>
                   </button>
                 </div>
                 <AdminStats products={products} />
@@ -207,7 +207,7 @@ const AdminPage: React.FC = () => {
         return ordersLoading ? (
           <LoadingSpinner />
         ) : (
-          <OrdersManager orders={orders} onRefresh={fetchOrdersData} />
+          <OrdersManager orders={orders} onRefresh={() => {}} />
         );
 
       case "inventory":
@@ -404,7 +404,10 @@ case "analytics": {
         <AddProductDrawer
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
-          onProductAdded={fetchProducts}
+          onProductAdded={() => {
+            // Real-time listener will automatically update products
+            showToast("პროდუქტი წარმატებით დაემატა!", "success");
+          }}
         />
       )}
 
@@ -414,8 +417,8 @@ case "analytics": {
           isOpen={isManualOrderModalOpen}
           onClose={() => setIsManualOrderModalOpen(false)}
           onOrderCreated={() => {
-            fetchOrdersData(); // Refresh orders list
-            fetchProducts(); // Refresh products to update stock
+            // Real-time listeners will automatically update both orders and products
+            showToast("შეკვეთა წარმატებით შეიქმნა!", "success");
           }}
         />
       )}
