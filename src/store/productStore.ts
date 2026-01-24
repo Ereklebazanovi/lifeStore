@@ -36,12 +36,19 @@ interface ProductActions {
   setLoading: (loading: boolean) => void;
 }
 
-export const useProductStore = create<ProductState & ProductActions>(
+interface StoreState extends ProductState & ProductActions {
+  isCreatingOrder: boolean;
+  setIsCreatingOrder: (creating: boolean) => void;
+}
+
+export const useProductStore = create<StoreState>(
   (set, get) => ({
     products: [],
     isLoading: false,
     categories: [],
+    isCreatingOrder: false,
 
+    setIsCreatingOrder: (creating: boolean) => set({ isCreatingOrder: creating }),
     setLoading: (loading: boolean) => set({ isLoading: loading }),
 
     fetchProducts: async () => {
@@ -572,12 +579,26 @@ export const useProductStore = create<ProductState & ProductActions>(
       const q = query(productsRef, orderBy("createdAt", "desc"));
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
+        const state = get();
+
+        // ⚠️ Skip updates while creating order to avoid transaction conflicts
+        if (state.isCreatingOrder) {
+          console.log("⏸️ subscribeToProducts update skipped (order creation in progress)");
+          return;
+        }
+
+        console.log("🔥 subscribeToProducts triggered", {
+          docChanges: snapshot.docChanges().length,
+          docs: snapshot.docs.length,
+          timestamp: new Date().toISOString()
+        });
+
         let products: Product[] = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
           createdAt: doc.data().createdAt?.toDate() || new Date(),
           updatedAt: doc.data().updatedAt?.toDate() || new Date(),
-          priority: doc.data().priority || 0, // Default priority to 0
+          priority: doc.data().priority || 0,
         })) as Product[];
 
         // Sort products by priority and date

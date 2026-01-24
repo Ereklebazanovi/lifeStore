@@ -1085,7 +1085,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
 
-      const orderDate = order.createdAt.toISOString().split("T")[0];
+      const orderDate = order.createdAt && !isNaN(order.createdAt.getTime())
+        ? order.createdAt.toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0];
       const matchesDateFrom = !dateFrom || orderDate >= dateFrom;
       const matchesDateTo = !dateTo || orderDate <= dateTo;
 

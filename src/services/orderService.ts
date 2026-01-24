@@ -58,6 +58,27 @@ export class OrderService {
   }
 
   /**
+   * Clean object by removing undefined values (Firestore safe)
+   */
+  private static cleanObject(obj: any): any {
+    if (typeof obj !== 'object' || obj === null) {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.cleanObject(item));
+    }
+
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = this.cleanObject(value);
+      }
+    }
+    return cleaned;
+  }
+
+  /**
    * Convert CartItem[] to OrderItem[] (For Website Orders)
    */
   private static convertCartItemsToOrderItems(
@@ -163,25 +184,31 @@ export class OrderService {
       }
 
       // Fallback for manual entries or failed product fetches
+      const manualProduct: any = {
+        id: item.productId || "manual_entry",
+        productCode: "MANUAL",
+        name: item.name,
+        description: "Added manually by admin",
+        price: item.price,
+        images: [],
+        category: "manual",
+        stock: 0,
+        hasVariants: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isActive: true,
+      };
+
+      // Only add weight if it exists
+      if (item.weight) {
+        manualProduct.weight = item.weight;
+      }
+
       const manualOrderItem: OrderItem = {
         productId:
           item.productId ||
           `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        product: {
-          id: item.productId || "manual_entry",
-          productCode: "MANUAL",
-          name: item.name,
-          description: "Added manually by admin",
-          price: item.price,
-          images: [],
-          category: "manual",
-          stock: 0,
-          hasVariants: false,
-          weight: item.weight,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          isActive: true,
-        },
+        product: manualProduct,
         quantity: item.quantity,
         price: item.price,
         total: item.quantity * item.price,
@@ -222,6 +249,13 @@ export class OrderService {
       console.log("📦 No real products to update inventory for");
       return;
     }
+
+    console.log("🚨 updateProductInventory called!", {
+      orderNumber,
+      items: realProducts,
+      timestamp: new Date().toISOString(),
+      stack: new Error().stack?.split('\n').slice(0, 5).join('\n')
+    });
 
     try {
       await runTransaction(db, async (transaction) => {
@@ -954,11 +988,18 @@ export class OrderService {
         adminNotes: "Manually added via Admin Panel",
       };
 
-      const firestorePayload = {
+      const firestorePayload = this.cleanObject({
         ...order,
         createdAt: Timestamp.fromDate(order.createdAt),
         updatedAt: Timestamp.fromDate(order.updatedAt),
-      };
+      });
+
+      console.log("🔍 Order object before save:", {
+        orderNumber,
+        orderKeys: Object.keys(order),
+        payloadKeys: Object.keys(firestorePayload),
+        undefinedFields: Object.entries(firestorePayload).filter(([_, v]) => v === undefined).map(([k]) => k)
+      });
 
       // 4. Save
       await setDoc(orderRef, firestorePayload);
@@ -971,6 +1012,14 @@ export class OrderService {
       return order;
     } catch (error) {
       console.error("❌ Error creating manual order:", error);
+
+      if (error instanceof Error) {
+        console.error("🔍 Error details:", {
+          message: error.message,
+          name: error.name,
+          stack: error.stack?.split('\n').slice(0, 8).join('\n')
+        });
+      }
 
       // 🛑 ROLLBACK
       const isInventoryError =
@@ -1071,13 +1120,50 @@ export class OrderService {
         (snapshot) => {
           const orders = snapshot.docs.map((doc) => {
             const data = doc.data();
+
+            // Log if createdAt is missing
+            if (!data.createdAt) {
+              console.warn("⚠️ Order missing createdAt:", {
+                orderNumber: data.orderNumber,
+                docId: doc.id,
+                data: Object.keys(data)
+              });
+            }
+
+            // Safe date conversion - handle both Timestamp and Date objects
+            const toDate = (value: any): Date | undefined => {
+              if (!value) return undefined;
+              if (value instanceof Date) {
+                if (!isNaN(value.getTime())) return value;
+                return undefined;
+              }
+              if (value.toDate && typeof value.toDate === 'function') {
+                try {
+                  const converted = value.toDate();
+                  if (converted instanceof Date && !isNaN(converted.getTime())) {
+                    return converted;
+                  }
+                } catch (e) {
+                  return undefined;
+                }
+                return undefined;
+              }
+              try {
+                const parsed = new Date(value);
+                if (!isNaN(parsed.getTime())) return parsed;
+              } catch (e) {
+                // Invalid date format
+              }
+              return undefined;
+            };
+
             return {
               ...data,
-              createdAt: data.createdAt.toDate(),
-              updatedAt: data.updatedAt.toDate(),
-              paidAt: data.paidAt ? data.paidAt.toDate() : undefined,
-              deliveredAt: data.deliveredAt ? data.deliveredAt.toDate() : undefined,
-              cancelledAt: data.cancelledAt ? data.cancelledAt.toDate() : undefined,
+              createdAt: toDate(data.createdAt) || new Date(),
+              updatedAt: toDate(data.updatedAt) || new Date(),
+              paidAt: toDate(data.paidAt),
+              deliveredAt: toDate(data.deliveredAt),
+              cancelledAt: toDate(data.cancelledAt),
               id: doc.id,
             } as Order;
           });

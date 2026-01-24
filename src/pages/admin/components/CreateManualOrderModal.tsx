@@ -36,7 +36,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   onOrderCreated,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { products } = useProductStore(); // ✅ დავამატოთ products access
+  const { products, setIsCreatingOrder } = useProductStore();
 
   // --- Form State ---
   const [customerInfo, setCustomerInfo] = useState({
@@ -85,8 +85,16 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       setPaymentMethod("cash");
       setShippingCost(5);
       setIsShippingCostManuallySet(false);
+    } else {
+      // Reset isCreatingOrder when modal closes to avoid freezing
+      setIsCreatingOrder(false);
     }
-  }, [isOpen]);
+
+    // Cleanup: reset flag when component unmounts
+    return () => {
+      setIsCreatingOrder(false);
+    };
+  }, [isOpen, setIsCreatingOrder]);
 
   // --- Handlers ---
   const handleItemChange = (
@@ -138,6 +146,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     // Validation
     if (!customerInfo.firstName || !customerInfo.phone) {
       showToast("შეავსეთ კლიენტის სახელი და ტელეფონი", "error");
@@ -182,6 +191,8 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     }
     try {
       setIsLoading(true);
+      setIsCreatingOrder(true);
+
       const orderData: CreateManualOrderRequest = {
         source,
         items,
@@ -191,7 +202,15 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
         status,
         paymentMethod: paymentMethod as any,
       };
+
+      const timeoutId = setTimeout(() => {
+        console.warn("⚠️ Order creation timeout - resetting isCreatingOrder flag");
+        setIsCreatingOrder(false);
+      }, 15000); // 15 second timeout
+
       await OrderService.createManualOrder(orderData);
+      clearTimeout(timeoutId);
+
       showToast("შეკვეთა წარმატებით შეიქმნა!", "success");
       onOrderCreated();
       onClose();
@@ -200,6 +219,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       showToast("შეკვეთის შექმნა ვერ მოხერხდა", "error");
     } finally {
       setIsLoading(false);
+      setIsCreatingOrder(false);
     }
   };
 
