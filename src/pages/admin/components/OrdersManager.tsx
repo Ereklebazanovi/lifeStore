@@ -984,7 +984,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       const minutesAgo = Math.floor(
         (new Date().getTime() - order.createdAt.getTime()) / (1000 * 60)
       );
-      const remainingMinutes = Math.max(0, 15 - minutesAgo);
+      const remainingMinutes = Math.max(0, 10 - minutesAgo);
 
       if (remainingMinutes > 0) {
         return `⏳ იხდის... (${remainingMinutes} წთ დარჩა)`;
@@ -1015,7 +1015,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           const minutesAgo = Math.floor(
             (new Date().getTime() - createdAt.getTime()) / (1000 * 60)
           );
-          const remainingMinutes = Math.max(0, 15 - minutesAgo);
+          const remainingMinutes = Math.max(0, 10 - minutesAgo);
           return remainingMinutes > 0
             ? `მოლოდინში (${remainingMinutes} წთ დარჩა)`
             : "მოლოდინში (გადახდა ვადაგასული)";

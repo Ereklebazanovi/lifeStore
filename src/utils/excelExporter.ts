@@ -81,6 +81,7 @@ export const exportSingleOrderToExcel = (order: Order) => {
         "ტელეფონის ნომერი": order.customerInfo.phone,
         "მისამართი": address,
         "კომენტარი": order.deliveryInfo.comment || "",
+        "გაუქმების მიზეზი": order.orderStatus === "cancelled" && order.cancelReason ? order.cancelReason : "",
       });
     });
 
@@ -104,6 +105,7 @@ export const exportSingleOrderToExcel = (order: Order) => {
       { wch: 16 }, // ტელეფონის ნომერი
       { wch: 28 }, // მისამართი
       { wch: 28 }, // კომენტარი
+      { wch: 25 }, // გაუქმების მიზეზი
     ];
     worksheet["!cols"] = colWidths;
 
@@ -130,7 +132,7 @@ export const exportSingleOrderToExcel = (order: Order) => {
 
     // Apply data row styling - all rows same color for single order
     for (let row = 2; row <= flattenedData.length + 1; row++) {
-      for (let col = 0; col < 14; col++) {
+      for (let col = 0; col < 15; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row - 1, c: col });
         if (!worksheet[cellAddress]) continue;
         if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
@@ -229,6 +231,7 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
           "ტელეფონის ნომერი": order.customerInfo.phone,
           "მისამართი": address,
           "კომენტარი": order.deliveryInfo.comment || "",
+          "გაუქმების მიზეზი": order.orderStatus === "cancelled" && order.cancelReason ? order.cancelReason : "",
         });
       });
     });
@@ -252,6 +255,7 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
       { wch: 16 }, // ტელეფონის ნომერი
       { wch: 28 }, // მისამართი
       { wch: 28 }, // კომენტარი
+      { wch: 25 }, // გაუქმების მიზეზი
     ];
     worksheet["!cols"] = colWidths;
 
@@ -289,12 +293,12 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
       }
 
       // ვასტილავთ მთელ რიგს
-      for (let col = 0; col < 14; col++) {
+      for (let col = 0; col < 15; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row - 1, c: col });
         if (!worksheet[cellAddress]) continue;
         if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
 
-        // ყვითალი ფერი მხოლოდ სვეტი B-ში (შეკვეთის ნომერი) როდესაც იწყება ახალი შეკვეთა
+        // ყვითელი ფერი მხოლოდ სვეტი B-ში (შეკვეთის ნომერი) როდესაც იწყება ახალი შეკვეთა
         if (col === 1 && isNewOrder) { // col 1 = column B
           worksheet[cellAddress].s.fill = yellowFill;
         }

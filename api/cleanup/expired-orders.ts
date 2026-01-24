@@ -95,7 +95,7 @@ export default async function handler(
           paymentStatus: "cancelled",
           status: "cancelled",
           orderStatus: "cancelled",
-          cancellationReason: "ავტომატურად გაუქმდა - 10 წუთის განმავლობაში გადახდა არ მოხდა",
+          cancellationReason: "არ დასრულდა გადახდა",
           cancelledAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
           adminNotes: `შეკვეთა ავტომატურად გაუქმდა ${new Date().toLocaleString("ka-GE")} - კლიენტმა 10 წუთში არ დაასრულა გადახდის პროცესი.ამ პროდუქტის მარაგი ავტომატურად დაბრუნდა.`,
