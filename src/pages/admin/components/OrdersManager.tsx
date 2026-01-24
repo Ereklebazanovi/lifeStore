@@ -73,17 +73,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
   };
 
-  // 🏷️ კურიერებისთვის ოპტიმიზებული ლეიბლის გენერაცია (76x92მმ)
-  const generateShippingLabel = (order: Order) => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    const orderDate = (order.createdAt instanceof Date
-      ? order.createdAt
-      : new Date(order.createdAt as any)).toLocaleDateString("ka-GE");
-
-    // პროდუქტების ინფორმაცია - ყველა პროდუქტი წონების გარეშე
-    const productsList = order.items.map(item => {
+  // Helper function to process products for label generation
+  const processProductsForLabel = (items: any[]) => {
+    return items.map(item => {
       let weight = item.product.weight;
       if (item.variantId && item.product.variants) {
         const variant = item.product.variants.find((v: any) => v.id === item.variantId);
@@ -103,19 +95,358 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         displayText: `${productCode ? `[${productCode}] ` : ''}${displayName} x${item.quantity}`
       };
     });
+  };
 
-    // ჯამური წონის გამოთვლა
-    const totalWeight = productsList.reduce((sum, p) =>
-      sum + (p.weight || 0) * p.quantity, 0
-    );
-
-    // პროდუქტების რაოდენობის გამოთვლა
+  // Helper function to calculate totals from products list
+  const calculateTotals = (productsList: any[]) => {
+    const totalWeight = productsList.reduce((sum, p) => sum + (p.weight || 0) * p.quantity, 0);
     const totalItems = productsList.reduce((sum, p) => sum + p.quantity, 0);
+    return { totalWeight, totalItems };
+  };
 
-    // კიდევ უფრო დიდი ფონტები კურიერებისთვის
-    const productFontSize = productsList.length > 12 ? '12px' :
-                           productsList.length > 8 ? '9px' :
-                           productsList.length > 5 ? '10px' : '11px';
+  // Helper function to get font size based on products count
+  const getProductFontSize = (productCount: number, isMultiple: boolean = false) => {
+    if (isMultiple) {
+      return productCount > 12 ? '7px' :
+             productCount > 8 ? '7.5px' :
+             productCount > 5 ? '8px' : '8.5px';
+    } else {
+      return productCount > 12 ? '12px' :
+             productCount > 8 ? '9px' :
+             productCount > 5 ? '10px' : '11px';
+    }
+  };
+
+  // Helper function to get common CSS styles for labels
+  const getLabelCSS = () => {
+    return `
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      @page {
+        size: 76mm 92mm;
+        margin: 0;
+      }
+
+      body {
+        font-family: 'Arial', sans-serif;
+        font-size: 9px;
+        line-height: 1.3;
+        color: #000;
+        background: white;
+      }
+
+      .label-container {
+        width: 76mm;
+        height: 92mm;
+        border: 1px solid #333;
+        padding: 2mm;
+        display: flex;
+        flex-direction: column;
+        background: white;
+        box-sizing: border-box;
+      }
+
+      .label-page {
+        width: 76mm;
+        height: 92mm;
+        margin: 0;
+        page-break-after: always;
+        border: 1px solid #333;
+        padding: 2mm;
+        display: flex;
+        flex-direction: column;
+        background: white;
+        box-sizing: border-box;
+      }
+
+      .label-page:last-child {
+        page-break-after: auto;
+      }
+
+      .header {
+        text-align: center;
+        border-bottom: 1px solid #666;
+        padding-bottom: 0.5mm;
+        margin-bottom: 1mm;
+        background: white;
+        padding: 1mm;
+        margin: -2mm -2mm 1mm -2mm;
+        flex-shrink: 0;
+      }
+
+      .logo-section {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.3mm;
+        gap: 1.5mm;
+      }
+
+      .logo {
+        width: 8mm;
+        height: 6mm;
+        object-fit: contain;
+      }
+
+      .store-name {
+        font-size: 9px;
+        font-weight: 900;
+        color: #1a3a15;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+      }
+
+      .order-info {
+        font-size: 7px;
+        font-weight: bold;
+        margin-top: 0.2mm;
+        color: #333;
+        line-height: 1.2;
+      }
+
+      .order-number {
+        font-size: 8px;
+        font-weight: 900;
+        color: #000;
+        letter-spacing: 0.2px;
+      }
+
+      .section {
+        margin-bottom: 0.8mm;
+        flex-shrink: 0;
+      }
+
+      .section-title {
+        font-size: 10px;
+        font-weight: 900;
+        margin-bottom: 0.6mm;
+        padding-bottom: 0.4mm;
+        border-bottom: 1px solid #999;
+        color: #000;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .customer-info {
+        font-size: 9px;
+        line-height: 1.3;
+      }
+
+      .customer-name {
+        font-weight: 900;
+        font-size: 11px;
+        margin-bottom: 0.6mm;
+        color: #000;
+      }
+
+      .info-line {
+        margin-bottom: 0.6mm;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.8mm;
+      }
+
+      .info-label {
+        font-size: 8px;
+        color: #333;
+        font-weight: 700;
+        min-width: 14mm;
+        flex-shrink: 0;
+      }
+
+      .info-value {
+        font-size: 9px;
+        color: #000;
+        font-weight: 400;
+        word-break: break-word;
+        flex-grow: 1;
+      }
+
+      .products {
+        flex-grow: 1;
+        overflow: hidden;
+      }
+
+      .products-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5mm;
+      }
+
+      .summary-badge {
+        background-color: #4ade80;
+        color: #000;
+        padding: 0.5mm 1.2mm;
+        border-radius: 2mm;
+        font-size: 7px;
+        font-weight: 700;
+      }
+
+      .products-list {
+        font-size: inherit;
+        overflow: hidden;
+        max-height: 30mm;
+      }
+
+      .product-item {
+        margin-bottom: 0.8mm;
+        line-height: 1.2;
+        border-bottom: 0.2mm solid #e5e7eb;
+        padding-bottom: 0.4mm;
+      }
+
+      .product-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+      }
+
+      .product-name {
+        font-weight: 600;
+        color: #000;
+        display: block;
+      }
+
+      .product-quantity {
+        color: #666;
+        font-weight: 500;
+        font-size: 90%;
+      }
+
+      .product-code-info {
+        font-size: 6px;
+        color: #888;
+        margin-top: 0.2mm;
+      }
+
+      .total-weight {
+        margin-top: 0.8mm;
+        font-size: 8px;
+        color: #666;
+        text-align: center;
+        font-weight: 600;
+      }
+
+      .total-info {
+        margin-top: auto;
+        border-top: 1px solid #999;
+        padding-top: 0.8mm;
+        flex-shrink: 0;
+      }
+
+      .payment-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 10px;
+        font-weight: 700;
+        margin-bottom: 0.4mm;
+      }
+
+      .total-amount {
+        color: #059669;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .payment-method {
+        font-size: 8px;
+        color: #666;
+        text-align: center;
+        margin-bottom: 0.2mm;
+      }
+    `;
+  };
+
+  // Helper function to generate label HTML for a single order
+  const generateLabelHTML = (order: Order, productsList: any[], totalItems: number, totalWeight: number, productFontSize: string, isMultiple: boolean = false) => {
+      const orderDate = (order.createdAt instanceof Date
+        ? order.createdAt
+        : new Date(order.createdAt as any)).toLocaleDateString("ka-GE");
+
+      const cssClass = isMultiple ? 'label-page' : 'label-container';
+
+      return `
+        <div class="${cssClass}" style="font-size: ${productFontSize};">
+          <div class="header">
+            <div class="logo-section">
+              <img src="./Screenshot 2025-12-10 151703.png" alt="LifeStore" class="logo">
+              <div class="store-name">LifeStore</div>
+            </div>
+            <div class="order-info">
+              <div class="order-number">${order.orderNumber}</div>
+              <div>${orderDate}</div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">მიმღები</div>
+            <div class="customer-info">
+              <div class="customer-name">${(order.customerInfo.firstName + ' ' + order.customerInfo.lastName).trim() || 'სახელი მითითებული არ არის'}</div>
+
+              <div class="info-line">
+                <span class="info-label">მისამართი:</span>
+                <span class="info-value">${order.deliveryInfo.city}, ${order.deliveryInfo.address}</span>
+              </div>
+
+              <div class="info-line">
+                <span class="info-label">ტელეფონი:</span>
+                <span class="info-value">${order.customerInfo.phone || 'არ არის მითითებული'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="products">
+            <div class="products-header">
+              <div class="section-title">შეკვეთა</div>
+              <div class="summary-badge">
+                ${totalItems} ცალი
+              </div>
+            </div>
+
+            <div class="products-list">
+              ${productsList.map(product =>
+                `<div class="product-item">
+                  <span class="product-name">${product.name}</span>
+                  <span class="product-quantity"> ${product.quantity} ცალი</span>
+                  ${product.productCode ? `<div class="product-code-info">პროდუქტის კოდი: ${product.productCode}</div>` : ''}
+                </div>`
+              ).join('')}
+            </div>
+
+            ${totalWeight > 0 ? `
+            <div class="total-weight">
+              წონა: ${totalWeight}გრ
+            </div>
+            ` : ''}
+          </div>
+
+          <div class="total-info">
+            <div class="payment-line">
+              <span>გადახდა:</span>
+              <span class="total-amount">₾${order.totalAmount.toFixed(2)}</span>
+            </div>
+            <div class="payment-method">
+              ${order.paymentMethod === 'cash' ? 'ნაღდი ანგარიშსწორება' : 'ონლაინ გადახდა'}
+            </div>
+            ${order.deliveryInfo.shippingCost ? `<div class="payment-method">მიწოდება: ₾${order.deliveryInfo.shippingCost.toFixed(2)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    };
+
+  // 🏷️ კურიერებისთვის ოპტიმიზებული ლეიბლის გენერაცია (76x92მმ)
+  const generateShippingLabel = (order: Order) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const productsList = processProductsForLabel(order.items);
+    const { totalWeight, totalItems } = calculateTotals(productsList);
+    const productFontSize = getProductFontSize(productsList.length, false);
 
     const labelContent = `
       <!DOCTYPE html>
@@ -124,131 +455,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         <meta charset="UTF-8">
         <title>ლეიბლი - ${order.orderNumber}</title>
         <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-
-          @page {
-            size: 76mm 92mm;
-            margin: 0;
-          }
+          ${getLabelCSS()}
 
           body {
-            font-family: 'Arial', sans-serif;
-            font-size: 9px;
-            line-height: 1.3;
-            color: #000;
             width: 76mm;
             height: 92mm;
             margin: 0;
             padding: 0;
-            background: white;
-          }
-
-          .label-container {
-            width: 76mm;
-            height: 92mm;
-            border: 1px solid #333;
-            padding: 2mm;
-            display: flex;
-            flex-direction: column;
-            background: white;
-            box-sizing: border-box;
-          }
-
-          /* Header - Bold & Clear */
-          .header {
-            text-align: center;
-            border-bottom: 1px solid #666;
-            padding-bottom: 0.5mm;
-            margin-bottom: 1mm;
-            background: white;
-            padding: 1mm;
-            margin: -2mm -2mm 1mm -2mm;
-            flex-shrink: 0;
-          }
-
-          .logo-section {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 0.3mm;
-            gap: 1.5mm;
-          }
-
-          .logo {
-            width: 8mm;
-            height: 6mm;
-            object-fit: contain;
-          }
-
-          .store-name {
-            font-size: 9px;
-            font-weight: 900;
-            color: #1a3a15;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-          }
-
-          .order-info {
-            font-size: 7px;
-            font-weight: bold;
-            margin-top: 0.2mm;
-            color: #333;
-            line-height: 1.2;
-          }
-
-          .order-number {
-            font-size: 8px;
-            font-weight: 900;
-            color: #000;
-            letter-spacing: 0.2px;
-          }
-
-          /* Customer Section - Larger for couriers */
-          .section {
-            margin-bottom: 0.8mm;
-            flex-shrink: 0;
-          }
-
-          .section-title {
-            font-size: 10px;
-            font-weight: 900;
-            margin-bottom: 0.6mm;
-            padding-bottom: 0.4mm;
-            border-bottom: 1px solid #999;
-            color: #000;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-          }
-
-          .customer-info {
-            font-size: 9px;
-            line-height: 1.3;
-          }
-
-          .customer-name {
-            font-weight: 900;
-            font-size: 11px;
-            margin-bottom: 0.6mm;
-            color: #000;
-          }
-
-          .info-line {
-            margin-bottom: 0.6mm;
-            display: flex;
-            align-items: flex-start;
-            gap: 0.8mm;
-          }
-
-          .info-label {
-            font-size: 8px;
-            color: #333;
-            font-weight: 700;
-            min-width: 14mm;
-            flex-shrink: 0;
           }
 
           .info-value {
@@ -406,72 +619,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         </style>
       </head>
       <body>
-        <div class="label-container">
-          <!-- Header -->
-          <div class="header">
-            <div class="logo-section">
-              <img src="./Screenshot 2025-12-10 151703.png" alt="LifeStore" class="logo">
-              <div class="store-name">LifeStore</div>
-            </div>
-            <div class="order-info">
-              <div class="order-number">${order.orderNumber}</div>
-              <div>${orderDate}</div>
-            </div>
-          </div>
-
-          <!-- Customer Info -->
-          <div class="section">
-            <div class="section-title">მიმღები</div>
-            <div class="customer-info">
-              <div class="customer-name">${(order.customerInfo.firstName + ' ' + order.customerInfo.lastName).trim() || 'სახელი მითითებული არ არის'}</div>
-
-              <div class="info-line">
-                <span class="info-label">მისამართი:</span>
-                <span class="info-value">${order.deliveryInfo.city}, ${order.deliveryInfo.address}</span>
-              </div>
-
-              <div class="info-line">
-                <span class="info-label">ტელეფონი:</span>
-                <span class="info-value">${order.customerInfo.phone || 'არ არის მითითებული'}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Products -->
-          <div class="products">
-            <div class="products-header">
-              <div class="section-title">შეკვეთა (${totalItems} ცალი)</div>
-            </div>
-
-            <div class="products-list">
-              ${productsList.map(product =>
-                `<div class="product-item">
-                  <span class="product-name">${product.name}</span>
-                  <span class="product-quantity"> ${product.quantity} ცალი</span>
-                  ${product.productCode ? `<div class="product-code-info">პროდუქტის კოდი: ${product.productCode}</div>` : ''}
-                </div>`
-              ).join('')}
-            </div>
-
-            ${totalWeight > 0 ? `
-            <div class="total-weight">
-              წონა: ${totalWeight}გრ
-            </div>
-            ` : ''}
-          </div>
-
-          <!-- Payment & Total - Simplified -->
-          <div class="total-info">
-            <div class="payment-line">
-              <span>გადახდა:</span>
-              <span class="total-amount">₾${order.totalAmount.toFixed(2)}</span>
-            </div>
-            <div class="payment-method">
-              ${order.paymentMethod === 'cash' ? 'ნაღდი ანგარიშსწორება' : 'ონლაინ გადახდა'}
-            </div>
-            ${order.deliveryInfo.shippingCost ? `<div class="payment-method">მიწოდება: ₾${order.deliveryInfo.shippingCost.toFixed(2)}</div>` : ''}
-          </div>
-        </div>
+        ${generateLabelHTML(order, productsList, totalItems, totalWeight, productFontSize, false)}
       </body>
       </html>
     `;
@@ -528,107 +676,11 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     if (!printWindow) return;
 
     const labelPages = selectedOrders.map(order => {
-      const orderDate = (order.createdAt instanceof Date
-        ? order.createdAt
-        : new Date(order.createdAt as any)).toLocaleDateString("ka-GE");
+      const productsList = processProductsForLabel(order.items);
+      const { totalWeight, totalItems } = calculateTotals(productsList);
+      const productFontSize = getProductFontSize(productsList.length, true);
 
-      const productsList = order.items.map(item => {
-        let weight = item.product.weight;
-        if (item.variantId && item.product.variants) {
-          const variant = item.product.variants.find((v: any) => v.id === item.variantId);
-          if (variant && variant.weight) {
-            weight = variant.weight;
-          }
-        }
-
-        const displayName = getOrderItemDisplayName(item);
-        const productCode = item.product.productCode;
-
-        return {
-          name: displayName,
-          productCode: productCode,
-          quantity: item.quantity,
-          weight: weight,
-          displayText: `${productCode ? `[${productCode}] ` : ''}${displayName} x${item.quantity}`
-        };
-      });
-
-      const totalWeight = productsList.reduce((sum, p) =>
-        sum + (p.weight || 0) * p.quantity, 0
-      );
-
-      const totalItems = productsList.reduce((sum, p) => sum + p.quantity, 0);
-      const productFontSize = productsList.length > 12 ? '7px' :
-                             productsList.length > 8 ? '7.5px' :
-                             productsList.length > 5 ? '8px' : '8.5px';
-
-      return `
-        <div class="label-page" style="font-size: ${productFontSize};">
-          <div class="header">
-            <div class="logo-section">
-              <img src="./Screenshot 2025-12-10 151703.png" alt="LifeStore" class="logo">
-              <div class="store-name">LifeStore</div>
-            </div>
-            <div class="order-info">
-              <div class="order-number">${order.orderNumber}</div>
-              <div>${orderDate}</div>
-            </div>
-          </div>
-
-          <div class="section">
-            <div class="section-title">მიმღები</div>
-            <div class="customer-info">
-              <div class="customer-name">${(order.customerInfo.firstName + ' ' + order.customerInfo.lastName).trim() || 'სახელი მითითებული არ არის'}</div>
-
-              <div class="info-line">
-                <span class="info-label">მისამართი:</span>
-                <span class="info-value">${order.deliveryInfo.city}, ${order.deliveryInfo.address}</span>
-              </div>
-
-              <div class="info-line">
-                <span class="info-label">ტელეფონი:</span>
-                <span class="info-value">${order.customerInfo.phone || 'არ არის მითითებული'}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="products">
-            <div class="products-header">
-              <div class="section-title">შეკვეთა</div>
-              <div class="summary-badge">
-                ${totalItems} ცალი
-              </div>
-            </div>
-
-            <div class="products-list">
-              ${productsList.map(product =>
-                `<div class="product-item">
-                  <span class="product-name">${product.name}</span>
-                  <span class="product-quantity"> ${product.quantity} ცალი</span>
-                  ${product.productCode ? `<div class="product-code-info">პროდუქტის კოდი: ${product.productCode}</div>` : ''}
-                </div>`
-              ).join('')}
-            </div>
-
-            ${totalWeight > 0 ? `
-            <div class="total-weight">
-              წონა: ${totalWeight}გრ
-            </div>
-            ` : ''}
-          </div>
-
-          <div class="total-info">
-            <div class="payment-line">
-              <span>გადახდა:</span>
-              <span class="total-amount">₾${order.totalAmount.toFixed(2)}</span>
-            </div>
-            <div class="payment-method">
-              ${order.paymentMethod === 'cash' ? 'ნაღდი ანგარიშსწორება' : 'ონლაინ გადახდა'}
-            </div>
-            ${order.deliveryInfo.shippingCost ? `<div class="payment-method">მიწოდება: ₾${order.deliveryInfo.shippingCost.toFixed(2)}</div>` : ''}
-          </div>
-        </div>
-      `;
+      return generateLabelHTML(order, productsList, totalItems, totalWeight, productFontSize, true);
     }).join('');
 
     const multiLabelContent = `
@@ -638,147 +690,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         <meta charset="UTF-8">
         <title>ლეიბლები - ${selectedOrders.length} შეკვეთა</title>
         <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-
-          @page {
-            size: 76mm 92mm;
-            margin: 0;
-          }
-
-          body {
-            font-family: 'Arial', sans-serif;
-            font-size: 9px;
-            line-height: 1.3;
-            color: #000;
-            background: white;
-          }
-
-          .label-page {
-            width: 76mm;
-            height: 92mm;
-            margin: 0;
-            page-break-after: always;
-            border: 1px solid #333;
-            padding: 2mm;
-            display: flex;
-            flex-direction: column;
-            background: white;
-            box-sizing: border-box;
-          }
-
-          .label-page:last-child {
-            page-break-after: auto;
-          }
-
-          .header {
-            text-align: center;
-            border-bottom: 1px solid #666;
-            padding-bottom: 0.5mm;
-            margin-bottom: 1mm;
-            background: white;
-            padding: 1mm;
-            margin: -2mm -2mm 1mm -2mm;
-            flex-shrink: 0;
-          }
-
-          .logo-section {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 0.3mm;
-            gap: 1.5mm;
-          }
-
-          .logo {
-            width: 8mm;
-            height: 6mm;
-            object-fit: contain;
-          }
-
-          .store-name {
-            font-size: 9px;
-            font-weight: 900;
-            color: #1a3a15;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-          }
-
-          .order-info {
-            font-size: 7px;
-            font-weight: bold;
-            margin-top: 0.2mm;
-            color: #333;
-            line-height: 1.2;
-          }
-
-          .order-number {
-            font-size: 8px;
-            font-weight: 900;
-            color: #000;
-            letter-spacing: 0.2px;
-          }
-
-          .section {
-            margin-bottom: 0.8mm;
-            flex-shrink: 0;
-          }
-
-          .section-title {
-            font-size: 10px;
-            font-weight: 900;
-            margin-bottom: 0.6mm;
-            padding-bottom: 0.4mm;
-            border-bottom: 1px solid #999;
-            color: #000;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-          }
-
-          .customer-info {
-            font-size: 9px;
-            line-height: 1.3;
-          }
-
-          .customer-name {
-            font-weight: 900;
-            font-size: 11px;
-            margin-bottom: 0.6mm;
-            color: #000;
-          }
-
-          .info-line {
-            margin-bottom: 0.6mm;
-            display: flex;
-            align-items: flex-start;
-            gap: 0.8mm;
-          }
-
-          .info-label {
-            font-size: 8px;
-            color: #333;
-            font-weight: 700;
-            min-width: 14mm;
-            flex-shrink: 0;
-          }
-
-          .info-value {
-            font-weight: 900;
-            color: #000;
-            flex: 1;
-            word-wrap: break-word;
-            font-size: 9px;
-          }
-
-          .products {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-          }
+          ${getLabelCSS()}
 
           .products-header {
             flex-shrink: 0;

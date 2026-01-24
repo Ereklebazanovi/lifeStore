@@ -79,55 +79,91 @@ export class OrderService {
   }
 
   /**
+   * Helper function to calculate actual price for a product/variant
+   */
+  private static calculateActualPrice(product: any, variantId?: string): number {
+    let actualPrice = product.price || 0;
+
+    // Check if this is a variant product
+    if (variantId && product.variants) {
+      const variant = product.variants.find((v: any) => v.id === variantId);
+      if (variant) {
+        // Use sale price if available and lower than regular price
+        actualPrice = variant.salePrice && variant.salePrice < variant.price
+          ? variant.salePrice
+          : variant.price;
+      }
+    } else {
+      // For simple products, check if there's a sale price
+      if (product.salePrice && product.salePrice < product.price) {
+        actualPrice = product.salePrice;
+      }
+    }
+    return actualPrice;
+  }
+
+  /**
+   * Helper function to convert Firestore timestamps to Date objects
+   */
+  private static convertFirestoreTimestamps(data: any): any {
+    return {
+      ...data,
+      createdAt: data.createdAt?.toDate?.() || data.createdAt,
+      updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
+      paidAt: data.paidAt?.toDate?.() || data.paidAt,
+      deliveredAt: data.deliveredAt?.toDate?.() || data.deliveredAt,
+      cancelledAt: data.cancelledAt?.toDate?.() || data.cancelledAt,
+    };
+  }
+
+  /**
+   * Helper function to create consistent Order object structure
+   */
+  private static createOrderObject(orderDoc: any, data: any): Order {
+    const convertedData = this.convertFirestoreTimestamps(data);
+
+    return {
+      id: orderDoc.id,
+      userId: convertedData.userId,
+      orderNumber: convertedData.orderNumber,
+      accessToken: convertedData.accessToken,
+      source: convertedData.source,
+      items: convertedData.items,
+      subtotal: convertedData.subtotal,
+      shippingCost: convertedData.shippingCost,
+      totalAmount: convertedData.totalAmount,
+      customerInfo: convertedData.customerInfo,
+      deliveryInfo: convertedData.deliveryInfo,
+      orderStatus: convertedData.orderStatus,
+      paymentMethod: convertedData.paymentMethod,
+      paymentStatus: convertedData.paymentStatus,
+      createdAt: convertedData.createdAt,
+      updatedAt: convertedData.updatedAt,
+      paidAt: convertedData.paidAt,
+      deliveredAt: convertedData.deliveredAt,
+      cancelledAt: convertedData.cancelledAt,
+      ...(convertedData.adminNotes && { adminNotes: convertedData.adminNotes }),
+      ...(convertedData.trackingNumber && { trackingNumber: convertedData.trackingNumber }),
+      ...(convertedData.cancelReason && { cancelReason: convertedData.cancelReason }),
+      ...(convertedData.cancellationReason && { cancellationReason: convertedData.cancellationReason }),
+    } as Order;
+  }
+
+  /**
    * Convert CartItem[] to OrderItem[] (For Website Orders)
    */
   private static convertCartItemsToOrderItems(
     cartItems: CartItem[]
   ): OrderItem[] {
     return cartItems.map((item) => {
+      const actualPrice = this.calculateActualPrice(item.product, item.variantId);
+
       const orderItem: any = {
         productId: item.productId,
         product: item.product,
         quantity: item.quantity,
-        price: (() => {
-          // Calculate correct price (considering sale price and variants)
-          let actualPrice = item.product.price || 0;
-
-          // Check if this is a variant product
-          if (item.variantId && item.product.variants) {
-            const variant = item.product.variants.find(v => v.id === item.variantId);
-            if (variant) {
-              // Use sale price if available and lower than regular price
-              actualPrice = variant.salePrice && variant.salePrice < variant.price
-                ? variant.salePrice
-                : variant.price;
-            }
-          } else {
-            // For simple products, check if there's a sale price
-            if (item.product.salePrice && item.product.salePrice < item.product.price) {
-              actualPrice = item.product.salePrice;
-            }
-          }
-          return actualPrice;
-        })(),
-        total: (() => {
-          // Calculate total with actual price
-          let actualPrice = item.product.price || 0;
-
-          if (item.variantId && item.product.variants) {
-            const variant = item.product.variants.find(v => v.id === item.variantId);
-            if (variant) {
-              actualPrice = variant.salePrice && variant.salePrice < variant.price
-                ? variant.salePrice
-                : variant.price;
-            }
-          } else {
-            if (item.product.salePrice && item.product.salePrice < item.product.price) {
-              actualPrice = item.product.salePrice;
-            }
-          }
-          return item.quantity * actualPrice;
-        })(),
+        price: actualPrice,
+        total: item.quantity * actualPrice,
       };
 
       // Only add variantId if it exists (avoid undefined)
@@ -412,24 +448,7 @@ export class OrderService {
         if (!querySnapshot.empty) {
           const orderDoc = querySnapshot.docs[0];
           const data = orderDoc.data();
-          return {
-            id: orderDoc.id,
-            userId: data.userId,
-            orderNumber: data.orderNumber,
-            source: data.source,
-            items: data.items,
-            subtotal: data.subtotal,
-            shippingCost: data.shippingCost,
-            totalAmount: data.totalAmount,
-            customerInfo: data.customerInfo,
-            deliveryInfo: data.deliveryInfo,
-            orderStatus: data.orderStatus,
-            paymentMethod: data.paymentMethod,
-            paymentStatus: data.paymentStatus,
-            createdAt: data.createdAt.toDate(),
-            updatedAt: data.updatedAt.toDate(),
-            paidAt: data.paidAt?.toDate(),
-          } as Order;
+          return this.createOrderObject(orderDoc, data);
         }
       } catch (authError) {
         // თუ უფლებების ერორია, ესეიგი Guest-ია, ვაგრძელებთ ქვემოთ...
@@ -453,24 +472,7 @@ export class OrderService {
       const orderDoc = guestSnapshot.docs[0];
       const data = orderDoc.data();
 
-      return {
-        id: orderDoc.id,
-        userId: data.userId,
-        orderNumber: data.orderNumber,
-        source: data.source,
-        items: data.items,
-        subtotal: data.subtotal,
-        shippingCost: data.shippingCost,
-        totalAmount: data.totalAmount,
-        customerInfo: data.customerInfo,
-        deliveryInfo: data.deliveryInfo,
-        orderStatus: data.orderStatus,
-        paymentMethod: data.paymentMethod,
-        paymentStatus: data.paymentStatus,
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-        paidAt: data.paidAt?.toDate(),
-      } as Order;
+      return this.createOrderObject(orderDoc, data);
     } catch (error) {
       console.error("Error getting order by number:", error);
       return null;
@@ -502,25 +504,7 @@ export class OrderService {
       const orderDoc = querySnapshot.docs[0];
       const data = orderDoc.data();
 
-      return {
-        id: orderDoc.id,
-        userId: data.userId,
-        orderNumber: data.orderNumber,
-        accessToken: data.accessToken,
-        source: data.source,
-        items: data.items,
-        subtotal: data.subtotal,
-        shippingCost: data.shippingCost,
-        totalAmount: data.totalAmount,
-        customerInfo: data.customerInfo,
-        deliveryInfo: data.deliveryInfo,
-        orderStatus: data.orderStatus,
-        paymentMethod: data.paymentMethod,
-        paymentStatus: data.paymentStatus,
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-        paidAt: data.paidAt?.toDate(),
-      } as Order;
+      return this.createOrderObject(orderDoc, data);
     } catch (error) {
       console.error("Error getting order by token:", error);
       return null;
@@ -1045,14 +1029,7 @@ export class OrderService {
       const orderDoc = await getDoc(doc(db, this.COLLECTION_NAME, orderId));
       if (!orderDoc.exists()) return null;
       const data = orderDoc.data();
-      return {
-        ...data,
-        id: orderDoc.id, // Add document ID
-        createdAt: data.createdAt.toDate(),
-        updatedAt: data.updatedAt.toDate(),
-        deliveredAt: data.deliveredAt?.toDate(),
-        paidAt: data.paidAt?.toDate(), // Add paidAt
-      } as Order;
+      return this.createOrderObject(orderDoc, data);
     } catch (error) {
       console.error("❌ Error getting order:", error);
       throw new Error("შეკვეთის მოძიება ვერ მოხერხდა");
@@ -1068,12 +1045,7 @@ export class OrderService {
       const snapshot = await getDocs(userQuery);
       const orders = snapshot.docs.map((doc) => {
         const data = doc.data();
-        return {
-          ...data,
-          createdAt: data.createdAt.toDate(),
-          updatedAt: data.updatedAt.toDate(),
-          deliveredAt: data.deliveredAt?.toDate(),
-        } as Order;
+        return this.createOrderObject(doc, data);
       });
       return orders.sort(
         (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
@@ -1091,12 +1063,7 @@ export class OrderService {
       const snapshot = await getDocs(allQuery);
       return snapshot.docs.map((doc) => {
         const data = doc.data();
-        return {
-          ...data,
-          createdAt: data.createdAt.toDate(),
-          updatedAt: data.updatedAt.toDate(),
-          deliveredAt: data.deliveredAt?.toDate(),
-        } as Order;
+        return this.createOrderObject(doc, data);
       });
     } catch (error) {
       console.error("❌ Error getting all orders:", error);
@@ -1158,14 +1125,14 @@ export class OrderService {
             };
 
             return {
-              ...data,
+              ...this.createOrderObject(doc, data),
+              // Override with safe date conversion for real-time subscription
               createdAt: toDate(data.createdAt) || new Date(),
               updatedAt: toDate(data.updatedAt) || new Date(),
               paidAt: toDate(data.paidAt),
               deliveredAt: toDate(data.deliveredAt),
               cancelledAt: toDate(data.cancelledAt),
-              id: doc.id,
-            } as Order;
+            };
           });
           callback(orders);
         },
