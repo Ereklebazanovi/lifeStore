@@ -513,12 +513,14 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
         {/* Footer */}
         <div className="p-4 border-t bg-gray-50 flex items-center justify-between">
           <button
+            type="button"
             onClick={onClose}
             className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
           >
             გაუქმება
           </button>
           <button
+            type="button"
             onClick={handleConfirm}
             disabled={
               !canConfirm ||
