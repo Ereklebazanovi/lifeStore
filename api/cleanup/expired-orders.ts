@@ -35,9 +35,9 @@ export default async function handler(
   try {
     console.log("🧹 Starting expired orders cleanup...");
 
-    // ✅ Production Time: 15 minutes - optimal for ecommerce
+    // ✅ Production Time: 10 minutes - safe balance for inventory protection
     const cutoffTime = new Date();
-    cutoffTime.setMinutes(cutoffTime.getMinutes() - 15);
+    cutoffTime.setMinutes(cutoffTime.getMinutes() - 10);
 
     const pendingOrdersQuery = adminDb
       .collection("orders")
@@ -95,10 +95,10 @@ export default async function handler(
           paymentStatus: "cancelled",
           status: "cancelled",
           orderStatus: "cancelled",
-          cancellationReason: "ავტომატურად გაუქმდა - 15 წუთის განმავლობაში გადახდა არ მოხდა",
+          cancellationReason: "ავტომატურად გაუქმდა - 10 წუთის განმავლობაში გადახდა არ მოხდა",
           cancelledAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
-          adminNotes: `შეკვეთა ავტომატურად გაუქმდა ${new Date().toLocaleString("ka-GE")} - კლიენტმა 15 წუთში არ დაასრულა გადახდის პროცესი.ამ პროდუქტის მარაგი ავტომატურად დაბრუნდა.`,
+          adminNotes: `შეკვეთა ავტომატურად გაუქმდა ${new Date().toLocaleString("ka-GE")} - კლიენტმა 10 წუთში არ დაასრულა გადახდის პროცესი.ამ პროდუქტის მარაგი ავტომატურად დაბრუნდა.`,
         });
 
         // 2. Restore Inventory (GROUPING LOGIC ✅)
@@ -145,7 +145,7 @@ export default async function handler(
                     timestamp: new Date(),
                     quantity: newVariantStock,
                     reason: "Order expired (auto rollback)",
-                    notes: `Variant stock restored by ${item.quantity} (payment timeout - 15 min)`
+                    notes: `Variant stock restored by ${item.quantity} (payment timeout - 10 min)`
                   };
 
                   variants[variantIndex].stock = newVariantStock;
@@ -170,7 +170,7 @@ export default async function handler(
               timestamp: new Date(),
               quantity: (productData.stock || 0) + totalQuantityRestored, // New stock level
               reason: "Order expired (auto rollback)",
-              notes: `Stock restored by ${totalQuantityRestored} (payment timeout - 15 min)`
+              notes: `Stock restored by ${totalQuantityRestored} (payment timeout - 10 min)`
             };
             updatePayload.stockHistory = FieldValue.arrayUnion(rollbackHistoryEntry);
 

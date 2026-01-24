@@ -3,6 +3,7 @@ import { useProductStore } from "../../../store/productStore";
 import { showToast } from "../../../components/ui/Toast";
 import type { Product, ProductVariant } from "../../../types";
 import { exportInventoryToExcel } from "../../../utils/excelExporter";
+
 import {
   Plus,
   Minus,
@@ -432,7 +433,18 @@ const ProductRow: React.FC<ProductRowProps> = ({
         </td>
 
         <td className="px-4 py-3 text-center">
-          <span className="text-sm font-medium text-gray-900">{getDisplayPrice()}</span>
+          <div className="flex flex-col items-center space-y-0.5">
+            {!product.hasVariants && product.salePrice && product.salePrice < (product.price || 0) ? (
+              <>
+                <span className="text-xs text-orange-600 font-semibold line-through decoration-orange-400">
+                  ₾{(product.price || 0).toFixed(2)}
+                </span>
+                <span className="text-sm font-medium text-emerald-600">₾{product.salePrice.toFixed(2)}</span>
+              </>
+            ) : (
+              <span className="text-sm font-medium text-gray-900">{getDisplayPrice()}</span>
+            )}
+          </div>
         </td>
 
         <td className="px-4 py-3 text-center">
@@ -532,7 +544,22 @@ const ProductRow: React.FC<ProductRowProps> = ({
                             <h5 className="font-medium text-sm text-gray-900 truncate">
                               {variant.name}
                             </h5>
-                            <p className="text-xs text-gray-500">₾{variant.price.toFixed(2)}</p>
+                            <div className="mt-1 space-y-0.5">
+                              {variant.salePrice && variant.salePrice < variant.price ? (
+                                <>
+                                  <p className="text-xs text-orange-600 font-semibold line-through decoration-orange-400">
+                                    ₾{variant.price.toFixed(2)}
+                                  </p>
+                                  <p className="text-xs text-emerald-600 font-medium">
+                                    ₾{variant.salePrice.toFixed(2)}
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-xs text-gray-900 font-medium">
+                                  ₾{variant.price.toFixed(2)}
+                                </p>
+                              )}
+                            </div>
                           </div>
                           <span
                             className={`ml-2 px-1.5 py-0.5 rounded-full text-xs font-medium ${
@@ -700,8 +727,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
             {/* Price & Stock Row */}
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-900">{getDisplayPrice()}</p>
+              <div className="space-y-0.5">
+                {!product.hasVariants && product.salePrice && product.salePrice < (product.price || 0) ? (
+                  <>
+                    <p className="text-xs text-orange-600 font-semibold line-through decoration-orange-400">
+                      ₾{(product.price || 0).toFixed(2)}
+                    </p>
+                    <p className="text-sm font-semibold text-emerald-600">₾{product.salePrice.toFixed(2)}</p>
+                  </>
+                ) : (
+                  <p className="text-sm font-semibold text-gray-900">{getDisplayPrice()}</p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <span
@@ -809,7 +845,22 @@ const ProductCard: React.FC<ProductCardProps> = ({
                       <h5 className="font-medium text-sm text-gray-900 mb-1">
                         {variant.name}
                       </h5>
-                      <p className="text-xs text-gray-500">₾{variant.price.toFixed(2)}</p>
+                      <div className="space-y-0.5">
+                        {variant.salePrice && variant.salePrice < variant.price ? (
+                          <>
+                            <p className="text-xs text-orange-600 font-semibold line-through decoration-orange-400">
+                              ₾{variant.price.toFixed(2)}
+                            </p>
+                            <p className="text-xs text-emerald-600 font-medium">
+                              ₾{variant.salePrice.toFixed(2)}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-xs text-gray-900 font-medium">
+                            ₾{variant.price.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span
@@ -966,6 +1017,7 @@ const InventoryManagerVariants: React.FC = () => {
           `ექსპორტი წარმატებით დასრულდა!\n${result.exportedProducts} პროდუქტი, ${result.totalStock} ცალი, ₾${(result.totalValue || 0).toFixed(2)} ღირებულება`,
           "success"
         );
+
         setIsExportModalOpen(false);
         setSelectedProducts(new Set());
         setExportDateRange({ startDate: "", endDate: "" });
@@ -992,13 +1044,13 @@ const InventoryManagerVariants: React.FC = () => {
         case "name":
           return a.name.localeCompare(b.name);
         case "stock":
-          const aStock = a.hasVariants
+          { const aStock = a.hasVariants
             ? a.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0
             : a.stock || 0;
           const bStock = b.hasVariants
             ? b.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0
             : b.stock || 0;
-          return bStock - aStock;
+          return bStock - aStock; }
         case "price":
           return (a.price || 0) - (b.price || 0);
         default:
