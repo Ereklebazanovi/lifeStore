@@ -156,62 +156,27 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       showToast("დაამატეთ მინიმუმ ერთი პროდუქტი", "error");
       return;
     }
-    // ✅ Enhanced Stock Validation - Support variants with dynamic stock calculation
-    const itemsWithProductId = items.filter(
-      (item) => item.productId && !item.productId.startsWith("manual_")
-    );
-
-    // Check each product against dynamic available stock
-    for (let i = 0; i < itemsWithProductId.length; i++) {
-      const item = itemsWithProductId[i];
-      if (item.productId) {
+    // ✅ Simplified Stock Validation - Trust ProductSelector's real-time validation
+    for (const item of items) {
+      if (item.productId && !item.productId.startsWith("manual_")) {
         const currentProduct = products.find((p) => p.id === item.productId);
-        if (currentProduct) {
-          let baseStock = 0;
-          let stockSource = "";
+        if (!currentProduct) {
+          showToast(`პროდუქტი არ მოიძებნა: "${item.name}"`, "error");
+          return;
+        }
 
-          // Get base stock
-          if (item.variantId && currentProduct.hasVariants) {
-            const variant = currentProduct.variants?.find(
-              (v) => v.id === item.variantId
-            );
-            if (variant) {
-              baseStock = variant.stock || 0;
-              stockSource = `ვარიანტი: ${variant.name}`;
-            } else {
-              showToast(`ვარიანტი არ მოიძებნა: "${item.name}"`, "error");
-              return;
-            }
-          } else {
-            baseStock = currentProduct.stock || 0;
-            stockSource = "მთავარი პროდუქტი";
-          }
+        // Basic stock check - ProductSelector handles detailed validation
+        let availableStock = 0;
+        if (item.variantId && currentProduct.hasVariants) {
+          const variant = currentProduct.variants?.find(v => v.id === item.variantId);
+          availableStock = variant?.stock || 0;
+        } else {
+          availableStock = currentProduct.stock || 0;
+        }
 
-          // Calculate allocated stock considering all items with same product/variant
-          const allocatedQuantity = items.reduce((total, otherItem, otherIndex) => {
-            // Don't count items that don't have product IDs or are manual items
-            if (!otherItem.productId || otherItem.productId.startsWith("manual_")) return total;
-
-            // Count items that match the current product
-            if (otherItem.productId === item.productId) {
-              if (item.variantId) {
-                // For variants, only count matching variant
-                return otherItem.variantId === item.variantId ? total + otherItem.quantity : total;
-              } else {
-                // For simple products, count all items without variants
-                return !otherItem.variantId ? total + otherItem.quantity : total;
-              }
-            }
-            return total;
-          }, 0);
-
-          if (baseStock < allocatedQuantity) {
-            showToast(
-              `არასაკმარისი მარაგი: "${item.name}" (${stockSource})\nსულ მოთხოვნილია: ${allocatedQuantity}, ხელმისაწვდომია: ${baseStock}`,
-              "error"
-            );
-            return;
-          }
+        if (availableStock < item.quantity) {
+          showToast(`არასაკმარისი მარაგი: "${item.name}"`, "error");
+          return;
         }
       }
     }
@@ -468,116 +433,52 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                       {items.map((item, index) => (
                         <tr key={index}>
                           <td className="p-3">
-                            <ProductSelector
-                              value={item.name}
-                              onChange={(value) =>
-                                handleItemChange(index, "name", value)
-                              }
-                              onProductSelect={(selection, quantity) =>
-                                handleProductSelect(index, selection, quantity)
-                              }
-                              placeholder="მაგ: ლანჩბოქსი"
-                              className="px-3 py-2 text-base !border-stone-200 !rounded focus:!ring-2 focus:!ring-emerald-500 !outline-none"
-                              requestedQuantity={item.quantity}
-                              selectedItems={items}
-                              currentItemIndex={index}
-                            />
-                            {/* Stock Status Indicator - ✅ გავხადეთ უფრო კომპაქტური და inline */}
-                            {item.productId && (
-                              <div className="mt-2 text-sm">
-                                {(() => {
-                                  const currentProduct = products.find(
-                                    (p) => p.id === item.productId
-                                  );
-                                  if (!currentProduct) return null;
+                            <div>
+                              <ProductSelector
+                                value={item.name}
+                                onChange={(value) =>
+                                  handleItemChange(index, "name", value)
+                                }
+                                onProductSelect={(selection, quantity) =>
+                                  handleProductSelect(index, selection, quantity)
+                                }
+                                placeholder="მაგ: ლანჩბოქსი"
+                                className="px-3 py-2 text-base !border-stone-200 !rounded focus:!ring-2 focus:!ring-emerald-500 !outline-none"
+                                requestedQuantity={item.quantity}
+                                selectedItems={items}
+                                currentItemIndex={index}
+                              />
+                              {/* Weight Information */}
+                              {item.productId && (() => {
+                                const currentProduct = products.find(
+                                  (p) => p.id === item.productId
+                                );
+                                if (!currentProduct) return null;
 
-                                  // Calculate dynamic available stock
-                                  let baseStock = 0;
-                                  if (item.variantId && currentProduct.hasVariants) {
-                                    const variant = currentProduct.variants?.find(
+                                let weight: number | undefined;
+                                if (
+                                  item.variantId &&
+                                  currentProduct.hasVariants
+                                ) {
+                                  const variant =
+                                    currentProduct.variants?.find(
                                       (v) => v.id === item.variantId
                                     );
-                                    baseStock = variant?.stock || 0;
-                                  } else {
-                                    baseStock = currentProduct.stock || 0;
-                                  }
+                                  weight = variant?.weight;
+                                } else {
+                                  weight = currentProduct.weight;
+                                }
 
-                                  // Calculate already allocated quantity (excluding current item)
-                                  const allocatedQuantity = items.reduce((total, otherItem, otherIndex) => {
-                                    if (otherIndex === index) return total; // Skip current item
-
-                                    if (otherItem.productId === item.productId) {
-                                      if (item.variantId) {
-                                        return otherItem.variantId === item.variantId ? total + otherItem.quantity : total;
-                                      } else {
-                                        return !otherItem.variantId ? total + otherItem.quantity : total;
-                                      }
-                                    }
-                                    return total;
-                                  }, 0);
-
-                                  const availableStock = Math.max(0, baseStock - allocatedQuantity);
-
-                                  if (availableStock <= 0) {
-                                    return (
-                                      <span className="text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
-                                        ❌ ამოიწურა
-                                      </span>
-                                    );
-                                  } else if (availableStock < item.quantity) {
-                                    return (
-                                      <span className="text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200">
-                                        ⚠️ არასაკმარისია (ხელმისაწვდომია{" "}
-                                        {availableStock} ცალი)
-                                      </span>
-                                    );
-                                  } else if (availableStock <= 5) {
-                                    return (
-                                      <span className="text-yellow-600 bg-yellow-50 px-2 py-1 rounded border border-yellow-200">
-                                        ⚡ დაბალი მარაგი ({availableStock} ცალი)
-                                      </span>
-                                    );
-                                  } else {
-                                    return (
-                                      <span className="text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
-                                        ✅ ხელმისაწვდომია ({availableStock}{" "}
-                                        ცალი)
-                                      </span>
-                                    );
-                                  }
-                                })()}
-                                {/* Weight Information */}
-                                {(() => {
-                                  const currentProduct = products.find(
-                                    (p) => p.id === item.productId
+                                if (weight) {
+                                  return (
+                                    <span className="ml-2 text-stone-600 bg-stone-50 px-2 py-1 rounded border border-stone-200">
+                                      ⚖️ {weight}გრ
+                                    </span>
                                   );
-                                  if (!currentProduct) return null;
-
-                                  let weight: number | undefined;
-                                  if (
-                                    item.variantId &&
-                                    currentProduct.hasVariants
-                                  ) {
-                                    const variant =
-                                      currentProduct.variants?.find(
-                                        (v) => v.id === item.variantId
-                                      );
-                                    weight = variant?.weight;
-                                  } else {
-                                    weight = currentProduct.weight;
-                                  }
-
-                                  if (weight) {
-                                    return (
-                                      <span className="ml-2 text-stone-600 bg-stone-50 px-2 py-1 rounded border border-stone-200">
-                                        ⚖️ {weight}გრ
-                                      </span>
-                                    );
-                                  }
-                                  return null;
-                                })()}
-                              </div>
-                            )}
+                                }
+                                return null;
+                              })()}
+                            </div>
                           </td>
                           <td className="p-3">
                             <input
