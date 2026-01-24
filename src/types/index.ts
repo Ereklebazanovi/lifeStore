@@ -126,6 +126,7 @@ export interface Order {
   trackingNumber?: string;
   // Cancellation fields
   cancelReason?: string;
+  cancellationReason?: string;
   cancelledAt?: Date | { seconds: number; nanoseconds: number };
 }
 

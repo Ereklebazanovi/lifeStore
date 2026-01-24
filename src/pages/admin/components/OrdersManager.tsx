@@ -1630,9 +1630,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           {order.items.length} პროდუქტი
                         </p>
                         {order.orderStatus === "cancelled" &&
-                          order.cancelReason && (
+                          (order.cancelReason || order.cancellationReason) && (
                             <p className="text-xs text-red-600 mt-1 truncate">
-                              მიზეზი: {order.cancelReason}
+                              მიზეზი: {order.cancelReason || order.cancellationReason}
                             </p>
                           )}
                       </div>
@@ -1980,13 +1980,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         გაუქმების ინფორმაცია
                       </h4>
                       <div className="space-y-3">
-                        {selectedOrder.cancelReason && (
+                        {(selectedOrder.cancelReason || selectedOrder.cancellationReason) && (
                           <div>
                             <span className="text-sm font-medium text-red-700">
                               მიზეზი:
                             </span>
                             <p className="text-sm text-red-900 mt-1 bg-red-100 p-3 rounded-lg border border-red-200">
-                              {selectedOrder.cancelReason}
+                              {selectedOrder.cancelReason || selectedOrder.cancellationReason}
                             </p>
                           </div>
                         )}

@@ -84,8 +84,8 @@ export const exportSingleOrderToExcel = (order: Order) => {
       };
 
       // Only add cancellation reason column if order is cancelled and has a reason
-      if (order.orderStatus === "cancelled" && order.cancelReason) {
-        rowData["გაუქმების მიზეზი"] = order.cancelReason;
+      if (order.orderStatus === "cancelled" && (order.cancelReason || order.cancellationReason)) {
+        rowData["გაუქმების მიზეზი"] = order.cancelReason || order.cancellationReason;
       }
 
       flattenedData.push(rowData);
@@ -245,8 +245,8 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
         };
 
         // Only add cancellation reason if order is cancelled and has a reason
-        if (order.orderStatus === "cancelled" && order.cancelReason) {
-          rowData["გაუქმების მიზეზი"] = order.cancelReason;
+        if (order.orderStatus === "cancelled" && (order.cancelReason || order.cancellationReason)) {
+          rowData["გაუქმების მიზეზი"] = order.cancelReason || order.cancellationReason;
         }
 
         flattenedData.push(rowData);
@@ -259,7 +259,7 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
 
     // Check if any order in the dataset is cancelled and has reason
     const hasCancelledOrders = orders.some(order =>
-      order.orderStatus === "cancelled" && order.cancelReason
+      order.orderStatus === "cancelled" && (order.cancelReason || order.cancellationReason)
     );
 
     const baseColWidths = [
