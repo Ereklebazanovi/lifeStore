@@ -36,6 +36,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   onOrderCreated,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { products, setIsCreatingOrder } = useProductStore();
 
   // --- Form State ---
@@ -147,6 +148,12 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Prevent double submission
+    if (isSubmitting || isLoading) {
+      console.warn("⚠️ Form submission already in progress");
+      return;
+    }
+
     console.log("🔴 CreateManualOrderModal.handleSubmit called!", {
       itemsCount: items.length,
       items: items.map(i => ({ name: i.name, qty: i.quantity })),
@@ -196,6 +203,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       }
     }
     try {
+      setIsSubmitting(true);
       setIsLoading(true);
       setIsCreatingOrder(true);
 
@@ -212,6 +220,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       const timeoutId = setTimeout(() => {
         console.warn("⚠️ Order creation timeout - resetting isCreatingOrder flag");
         setIsCreatingOrder(false);
+        setIsSubmitting(false);
       }, 15000); // 15 second timeout
 
       await OrderService.createManualOrder(orderData);
@@ -225,6 +234,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       showToast("შეკვეთის შექმნა ვერ მოხერხდა", "error");
     } finally {
       setIsLoading(false);
+      setIsSubmitting(false);
       setIsCreatingOrder(false);
     }
   };
