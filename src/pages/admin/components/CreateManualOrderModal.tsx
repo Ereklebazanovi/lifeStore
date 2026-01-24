@@ -145,9 +145,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async () => {
     // Prevent double submission
     if (isSubmitting || isLoading) {
       console.warn("⚠️ Form submission already in progress");
@@ -262,9 +260,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
         </div>
         {/* --- Scrollable Body --- */}
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-          <form
-            id="create-order-form"
-            onSubmit={handleSubmit}
+          <div
             className="space-y-8"
           >
             {/* 1. Quick Settings Row - ✅ გავზარდეთ სივრცეები და ფონტები კომფორტისთვის */}
@@ -604,7 +600,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                 </div>
               </div>
             </div>
-          </form>
+          </div>
         </div>
         {/* --- Footer (Fixed) - ✅ გავზარდეთ ღილაკები */}
         <div className="flex items-center justify-end gap-4 p-5 border-t border-stone-100 bg-gray-50 rounded-b-xl flex-shrink-0">
@@ -616,8 +612,8 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
             გაუქმება
           </button>
           <button
-            type="submit"
-            form="create-order-form"
+            type="button"
+            onClick={handleSubmit}
             disabled={isLoading}
             className="px-7 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-base font-medium shadow-sm shadow-emerald-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all active:scale-95"
           >
