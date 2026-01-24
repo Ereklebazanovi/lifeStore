@@ -37,6 +37,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -52,6 +53,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
 
     window.addEventListener("resize", checkScreenSize);
     return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
+
+  // Real-time clock
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000); // Update every second
+
+    return () => clearInterval(timer);
   }, []);
 
   // 1. ყველა შესაძლო მენიუს ელემენტი
@@ -117,10 +127,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     </button>
   );
 
-  const currentTime = new Date().toLocaleTimeString("ka-GE", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
   return (
     <div className="h-screen bg-gray-50 overflow-hidden">
@@ -310,7 +316,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                 activeSection}
             </h1>
           </div>
-          <div className="text-sm text-gray-500">{currentTime}</div>
+          <div className="text-sm text-gray-500">
+            {currentTime.toLocaleTimeString("ka-GE", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })}
+          </div>
         </header>
 
         <main className="flex-1 p-6 overflow-hidden flex flex-col">
