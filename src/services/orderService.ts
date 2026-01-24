@@ -512,24 +512,25 @@ export class OrderService {
 
       const orderData = orderDoc.data();
 
-      // 2. Only cancel if order is still pending
-      if (
-        orderData.paymentStatus !== "pending" ||
-        orderData.orderStatus !== "pending"
-      ) {
-        console.log(`Order ${orderId} is not pending, cannot cancel`);
-        return;
+      // 2. Check if order is already cancelled
+      if (orderData.orderStatus === "cancelled") {
+        console.log(`Order ${orderId} is already cancelled`);
+        throw new Error("შეკვეთა უკვე გაუქმებულია");
       }
+
+      // Allow cancellation of orders in any status except already cancelled
+      console.log(`📋 Cancelling order with status: ${orderData.orderStatus}, payment: ${orderData.paymentStatus}`);
 
       // 3. No inventory rollback for manual cancellations
       // Only automated expired order cleanup should rollback inventory
       console.log(`⚠️ Manual cancellation - inventory NOT restored automatically`);
       console.log(`📋 Admin should manually restore inventory if needed`);
 
-      // 4. Update order status
+      // 4. Update order status to cancelled
       await updateDoc(orderDoc.ref, {
         orderStatus: "cancelled",
-        paymentStatus: "failed",
+        // Only update paymentStatus to failed if it was pending
+        ...(orderData.paymentStatus === "pending" && { paymentStatus: "failed" }),
         cancelReason: reason,
         cancelledAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
