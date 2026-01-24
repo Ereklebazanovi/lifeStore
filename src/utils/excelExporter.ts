@@ -66,7 +66,7 @@ export const exportSingleOrderToExcel = (order: Order) => {
       const quantity = item.quantity;
       const unitPrice = item.price;
 
-      flattenedData.push({
+      const rowData: any = {
         "თარიღი": formattedDate,
         "შეკვეთის ნომერი": order.orderNumber,
         "სტატუსი": order.orderStatus,
@@ -81,16 +81,22 @@ export const exportSingleOrderToExcel = (order: Order) => {
         "ტელეფონის ნომერი": order.customerInfo.phone,
         "მისამართი": address,
         "კომენტარი": order.deliveryInfo.comment || "",
-        "გაუქმების მიზეზი": order.orderStatus === "cancelled" && order.cancelReason ? order.cancelReason : "",
-      });
+      };
+
+      // Only add cancellation reason column if order is cancelled and has a reason
+      if (order.orderStatus === "cancelled" && order.cancelReason) {
+        rowData["გაუქმების მიზეზი"] = order.cancelReason;
+      }
+
+      flattenedData.push(rowData);
     });
 
     const worksheet = XLSX.utils.json_to_sheet(flattenedData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, order.orderNumber);
 
-    // Auto-fit columns
-    const colWidths = [
+    // Auto-fit columns - only include cancellation column if order is cancelled
+    const baseColWidths = [
       { wch: 16 }, // თარიღი
       { wch: 18 }, // შეკვეთის ნომერი
       { wch: 14 }, // სტატუსი
@@ -105,8 +111,12 @@ export const exportSingleOrderToExcel = (order: Order) => {
       { wch: 16 }, // ტელეფონის ნომერი
       { wch: 28 }, // მისამართი
       { wch: 28 }, // კომენტარი
-      { wch: 25 }, // გაუქმების მიზეზი
     ];
+
+    // Add cancellation reason column width only if order is cancelled
+    const colWidths = (order.orderStatus === "cancelled" && order.cancelReason)
+      ? [...baseColWidths, { wch: 25 }] // გაუქმების მიზეზი
+      : baseColWidths;
     worksheet["!cols"] = colWidths;
 
     // Header style - Bold with light gray background
@@ -131,8 +141,9 @@ export const exportSingleOrderToExcel = (order: Order) => {
     }
 
     // Apply data row styling - all rows same color for single order
+    const totalColumns = colWidths.length;
     for (let row = 2; row <= flattenedData.length + 1; row++) {
-      for (let col = 0; col < 15; col++) {
+      for (let col = 0; col < totalColumns; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row - 1, c: col });
         if (!worksheet[cellAddress]) continue;
         if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
@@ -216,7 +227,7 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
         const quantity = item.quantity;
         const unitPrice = item.price;
 
-        flattenedData.push({
+        const rowData: any = {
           "თარიღი": formattedDate,
           "შეკვეთის ნომერი": order.orderNumber,
           "სტატუსი": order.orderStatus,
@@ -231,8 +242,14 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
           "ტელეფონის ნომერი": order.customerInfo.phone,
           "მისამართი": address,
           "კომენტარი": order.deliveryInfo.comment || "",
-          "გაუქმების მიზეზი": order.orderStatus === "cancelled" && order.cancelReason ? order.cancelReason : "",
-        });
+        };
+
+        // Only add cancellation reason if order is cancelled and has a reason
+        if (order.orderStatus === "cancelled" && order.cancelReason) {
+          rowData["გაუქმების მიზეზი"] = order.cancelReason;
+        }
+
+        flattenedData.push(rowData);
       });
     });
 
@@ -240,7 +257,12 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "შეკვეთები");
 
-    const colWidths = [
+    // Check if any order in the dataset is cancelled and has reason
+    const hasCancelledOrders = orders.some(order =>
+      order.orderStatus === "cancelled" && order.cancelReason
+    );
+
+    const baseColWidths = [
       { wch: 16 }, // თარიღი
       { wch: 18 }, // შეკვეთის ნომერი
       { wch: 14 }, // სტატუსი
@@ -255,8 +277,12 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
       { wch: 16 }, // ტელეფონის ნომერი
       { wch: 28 }, // მისამართი
       { wch: 28 }, // კომენტარი
-      { wch: 25 }, // გაუქმების მიზეზი
     ];
+
+    // Add cancellation reason column only if there are cancelled orders
+    const colWidths = hasCancelledOrders
+      ? [...baseColWidths, { wch: 25 }] // გაუქმების მიზეზი
+      : baseColWidths;
     worksheet["!cols"] = colWidths;
 
     // Header style - Bold with light gray background
@@ -293,7 +319,8 @@ export const exportMultipleOrdersToExcel = (orders: Order[]) => {
       }
 
       // ვასტილავთ მთელ რიგს
-      for (let col = 0; col < 15; col++) {
+      const totalColumns = colWidths.length;
+      for (let col = 0; col < totalColumns; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row - 1, c: col });
         if (!worksheet[cellAddress]) continue;
         if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
