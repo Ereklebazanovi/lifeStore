@@ -156,35 +156,58 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       showToast("დაამატეთ მინიმუმ ერთი პროდუქტი", "error");
       return;
     }
-    // ✅ Enhanced Stock Validation - Support variants
+    // ✅ Enhanced Stock Validation - Support variants with dynamic stock calculation
     const itemsWithProductId = items.filter(
       (item) => item.productId && !item.productId.startsWith("manual_")
     );
-    for (const item of itemsWithProductId) {
+
+    // Check each product against dynamic available stock
+    for (let i = 0; i < itemsWithProductId.length; i++) {
+      const item = itemsWithProductId[i];
       if (item.productId) {
         const currentProduct = products.find((p) => p.id === item.productId);
         if (currentProduct) {
-          let availableStock = 0;
+          let baseStock = 0;
           let stockSource = "";
-          // Check if this is a variant or simple product
+
+          // Get base stock
           if (item.variantId && currentProduct.hasVariants) {
             const variant = currentProduct.variants?.find(
               (v) => v.id === item.variantId
             );
             if (variant) {
-              availableStock = variant.stock || 0;
+              baseStock = variant.stock || 0;
               stockSource = `ვარიანტი: ${variant.name}`;
             } else {
               showToast(`ვარიანტი არ მოიძებნა: "${item.name}"`, "error");
               return;
             }
           } else {
-            availableStock = currentProduct.stock || 0;
+            baseStock = currentProduct.stock || 0;
             stockSource = "მთავარი პროდუქტი";
           }
-          if (availableStock < item.quantity) {
+
+          // Calculate allocated stock considering all items with same product/variant
+          const allocatedQuantity = items.reduce((total, otherItem, otherIndex) => {
+            // Don't count items that don't have product IDs or are manual items
+            if (!otherItem.productId || otherItem.productId.startsWith("manual_")) return total;
+
+            // Count items that match the current product
+            if (otherItem.productId === item.productId) {
+              if (item.variantId) {
+                // For variants, only count matching variant
+                return otherItem.variantId === item.variantId ? total + otherItem.quantity : total;
+              } else {
+                // For simple products, count all items without variants
+                return !otherItem.variantId ? total + otherItem.quantity : total;
+              }
+            }
+            return total;
+          }, 0);
+
+          if (baseStock < allocatedQuantity) {
             showToast(
-              `არასაკმარისი მარაგი: "${item.name}" (${stockSource})\nმოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${availableStock}`,
+              `არასაკმარისი მარაგი: "${item.name}" (${stockSource})\nსულ მოთხოვნილია: ${allocatedQuantity}, ხელმისაწვდომია: ${baseStock}`,
               "error"
             );
             return;
@@ -456,6 +479,8 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                               placeholder="მაგ: ლანჩბოქსი"
                               className="px-3 py-2 text-base !border-stone-200 !rounded focus:!ring-2 focus:!ring-emerald-500 !outline-none"
                               requestedQuantity={item.quantity}
+                              selectedItems={items}
+                              currentItemIndex={index}
                             />
                             {/* Stock Status Indicator - ✅ გავხადეთ უფრო კომპაქტური და inline */}
                             {item.productId && (
@@ -465,19 +490,34 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                                     (p) => p.id === item.productId
                                   );
                                   if (!currentProduct) return null;
-                                  let availableStock = 0;
-                                  if (
-                                    item.variantId &&
-                                    currentProduct.hasVariants
-                                  ) {
-                                    const variant =
-                                      currentProduct.variants?.find(
-                                        (v) => v.id === item.variantId
-                                      );
-                                    availableStock = variant?.stock || 0;
+
+                                  // Calculate dynamic available stock
+                                  let baseStock = 0;
+                                  if (item.variantId && currentProduct.hasVariants) {
+                                    const variant = currentProduct.variants?.find(
+                                      (v) => v.id === item.variantId
+                                    );
+                                    baseStock = variant?.stock || 0;
                                   } else {
-                                    availableStock = currentProduct.stock || 0;
+                                    baseStock = currentProduct.stock || 0;
                                   }
+
+                                  // Calculate already allocated quantity (excluding current item)
+                                  const allocatedQuantity = items.reduce((total, otherItem, otherIndex) => {
+                                    if (otherIndex === index) return total; // Skip current item
+
+                                    if (otherItem.productId === item.productId) {
+                                      if (item.variantId) {
+                                        return otherItem.variantId === item.variantId ? total + otherItem.quantity : total;
+                                      } else {
+                                        return !otherItem.variantId ? total + otherItem.quantity : total;
+                                      }
+                                    }
+                                    return total;
+                                  }, 0);
+
+                                  const availableStock = Math.max(0, baseStock - allocatedQuantity);
+
                                   if (availableStock <= 0) {
                                     return (
                                       <span className="text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
@@ -487,7 +527,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                                   } else if (availableStock < item.quantity) {
                                     return (
                                       <span className="text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200">
-                                        ⚠️ არასაკმარისია (მარაგშია{" "}
+                                        ⚠️ არასაკმარისია (ხელმისაწვდომია{" "}
                                         {availableStock} ცალი)
                                       </span>
                                     );

@@ -11,7 +11,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { useProductStore } from "../../store/productStore";
-import type { Product, ProductVariant } from "../../types";
+import type { Product, ProductVariant, ManualOrderItem } from "../../types";
 import { getTotalStock } from "../../utils/stock";
 
 export interface ProductSelection {
@@ -30,6 +30,8 @@ interface ProductSelectModalProps {
   onClose: () => void;
   onProductSelect: (selection: ProductSelection, quantity: number) => void;
   requestedQuantity?: number;
+  selectedItems?: ManualOrderItem[];
+  currentItemIndex?: number;
 }
 
 const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
@@ -37,6 +39,8 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
   onClose,
   onProductSelect,
   requestedQuantity = 1,
+  selectedItems = [],
+  currentItemIndex = -1,
 }) => {
   const { products } = useProductStore();
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,6 +49,41 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
     null
   );
   const [quantity, setQuantity] = useState(requestedQuantity);
+
+  // Calculate available stock after considering already selected items
+  const getAvailableStock = (productId: string, variantId?: string): number => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return 0;
+
+    // Get base stock
+    let baseStock = 0;
+    if (variantId && product.hasVariants) {
+      const variant = product.variants?.find(v => v.id === variantId);
+      baseStock = variant?.stock || 0;
+    } else {
+      baseStock = getTotalStock(product);
+    }
+
+    // Calculate already allocated quantity (excluding current item being edited)
+    const allocatedQuantity = selectedItems.reduce((total, item, index) => {
+      // Skip the current item we're editing
+      if (index === currentItemIndex) return total;
+
+      // Only count items that match this product/variant
+      if (item.productId === productId) {
+        if (variantId) {
+          // For variant products, only count if variant matches
+          return item.variantId === variantId ? total + item.quantity : total;
+        } else {
+          // For simple products, count if no variant specified
+          return !item.variantId ? total + item.quantity : total;
+        }
+      }
+      return total;
+    }, 0);
+
+    return Math.max(0, baseStock - allocatedQuantity);
+  };
 
   // Reset state when modal opens
   useEffect(() => {
@@ -95,25 +134,26 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
       // Reset quantity to 1 when switching products with variants
       setQuantity(1);
     } else {
-      // Simple product - reset quantity based on stock
-      const productStock = getTotalStock(product);
-      setQuantity(productStock > 0 ? 1 : 0);
+      // Simple product - reset quantity based on available stock
+      const availableStock = getAvailableStock(product.id);
+      setQuantity(availableStock > 0 ? 1 : 0);
       setSelectedVariant(null);
     }
   };
 
   const handleVariantClick = (variant: ProductVariant) => {
     setSelectedVariant(variant);
+    if (!selectedProduct) return;
+
     // Smart quantity adjustment when switching variants
-    const variantStock = variant.stock || 0;
-    if (variantStock === 0) {
+    const availableStock = getAvailableStock(selectedProduct.id, variant.id);
+    if (availableStock === 0) {
       // If variant is out of stock, set quantity to 0 and disable controls
       setQuantity(0);
     } else {
       // If variant has stock, always reset to 1 for fresh start
       setQuantity(1);
     }
-    // If variant has enough stock, keep current quantity
   };
 
   const handleConfirm = () => {
@@ -131,7 +171,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
           ? selectedVariant.salePrice
           : selectedVariant.price;
 
-      stock = selectedVariant.stock || 0;
+      stock = getAvailableStock(selectedProduct.id, selectedVariant.id);
 
       selection = {
         type: "existing",
@@ -151,7 +191,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
           ? selectedProduct.salePrice
           : selectedProduct.price;
 
-      stock = getTotalStock(selectedProduct);
+      stock = getAvailableStock(selectedProduct.id);
 
       selection = {
         type: "existing",
@@ -170,9 +210,11 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
 
   const canConfirm =
     selectedProduct && (!selectedProduct.variants?.length || selectedVariant);
-  const currentStock = selectedVariant
-    ? selectedVariant.stock
-    : getTotalStock(selectedProduct || ({} as Product));
+  const currentStock = selectedProduct ? (
+    selectedVariant
+      ? getAvailableStock(selectedProduct.id, selectedVariant.id)
+      : getAvailableStock(selectedProduct.id)
+  ) : 0;
   const stockStatus = getStockStatus(currentStock, quantity);
 
   if (!isOpen) return null;
@@ -223,7 +265,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
               </h3>
               <div className="space-y-2">
                 {filteredProducts.map((product) => {
-                  const totalStock = getTotalStock(product);
+                  const availableStock = getAvailableStock(product.id);
                   const isSelected = selectedProduct?.id === product.id;
 
                   return (
@@ -259,9 +301,9 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          {getStockIcon(getStockStatus(totalStock, quantity))}
+                          {getStockIcon(getStockStatus(availableStock, quantity))}
                           <span className="text-xs text-gray-500">
-                            [{totalStock}]
+                            [{availableStock}]
                           </span>
                         </div>
                       </div>
@@ -289,7 +331,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                     </h4>
                     {selectedProduct.variants.map((variant) => {
                       const isSelected = selectedVariant?.id === variant.id;
-                      const variantStock = variant.stock || 0;
+                      const variantStock = getAvailableStock(selectedProduct.id, variant.id);
                       const actualPrice =
                         variant.salePrice && variant.salePrice < variant.price
                           ? variant.salePrice
@@ -348,11 +390,11 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                       </div>
                       <div className="flex items-center justify-between mt-1">
                         <span className="text-gray-900">
-                          მარაგი: {getTotalStock(selectedProduct)}
+                          ხელმისაწვდომი: {getAvailableStock(selectedProduct.id)}
                         </span>
                         {getStockIcon(
                           getStockStatus(
-                            getTotalStock(selectedProduct),
+                            getAvailableStock(selectedProduct.id),
                             quantity
                           )
                         )}

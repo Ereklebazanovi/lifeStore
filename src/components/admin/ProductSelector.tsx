@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Search, ChevronDown } from "lucide-react";
 import ProductSelectModal, { ProductSelection } from "./ProductSelectModal";
+import type { ManualOrderItem } from "../../types";
 
 interface ProductSelectorProps {
   value: string;
@@ -10,6 +11,8 @@ interface ProductSelectorProps {
   placeholder?: string;
   className?: string;
   requestedQuantity?: number;
+  selectedItems?: ManualOrderItem[];
+  currentItemIndex?: number;
 }
 
 const ProductSelector: React.FC<ProductSelectorProps> = ({
@@ -19,6 +22,8 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
   placeholder = "პროდუქტის არჩევა...",
   className = "",
   requestedQuantity = 1,
+  selectedItems = [],
+  currentItemIndex = -1,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -59,6 +64,8 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         onClose={() => setIsModalOpen(false)}
         onProductSelect={handleProductSelect}
         requestedQuantity={requestedQuantity}
+        selectedItems={selectedItems}
+        currentItemIndex={currentItemIndex}
       />
     </>
   );
