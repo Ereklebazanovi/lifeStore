@@ -25,23 +25,20 @@ interface ProductActions {
   updateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   toggleProductStatus: (id: string) => Promise<void>;
-  getProductById: (id: string) => Promise<Product | null>; // <--- ახალი ფუნქციის ტიპი
-  updateStock: (id: string, newStock: number, reason?: string) => Promise<void>; // <--- Stock update method
-  updateVariantStock: (productId: string, variantId: string, newStock: number, reason?: string) => Promise<void>; // Update variant stock
-  addVariant: (productId: string, variant: Omit<ProductVariant, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>; // Add new variant
-  updateVariant: (productId: string, variantId: string, updates: Partial<ProductVariant>) => Promise<void>; // Update variant
-  deleteVariant: (productId: string, variantId: string) => Promise<void>; // Remove variant
+  getProductById: (id: string) => Promise<Product | null>;
+  updateStock: (id: string, newStock: number, reason?: string) => Promise<void>;
+  updateVariantStock: (productId: string, variantId: string, newStock: number, reason?: string) => Promise<void>;
+  addVariant: (productId: string, variant: Omit<ProductVariant, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateVariant: (productId: string, variantId: string, updates: Partial<ProductVariant>) => Promise<void>;
+  deleteVariant: (productId: string, variantId: string) => Promise<void>;
   subscribeToProducts: () => () => void;
-  refreshInventory: () => Promise<void>; // Real-time inventory refresh
+  refreshInventory: () => Promise<void>;
   setLoading: (loading: boolean) => void;
-}
-
-interface StoreState extends ProductState & ProductActions {
-  isCreatingOrder: boolean;
   setIsCreatingOrder: (creating: boolean) => void;
+  isCreatingOrder: boolean;
 }
 
-export const useProductStore = create<StoreState>(
+export const useProductStore = create<ProductState & ProductActions>(
   (set, get) => ({
     products: [],
     isLoading: false,
