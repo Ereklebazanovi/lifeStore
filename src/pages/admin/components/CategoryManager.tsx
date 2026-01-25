@@ -119,7 +119,8 @@ const CategoryManager: React.FC = () => {
     const category = categories.find((c) => c.id === id);
     if (!category) return;
 
-    const newPriority = direction === "up" ? (category.priority || 0) - 1 : (category.priority || 0) + 1;
+    // Up = მაღალი პრიორიტეტი (+1), Down = დაბალი პრიორიტეტი (-1)
+    const newPriority = direction === "up" ? (category.priority || 0) + 1 : (category.priority || 0) - 1;
     await updateCategory(id, { priority: newPriority });
   };
 
@@ -135,7 +136,8 @@ const CategoryManager: React.FC = () => {
     setEditingId(null);
   };
 
-  const sortedCategories = [...categories].sort((a, b) => (a.priority || 0) - (b.priority || 0));
+  // უმაღლესი პრიორიტეტი (მაღალი ციფრი) -> პირველი
+  const sortedCategories = [...categories].sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
   return (
     <div className="space-y-6">
@@ -143,7 +145,7 @@ const CategoryManager: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">კატეგორიები</h2>
-          <p className="text-sm text-gray-600 mt-1">მართვა საიტის კატეგორიებზე</p>
+          <p className="text-sm text-gray-600 mt-1">საიტის კატეგორიების მართვა</p>
         </div>
         <button
           onClick={() => {
