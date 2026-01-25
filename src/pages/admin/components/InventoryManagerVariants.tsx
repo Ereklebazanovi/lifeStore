@@ -384,7 +384,7 @@ const ProductRow: React.FC<ProductRowProps> = ({
 
   return (
     <>
-      <tr className="border-b border-gray-200 hover:bg-gray-50/30 transition-colors">
+      <tr className={`border-b border-gray-200 hover:bg-gray-50/30 transition-colors ${!product.isActive ? 'opacity-60 bg-gray-50/50' : ''}`}>
         <td className="px-4 py-3 text-center">
           <button
             onClick={() => onSelectProduct(product.id)}
@@ -429,6 +429,18 @@ const ProductRow: React.FC<ProductRowProps> = ({
             }`}
           >
             {product.hasVariants ? "ვარიანტებით" : "მარტივი"}
+          </span>
+        </td>
+
+        <td className="px-4 py-3 text-center">
+          <span
+            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+              product.isActive
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-gray-100 text-gray-600"
+            }`}
+          >
+            {product.isActive ? "აქტიური" : "არააქტიური"}
           </span>
         </td>
 
@@ -512,7 +524,7 @@ const ProductRow: React.FC<ProductRowProps> = ({
       {/* Mobile-First Responsive Variants Layout */}
       {product.hasVariants && isExpanded && (
         <tr>
-          <td colSpan={6} className="p-0">
+          <td colSpan={7} className="p-0">
             <div className="bg-blue-50/20 border-l-4 border-blue-200">
               <div className="p-4">
                 {/* Header - Compact on mobile */}
@@ -568,7 +580,7 @@ const ProductRow: React.FC<ProductRowProps> = ({
                                 : 'bg-gray-200 text-gray-600'
                             }`}
                           >
-                            {variant.isActive ? '✓' : '✗'}
+                            {variant.isActive ? 'აქტ' : 'არააქტ'}
                           </span>
                         </div>
 
@@ -674,7 +686,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <div className={`bg-white border border-gray-200 rounded-lg overflow-hidden ${!product.isActive ? 'opacity-60 bg-gray-50/50' : ''}`}>
       {/* Card Header */}
       <div className="p-4">
         <div className="flex items-start gap-3 mb-3">
@@ -717,6 +729,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 }`}
               >
                 {product.hasVariants ? "ვარიანტებით" : "მარტივი"}
+              </span>
+              <span
+                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  product.isActive
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-red-100 text-red-600"
+                }`}
+              >
+                {product.isActive ? "აქტიური" : "არააქტიური"}
               </span>
               {product.hasVariants && (
                 <span className="text-xs text-blue-600 font-medium">
@@ -870,7 +891,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                             : 'bg-gray-200 text-gray-600'
                         }`}
                       >
-                        {variant.isActive ? '✓' : '✗'}
+                        {variant.isActive ? 'აქტ' : 'არააქტ'}
                       </span>
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${getStockStatusColor(
@@ -1037,7 +1058,7 @@ const InventoryManagerVariants: React.FC = () => {
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.id.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
-      return matchesSearch && matchesCategory && product.isActive;
+      return matchesSearch && matchesCategory;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -1196,6 +1217,9 @@ const InventoryManagerVariants: React.FC = () => {
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                       კატეგორია
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      სტატუსი
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                       ფასი

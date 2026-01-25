@@ -297,14 +297,21 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                         isSelected
                           ? "border-emerald-500 bg-emerald-50"
                           : "border-gray-200 hover:border-gray-300"
-                      }`}
+                      } ${!product.isActive ? 'opacity-60 bg-gray-50/50' : ''}`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900">
-                            {product.name}
-                          </h4>
-                          <div className="text-xs text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <h4 className={`text-sm font-medium ${!product.isActive ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                              {product.name}
+                            </h4>
+                            {!product.isActive && (
+                              <span className="px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-600 rounded-full">
+                                არააქტიური
+                              </span>
+                            )}
+                          </div>
+                          <div className={`text-xs ${!product.isActive ? 'text-gray-500' : 'text-gray-600'}`}>
                             ₾
                             {product.salePrice &&
                             product.salePrice < product.price ? (
@@ -366,14 +373,21 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                             isSelected
                               ? "border-emerald-500 bg-emerald-50"
                               : "border-gray-200 hover:border-gray-300"
-                          }`}
+                          } ${!variant.isActive ? 'opacity-60 bg-gray-50/50' : ''}`}
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {variant.name}
+                              <div className="flex items-center gap-2">
+                                <div className={`text-sm font-medium ${!variant.isActive ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                                  {variant.name}
+                                </div>
+                                {!variant.isActive && (
+                                  <span className="px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-600 rounded-full">
+                                    არააქტიური
+                                  </span>
+                                )}
                               </div>
-                              <div className="text-xs text-gray-600">
+                              <div className={`text-xs ${!variant.isActive ? 'text-gray-500' : 'text-gray-600'}`}>
                                 ₾
                                 {variant.salePrice &&
                                 variant.salePrice < variant.price ? (
@@ -486,31 +500,53 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
 
                 {/* Selection Summary */}
                 {canConfirm && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md">
-                    <h4 className="text-sm font-medium text-emerald-900 mb-1">
-                      არჩეული პროდუქტი:
-                    </h4>
-                    <div className="text-xs text-emerald-800">
-                      <div>
-                        {selectedProduct.name}
-                        {selectedVariant && ` (${selectedVariant.name})`}
+                  <>
+                    {/* Warning for inactive product/variant */}
+                    {(!selectedProduct.isActive || (selectedVariant && !selectedVariant.isActive)) && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-md mb-3">
+                        <h4 className="text-sm font-medium text-red-900 mb-1 flex items-center gap-2">
+                          ⚠️ გაფრთხილება
+                        </h4>
+                        <div className="text-xs text-red-800">
+                          {!selectedProduct.isActive && (
+                            <div>• პროდუქტი <strong>{selectedProduct.name}</strong> არააქტიურია საიტზე</div>
+                          )}
+                          {selectedVariant && !selectedVariant.isActive && (
+                            <div>• ვარიანტი <strong>{selectedVariant.name}</strong> არააქტიურია საიტზე</div>
+                          )}
+                          <div className="mt-1 font-medium">
+                            ეს პროდუქტი/ვარიანტი დამალულია კლიენტებისთვის, მაგრამ +ხელით შეკვეთისთვის ხელმისაწვდომია.
+                          </div>
+                        </div>
                       </div>
-                      <div>რაოდენობა: {quantity}</div>
-                      <div className="font-medium mt-1">
-                        ღირებულება: ₾
-                        {(
-                          (selectedVariant?.salePrice &&
-                          selectedVariant.salePrice < selectedVariant.price
-                            ? selectedVariant.salePrice
-                            : selectedVariant?.price ||
-                              (selectedProduct.salePrice &&
-                              selectedProduct.salePrice < selectedProduct.price
-                                ? selectedProduct.salePrice
-                                : selectedProduct.price)) * quantity
-                        ).toFixed(2)}
+                    )}
+
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-md">
+                      <h4 className="text-sm font-medium text-emerald-900 mb-1">
+                        არჩეული პროდუქტი:
+                      </h4>
+                      <div className="text-xs text-emerald-800">
+                        <div>
+                          {selectedProduct.name}
+                          {selectedVariant && ` (${selectedVariant.name})`}
+                        </div>
+                        <div>რაოდენობა: {quantity}</div>
+                        <div className="font-medium mt-1">
+                          ღირებულება: ₾
+                          {(
+                            (selectedVariant?.salePrice &&
+                            selectedVariant.salePrice < selectedVariant.price
+                              ? selectedVariant.salePrice
+                              : selectedVariant?.price ||
+                                (selectedProduct.salePrice &&
+                                selectedProduct.salePrice < selectedProduct.price
+                                  ? selectedProduct.salePrice
+                                  : selectedProduct.price)) * quantity
+                          ).toFixed(2)}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             ) : (
