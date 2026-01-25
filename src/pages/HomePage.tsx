@@ -14,6 +14,7 @@ import {
   Filter,
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
+import { useCategoryStore } from "../store/categoryStore";
 import { showToast } from "../components/ui/Toast";
 import { hasDiscount, getDiscountText } from "../utils/discount";
 import {
@@ -45,20 +46,28 @@ const HERO_IMAGES = [
 ];
 
 const HomePage: React.FC = () => {
-  const { products, categories, fetchProducts, isLoading } = useProductStore();
+  const { products, fetchProducts, isLoading } = useProductStore();
+  const { categories: categoryObjects, fetchCategories } = useCategoryStore();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [displayCount, setDisplayCount] = useState(12);
 
+  // პრიორიტეტის მიხედვით დალაგებული კატეგორიების სია
+  const sortedCategories = categoryObjects
+    .filter((cat) => cat.isActive !== false) // მხოლოდ აქტიური კატეგორიები
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0)) // მაღალი priority პირველი
+    .map((cat) => cat.name); // მხოლოდ სახელები
+
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
     HERO_IMAGES.forEach((image) => {
       const img = new Image();
       img.src = image.url;
     });
-  }, [fetchProducts]);
+  }, [fetchProducts, fetchCategories]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -344,7 +353,7 @@ const HomePage: React.FC = () => {
                 </div>
 
                 {/* Category Filter */}
-                {categories.length > 0 && (
+                {sortedCategories.length > 0 && (
                   <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
                     <span className="text-sm font-medium text-stone-700 whitespace-nowrap mr-2">კატეგორიები:</span>
                     <button
@@ -358,7 +367,7 @@ const HomePage: React.FC = () => {
                     >
                       ყველა
                     </button>
-                    {categories.map((category) => (
+                    {sortedCategories.map((category) => (
                       <button
                         key={category}
                         onClick={() => setSelectedCategory(category)}
