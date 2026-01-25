@@ -333,11 +333,15 @@ export const exportInventoryToExcel = (
     productsToExport.forEach((product) => {
       // ვარიანტებიანი პროდუქტი
       if (product.hasVariants && product.variants && product.variants.length > 0) {
+        let variantTotalStock = 0;
+
+        // დავამატოთ ყველა ვარიანტი
         product.variants.forEach((variant) => {
            const stock = dateRange && adjustedEndDate ? getStockAtDate(variant.stockHistory, adjustedEndDate) : (variant.stock || 0);
            const price = variant.price || 0;
            const totalValue = stock * price;
 
+           variantTotalStock += stock;
            grandTotalStock += stock;
            grandTotalValue += totalValue;
 
@@ -351,6 +355,30 @@ export const exportInventoryToExcel = (
              "ჯამური ღირებულება (₾)": totalValue,
            });
         });
+
+        // შევამოწმოთ მშობლის ისტორია (Legacy Stock)
+        if (dateRange && adjustedEndDate) {
+          const parentStock = getStockAtDate(product.stockHistory, adjustedEndDate);
+
+          // თუ ვარიანტებს მარაგი არ აქვთ, მაგრამ მშობელს აქვს - ეს ძველი მარტივი პროდუქტის მარაგია
+          if (variantTotalStock === 0 && parentStock > 0) {
+            const parentPrice = product.price || 0;
+            const parentTotalValue = parentStock * parentPrice;
+
+            grandTotalStock += parentStock;
+            grandTotalValue += parentTotalValue;
+
+            flattenedData.push({
+              "პროდუქტის დასახელება": `${product.name} (ძველი ნაშთი)`,
+              "პროდუქტის კოდი": product.productCode || "-",
+              "კატეგორია": product.category || "-",
+              "ვარიანტი": "Legacy",
+              "ერთეულის ფასი (₾)": parentPrice,
+              "მარაგი (ცალი)": parentStock,
+              "ჯამური ღირებულება (₾)": parentTotalValue,
+            });
+          }
+        }
       } else {
         // მარტივი პროდუქტი
         const stock = dateRange && adjustedEndDate ? getStockAtDate(product.stockHistory, adjustedEndDate) : (product.stock || 0);
