@@ -60,6 +60,7 @@ const HomePage: React.FC = () => {
     .sort((a, b) => (b.priority || 0) - (a.priority || 0)) // მაღალი priority პირველი
     .map((cat) => cat.name); // მხოლოდ სახელები
 
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();

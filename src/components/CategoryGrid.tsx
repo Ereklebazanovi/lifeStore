@@ -10,7 +10,9 @@ const CategoryGrid: React.FC = () => {
     fetchCategories();
   }, [fetchCategories]);
 
-  const activeCategories = categories.filter((cat) => cat.isActive !== false);
+  const activeCategories = categories
+    .filter((cat) => cat.isActive !== false) // მხოლოდ აქტიური კატეგორიები
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0)); // მაღალი priority პირველი
 
   return (
     <section className="py-12 lg:py-20 bg-white border-b border-stone-100">
