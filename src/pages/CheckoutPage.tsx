@@ -480,8 +480,8 @@ const CheckoutPage: React.FC = () => {
                     <Truck className="w-3 h-3" /> 
                     მიწოდება ({formData.city})
                   </span>
-                  <span className={shippingCost === 0 ? "text-emerald-600 font-bold" : "text-stone-900"}>
-                    {shippingCost === 0 ? "უფასო" : `+ ₾${shippingCost.toFixed(2)}`}
+                  <span className="text-stone-900">
+                    + ₾{shippingCost.toFixed(2)}
                   </span>
                 </div>
                 
