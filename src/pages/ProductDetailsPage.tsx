@@ -186,10 +186,9 @@ const ProductDetailsPage: React.FC = () => {
     const facebookUrl = `https://lifestore.ge/api/og/${product.id}`; // Special URL for Facebook bot
     const shareText = `🛍️ ${product.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
 
-    // Enhanced Facebook Share URL with proper Open Graph endpoint + unique cache buster
+    // Use the main product page for Facebook sharing (since SEOHead handles OG tags)
     const cacheBuster = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`; // More unique cache busting
-    const facebookOgUrl = `https://lifestore.ge/api/og/${product.id}?v=${cacheBuster}&fb=1`; // Special OG URL for Facebook
-    const shareUrl = `https://lifestore.ge/product/${product.id}?v=${cacheBuster}`;
+    const shareUrl = `https://lifestore.ge/product/${product.id}?fb=${cacheBuster}`;
 
     const detailedQuote = `🛍️ ${product.name}
 💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
@@ -202,7 +201,7 @@ ${product.description}
 🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${product.id}`;
 
     const facebookParams = new URLSearchParams({
-      u: facebookOgUrl, // Use Open Graph URL for proper metadata
+      u: shareUrl, // Use main product URL which has proper SEOHead OG tags
       quote: detailedQuote,
     });
     const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
@@ -264,7 +263,7 @@ ${product.description}
     <>
       <SEOHead
         title={`${product.name} - ₾${getCurrentPrice().toFixed(2)} | Life Store`}
-        description={`${product.description.slice(0, 140)}`}
+        description={`${product.description.slice(0, 120)} ✅ მარაგშია ${currentStock} ცალი 🚚 მიწოდება: თბილისი/რუსთავი 5₾, სხვა 10₾`}
         keywords={`${product.name}, ეკო პროდუქტები, ${product.category}`}
         ogImage={product.images?.[0] || "https://lifestore.ge/Screenshot 2025-12-10 151703.png"}
         ogType="product"
@@ -715,7 +714,7 @@ ${product.description}
                 onClick={() => {
                   if (!product) return;
                   const cacheBuster = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                  const facebookOgUrl = `https://lifestore.ge/api/og/${product.id}?v=${cacheBuster}&fb=1`;
+                  const shareUrl = `https://lifestore.ge/product/${product.id}?fb=${cacheBuster}`;
                   const detailedQuote = `🛍️ ${product.name}
 💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
 📦 კატეგორია: ${product.category}${getCurrentWeight() ? `\n⚖️ წონა: ${getCurrentWeight()}გრ` : ''}
@@ -727,7 +726,7 @@ ${product.description}
 🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${product.id}`;
 
                   const facebookParams = new URLSearchParams({
-                    u: facebookOgUrl,
+                    u: shareUrl,
                     quote: detailedQuote,
                   });
                   const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;

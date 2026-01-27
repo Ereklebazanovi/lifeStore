@@ -56,8 +56,8 @@ const SEOHead: React.FC<SEOHeadProps> = ({
       updateMetaTag('og:url', canonicalUrl, true);
     }
 
-    // Facebook specific tags
-    updateMetaTag('fb:app_id', '1234567890', true); // Replace with actual Facebook App ID
+    // Facebook specific tags - Remove fake app ID to avoid conflicts
+    // updateMetaTag('fb:app_id', '1234567890', true); // Commented out - use real app ID when available
 
     // Twitter tags
     updateMetaTag('twitter:card', 'summary_large_image');
