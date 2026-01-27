@@ -390,11 +390,11 @@ const CheckoutPage: React.FC = () => {
                         onChange={handleChange}
                         className={`${inputBaseStyle} appearance-none cursor-pointer`}
                       >
-                        <option value="თბილისი">თბილისი</option>
-                        <option value="ბათუმი">ბათუმი</option>
-                        <option value="ქუთაისი">ქუთაისი</option>
-                        <option value="რუსთავი">რუსთავი</option>
-                        <option value="სხვა">სხვა</option>
+                        <option value="თბილისი">თბილისი (მიწოდება: 5₾)</option>
+                        <option value="რუსთავი">რუსთავი (მიწოდება: 5₾)</option>
+                        <option value="ბათუმი">ბათუმი (მიწოდება: 10₾)</option>
+                        <option value="ქუთაისი">ქუთაისი (მიწოდება: 10₾)</option>
+                        <option value="სხვა">სხვა (მიწოდება: 10₾)</option>
                       </select>
                    </div>
                    <div className="sm:col-span-2">

@@ -197,7 +197,7 @@ const ProductDetailsPage: React.FC = () => {
 ${product.description}
 
 🌿 Life Store - ეკომეგობრული სახლის ნივთები
-🚚 უფასო მიწოდება თბილისში
+🚚 მიწოდება: თბილისი/რუსთავი 5₾, სხვა 10₾
 🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${product.id}`;
 
     const facebookParams = new URLSearchParams({
@@ -515,7 +515,7 @@ ${product.description}
                       <Leaf className="w-4 h-4 text-emerald-600" /> 100% ეკომეგობრული
                   </li>
                    <li className="flex items-center gap-2">
-                      <Truck className="w-4 h-4 text-emerald-600" /> უფასო მიწოდება თბილისში
+                      <Truck className="w-4 h-4 text-emerald-600" /> მიწოდება: თბილისი/რუსთავი 5₾, სხვა 10₾
                   </li>
                    <li className="flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-600" /> ხარისხის გარანტია
@@ -722,7 +722,7 @@ ${product.description}
 ${product.description}
 
 🌿 Life Store - ეკომეგობრული სახლის ნივთები
-🚚 უფასო მიწოდება თბილისში
+🚚 მიწოდება: თბილისი/რუსთავი 5₾, სხვა 10₾
 🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${product.id}`;
 
                   const facebookParams = new URLSearchParams({
