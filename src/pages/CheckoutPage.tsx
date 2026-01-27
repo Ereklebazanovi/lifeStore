@@ -63,7 +63,7 @@ const CheckoutPage: React.FC = () => {
   const [isAgreed, setIsAgreed] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const shippingCost = formData.city === "თბილისი" ? 0 : 7;
+  const shippingCost = (formData.city === "თბილისი" || formData.city === "რუსთავი") ? 5 : 10;
   const grandTotal = subtotal + shippingCost;
 
   // მომხმარებლის ინფორმაციის ავტომატური შევსება
