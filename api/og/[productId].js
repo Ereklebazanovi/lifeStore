@@ -56,9 +56,10 @@ export default async function handler(req, res) {
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="product">
     <meta property="og:url" content="https://lifestore.ge/product/${productId}">
-    <meta property="og:title" content="${product.name} - ₾${actualPrice.toFixed(2)}">
-    <meta property="og:description" content="${product.description.slice(0, 160)} ✅ მარაგშია ${totalStock} ცალი">
+    <meta property="og:title" content="${product.name} - ₾${actualPrice.toFixed(2)} | Life Store">
+    <meta property="og:description" content="${product.description.slice(0, 120)} ✅ მარაგშია ${totalStock} ცალი 🚚 მიწოდება: თბილისი/რუსთავი 5₾, სხვა 10₾">
     <meta property="og:image" content="${product.images?.[0] || 'https://lifestore.ge/Screenshot 2025-12-10 151703.png'}">
+    <meta property="og:image:alt" content="${product.name}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="Life Store">
@@ -113,7 +114,8 @@ export default async function handler(req, res) {
 
     // Set headers
     res.setHeader('Content-Type', 'text/html');
-    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=900'); // Cache for 30 min, edge cache 15 min
+    res.setHeader('Vary', 'User-Agent'); // Vary by user agent for better crawling
 
     return res.status(200).send(html);
 

@@ -186,8 +186,9 @@ const ProductDetailsPage: React.FC = () => {
     const facebookUrl = `https://lifestore.ge/api/og/${product.id}`; // Special URL for Facebook bot
     const shareText = `🛍️ ${product.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
 
-    // Enhanced Facebook Share URL with detailed quote + cache buster
-    const cacheBuster = Date.now(); // Current timestamp to bust Facebook cache
+    // Enhanced Facebook Share URL with proper Open Graph endpoint + unique cache buster
+    const cacheBuster = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`; // More unique cache busting
+    const facebookOgUrl = `https://lifestore.ge/api/og/${product.id}?v=${cacheBuster}&fb=1`; // Special OG URL for Facebook
     const shareUrl = `https://lifestore.ge/product/${product.id}?v=${cacheBuster}`;
 
     const detailedQuote = `🛍️ ${product.name}
@@ -201,7 +202,7 @@ ${product.description}
 🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${product.id}`;
 
     const facebookParams = new URLSearchParams({
-      u: shareUrl, // Use cache-busting URL
+      u: facebookOgUrl, // Use Open Graph URL for proper metadata
       quote: detailedQuote,
     });
     const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
@@ -713,8 +714,8 @@ ${product.description}
               <button
                 onClick={() => {
                   if (!product) return;
-                  const cacheBuster = Date.now();
-                  const shareUrl = `https://lifestore.ge/product/${product.id}?v=${cacheBuster}`;
+                  const cacheBuster = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                  const facebookOgUrl = `https://lifestore.ge/api/og/${product.id}?v=${cacheBuster}&fb=1`;
                   const detailedQuote = `🛍️ ${product.name}
 💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
 📦 კატეგორია: ${product.category}${getCurrentWeight() ? `\n⚖️ წონა: ${getCurrentWeight()}გრ` : ''}
@@ -726,7 +727,7 @@ ${product.description}
 🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${product.id}`;
 
                   const facebookParams = new URLSearchParams({
-                    u: shareUrl,
+                    u: facebookOgUrl,
                     quote: detailedQuote,
                   });
                   const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?${facebookParams.toString()}`;
