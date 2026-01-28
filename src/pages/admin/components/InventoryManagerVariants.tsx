@@ -1079,7 +1079,7 @@ const InventoryManagerVariants: React.FC = () => {
         setSelectedProducts(new Set());
         setTurnoverDateRange({ startDate: "", endDate: "" });
       } else {
-        showToast(result.error || "ბრუნვითი ანგარიშის შეცდომა", "error");
+        showToast(typeof result.error === 'string' ? result.error : "ბრუნვითი ანგარიშის შეცდომა", "error");
       }
     } catch (error) {
       console.error("Turnover report error:", error);
