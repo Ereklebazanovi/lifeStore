@@ -1062,7 +1062,7 @@ const InventoryManagerVariants: React.FC = () => {
       const startDate = new Date(turnoverDateRange.startDate);
       const endDate = new Date(turnoverDateRange.endDate);
 
-      if (startDate >= endDate) {
+      if (startDate > endDate) {
         showToast("საწყისი თარიღი უნდა იყოს უფრო ადრინდელი საბოლოოზე", "error");
         return;
       }
