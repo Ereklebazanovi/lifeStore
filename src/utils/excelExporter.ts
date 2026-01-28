@@ -107,78 +107,26 @@ export const calculateTurnover = (
     : products;
 
   productsToAnalyze.forEach((product) => {
-    if (product.hasVariants && product.variants && product.variants.length > 0) {
-      // Handle variant products
-      product.variants.forEach((variant) => {
-        const initialStock = getStockAtDate(variant.stockHistory, beforeStartDate);
-        const finalStock = getStockAtDate(variant.stockHistory, adjustedEndDate);
-        const movements = getStockMovements(variant.stockHistory, startDate, adjustedEndDate);
-        const price = variant.price || 0;
+    // Handle all products as simple products (no variants)
+    const initialStock = getStockAtDate(product.stockHistory, beforeStartDate);
+    const finalStock = getStockAtDate(product.stockHistory, adjustedEndDate);
+    const movements = getStockMovements(product.stockHistory, startDate, adjustedEndDate);
+    const price = product.price || 0;
 
-        turnoverData.push({
-          productName: product.name,
-          productCode: product.productCode || "-",
-          category: product.category || "-",
-          variantName: variant.name,
-          initialStock,
-          incoming: movements.incoming,
-          outgoing: movements.outgoing,
-          finalStock,
-          initialValue: initialStock * price,
-          incomingValue: movements.incoming * price,
-          outgoingValue: movements.outgoing * price,
-          finalValue: finalStock * price,
-          price
-        });
-      });
-
-      // Check for legacy stock on parent product
-      const parentInitialStock = getStockAtDate(product.stockHistory, beforeStartDate);
-      const parentFinalStock = getStockAtDate(product.stockHistory, adjustedEndDate);
-
-      if (parentInitialStock > 0 || parentFinalStock > 0) {
-        const parentMovements = getStockMovements(product.stockHistory, startDate, adjustedEndDate);
-        const parentPrice = product.price || 0;
-
-        turnoverData.push({
-          productName: `${product.name} (ძველი ნაშთი)`,
-          productCode: product.productCode || "-",
-          category: product.category || "-",
-          variantName: "Legacy",
-          initialStock: parentInitialStock,
-          incoming: parentMovements.incoming,
-          outgoing: parentMovements.outgoing,
-          finalStock: parentFinalStock,
-          initialValue: parentInitialStock * parentPrice,
-          incomingValue: parentMovements.incoming * parentPrice,
-          outgoingValue: parentMovements.outgoing * parentPrice,
-          finalValue: parentFinalStock * parentPrice,
-          price: parentPrice
-        });
-      }
-    } else {
-      // Handle simple products
-      const initialStock = getStockAtDate(product.stockHistory, beforeStartDate);
-      const finalStock = getStockAtDate(product.stockHistory, adjustedEndDate);
-      const movements = getStockMovements(product.stockHistory, startDate, adjustedEndDate);
-      const price = product.price || 0;
-
-      turnoverData.push({
-        productName: product.name,
-        productCode: product.productCode || "-",
-        category: product.category || "-",
-        variantName: "-",
-        initialStock,
-        incoming: movements.incoming,
-        outgoing: movements.outgoing,
-        finalStock,
-        initialValue: initialStock * price,
-        incomingValue: movements.incoming * price,
-        outgoingValue: movements.outgoing * price,
-        finalValue: finalStock * price,
-        price
-      });
-    }
+    turnoverData.push({
+      productName: product.name,
+      productCode: product.productCode || "-",
+      category: product.category || "-",
+      initialStock,
+      incoming: movements.incoming,
+      outgoing: movements.outgoing,
+      finalStock,
+      initialValue: initialStock * price,
+      incomingValue: movements.incoming * price,
+      outgoingValue: movements.outgoing * price,
+      finalValue: finalStock * price,
+      price
+    });
   });
 
   return turnoverData.filter(item =>
@@ -459,7 +407,6 @@ export interface TurnoverData {
   productName: string;
   productCode: string;
   category: string;
-  variantName: string;
   initialStock: number;
   incoming: number;
   outgoing: number;
@@ -504,73 +451,22 @@ export const exportInventoryToExcel = (
 
     // 3. მონაცემების დამუშავება
     productsToExport.forEach((product) => {
-      // ვარიანტებიანი პროდუქტი
-      if (product.hasVariants && product.variants && product.variants.length > 0) {
-        let variantTotalStock = 0;
+      // All products as simple products
+      const stock = dateRange && adjustedEndDate ? getStockAtDate(product.stockHistory, adjustedEndDate) : (product.stock || 0);
+      const price = product.price || 0;
+      const totalValue = stock * price;
 
-        // დავამატოთ ყველა ვარიანტი
-        product.variants.forEach((variant) => {
-           const stock = dateRange && adjustedEndDate ? getStockAtDate(variant.stockHistory, adjustedEndDate) : (variant.stock || 0);
-           const price = variant.price || 0;
-           const totalValue = stock * price;
+      grandTotalStock += stock;
+      grandTotalValue += totalValue;
 
-           variantTotalStock += stock;
-           grandTotalStock += stock;
-           grandTotalValue += totalValue;
-
-           flattenedData.push({
-             "პროდუქტის დასახელება": product.name,
-             "პროდუქტის კოდი": product.productCode || "-",
-             "კატეგორია": product.category || "-",
-             "ვარიანტი": variant.name,
-             "ერთეულის ფასი (₾)": price,
-             "მარაგი (ცალი)": stock,
-             "ჯამური ღირებულება (₾)": totalValue,
-           });
-        });
-
-        // შევამოწმოთ მშობლის ისტორია (Legacy Stock)
-        if (dateRange && adjustedEndDate) {
-          const parentStock = getStockAtDate(product.stockHistory, adjustedEndDate);
-
-          // თუ ვარიანტებს მარაგი არ აქვთ, მაგრამ მშობელს აქვს - ეს ძველი მარტივი პროდუქტის მარაგია
-          if (variantTotalStock === 0 && parentStock > 0) {
-            const parentPrice = product.price || 0;
-            const parentTotalValue = parentStock * parentPrice;
-
-            grandTotalStock += parentStock;
-            grandTotalValue += parentTotalValue;
-
-            flattenedData.push({
-              "პროდუქტის დასახელება": `${product.name} (ძველი ნაშთი)`,
-              "პროდუქტის კოდი": product.productCode || "-",
-              "კატეგორია": product.category || "-",
-              "ვარიანტი": "Legacy",
-              "ერთეულის ფასი (₾)": parentPrice,
-              "მარაგი (ცალი)": parentStock,
-              "ჯამური ღირებულება (₾)": parentTotalValue,
-            });
-          }
-        }
-      } else {
-        // მარტივი პროდუქტი
-        const stock = dateRange && adjustedEndDate ? getStockAtDate(product.stockHistory, adjustedEndDate) : (product.stock || 0);
-        const price = product.price || 0;
-        const totalValue = stock * price;
-
-        grandTotalStock += stock;
-        grandTotalValue += totalValue;
-
-        flattenedData.push({
-          "პროდუქტის დასახელება": product.name,
-          "პროდუქტის კოდი": product.productCode || "-",
-          "კატეგორია": product.category || "-",
-          "ვარიანტი": "-",
-          "ერთეულის ფასი (₾)": price,
-          "მარაგი (ცალი)": stock,
-          "ჯამური ღირებულება (₾)": totalValue,
-        });
-      }
+      flattenedData.push({
+        "პროდუქტის დასახელება": product.name,
+        "პროდუქტის კოდი": product.productCode || "-",
+        "კატეგორია": product.category || "-",
+        "ერთეულის ფასი (₾)": price,
+        "მარაგი (ცალი)": stock,
+        "ჯამური ღირებულება (₾)": totalValue,
+      });
     });
 
     // 4. ჯამური სტრიქონის დამატება
@@ -578,7 +474,6 @@ export const exportInventoryToExcel = (
       "პროდუქტის დასახელება": "სულ ჯამში:",
       "პროდუქტის კოდი": "",
       "კატეგორია": "",
-      "ვარიანტი": "",
       "ერთეულის ფასი (₾)": "",
       "მარაგი (ცალი)": grandTotalStock,
       "ჯამური ღირებულება (₾)": grandTotalValue,
@@ -593,19 +488,18 @@ export const exportInventoryToExcel = (
 
     const workbook = XLSX.utils.book_new();
 
-    // A1 უჯრის გაერთიანება (Merge) მთელ სიგანეზე (A-დან G-მდე)
+    // A1 უჯრის გაერთიანება (Merge) მთელ სიგანეზე (A-დან F-მდე)
     if(!worksheet["!merges"]) worksheet["!merges"] = [];
-    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }); // Row 0, Col 0 to Col 6
+    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }); // Row 0, Col 0 to Col 5
 
     // 6. სვეტების სიგანეები
     const colWidths = [
       { wch: 30 }, // A: სახელი
       { wch: 15 }, // B: SKU
       { wch: 15 }, // C: კატეგორია
-      { wch: 15 }, // D: ვარიანტი
-      { wch: 15 }, // E: ფასი
-      { wch: 15 }, // F: მარაგი
-      { wch: 20 }, // G: ჯამი
+      { wch: 15 }, // D: ფასი
+      { wch: 15 }, // E: მარაგი
+      { wch: 20 }, // F: ჯამი
     ];
     worksheet["!cols"] = colWidths;
 
@@ -771,7 +665,6 @@ export const exportTurnoverToExcel = (
         "პროდუქტის დასახელება": item.productName,
         "პროდუქტის კოდი": item.productCode,
         "კატეგორია": item.category,
-        "ვარიანტი": item.variantName,
         "ერთეულის ფასი (₾)": item.price,
         "საწყისი ნაშთი": item.initialStock,
         "შემოსული": item.incoming,
@@ -789,7 +682,6 @@ export const exportTurnoverToExcel = (
       "პროდუქტის დასახელება": "სულ ჯამში:",
       "პროდუქტის კოდი": "",
       "კატეგორია": "",
-      "ვარიანტი": "",
       "ერთეულის ფასი (₾)": "",
       "საწყისი ნაშთი": totalInitialStock,
       "შემოსული": totalIncoming,
@@ -807,25 +699,24 @@ export const exportTurnoverToExcel = (
 
     const workbook = XLSX.utils.book_new();
 
-    // Merge title cell (A1 to M1)
+    // Merge title cell (A1 to L1)
     if (!worksheet["!merges"]) worksheet["!merges"] = [];
-    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 12 } });
+    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 11 } });
 
     // Set column widths
     const colWidths = [
       { wch: 30 }, // A: სახელი
       { wch: 15 }, // B: კოდი
       { wch: 15 }, // C: კატეგორია
-      { wch: 15 }, // D: ვარიანტი
-      { wch: 15 }, // E: ფასი
-      { wch: 12 }, // F: საწყისი ნაშთი
-      { wch: 12 }, // G: შემოსული
-      { wch: 12 }, // H: გასული
-      { wch: 12 }, // I: საბოლოო ნაშთი
-      { wch: 18 }, // J: საწყისი ღირებულება
-      { wch: 18 }, // K: შემოსული ღირებულება
-      { wch: 18 }, // L: გასული ღირებულება
-      { wch: 18 }, // M: საბოლოო ღირებულება
+      { wch: 15 }, // D: ფასი
+      { wch: 12 }, // E: საწყისი ნაშთი
+      { wch: 12 }, // F: შემოსული
+      { wch: 12 }, // G: გასული
+      { wch: 12 }, // H: საბოლოო ნაშთი
+      { wch: 18 }, // I: საწყისი ღირებულება
+      { wch: 18 }, // J: შემოსული ღირებულება
+      { wch: 18 }, // K: გასული ღირებულება
+      { wch: 18 }, // L: საბოლოო ღირებულება
     ];
     worksheet["!cols"] = colWidths;
 
@@ -890,7 +781,7 @@ export const exportTurnoverToExcel = (
 
     // Apply styles to all cells
     for (let R = 1; R <= lastRowIndex; ++R) {
-      for (let C = 0; C <= 12; ++C) {
+      for (let C = 0; C <= 11; ++C) {
         const address = XLSX.utils.encode_cell({ r: R, c: C });
         if (!worksheet[address]) continue;
 
@@ -900,16 +791,16 @@ export const exportTurnoverToExcel = (
         } else if (R === lastRowIndex) {
           // Summary row
           worksheet[address].s = summaryStyle;
-          if (C >= 4) worksheet[address].s.numFmt = "#,##0.00";
+          if (C >= 3) worksheet[address].s.numFmt = "#,##0.00";
         } else {
           // Data rows
           const colLetter = XLSX.utils.encode_col(C);
 
-          if (["J", "K", "L", "M"].includes(colLetter)) { // Currency columns
+          if (["I", "J", "K", "L"].includes(colLetter)) { // Currency columns
             worksheet[address].s = currencyStyle;
-          } else if (["E", "F", "G", "H", "I"].includes(colLetter)) { // Numeric columns
+          } else if (["D", "E", "F", "G", "H"].includes(colLetter)) { // Numeric columns
             worksheet[address].s = centerStyle;
-            if (colLetter === "E") {
+            if (colLetter === "D") {
               worksheet[address].s.numFmt = "#,##0.00";
             }
           } else if (colLetter === "A") { // Product name

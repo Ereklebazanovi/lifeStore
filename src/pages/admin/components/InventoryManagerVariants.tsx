@@ -11,8 +11,6 @@ import {
   AlertTriangle,
   Search,
   RefreshCw,
-  ChevronDown,
-  ChevronRight,
   Box,
   Download,
   Calendar,
@@ -364,21 +362,10 @@ const ProductRow: React.FC<ProductRowProps> = ({
   };
 
   const getDisplayStock = () => {
-    if (product.hasVariants && product.variants) {
-      return product.variants.reduce((total, variant) => total + (variant.stock || 0), 0);
-    }
     return product.stock || 0;
   };
 
   const getDisplayPrice = () => {
-    if (product.hasVariants) {
-      if (product.minPrice === product.maxPrice) {
-        return `₾${product.minPrice?.toFixed(2) || "0.00"}`;
-      }
-      return `₾${product.minPrice?.toFixed(2) || "0.00"} - ₾${
-        product.maxPrice?.toFixed(2) || "0.00"
-      }`;
-    }
     return `₾${product.price?.toFixed(2) || "0.00"}`;
   };
 
@@ -413,22 +400,13 @@ const ProductRow: React.FC<ProductRowProps> = ({
             <div className="min-w-0 flex-1">
               <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
               <p className="text-xs text-gray-500 truncate">ID: {product.id}</p>
-              {product.hasVariants && (
-                <p className="text-xs text-blue-600 font-medium">
-                  {product.variants?.length || 0} ვარიანტი
-                </p>
-              )}
             </div>
           </div>
         </td>
 
         <td className="px-4 py-3 text-center">
-          <span
-            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-              product.hasVariants ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"
-            }`}
-          >
-            {product.hasVariants ? "ვარიანტებით" : "მარტივი"}
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            მარტივი
           </span>
         </td>
 
@@ -446,7 +424,7 @@ const ProductRow: React.FC<ProductRowProps> = ({
 
         <td className="px-4 py-3 text-center">
           <div className="flex flex-col items-center space-y-0.5">
-            {!product.hasVariants && product.salePrice && product.salePrice < (product.price || 0) ? (
+            {product.salePrice && product.salePrice < (product.price || 0) ? (
               <>
                 <span className="text-xs text-orange-600 font-semibold line-through decoration-orange-400">
                   ₾{(product.price || 0).toFixed(2)}
@@ -470,161 +448,43 @@ const ProductRow: React.FC<ProductRowProps> = ({
         </td>
 
         <td className="px-4 py-3 text-center">
-          {product.hasVariants ? (
+          <div className="flex items-center justify-center gap-1">
             <button
-              onClick={onToggleExpand}
-              className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              onClick={() =>
+                onStockAdjustment(
+                  product.id,
+                  product.name,
+                  product.stock || 0,
+                  "remove"
+                )
+              }
+              disabled={!product.stock || product.stock <= 0}
+              className="w-8 h-8 flex items-center justify-center rounded-md bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100"
+              title="მარაგის შემცირება"
             >
-              {isExpanded ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-              {isExpanded ? "ვარიანტების დამალვა" : "ვარიანტების ნახვა"}
+              <Minus className="w-4 h-4" />
             </button>
-          ) : (
-            <div className="flex items-center justify-center gap-1">
-              <button
-                onClick={() =>
-                  onStockAdjustment(
-                    product.id,
-                    product.name,
-                    product.stock || 0,
-                    "remove"
-                  )
-                }
-                disabled={!product.stock || product.stock <= 0}
-                className="w-8 h-8 flex items-center justify-center rounded-md bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100"
-                title="მარაგის შემცირება"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="mx-1 text-sm font-medium text-gray-700 min-w-[45px] text-center">
-                {product.stock || 0}
-              </span>
-              <button
-                onClick={() =>
-                  onStockAdjustment(
-                    product.id,
-                    product.name,
-                    product.stock || 0,
-                    "add"
-                  )
-                }
-                className="w-8 h-8 flex items-center justify-center rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:scale-105"
-                title="მარაგის დამატება"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+            <span className="mx-1 text-sm font-medium text-gray-700 min-w-[45px] text-center">
+              {product.stock || 0}
+            </span>
+            <button
+              onClick={() =>
+                onStockAdjustment(
+                  product.id,
+                  product.name,
+                  product.stock || 0,
+                  "add"
+                )
+              }
+              className="w-8 h-8 flex items-center justify-center rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:scale-105"
+              title="მარაგის დამატება"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
         </td>
       </tr>
 
-      {/* Mobile-First Responsive Variants Layout */}
-      {product.hasVariants && isExpanded && (
-        <tr>
-          <td colSpan={7} className="p-0">
-            <div className="bg-blue-50/20 border-l-4 border-blue-200">
-              <div className="p-4">
-                {/* Header - Compact on mobile */}
-                <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                    <Box className="w-4 h-4 text-blue-600" />
-                    ვარიანტები ({product.variants?.length || 0})
-                  </h4>
-                  <div className="text-xs text-gray-500">
-                    ჯამი: {product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0} ცალი
-                  </div>
-                </div>
-
-                {/* Responsive Grid - Mobile: 1 col, Tablet: 2 col, Desktop: 3+ col */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {product.variants?.map((variant) => (
-                    <div
-                      key={variant.id}
-                      className={`p-3 rounded-lg border ${
-                        variant.isActive
-                          ? 'bg-white border-blue-200'
-                          : 'bg-gray-50 border-gray-200 opacity-75'
-                      }`}
-                    >
-                      {/* Variant Info */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-start">
-                          <div className="min-w-0 flex-1">
-                            <h5 className="font-medium text-sm text-gray-900 truncate">
-                              {variant.name}
-                            </h5>
-                            <div className="mt-1 space-y-0.5">
-                              {variant.salePrice && variant.salePrice < variant.price ? (
-                                <>
-                                  <p className="text-xs text-orange-600 font-semibold line-through decoration-orange-400">
-                                    ₾{variant.price.toFixed(2)}
-                                  </p>
-                                  <p className="text-xs text-emerald-600 font-medium">
-                                    ₾{variant.salePrice.toFixed(2)}
-                                  </p>
-                                </>
-                              ) : (
-                                <p className="text-xs text-gray-900 font-medium">
-                                  ₾{variant.price.toFixed(2)}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <span
-                            className={`ml-2 px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                              variant.isActive
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-gray-200 text-gray-600'
-                            }`}
-                          >
-                            {variant.isActive ? 'აქტ' : 'არააქტ'}
-                          </span>
-                        </div>
-
-                        {/* Stock & Controls */}
-                        <div className="flex justify-between items-center">
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${getStockStatusColor(
-                              variant.stock || 0
-                            )}`}
-                          >
-                            {variant.stock || 0} ცალი
-                          </span>
-
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() =>
-                                onVariantStockAdjustment(product.id, product.name, variant, "remove")
-                              }
-                              disabled={!variant.stock || variant.stock <= 0}
-                              className="w-7 h-7 flex items-center justify-center rounded bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 disabled:opacity-30 disabled:cursor-not-allowed"
-                              title="მარაგის შემცირება"
-                            >
-                              <Minus className="w-3 h-3" />
-                            </button>
-                            <button
-                              onClick={() =>
-                                onVariantStockAdjustment(product.id, product.name, variant, "add")
-                              }
-                              className="w-7 h-7 flex items-center justify-center rounded bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200"
-                              title="მარაგის დამატება"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </td>
-        </tr>
-      )}
     </>
   );
 };
@@ -667,21 +527,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const getDisplayStock = () => {
-    if (product.hasVariants && product.variants) {
-      return product.variants.reduce((total, variant) => total + (variant.stock || 0), 0);
-    }
     return product.stock || 0;
   };
 
   const getDisplayPrice = () => {
-    if (product.hasVariants) {
-      if (product.minPrice === product.maxPrice) {
-        return `₾${product.minPrice?.toFixed(2) || "0.00"}`;
-      }
-      return `₾${product.minPrice?.toFixed(2) || "0.00"} - ₾${
-        product.maxPrice?.toFixed(2) || "0.00"
-      }`;
-    }
     return `₾${product.price?.toFixed(2) || "0.00"}`;
   };
 
@@ -723,12 +572,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
             {/* Type & Category */}
             <div className="flex flex-wrap gap-2 mb-2">
-              <span
-                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  product.hasVariants ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {product.hasVariants ? "ვარიანტებით" : "მარტივი"}
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                მარტივი
               </span>
               <span
                 className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -749,7 +594,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             {/* Price & Stock Row */}
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                {!product.hasVariants && product.salePrice && product.salePrice < (product.price || 0) ? (
+                {product.salePrice && product.salePrice < (product.price || 0) ? (
                   <>
                     <p className="text-xs text-orange-600 font-semibold line-through decoration-orange-400">
                       ₾{(product.price || 0).toFixed(2)}
@@ -773,165 +618,49 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Stock Control Buttons */}
         <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-          {product.hasVariants ? (
+          <div className="flex items-center gap-3 w-full justify-center">
             <button
-              onClick={onToggleExpand}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex-1 justify-center"
+              onClick={() =>
+                onStockAdjustment(
+                  product.id,
+                  product.name,
+                  product.stock || 0,
+                  "remove"
+                )
+              }
+              disabled={!product.stock || product.stock <= 0}
+              className="flex items-center gap-1 px-4 py-2 bg-red-50 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              {isExpanded ? (
-                <>
-                  <ChevronDown className="w-4 h-4" />
-                  ვარიანტების დამალვა
-                </>
-              ) : (
-                <>
-                  <ChevronRight className="w-4 h-4" />
-                  ვარიანტების ნახვა
-                </>
-              )}
+              <Minus className="w-4 h-4" />
+              შემცირება
             </button>
-          ) : (
-            <div className="flex items-center gap-3 w-full justify-center">
-              <button
-                onClick={() =>
-                  onStockAdjustment(
-                    product.id,
-                    product.name,
-                    product.stock || 0,
-                    "remove"
-                  )
-                }
-                disabled={!product.stock || product.stock <= 0}
-                className="flex items-center gap-1 px-4 py-2 bg-red-50 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <Minus className="w-4 h-4" />
-                შემცირება
-              </button>
 
-              <div className="px-3 py-2 bg-gray-50 rounded-lg border">
-                <span className="text-sm font-bold text-gray-900">
-                  {product.stock || 0}
-                </span>
-              </div>
-
-              <button
-                onClick={() =>
-                  onStockAdjustment(
-                    product.id,
-                    product.name,
-                    product.stock || 0,
-                    "add"
-                  )
-                }
-                className="flex items-center gap-1 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                დამატება
-              </button>
+            <div className="px-3 py-2 bg-gray-50 rounded-lg border">
+              <span className="text-sm font-bold text-gray-900">
+                {product.stock || 0}
+              </span>
             </div>
-          )}
+
+            <button
+              onClick={() =>
+                onStockAdjustment(
+                  product.id,
+                  product.name,
+                  product.stock || 0,
+                  "add"
+                )
+              }
+              className="flex items-center gap-1 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              დამატება
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Expanded Variants Section */}
-      {product.hasVariants && isExpanded && (
-        <div className="border-t border-gray-100 bg-blue-50/20">
-          <div className="p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                <Box className="w-4 h-4 text-blue-600" />
-                ვარიანტები
-              </h4>
-              <div className="text-xs text-gray-500">
-                ჯამი: {product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0} ცალი
-              </div>
-            </div>
-
-            {/* Single Column Variant List for Mobile */}
-            <div className="space-y-3">
-              {product.variants?.map((variant) => (
-                <div
-                  key={variant.id}
-                  className={`p-3 rounded-lg border ${
-                    variant.isActive
-                      ? 'bg-white border-blue-200'
-                      : 'bg-gray-50 border-gray-200 opacity-75'
-                  }`}
-                >
-                  {/* Variant Header */}
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h5 className="font-medium text-sm text-gray-900 mb-1">
-                        {variant.name}
-                      </h5>
-                      <div className="space-y-0.5">
-                        {variant.salePrice && variant.salePrice < variant.price ? (
-                          <>
-                            <p className="text-xs text-orange-600 font-semibold line-through decoration-orange-400">
-                              ₾{variant.price.toFixed(2)}
-                            </p>
-                            <p className="text-xs text-emerald-600 font-medium">
-                              ₾{variant.salePrice.toFixed(2)}
-                            </p>
-                          </>
-                        ) : (
-                          <p className="text-xs text-gray-900 font-medium">
-                            ₾{variant.price.toFixed(2)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                          variant.isActive
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-gray-200 text-gray-600'
-                        }`}
-                      >
-                        {variant.isActive ? 'აქტ' : 'არააქტ'}
-                      </span>
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${getStockStatusColor(
-                          variant.stock || 0
-                        )}`}
-                      >
-                        {variant.stock || 0} ცალი
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Variant Controls */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() =>
-                        onVariantStockAdjustment(product.id, product.name, variant, "remove")
-                      }
-                      disabled={!variant.stock || variant.stock <= 0}
-                      className="flex-1 flex items-center justify-center gap-1 py-2 bg-red-50 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed text-sm"
-                    >
-                      <Minus className="w-3 h-3" />
-                      შემცირება
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        onVariantStockAdjustment(product.id, product.name, variant, "add")
-                      }
-                      className="flex-1 flex items-center justify-center gap-1 py-2 bg-emerald-50 text-emerald-600 rounded border border-emerald-200 hover:bg-emerald-100 text-sm"
-                    >
-                      <Plus className="w-3 h-3" />
-                      დამატება
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
