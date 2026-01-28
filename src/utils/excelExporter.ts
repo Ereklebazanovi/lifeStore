@@ -32,6 +32,163 @@ const getStockAtDate = (stockHistory: StockHistory[] | undefined, targetDate: Da
   return relevantHistory[0].quantity;
 };
 
+// Helper function to calculate stock movements for a given date range
+const getStockMovements = (
+  stockHistory: StockHistory[] | undefined,
+  startDate: Date,
+  endDate: Date
+): { incoming: number; outgoing: number } => {
+  if (!stockHistory || stockHistory.length === 0) {
+    return { incoming: 0, outgoing: 0 };
+  }
+
+  // Filter history within the date range
+  const relevantHistory = stockHistory.filter(h => {
+    const historyDate = h.timestamp instanceof Date
+      ? h.timestamp
+      : typeof h.timestamp === 'object' && h.timestamp !== null && 'toDate' in h.timestamp
+        ? (h.timestamp as any).toDate()
+        : new Date(h.timestamp as any);
+
+    return historyDate >= startDate && historyDate <= endDate;
+  });
+
+  if (relevantHistory.length === 0) {
+    return { incoming: 0, outgoing: 0 };
+  }
+
+  // Sort by timestamp to get movement sequence
+  relevantHistory.sort((a, b) => {
+    const dateA = a.timestamp instanceof Date ? a.timestamp : typeof a.timestamp === 'object' && a.timestamp !== null && 'toDate' in a.timestamp ? (a.timestamp as any).toDate() : new Date(a.timestamp as any);
+    const dateB = b.timestamp instanceof Date ? b.timestamp : typeof b.timestamp === 'object' && b.timestamp !== null && 'toDate' in b.timestamp ? (b.timestamp as any).toDate() : new Date(b.timestamp as any);
+    return dateA.getTime() - dateB.getTime();
+  });
+
+  let incoming = 0;
+  let outgoing = 0;
+  let previousQuantity = relevantHistory[0].quantity;
+
+  for (let i = 1; i < relevantHistory.length; i++) {
+    const currentQuantity = relevantHistory[i].quantity;
+    const change = currentQuantity - previousQuantity;
+
+    if (change > 0) {
+      incoming += change;
+    } else if (change < 0) {
+      outgoing += Math.abs(change);
+    }
+
+    previousQuantity = currentQuantity;
+  }
+
+  return { incoming, outgoing };
+};
+
+// Calculate turnover data for products in a given date range
+export const calculateTurnover = (
+  products: Product[],
+  selectedProductIds: Set<string>,
+  startDate: Date,
+  endDate: Date
+): TurnoverData[] => {
+  const turnoverData: TurnoverData[] = [];
+
+  // Adjust dates properly
+  const adjustedEndDate = new Date(endDate);
+  adjustedEndDate.setHours(23, 59, 59, 999);
+
+  // For initial stock, we need the stock BEFORE the start date (not including)
+  const beforeStartDate = new Date(startDate);
+  beforeStartDate.setMilliseconds(beforeStartDate.getMilliseconds() - 1);
+
+  // Filter products
+  const productsToAnalyze = selectedProductIds.size > 0
+    ? products.filter(p => selectedProductIds.has(p.id))
+    : products;
+
+  productsToAnalyze.forEach((product) => {
+    if (product.hasVariants && product.variants && product.variants.length > 0) {
+      // Handle variant products
+      product.variants.forEach((variant) => {
+        const initialStock = getStockAtDate(variant.stockHistory, beforeStartDate);
+        const finalStock = getStockAtDate(variant.stockHistory, adjustedEndDate);
+        const movements = getStockMovements(variant.stockHistory, startDate, adjustedEndDate);
+        const price = variant.price || 0;
+
+        turnoverData.push({
+          productName: product.name,
+          productCode: product.productCode || "-",
+          category: product.category || "-",
+          variantName: variant.name,
+          initialStock,
+          incoming: movements.incoming,
+          outgoing: movements.outgoing,
+          finalStock,
+          initialValue: initialStock * price,
+          incomingValue: movements.incoming * price,
+          outgoingValue: movements.outgoing * price,
+          finalValue: finalStock * price,
+          price
+        });
+      });
+
+      // Check for legacy stock on parent product
+      const parentInitialStock = getStockAtDate(product.stockHistory, beforeStartDate);
+      const parentFinalStock = getStockAtDate(product.stockHistory, adjustedEndDate);
+
+      if (parentInitialStock > 0 || parentFinalStock > 0) {
+        const parentMovements = getStockMovements(product.stockHistory, startDate, adjustedEndDate);
+        const parentPrice = product.price || 0;
+
+        turnoverData.push({
+          productName: `${product.name} (ძველი ნაშთი)`,
+          productCode: product.productCode || "-",
+          category: product.category || "-",
+          variantName: "Legacy",
+          initialStock: parentInitialStock,
+          incoming: parentMovements.incoming,
+          outgoing: parentMovements.outgoing,
+          finalStock: parentFinalStock,
+          initialValue: parentInitialStock * parentPrice,
+          incomingValue: parentMovements.incoming * parentPrice,
+          outgoingValue: parentMovements.outgoing * parentPrice,
+          finalValue: parentFinalStock * parentPrice,
+          price: parentPrice
+        });
+      }
+    } else {
+      // Handle simple products
+      const initialStock = getStockAtDate(product.stockHistory, beforeStartDate);
+      const finalStock = getStockAtDate(product.stockHistory, adjustedEndDate);
+      const movements = getStockMovements(product.stockHistory, startDate, adjustedEndDate);
+      const price = product.price || 0;
+
+      turnoverData.push({
+        productName: product.name,
+        productCode: product.productCode || "-",
+        category: product.category || "-",
+        variantName: "-",
+        initialStock,
+        incoming: movements.incoming,
+        outgoing: movements.outgoing,
+        finalStock,
+        initialValue: initialStock * price,
+        incomingValue: movements.incoming * price,
+        outgoingValue: movements.outgoing * price,
+        finalValue: finalStock * price,
+        price
+      });
+    }
+  });
+
+  return turnoverData.filter(item =>
+    item.initialStock > 0 ||
+    item.incoming > 0 ||
+    item.outgoing > 0 ||
+    item.finalStock > 0
+  );
+};
+
 // Helper function to prepare order data for Excel export
 const prepareOrderDataForExcel = (order: Order) => {
   const orderDate = order.createdAt instanceof Date
@@ -298,6 +455,22 @@ export interface InventoryExportData {
   updatedAt?: Date;
 }
 
+export interface TurnoverData {
+  productName: string;
+  productCode: string;
+  category: string;
+  variantName: string;
+  initialStock: number;
+  incoming: number;
+  outgoing: number;
+  finalStock: number;
+  initialValue: number;
+  incomingValue: number;
+  outgoingValue: number;
+  finalValue: number;
+  price: number;
+}
+
 
 export const exportInventoryToExcel = (
   products: Product[],
@@ -550,6 +723,223 @@ export const exportInventoryToExcel = (
 
   } catch (error) {
     console.error("Inventory export error:", error);
+    return { success: false, error: error };
+  }
+};
+
+// Export turnover report to Excel
+export const exportTurnoverToExcel = (
+  products: Product[],
+  selectedProductIds: Set<string>,
+  startDate: Date,
+  endDate: Date
+) => {
+  try {
+    // Calculate turnover data
+    const turnoverData = calculateTurnover(products, selectedProductIds, startDate, endDate);
+
+    if (turnoverData.length === 0) {
+      return { success: false, error: "ამ პერიოდში მონაცემები ვერ მოიძებნა" };
+    }
+
+    // Prepare data for Excel
+    const flattenedData: any[] = [];
+
+    // Report title and period
+    const reportTitle = `ბრუნვითი ანგარიში: ${startDate.toLocaleDateString("ka-GE")} - ${endDate.toLocaleDateString("ka-GE")}`;
+
+    let totalInitialStock = 0;
+    let totalIncoming = 0;
+    let totalOutgoing = 0;
+    let totalFinalStock = 0;
+    let totalInitialValue = 0;
+    let totalIncomingValue = 0;
+    let totalOutgoingValue = 0;
+    let totalFinalValue = 0;
+
+    turnoverData.forEach((item) => {
+      totalInitialStock += item.initialStock;
+      totalIncoming += item.incoming;
+      totalOutgoing += item.outgoing;
+      totalFinalStock += item.finalStock;
+      totalInitialValue += item.initialValue;
+      totalIncomingValue += item.incomingValue;
+      totalOutgoingValue += item.outgoingValue;
+      totalFinalValue += item.finalValue;
+
+      flattenedData.push({
+        "პროდუქტის დასახელება": item.productName,
+        "პროდუქტის კოდი": item.productCode,
+        "კატეგორია": item.category,
+        "ვარიანტი": item.variantName,
+        "ერთეულის ფასი (₾)": item.price,
+        "საწყისი ნაშთი": item.initialStock,
+        "შემოსული": item.incoming,
+        "გასული": item.outgoing,
+        "საბოლოო ნაშთი": item.finalStock,
+        "საწყისი ღირებულება (₾)": item.initialValue,
+        "შემოსული ღირებულება (₾)": item.incomingValue,
+        "გასული ღირებულება (₾)": item.outgoingValue,
+        "საბოლოო ღირებულება (₾)": item.finalValue,
+      });
+    });
+
+    // Add summary row
+    flattenedData.push({
+      "პროდუქტის დასახელება": "სულ ჯამში:",
+      "პროდუქტის კოდი": "",
+      "კატეგორია": "",
+      "ვარიანტი": "",
+      "ერთეულის ფასი (₾)": "",
+      "საწყისი ნაშთი": totalInitialStock,
+      "შემოსული": totalIncoming,
+      "გასული": totalOutgoing,
+      "საბოლოო ნაშთი": totalFinalStock,
+      "საწყისი ღირებულება (₾)": totalInitialValue,
+      "შემოსული ღირებულება (₾)": totalIncomingValue,
+      "გასული ღირებულება (₾)": totalOutgoingValue,
+      "საბოლოო ღირებულება (₾)": totalFinalValue,
+    });
+
+    // Create Excel workbook
+    const worksheet = XLSX.utils.aoa_to_sheet([[reportTitle]]);
+    XLSX.utils.sheet_add_json(worksheet, flattenedData, { origin: "A2" });
+
+    const workbook = XLSX.utils.book_new();
+
+    // Merge title cell (A1 to M1)
+    if (!worksheet["!merges"]) worksheet["!merges"] = [];
+    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 12 } });
+
+    // Set column widths
+    const colWidths = [
+      { wch: 30 }, // A: სახელი
+      { wch: 15 }, // B: კოდი
+      { wch: 15 }, // C: კატეგორია
+      { wch: 15 }, // D: ვარიანტი
+      { wch: 15 }, // E: ფასი
+      { wch: 12 }, // F: საწყისი ნაშთი
+      { wch: 12 }, // G: შემოსული
+      { wch: 12 }, // H: გასული
+      { wch: 12 }, // I: საბოლოო ნაშთი
+      { wch: 18 }, // J: საწყისი ღირებულება
+      { wch: 18 }, // K: შემოსული ღირებულება
+      { wch: 18 }, // L: გასული ღირებულება
+      { wch: 18 }, // M: საბოლოო ღირებულება
+    ];
+    worksheet["!cols"] = colWidths;
+
+    // Styling
+    const borderStyle = {
+      top: { style: "thin", color: { rgb: "000000" } },
+      bottom: { style: "thin", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } },
+    };
+
+    // Title style
+    const titleStyle = {
+      font: { bold: true, sz: 14, color: { rgb: "4472C4" } },
+      alignment: { horizontal: "center", vertical: "center" },
+      fill: { fgColor: { rgb: "FFFFFF" } }
+    };
+
+    // Header style
+    const headerStyle = {
+      font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
+      fill: { fgColor: { rgb: "4472C4" } },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: borderStyle,
+    };
+
+    // Summary style
+    const summaryStyle = {
+      font: { bold: true },
+      fill: { fgColor: { rgb: "E2EFDA" } },
+      border: borderStyle,
+      alignment: { horizontal: "right" }
+    };
+
+    const currencyStyle = {
+      alignment: { horizontal: "right", vertical: "center" },
+      numFmt: "#,##0.00",
+      border: borderStyle
+    };
+
+    const centerStyle = {
+      alignment: { horizontal: "center", vertical: "center" },
+      border: borderStyle
+    };
+
+    const leftStyle = {
+      alignment: { horizontal: "left", vertical: "center" },
+      border: borderStyle
+    };
+
+    // Apply title style
+    if (!worksheet["A1"].s) worksheet["A1"].s = {};
+    worksheet["A1"].s = titleStyle;
+
+    // Set row heights
+    if (!worksheet["!rows"]) worksheet["!rows"] = [];
+    worksheet["!rows"][0] = { hpx: 30 }; // Title
+    worksheet["!rows"][1] = { hpx: 25 }; // Header
+
+    const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
+    const lastRowIndex = range.e.r;
+
+    // Apply styles to all cells
+    for (let R = 1; R <= lastRowIndex; ++R) {
+      for (let C = 0; C <= 12; ++C) {
+        const address = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!worksheet[address]) continue;
+
+        if (R === 1) {
+          // Header row
+          worksheet[address].s = headerStyle;
+        } else if (R === lastRowIndex) {
+          // Summary row
+          worksheet[address].s = summaryStyle;
+          if (C >= 4) worksheet[address].s.numFmt = "#,##0.00";
+        } else {
+          // Data rows
+          const colLetter = XLSX.utils.encode_col(C);
+
+          if (["J", "K", "L", "M"].includes(colLetter)) { // Currency columns
+            worksheet[address].s = currencyStyle;
+          } else if (["E", "F", "G", "H", "I"].includes(colLetter)) { // Numeric columns
+            worksheet[address].s = centerStyle;
+            if (colLetter === "E") {
+              worksheet[address].s.numFmt = "#,##0.00";
+            }
+          } else if (colLetter === "A") { // Product name
+            worksheet[address].s = leftStyle;
+          } else {
+            worksheet[address].s = centerStyle;
+          }
+        }
+      }
+    }
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Turnover Report");
+    const filename = `Turnover_Report_${startDate.toISOString().split("T")[0]}_${endDate.toISOString().split("T")[0]}.xlsx`;
+    XLSX.writeFile(workbook, filename);
+
+    return {
+      success: true,
+      totalInitialStock,
+      totalIncoming,
+      totalOutgoing,
+      totalFinalStock,
+      totalInitialValue,
+      totalIncomingValue,
+      totalOutgoingValue,
+      totalFinalValue,
+      exportedProducts: flattenedData.length - 1 // -1 for summary row
+    };
+
+  } catch (error) {
+    console.error("Turnover export error:", error);
     return { success: false, error: error };
   }
 };

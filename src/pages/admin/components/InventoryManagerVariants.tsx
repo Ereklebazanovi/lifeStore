@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useProductStore } from "../../../store/productStore";
 import { showToast } from "../../../components/ui/Toast";
 import type { Product, ProductVariant } from "../../../types";
-import { exportInventoryToExcel } from "../../../utils/excelExporter";
+import { exportInventoryToExcel, exportTurnoverToExcel } from "../../../utils/excelExporter";
 
 import {
   Plus,
@@ -958,8 +958,10 @@ const InventoryManagerVariants: React.FC = () => {
 
   // Export functionality states
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [exportDateRange, setExportDateRange] = useState({
+  const [isStockSnapshotModalOpen, setIsStockSnapshotModalOpen] = useState(false);
+  const [snapshotDate, setSnapshotDate] = useState("");
+  const [isTurnoverModalOpen, setIsTurnoverModalOpen] = useState(false);
+  const [turnoverDateRange, setTurnoverDateRange] = useState({
     startDate: "",
     endDate: "",
   });
@@ -1020,34 +1022,68 @@ const InventoryManagerVariants: React.FC = () => {
     }
   };
 
-  const handleExport = () => {
+  const handleStockSnapshot = () => {
     try {
-      let dateRange: { startDate: Date; endDate: Date } | undefined;
+      let targetDate: Date | undefined;
 
-      if (exportDateRange.startDate && exportDateRange.endDate) {
-        dateRange = {
-          startDate: new Date(exportDateRange.startDate),
-          endDate: new Date(exportDateRange.endDate),
-        };
+      if (snapshotDate) {
+        targetDate = new Date(snapshotDate);
+        // Set time to end of day (23:59:59.999)
+        targetDate.setHours(23, 59, 59, 999);
       }
 
-      const result = exportInventoryToExcel(products, selectedProducts, dateRange);
+      const result = exportInventoryToExcel(products, selectedProducts, targetDate ? { startDate: targetDate, endDate: targetDate } : undefined);
 
       if (result.success) {
         showToast(
-          `ექსპორტი წარმატებით დასრულდა!\n${result.exportedProducts} პროდუქტი, ${result.totalStock} ცალი, ₾${(result.totalValue || 0).toFixed(2)} ღირებულება`,
+          `მარაგის ნაშთი წარმატებით ექსპორტირდა!\n${result.exportedProducts} პროდუქტი, ${result.totalStock} ცალი, ₾${(result.totalValue || 0).toFixed(2)} ღირებულება`,
           "success"
         );
 
-        setIsExportModalOpen(false);
+        setIsStockSnapshotModalOpen(false);
         setSelectedProducts(new Set());
-        setExportDateRange({ startDate: "", endDate: "" });
+        setSnapshotDate("");
       } else {
         showToast("ექსპორტის შეცდომა", "error");
       }
     } catch (error) {
-      console.error("Export error:", error);
+      console.error("Stock snapshot export error:", error);
       showToast("ექსპორტის შეცდომა", "error");
+    }
+  };
+
+  const handleTurnoverReport = () => {
+    try {
+      if (!turnoverDateRange.startDate || !turnoverDateRange.endDate) {
+        showToast("გთხოვთ მიუთითოთ პერიოდი", "error");
+        return;
+      }
+
+      const startDate = new Date(turnoverDateRange.startDate);
+      const endDate = new Date(turnoverDateRange.endDate);
+
+      if (startDate >= endDate) {
+        showToast("საწყისი თარიღი უნდა იყოს უფრო ადრინდელი საბოლოოზე", "error");
+        return;
+      }
+
+      const result = exportTurnoverToExcel(products, selectedProducts, startDate, endDate);
+
+      if (result.success) {
+        showToast(
+          `ბრუნვითი ანგარიში წარმატებით გენერირდა!\n${result.exportedProducts} პროდუქტი\nსაწყისი: ${result.totalInitialStock} ცალი (₾${result.totalInitialValue?.toFixed(2)})\nშემოსული: +${result.totalIncoming} ცალი\nგასული: -${result.totalOutgoing} ცალი\nსაბოლოო: ${result.totalFinalStock} ცალი (₾${result.totalFinalValue?.toFixed(2)})`,
+          "success"
+        );
+
+        setIsTurnoverModalOpen(false);
+        setSelectedProducts(new Set());
+        setTurnoverDateRange({ startDate: "", endDate: "" });
+      } else {
+        showToast(result.error || "ბრუნვითი ანგარიშის შეცდომა", "error");
+      }
+    } catch (error) {
+      console.error("Turnover report error:", error);
+      showToast("ბრუნვითი ანგარიშის შეცდომა", "error");
     }
   };
 
@@ -1122,13 +1158,22 @@ const InventoryManagerVariants: React.FC = () => {
             <Package className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
             საწყობი (მარაგის მართვა)
           </h1>
-          <button
-            onClick={() => setIsExportModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm"
-          >
-            <Download className="w-4 h-4" />
-            Excel ექსპორტი
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsStockSnapshotModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            >
+              <Download className="w-4 h-4" />
+              მარაგის ნაშთი
+            </button>
+            <button
+              onClick={() => setIsTurnoverModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm"
+            >
+              <Calendar className="w-4 h-4" />
+              ბრუნვითი ანგარიში
+            </button>
+          </div>
         </div>
 
         {/* Summary Cards - Mobile: 2x3, Desktop: 1x5 */}
@@ -1299,13 +1344,87 @@ const InventoryManagerVariants: React.FC = () => {
         />
       )}
 
-      {/* Export Modal */}
-      {isExportModalOpen && (
+      {/* Stock Snapshot Modal */}
+      {isStockSnapshotModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-lg w-full max-w-md shadow-xl">
             <div className="p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Excel ექსპორტი
+                მარაგის ნაშთი
+              </h3>
+
+              <div className="space-y-4">
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-700 mb-2">შერჩეული პროდუქტები:</p>
+                  <p className="font-medium text-gray-900">
+                    {selectedProducts.size === 0
+                      ? `ყველა (${filteredProducts.length} პროდუქტი)`
+                      : `${selectedProducts.size} პროდუქტი`
+                    }
+                  </p>
+                </div>
+
+                {/* Single Date Picker */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Calendar className="w-4 h-4 inline mr-2" />
+                    თარიღი (არასავალდებულო)
+                  </label>
+                  <input
+                    type="date"
+                    value={snapshotDate}
+                    onChange={(e) => setSnapshotDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {snapshotDate ? `რა ნაშთი იყო ${new Date(snapshotDate).toLocaleDateString("ka-GE")} დღის ბოლოს (23:59)` : "დატოვეთ ცარიელი მიმდინარე ნაშთისთვის"}
+                  </p>
+                </div>
+
+                {/* Export Summary */}
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="text-sm font-semibold text-blue-800 mb-2">შედეგი შეიცავს:</h4>
+                  <ul className="text-xs text-blue-700 space-y-1">
+                    <li>• პროდუქტების ზუსტი ნაშთები კონკრეტულ მომენტში</li>
+                    <li>• ვარიანტების ინფორმაცია</li>
+                    <li>• ღირებულება ფასების მიხედვით</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsStockSnapshotModalOpen(false);
+                    setSelectedProducts(new Set());
+                    setSnapshotDate("");
+                  }}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  გაუქმება
+                </button>
+                <button
+                  type="button"
+                  onClick={handleStockSnapshot}
+                  className="flex-1 px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  ნაშთის ექსპორტი
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Turnover Report Modal */}
+      {isTurnoverModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md shadow-xl">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                ბრუნვითი ანგარიში
               </h3>
 
               <div className="space-y-4">
@@ -1323,48 +1442,50 @@ const InventoryManagerVariants: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Calendar className="w-4 h-4 inline mr-2" />
-                    თარიღის ფილტრი (არასავალდებულო)
+                    ანგარიშის პერიოდი
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">საწყისი თარიღი</label>
                       <input
                         type="date"
-                        value={exportDateRange.startDate}
-                        onChange={(e) => setExportDateRange(prev => ({
+                        value={turnoverDateRange.startDate}
+                        onChange={(e) => setTurnoverDateRange(prev => ({
                           ...prev,
                           startDate: e.target.value
                         }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+                        required
                       />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">საბოლოო თარიღი</label>
                       <input
                         type="date"
-                        value={exportDateRange.endDate}
-                        onChange={(e) => setExportDateRange(prev => ({
+                        value={turnoverDateRange.endDate}
+                        onChange={(e) => setTurnoverDateRange(prev => ({
                           ...prev,
                           endDate: e.target.value
                         }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+                        required
                       />
                     </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    რომ მოხვდეს მხოლოდ მითითებულ პერიოდში განახლებული პროდუქტები
+                    მიუთითეთ პერიოდი, რომლის ბრუნვის ანალიზიც გნებავთ
                   </p>
                 </div>
 
-                {/* Export Summary */}
+                {/* Report Summary */}
                 <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                  <h4 className="text-sm font-semibold text-emerald-800 mb-2">ექსპორტის შედეგი შეიცავს:</h4>
+                  <h4 className="text-sm font-semibold text-emerald-800 mb-2">ანგარიში შეიცავს:</h4>
                   <ul className="text-xs text-emerald-700 space-y-1">
-                    <li>• პროდუქტების სია (ID, სახელი, კოდი, კატეგორია)</li>
-                    <li>• ვარიანტების ინფორმაცია (თუ არის)</li>
-                    <li>• მარაგის რაოდენობა და ღირებულება</li>
-                    <li>• ჯამური მარაგის ღირებულება</li>
-                    {/* <li>• შექმნის/განახლების თარიღები</li> */}
+                    <li>• საწყისი ნაშთი (პერიოდის დაწყებამდე)</li>
+                    <li>• შემოსული პროდუქციის რაოდენობა</li>
+                    <li>• გასული პროდუქციის რაოდენობა</li>
+                    <li>• საბოლოო ნაშთი (გათვლილი)</li>
+                    <li>• ბრუნვის ანალიზი ღირებულებებით</li>
                   </ul>
                 </div>
               </div>
@@ -1373,9 +1494,9 @@ const InventoryManagerVariants: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsExportModalOpen(false);
+                    setIsTurnoverModalOpen(false);
                     setSelectedProducts(new Set());
-                    setExportDateRange({ startDate: "", endDate: "" });
+                    setTurnoverDateRange({ startDate: "", endDate: "" });
                   }}
                   className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
@@ -1383,11 +1504,12 @@ const InventoryManagerVariants: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={handleExport}
-                  className="flex-1 px-4 py-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+                  onClick={handleTurnoverReport}
+                  disabled={!turnoverDateRange.startDate || !turnoverDateRange.endDate}
+                  className="flex-1 px-4 py-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Download className="w-4 h-4" />
-                  ექსპორტი
+                  <Calendar className="w-4 h-4" />
+                  ანგარიშის გენერირება
                 </button>
               </div>
             </div>
