@@ -66,20 +66,34 @@ const getStockMovements = (
 
   let incoming = 0;
   let outgoing = 0;
-  let previousQuantity = relevantHistory[0].quantity;
 
-  for (let i = 1; i < relevantHistory.length; i++) {
-    const currentQuantity = relevantHistory[i].quantity;
-    const change = currentQuantity - previousQuantity;
+  // Get all stock history sorted by date for proper previous quantity calculation
+  const allHistorySorted = [...stockHistory].sort((a, b) => {
+    const dateA = a.timestamp instanceof Date ? a.timestamp : typeof a.timestamp === 'object' && a.timestamp !== null && 'toDate' in a.timestamp ? (a.timestamp as any).toDate() : new Date(a.timestamp as any);
+    const dateB = b.timestamp instanceof Date ? b.timestamp : typeof b.timestamp === 'object' && b.timestamp !== null && 'toDate' in b.timestamp ? (b.timestamp as any).toDate() : new Date(b.timestamp as any);
+    return dateA.getTime() - dateB.getTime();
+  });
 
-    if (change > 0) {
-      incoming += change;
-    } else if (change < 0) {
-      outgoing += Math.abs(change);
+  relevantHistory.forEach((entry) => {
+    // Special handling for Initial stock - treat as incoming
+    if (entry.reason === "Initial stock") {
+      incoming += entry.quantity;
+      return;
     }
 
-    previousQuantity = currentQuantity;
-  }
+    // For other entries, calculate the change from previous quantity
+    const entryIndex = allHistorySorted.findIndex(h => h === entry);
+    if (entryIndex > 0) {
+      const previousEntry = allHistorySorted[entryIndex - 1];
+      const change = entry.quantity - previousEntry.quantity;
+
+      if (change > 0) {
+        incoming += change;
+      } else if (change < 0) {
+        outgoing += Math.abs(change);
+      }
+    }
+  });
 
   return { incoming, outgoing };
 };
