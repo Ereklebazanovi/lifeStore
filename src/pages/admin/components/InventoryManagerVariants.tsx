@@ -800,7 +800,7 @@ const InventoryManagerVariants: React.FC = () => {
 
       if (result.success) {
         showToast(
-          `ბრუნვითი ანგარიში წარმატებით გენერირდა!\n${result.exportedProducts} პროდუქტი\nსაწყისი: ${result.totalInitialStock} ცალი (₾${result.totalInitialValue?.toFixed(2)})\nშემოსული: +${result.totalIncoming} ცალი\nგასული: -${result.totalOutgoing} ცალი\nსაბოლოო: ${result.totalFinalStock} ცალი (₾${result.totalFinalValue?.toFixed(2)})`,
+          `ბრუნვითი უწყისი წარმატებით გენერირდა!\n${result.exportedProducts} პროდუქტი\nსაწყისი ნაშთი: ${result.totalOpeningQuantity} ცალი\nმიღება: +${result.totalQuantityIn} ცალი\nგაყიდვა: -${result.totalQuantityOut} ცალი\nსხვაობა: ${result.totalDifference} ცალი\nმარაგის ნაშთი: ${result.totalClosingQuantity} ცალი`,
           "success"
         );
 
@@ -900,7 +900,7 @@ const InventoryManagerVariants: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm"
             >
               <Calendar className="w-4 h-4" />
-              ბრუნვითი ანგარიში
+              ბრუნვითი უწყისი
             </button>
           </div>
         </div>
@@ -1153,7 +1153,7 @@ const InventoryManagerVariants: React.FC = () => {
           <div className="bg-white rounded-lg w-full max-w-md shadow-xl">
             <div className="p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                ბრუნვითი ანგარიში
+                სასაწყობო ბრუნვითი უწყისი
               </h3>
 
               <div className="space-y-4">
@@ -1202,19 +1202,20 @@ const InventoryManagerVariants: React.FC = () => {
                     </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    მიუთითეთ პერიოდი, რომლის ბრუნვის ანალიზიც გნებავთ
+                    მიუთითეთ პერიოდი სასაწყობო ბრუნვითი უწყისისთვის
                   </p>
                 </div>
 
                 {/* Report Summary */}
                 <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                  <h4 className="text-sm font-semibold text-emerald-800 mb-2">ანგარიში შეიცავს:</h4>
+                  <h4 className="text-sm font-semibold text-emerald-800 mb-2">უწყისი შეიცავს:</h4>
                   <ul className="text-xs text-emerald-700 space-y-1">
-                    <li>• საწყისი ნაშთი (პერიოდის დაწყებამდე)</li>
-                    <li>• შემოსული პროდუქციის რაოდენობა</li>
-                    <li>• გასული პროდუქციის რაოდენობა</li>
-                    <li>• საბოლოო ნაშთი (გათვლილი)</li>
-                    <li>• ბრუნვის ანალიზი ღირებულებებით</li>
+                    <li>• კოდი და დასახელება</li>
+                    <li>• საწყისი რაოდენობრივი ნაშთი</li>
+                    <li>• მიღებული რაოდენობა</li>
+                    <li>• გაყიდული რაოდენობა</li>
+                    <li>• ბრუნვის სხვაობა</li>
+                    <li>• მარაგის ნაშთი</li>
                   </ul>
                 </div>
               </div>
@@ -1238,7 +1239,7 @@ const InventoryManagerVariants: React.FC = () => {
                   className="flex-1 px-4 py-2 text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Calendar className="w-4 h-4" />
-                  ანგარიშის გენერირება
+                  უწყისის გენერირება
                 </button>
               </div>
             </div>

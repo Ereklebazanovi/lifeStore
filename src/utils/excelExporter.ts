@@ -108,32 +108,31 @@ export const calculateTurnover = (
 
   productsToAnalyze.forEach((product) => {
     // Handle all products as simple products (no variants)
-    const initialStock = getStockAtDate(product.stockHistory, beforeStartDate);
-    const finalStock = getStockAtDate(product.stockHistory, adjustedEndDate);
+    const openingQuantity = getStockAtDate(product.stockHistory, beforeStartDate);
+    const closingQuantity = getStockAtDate(product.stockHistory, adjustedEndDate);
     const movements = getStockMovements(product.stockHistory, startDate, adjustedEndDate);
-    const price = product.price || 0;
+
+    const quantityIn = movements.incoming;
+    const quantityOut = movements.outgoing;
+    const difference = quantityIn - quantityOut;
 
     turnoverData.push({
-      productName: product.name,
       productCode: product.productCode || "-",
-      category: product.category || "-",
-      initialStock,
-      incoming: movements.incoming,
-      outgoing: movements.outgoing,
-      finalStock,
-      initialValue: initialStock * price,
-      incomingValue: movements.incoming * price,
-      outgoingValue: movements.outgoing * price,
-      finalValue: finalStock * price,
-      price
+      productName: product.name,
+      unit: "ცალი",
+      openingQuantity,
+      quantityIn,
+      quantityOut,
+      difference,
+      closingQuantity
     });
   });
 
   return turnoverData.filter(item =>
-    item.initialStock > 0 ||
-    item.incoming > 0 ||
-    item.outgoing > 0 ||
-    item.finalStock > 0
+    item.openingQuantity > 0 ||
+    item.quantityIn > 0 ||
+    item.quantityOut > 0 ||
+    item.closingQuantity > 0
   );
 };
 
@@ -404,20 +403,15 @@ export interface InventoryExportData {
 }
 
 export interface TurnoverData {
-  productName: string;
   productCode: string;
-  category: string;
-  initialStock: number;
-  incoming: number;
-  outgoing: number;
-  finalStock: number;
-  initialValue: number;
-  incomingValue: number;
-  outgoingValue: number;
-  finalValue: number;
-  price: number;
+  productName: string;
+  unit: string;
+  openingQuantity: number;
+  quantityIn: number;
+  quantityOut: number;
+  difference: number;
+  closingQuantity: number;
 }
-
 
 export const exportInventoryToExcel = (
   products: Product[],
@@ -640,57 +634,43 @@ export const exportTurnoverToExcel = (
     const flattenedData: any[] = [];
 
     // Report title and period
-    const reportTitle = `ბრუნვითი ანგარიში: ${startDate.toLocaleDateString("ka-GE")} - ${endDate.toLocaleDateString("ka-GE")}`;
+    const reportTitle = `სასაწყობო ბრუნვითი უწყისი: ${startDate.toLocaleDateString("ka-GE")} - ${endDate.toLocaleDateString("ka-GE")}`;
 
-    let totalInitialStock = 0;
-    let totalIncoming = 0;
-    let totalOutgoing = 0;
-    let totalFinalStock = 0;
-    let totalInitialValue = 0;
-    let totalIncomingValue = 0;
-    let totalOutgoingValue = 0;
-    let totalFinalValue = 0;
+    let totalOpeningQuantity = 0;
+    let totalQuantityIn = 0;
+    let totalQuantityOut = 0;
+    let totalDifference = 0;
+    let totalClosingQuantity = 0;
 
     turnoverData.forEach((item) => {
-      totalInitialStock += item.initialStock;
-      totalIncoming += item.incoming;
-      totalOutgoing += item.outgoing;
-      totalFinalStock += item.finalStock;
-      totalInitialValue += item.initialValue;
-      totalIncomingValue += item.incomingValue;
-      totalOutgoingValue += item.outgoingValue;
-      totalFinalValue += item.finalValue;
+      totalOpeningQuantity += item.openingQuantity;
+      totalQuantityIn += item.quantityIn;
+      totalQuantityOut += item.quantityOut;
+      totalDifference += item.difference;
+      totalClosingQuantity += item.closingQuantity;
 
       flattenedData.push({
-        "პროდუქტის დასახელება": item.productName,
-        "პროდუქტის კოდი": item.productCode,
-        "კატეგორია": item.category,
-        "ერთეულის ფასი (₾)": item.price,
-        "საწყისი ნაშთი": item.initialStock,
-        "შემოსული": item.incoming,
-        "გასული": item.outgoing,
-        "საბოლოო ნაშთი": item.finalStock,
-        "საწყისი ღირებულება (₾)": item.initialValue,
-        "შემოსული ღირებულება (₾)": item.incomingValue,
-        "გასული ღირებულება (₾)": item.outgoingValue,
-        "საბოლოო ღირებულება (₾)": item.finalValue,
+        "კოდი": item.productCode,
+        "დასახელება": item.productName,
+        "ერთეული": item.unit,
+        "საწყისი რაოდენობრივი ნაშთი": item.openingQuantity,
+        "მიღება": item.quantityIn,
+        "გაყიდვა": item.quantityOut,
+        "ბრუნვის სხვაობა": item.difference,
+        "მარაგის ნაშთი": item.closingQuantity,
       });
     });
 
     // Add summary row
     flattenedData.push({
-      "პროდუქტის დასახელება": "სულ ჯამში:",
-      "პროდუქტის კოდი": "",
-      "კატეგორია": "",
-      "ერთეულის ფასი (₾)": "",
-      "საწყისი ნაშთი": totalInitialStock,
-      "შემოსული": totalIncoming,
-      "გასული": totalOutgoing,
-      "საბოლოო ნაშთი": totalFinalStock,
-      "საწყისი ღირებულება (₾)": totalInitialValue,
-      "შემოსული ღირებულება (₾)": totalIncomingValue,
-      "გასული ღირებულება (₾)": totalOutgoingValue,
-      "საბოლოო ღირებულება (₾)": totalFinalValue,
+      "კოდი": "",
+      "დასახელება": "სულ ჯამში:",
+      "ერთეული": "",
+      "საწყისი რაოდენობრივი ნაშთი": totalOpeningQuantity,
+      "მიღება": totalQuantityIn,
+      "გაყიდვა": totalQuantityOut,
+      "ბრუნვის სხვაობა": totalDifference,
+      "მარაგის ნაშთი": totalClosingQuantity,
     });
 
     // Create Excel workbook
@@ -699,24 +679,20 @@ export const exportTurnoverToExcel = (
 
     const workbook = XLSX.utils.book_new();
 
-    // Merge title cell (A1 to L1)
+    // Merge title cell (A1 to H1)
     if (!worksheet["!merges"]) worksheet["!merges"] = [];
-    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 11 } });
+    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } });
 
     // Set column widths
     const colWidths = [
-      { wch: 30 }, // A: სახელი
-      { wch: 15 }, // B: კოდი
-      { wch: 15 }, // C: კატეგორია
-      { wch: 15 }, // D: ფასი
-      { wch: 12 }, // E: საწყისი ნაშთი
-      { wch: 12 }, // F: შემოსული
-      { wch: 12 }, // G: გასული
-      { wch: 12 }, // H: საბოლოო ნაშთი
-      { wch: 18 }, // I: საწყისი ღირებულება
-      { wch: 18 }, // J: შემოსული ღირებულება
-      { wch: 18 }, // K: გასული ღირებულება
-      { wch: 18 }, // L: საბოლოო ღირებულება
+      { wch: 15 }, // A: კოდი
+      { wch: 30 }, // B: დასახელება
+      { wch: 10 }, // C: ერთეული
+      { wch: 18 }, // D: საწყისი რაოდენობრივი ნაშთი
+      { wch: 12 }, // E: მიღება
+      { wch: 12 }, // F: გაყიდვა
+      { wch: 15 }, // G: ბრუნვის სხვაობა
+      { wch: 15 }, // H: მარაგის ნაშთი
     ];
     worksheet["!cols"] = colWidths;
 
@@ -730,30 +706,31 @@ export const exportTurnoverToExcel = (
 
     // Title style
     const titleStyle = {
-      font: { bold: true, sz: 14, color: { rgb: "4472C4" } },
+      font: { bold: true, sz: 16, color: { rgb: "000000" } },
       alignment: { horizontal: "center", vertical: "center" },
       fill: { fgColor: { rgb: "FFFFFF" } }
     };
 
-    // Header style
+    // Header style - Traditional blue style
     const headerStyle = {
       font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
-      fill: { fgColor: { rgb: "4472C4" } },
+      fill: { fgColor: { rgb: "366092" } },
       alignment: { horizontal: "center", vertical: "center", wrapText: true },
       border: borderStyle,
     };
 
-    // Summary style
+    // Summary style - Light green for totals
     const summaryStyle = {
       font: { bold: true },
-      fill: { fgColor: { rgb: "E2EFDA" } },
+      fill: { fgColor: { rgb: "D4EDDA" } },
       border: borderStyle,
-      alignment: { horizontal: "right" }
+      alignment: { horizontal: "center" }
     };
 
-    const currencyStyle = {
-      alignment: { horizontal: "right", vertical: "center" },
-      numFmt: "#,##0.00",
+    // Quantity style - numbers centered
+    const quantityStyle = {
+      alignment: { horizontal: "center", vertical: "center" },
+      numFmt: "#,##0",
       border: borderStyle
     };
 
@@ -781,7 +758,7 @@ export const exportTurnoverToExcel = (
 
     // Apply styles to all cells
     for (let R = 1; R <= lastRowIndex; ++R) {
-      for (let C = 0; C <= 11; ++C) {
+      for (let C = 0; C <= 7; ++C) {
         const address = XLSX.utils.encode_cell({ r: R, c: C });
         if (!worksheet[address]) continue;
 
@@ -791,41 +768,35 @@ export const exportTurnoverToExcel = (
         } else if (R === lastRowIndex) {
           // Summary row
           worksheet[address].s = summaryStyle;
-          if (C >= 3) worksheet[address].s.numFmt = "#,##0.00";
+          if (C >= 3 && C <= 7) worksheet[address].s.numFmt = "#,##0";
         } else {
           // Data rows
           const colLetter = XLSX.utils.encode_col(C);
 
-          if (["I", "J", "K", "L"].includes(colLetter)) { // Currency columns
-            worksheet[address].s = currencyStyle;
-          } else if (["D", "E", "F", "G", "H"].includes(colLetter)) { // Numeric columns
+          if (["D", "E", "F", "G", "H"].includes(colLetter)) { // Quantity columns
+            worksheet[address].s = quantityStyle;
+          } else if (colLetter === "A") { // Code column
             worksheet[address].s = centerStyle;
-            if (colLetter === "D") {
-              worksheet[address].s.numFmt = "#,##0.00";
-            }
-          } else if (colLetter === "A") { // Product name
+          } else if (colLetter === "B") { // Product name
             worksheet[address].s = leftStyle;
-          } else {
+          } else if (colLetter === "C") { // Unit column
             worksheet[address].s = centerStyle;
           }
         }
       }
     }
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Turnover Report");
-    const filename = `Turnover_Report_${startDate.toISOString().split("T")[0]}_${endDate.toISOString().split("T")[0]}.xlsx`;
+    XLSX.utils.book_append_sheet(workbook, worksheet, "ბრუნვითი უწყისი");
+    const filename = `ბრუნვითი_უწყისი_${startDate.toISOString().split("T")[0]}_${endDate.toISOString().split("T")[0]}.xlsx`;
     XLSX.writeFile(workbook, filename);
 
     return {
       success: true,
-      totalInitialStock,
-      totalIncoming,
-      totalOutgoing,
-      totalFinalStock,
-      totalInitialValue,
-      totalIncomingValue,
-      totalOutgoingValue,
-      totalFinalValue,
+      totalOpeningQuantity,
+      totalQuantityIn,
+      totalQuantityOut,
+      totalDifference,
+      totalClosingQuantity,
       exportedProducts: flattenedData.length - 1 // -1 for summary row
     };
 
