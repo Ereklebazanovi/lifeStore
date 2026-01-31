@@ -84,14 +84,14 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({
 
   if (alerts.length === 0) {
     return (
-      <div className={`bg-emerald-50 border border-emerald-200 rounded-lg p-4 ${className}`}>
+      <div className={`bg-emerald-50 border border-emerald-200 rounded-md sm:rounded-lg p-3 sm:p-4 ${className}`}>
         <div className="flex items-center gap-2">
-          <Package className="w-5 h-5 text-emerald-600" />
-          <h3 className="text-lg font-semibold text-emerald-900">
+          <Package className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+          <h3 className="text-sm sm:text-base md:text-lg font-semibold text-emerald-900">
             მარაგის მდგომარეობა შესანიშნავია! ✅
           </h3>
         </div>
-        <p className="text-emerald-700 mt-2">
+        <p className="text-xs sm:text-sm text-emerald-700 mt-1 sm:mt-2">
           ყველა პროდუქტი საკმარისი რაოდენობითაა ხელმისაწვდომი
         </p>
       </div>
@@ -101,26 +101,26 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({
   return (
     <div className={className}>
       {showTitle && (
-        <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-200 gap-2 sm:gap-0">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+            <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">
               მარაგის გაფრთხილებები
             </h3>
           </div>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm">
             {stats.outOfStock > 0 && (
-              <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full font-medium">
+              <span className="bg-red-100 text-red-800 px-2 sm:px-3 py-1 rounded-full font-medium">
                 {stats.outOfStock} ამოიწურა
               </span>
             )}
             {stats.criticalStock > 0 && (
-              <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-medium">
+              <span className="bg-amber-100 text-amber-800 px-2 sm:px-3 py-1 rounded-full font-medium">
                 {stats.criticalStock} კრიტიკული
               </span>
             )}
             {stats.lowStock > 0 && (
-              <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-medium">
+              <span className="bg-yellow-100 text-yellow-800 px-2 sm:px-3 py-1 rounded-full font-medium">
                 {stats.lowStock} დაბალი
               </span>
             )}
@@ -128,11 +128,11 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-2 sm:space-y-3 md:space-y-4">
         {alerts.map((alert, index) => (
           <div
             key={`${alert.product.id}-${alert.type}`}
-            className={`flex items-start gap-3 p-4 rounded-lg border-l-4 ${getAlertStyles(
+            className={`flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-md sm:rounded-lg border-l-4 ${getAlertStyles(
               alert.type
             )}`}
           >
@@ -141,7 +141,7 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({
               <img
                 src={alert.product.images?.[0] || '/placeholder-product.png'}
                 alt={alert.product.name}
-                className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 object-cover rounded-md sm:rounded-lg border border-gray-200"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/placeholder-product.png';
                 }}
@@ -149,16 +149,16 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({
             </div>
 
             {/* Alert Icon */}
-            <div className="flex-shrink-0 mt-1">
+            <div className="flex-shrink-0 mt-0.5 sm:mt-1">
               {getAlertIcon(alert.type)}
             </div>
 
             {/* Product Info */}
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-900 mb-1">
+              <p className="font-semibold text-gray-900 mb-1 text-xs sm:text-sm md:text-base">
                 {alert.message}
               </p>
-              <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-600">
+              <div className="flex flex-wrap items-center gap-1 sm:gap-2 md:gap-4 text-xs sm:text-sm text-gray-600">
                 <span className="flex items-center gap-1">
                   📦 {alert.product.category}
                 </span>
@@ -180,11 +180,11 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({
             {/* Stock Status */}
             <div className="flex-shrink-0">
               {alert.type === "out_of_stock" ? (
-                <span className="text-xs sm:text-sm bg-red-100 text-red-800 px-2 sm:px-3 py-1 rounded-full font-medium">
+                <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium">
                   ❌ ამოიწურა
                 </span>
               ) : (
-                <span className="text-xs sm:text-sm bg-gray-100 text-gray-700 px-2 sm:px-3 py-1 rounded-full font-medium">
+                <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full font-medium">
                   📊 {alert.product.stock} ცალი
                 </span>
               )}

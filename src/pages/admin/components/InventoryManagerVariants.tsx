@@ -94,14 +94,14 @@ const VariantStockModal: React.FC<VariantStockModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
-      <div className="bg-white rounded-lg w-full max-w-sm sm:max-w-md shadow-xl">
-        <div className="p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">
+      <div className="bg-white rounded-lg w-full max-w-sm sm:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="p-3 sm:p-4 md:p-6">
+          <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 mb-2 sm:mb-3">
             {isAdd ? "მარაგის დამატება" : "მარაგის შემცირება"}
           </h3>
 
           <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-50 rounded-lg">
-            <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{productName}</p>
+            <p className="font-medium text-gray-900 text-xs sm:text-sm md:text-base truncate">{productName}</p>
             <p className="text-xs sm:text-sm text-gray-600 truncate">ვარიანტი: {variant.name}</p>
             <p className="text-xs sm:text-sm text-gray-600">
               მიმდინარე მარაგი: <span className="font-bold">{currentStock} ცალი</span>
@@ -535,19 +535,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg overflow-hidden ${!product.isActive ? 'opacity-60 bg-gray-50/50' : ''}`}>
+    <div className={`bg-white border border-gray-200 rounded-md sm:rounded-lg overflow-hidden ${!product.isActive ? 'opacity-60 bg-gray-50/50' : ''}`}>
       {/* Card Header */}
-      <div className="p-4">
-        <div className="flex items-start gap-3 mb-3">
+      <div className="p-2 sm:p-3 md:p-4">
+        <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
           {/* Selection Checkbox */}
           <button
             onClick={() => onSelectProduct(product.id)}
             className="flex items-center justify-center mt-1"
           >
             {isSelected ? (
-              <CheckSquare className="w-5 h-5 text-emerald-600" />
+              <CheckSquare className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
             ) : (
-              <Square className="w-5 h-5 text-gray-400" />
+              <Square className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
             )}
           </button>
           {/* Product Image */}
@@ -555,28 +555,28 @@ const ProductCard: React.FC<ProductCardProps> = ({
             <img
               src={product.images[0]}
               alt={product.name}
-              className="w-16 h-16 object-cover rounded-lg border border-gray-200 flex-shrink-0"
+              className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 object-cover rounded-md sm:rounded-lg border border-gray-200 flex-shrink-0"
             />
           ) : (
-            <div className="w-16 h-16 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0">
-              <Package className="w-8 h-8 text-gray-400" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gray-100 rounded-md sm:rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0">
+              <Package className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-gray-400" />
             </div>
           )}
 
           {/* Product Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-1">
+            <h3 className="font-semibold text-gray-900 text-xs sm:text-sm leading-tight mb-1">
               {product.name}
             </h3>
-            <p className="text-xs text-gray-500 mb-2">ID: {product.id}</p>
+            <p className="text-xs text-gray-500 mb-1 sm:mb-2 truncate">ID: {product.id}</p>
 
             {/* Type & Category */}
-            <div className="flex flex-wrap gap-2 mb-2">
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            <div className="flex flex-wrap gap-1 sm:gap-2 mb-1 sm:mb-2">
+              <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                 მარტივი
               </span>
               <span
-                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${
                   product.isActive
                     ? "bg-emerald-100 text-emerald-700"
                     : "bg-red-100 text-red-600"
@@ -618,9 +618,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         </div>
 
-        {/* Stock Control Buttons */}
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-          <div className="flex items-center gap-1 sm:gap-3 w-full justify-center">
+        {/* Stock Control - Compact */}
+        <div className="pt-2 border-t border-gray-100">
+          <div className="flex items-center justify-center gap-2">
             <button
               onClick={() =>
                 onStockAdjustment(
@@ -631,14 +631,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 )
               }
               disabled={!product.stock || product.stock <= 0}
-              className="flex items-center gap-1 px-2 sm:px-4 py-2 bg-red-50 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-xs sm:text-sm"
+              className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              title="მარაგის შემცირება"
             >
-              <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">შემცირება</span>
-              <span className="sm:hidden">-</span>
+              <Minus className="w-4 h-4" />
             </button>
 
-            <div className="px-2 sm:px-3 py-2 bg-gray-50 rounded-lg border min-w-[40px] text-center">
+            <div className="px-3 py-2 bg-gray-50 rounded-lg border min-w-[60px] text-center">
               <span className="text-sm font-bold text-gray-900">
                 {product.stock || 0}
               </span>
@@ -653,11 +652,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   "add"
                 )
               }
-              className="flex items-center gap-1 px-2 sm:px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-all text-xs sm:text-sm"
+              className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-all"
+              title="მარაგის დამატება"
             >
-              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">დამატება</span>
-              <span className="sm:hidden">+</span>
+              <Plus className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -881,18 +879,18 @@ const InventoryManagerVariants: React.FC = () => {
   }, 0);
 
   return (
-    <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 lg:space-y-6">
+    <div className="p-2 sm:p-3 md:p-4 lg:p-6 space-y-2 sm:space-y-3 md:space-y-4 lg:space-y-6">
       {/* Compact Header */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-          <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
+      <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-3">
+          <h1 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-gray-900 flex items-center gap-1 sm:gap-2">
             <Package className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-emerald-600 flex-shrink-0" />
             <span className="truncate">საწყობი (მარაგის მართვა)</span>
           </h1>
           <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
             <button
               onClick={() => setIsStockSnapshotModalOpen(true)}
-              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm whitespace-nowrap"
+              className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md sm:rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm whitespace-nowrap"
             >
               <Download className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">მარაგის ნაშთი</span>
@@ -900,7 +898,7 @@ const InventoryManagerVariants: React.FC = () => {
             </button>
             <button
               onClick={() => setIsTurnoverModalOpen(true)}
-              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-xs sm:text-sm whitespace-nowrap"
+              className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-emerald-600 text-white rounded-md sm:rounded-lg hover:bg-emerald-700 transition-colors text-xs sm:text-sm whitespace-nowrap"
             >
               <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">ბრუნვითი უწყისი</span>
@@ -910,46 +908,46 @@ const InventoryManagerVariants: React.FC = () => {
         </div>
 
         {/* Summary Cards - Mobile: 2x3, Desktop: 1x5 */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 mb-4">
-          <div className="bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-200">
-            <p className="text-lg sm:text-2xl font-bold text-blue-600">{totalProducts}</p>
-            <p className="text-xs text-blue-700 leading-tight">პროდუქტი</p>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-1.5 sm:gap-2 md:gap-3 mb-3 sm:mb-4">
+          <div className="bg-blue-50 p-1.5 sm:p-2 md:p-3 rounded-md sm:rounded-lg border border-blue-200">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-blue-600">{totalProducts}</p>
+            <p className="text-xs text-blue-700 leading-tight truncate">პროდუქტი</p>
           </div>
-          <div className="bg-emerald-50 p-2 sm:p-3 rounded-lg border border-emerald-200">
-            <p className="text-lg sm:text-2xl font-bold text-emerald-600">{totalStock}</p>
-            <p className="text-xs text-emerald-700 leading-tight">ჯამური მარაგი</p>
+          <div className="bg-emerald-50 p-1.5 sm:p-2 md:p-3 rounded-md sm:rounded-lg border border-emerald-200">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-emerald-600">{totalStock}</p>
+            <p className="text-xs text-emerald-700 leading-tight truncate">ჯამური მარაგი</p>
           </div>
-          <div className="bg-purple-50 p-2 sm:p-3 rounded-lg border border-purple-200">
-            <p className="text-base sm:text-xl font-bold text-purple-600">₾{totalInventoryValue.toFixed(0)}</p>
-            <p className="text-xs text-purple-700 leading-tight">ღირებულება</p>
+          <div className="bg-purple-50 p-1.5 sm:p-2 md:p-3 rounded-md sm:rounded-lg border border-purple-200">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-purple-600">₾{totalInventoryValue.toFixed(0)}</p>
+            <p className="text-xs text-purple-700 leading-tight truncate">ღირებულება</p>
           </div>
-          <div className="bg-yellow-50 p-2 sm:p-3 rounded-lg border border-yellow-200">
-            <p className="text-lg sm:text-2xl font-bold text-yellow-600">{lowStockProducts}</p>
-            <p className="text-xs text-yellow-700 leading-tight">დაბალი მარაგი</p>
+          <div className="bg-yellow-50 p-1.5 sm:p-2 md:p-3 rounded-md sm:rounded-lg border border-yellow-200">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-yellow-600">{lowStockProducts}</p>
+            <p className="text-xs text-yellow-700 leading-tight truncate">დაბალი მარაგი</p>
           </div>
-          <div className="bg-red-50 p-2 sm:p-3 rounded-lg border border-red-200 lg:col-span-1 col-span-2">
-            <p className="text-lg sm:text-2xl font-bold text-red-600">{outOfStockProducts}</p>
-            <p className="text-xs text-red-700 leading-tight">ამოიწურა</p>
+          <div className="bg-red-50 p-1.5 sm:p-2 md:p-3 rounded-md sm:rounded-lg border border-red-200 lg:col-span-1 col-span-2">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-600">{outOfStockProducts}</p>
+            <p className="text-xs text-red-700 leading-tight truncate">ამოიწურა</p>
           </div>
         </div>
 
         {/* Search & Filters - Stack on mobile */}
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <div className="flex-1 relative">
-            <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 sm:w-4 h-3 sm:h-4 text-gray-400" />
             <input
               type="text"
               placeholder="პროდუქტის ძებნა..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 sm:pl-9 pr-3 sm:pr-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="w-full pl-7 sm:pl-8 md:pl-9 pr-3 sm:pr-4 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
             />
           </div>
 
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-2 sm:px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white min-w-[120px]"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white min-w-[100px] sm:min-w-[120px]"
           >
             <option value="name">სახელით</option>
             <option value="stock">მარაგით</option>
@@ -1028,7 +1026,7 @@ const InventoryManagerVariants: React.FC = () => {
             </div>
 
             {/* Mobile Card View - Hidden on desktop */}
-            <div className="md:hidden space-y-3 p-4">
+            <div className="md:hidden space-y-2 sm:space-y-3 p-2 sm:p-3 md:p-4">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}

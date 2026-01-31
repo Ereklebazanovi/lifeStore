@@ -362,7 +362,7 @@ case "analytics": {
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">
-                    პოპულარული პროდუქტები
+                    მაღალი მარაგები
                   </h4>
                   <div className="space-y-2">
                     {products

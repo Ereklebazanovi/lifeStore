@@ -103,7 +103,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       onClick={onClick}
       title={collapsed ? label : undefined}
       className={`
-        w-full flex items-center space-x-3 px-4 py-3 sm:py-2.5 rounded-lg text-base sm:text-sm font-medium transition-all duration-200
+        w-full flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 rounded-md sm:rounded-lg text-sm sm:text-base md:text-sm font-medium transition-all duration-200
         ${
           isActive
             ? "bg-blue-600 text-white shadow-sm"
@@ -112,12 +112,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         ${collapsed ? "justify-center px-3" : ""}
       `}
     >
-      <Icon className={`${collapsed ? "w-6 h-6" : "w-5 h-5 sm:w-5 sm:h-5"} min-w-[20px]`} />
-      {!collapsed && <span className="flex-1 text-left truncate text-base sm:text-sm">{label}</span>}
+      <Icon className={`${collapsed ? "w-5 h-5 sm:w-6 sm:h-6" : "w-4 h-4 sm:w-5 sm:h-5"} min-w-[16px] sm:min-w-[20px]`} />
+      {!collapsed && <span className="flex-1 text-left truncate text-sm sm:text-base">{label}</span>}
       {!collapsed && count && (
         <span
           className={`
-          px-2.5 py-1 text-sm sm:text-xs rounded-full font-medium
+          px-2 sm:px-2.5 py-0.5 sm:py-1 text-xs rounded-full font-medium
           ${isActive ? "bg-white/20" : "bg-gray-200 text-gray-600"}
         `}
         >
@@ -142,15 +142,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       {!isDesktop && (
         <aside
           className={`
-          fixed inset-y-0 left-0 z-50 w-72 sm:w-80 bg-white border-r border-gray-200 shadow-lg
+          fixed inset-y-0 left-0 z-50 w-64 sm:w-72 md:w-80 bg-white border-r border-gray-200 shadow-lg
           transform transition-transform duration-300 ease-in-out
           ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
         `}
         >
-          <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center">
+          <div className="p-3 sm:p-4 md:p-6 border-b border-gray-200 flex justify-between items-center">
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">LifeStore</h1>
-              <p className="text-sm sm:text-base text-gray-600 truncate">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">LifeStore</h1>
+              <p className="text-xs sm:text-sm md:text-base text-gray-600 truncate">
                 {user?.role === "admin"
                   ? "ადმინისტრატორი"
                   : user?.role === "manager"
@@ -168,7 +168,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
             </button>
           </div>
 
-          <nav className="flex-1 p-4 sm:p-6 space-y-2">
+          <nav className="flex-1 p-3 sm:p-4 md:p-6 space-y-1 sm:space-y-2">
             {navigationItems.map((item) => (
               <SidebarNavItem
                 key={item.id}
@@ -287,14 +287,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
           marginLeft: isDesktop ? (isSidebarOpen ? "256px" : "64px") : "0px",
         }}
       >
-        <header className="h-14 sm:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-3 sm:px-4 lg:px-6 shadow-sm sticky top-0 z-20">
-          <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+        <header className="h-12 sm:h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-2 sm:px-3 md:px-4 lg:px-6 shadow-sm sticky top-0 z-20">
+          <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-1 min-w-0">
             {!isDesktop && (
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="p-2.5 sm:p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors flex-shrink-0"
+                className="p-1.5 sm:p-2 md:p-2.5 rounded-md sm:rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors flex-shrink-0 flex items-center justify-center"
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             )}
 
@@ -311,12 +311,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
               </button>
             )}
 
-            <h1 className="text-base sm:text-lg font-semibold text-gray-900 capitalize truncate">
+            <h1 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 capitalize truncate">
               {allNavItems.find((i) => i.id === activeSection)?.label ||
                 activeSection}
             </h1>
           </div>
-          <div className="text-xs sm:text-sm text-gray-500 flex-shrink-0 ml-2">
+          <div className="text-xs sm:text-sm text-gray-500 flex-shrink-0 ml-1 sm:ml-2">
             {currentTime.toLocaleTimeString("ka-GE", {
               hour: "2-digit",
               minute: "2-digit",
@@ -325,7 +325,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
           </div>
         </header>
 
-        <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-hidden flex flex-col">
+        <main className="flex-1 p-2 sm:p-3 md:p-4 lg:p-6 overflow-hidden flex flex-col">
           <div className="flex-1 overflow-y-auto custom-scrollbar">{children}</div>
         </main>
       </div>

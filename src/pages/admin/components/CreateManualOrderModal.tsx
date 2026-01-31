@@ -240,9 +240,9 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm">
       {/* ✅ Responsive modal that adapts to screen size */}
-      <div className="bg-white rounded-xl w-full max-w-sm sm:max-w-2xl lg:max-w-4xl shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[90vh] animate-in fade-in zoom-in duration-200">
+      <div className="bg-white rounded-t-xl sm:rounded-xl w-full max-w-sm sm:max-w-2xl lg:max-w-4xl shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[90vh] animate-in fade-in zoom-in duration-200">
         {/* --- Header (Fixed) --- */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-stone-100 flex-shrink-0">
           <h2 className="text-lg sm:text-xl font-bold text-stone-900 flex items-center gap-2">
@@ -254,7 +254,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 sm:p-2 hover:bg-stone-100 rounded-full transition-colors"
+            className="p-1.5 sm:p-2 hover:bg-stone-100 rounded-full transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <X className="w-5 h-5 sm:w-6 sm:h-6 text-stone-500" />
           </button>
@@ -273,7 +273,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                   <select
                     value={source}
                     onChange={(e) => setSource(e.target.value as OrderSource)}
-                    className="w-full pl-10 pr-3 py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                    className="w-full pl-10 pr-3 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
                   >
                     <option value="instagram">Instagram</option>
                     <option value="facebook">Facebook</option>
@@ -290,7 +290,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as any)}
-                  className="w-full px-3 py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                  className="w-full px-3 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
                 >
                   <option value="pending">📋 მოლოდინში</option>
                   <option value="confirmed">💳 გადახდილი</option>
@@ -305,7 +305,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as any)}
-                  className="w-full px-3 py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                  className="w-full px-3 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
                 >
                   <option value="cash">ნაღდი / ადგილზე</option>
                   <option value="bank_transfer">ბანკი</option>
@@ -333,7 +333,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                           firstName: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-stone-400"
+                      className="w-full px-4 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-stone-400 touch-manipulation"
                     />
                     <input
                       type="text"
@@ -345,7 +345,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                           lastName: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-stone-400"
+                      className="w-full px-4 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-stone-400 touch-manipulation"
                     />
                   </div>
                   {/* ✅ Phone Input Component - შეცვლილია */}
@@ -399,7 +399,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                         setShippingCost(calculateShippingCost(newCity));
                       }
                     }}
-                    className="w-full px-4 py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                    className="w-full px-4 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
                   >
                     <option value="თბილისი">თბილისი (5 ₾)</option>
                     <option value="რუსთავი">რუსთავი (5 ₾)</option>
@@ -417,7 +417,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                         address: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none h-24 resize-none placeholder:text-stone-400"
+                    className="w-full px-4 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none h-24 resize-none placeholder:text-stone-400 touch-manipulation"
                   />
                   <input
                     type="text"
@@ -429,7 +429,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                         comment: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none placeholder:text-stone-400"
+                    className="w-full px-4 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none placeholder:text-stone-400 touch-manipulation"
                   />
                 </div>
               </div>
@@ -606,7 +606,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 sm:px-6 py-2.5 text-sm sm:text-base font-medium text-stone-600 hover:text-stone-800 transition-colors border border-stone-200 rounded-lg hover:bg-stone-100"
+            className="px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base font-medium text-stone-600 hover:text-stone-800 transition-colors border border-stone-200 rounded-lg hover:bg-stone-100 min-h-[44px] flex items-center justify-center"
           >
             გაუქმება
           </button>
@@ -614,7 +614,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={isLoading}
-            className="px-6 sm:px-7 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm sm:text-base font-medium shadow-sm shadow-emerald-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all active:scale-95"
+            className="px-6 sm:px-7 py-3 sm:py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm sm:text-base font-medium shadow-sm shadow-emerald-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all active:scale-95 min-h-[44px]"
           >
             {isLoading ? (
               <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

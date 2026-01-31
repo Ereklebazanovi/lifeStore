@@ -228,7 +228,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       onClick={(e) => {
         e.stopPropagation();
       }}
@@ -241,28 +241,28 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
 
       {/* Modal */}
       <div
-        className="relative bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 max-h-[85vh] flex flex-col"
+        className="relative bg-white rounded-t-xl sm:rounded-lg shadow-xl max-w-5xl w-full mx-2 sm:mx-4 max-h-[95vh] sm:max-h-[85vh] flex flex-col"
         onClick={(e) => {
           e.stopPropagation();
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-bold text-gray-900">პროდუქტის არჩევა</h2>
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900">პროდუქტის არჩევა</h2>
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onClose();
             }}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Search */}
-        <div className="p-4 border-b">
+        <div className="p-3 sm:p-4 border-b">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -270,16 +270,16 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
               placeholder="ძებნა პროდუქტის სახელით..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full pl-9 pr-4 py-2.5 sm:py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent touch-manipulation"
               autoFocus
             />
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex flex-col sm:flex-row overflow-hidden">
           {/* Products List */}
-          <div className="w-1/2 border-r overflow-y-auto">
+          <div className="w-full sm:w-1/2 h-64 sm:h-auto sm:border-r border-b sm:border-b-0 overflow-y-auto custom-scrollbar">
             <div className="p-3">
               <h3 className="text-xs font-semibold text-gray-700 mb-2 uppercase">
                 პროდუქტები ({filteredProducts.length})
@@ -293,7 +293,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                     <button
                       key={product.id}
                       onClick={() => handleProductClick(product)}
-                      className={`w-full text-left p-2 rounded-md border transition-all ${
+                      className={`w-full text-left p-3 sm:p-2 rounded-md border transition-all min-h-[60px] sm:min-h-[44px] active:scale-[0.98] ${
                         isSelected
                           ? "border-emerald-500 bg-emerald-50"
                           : "border-gray-200 hover:border-gray-300"
@@ -302,7 +302,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <h4 className={`text-sm font-medium ${!product.isActive ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                            <h4 className={`text-sm sm:text-sm font-medium ${!product.isActive ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                               {product.name}
                             </h4>
                             {!product.isActive && (
@@ -311,7 +311,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                               </span>
                             )}
                           </div>
-                          <div className={`text-xs ${!product.isActive ? 'text-gray-500' : 'text-gray-600'}`}>
+                          <div className={`text-xs sm:text-xs ${!product.isActive ? 'text-gray-500' : 'text-gray-600'} mt-1`}>
                             ₾
                             {product.salePrice &&
                             product.salePrice < product.price ? (
@@ -343,9 +343,9 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
           </div>
 
           {/* Variants & Details */}
-          <div className="w-1/2 flex flex-col">
+          <div className="w-full sm:w-1/2 flex flex-col min-h-0">
             {selectedProduct ? (
-              <div className="flex-1 overflow-y-auto p-3">
+              <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">
                   {selectedProduct.name}
                 </h3>
@@ -369,7 +369,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                         <button
                           key={variant.id}
                           onClick={() => handleVariantClick(variant)}
-                          className={`w-full text-left p-2 rounded-md border transition-all ${
+                          className={`w-full text-left p-3 sm:p-2 rounded-md border transition-all min-h-[56px] sm:min-h-[44px] active:scale-[0.98] ${
                             isSelected
                               ? "border-emerald-500 bg-emerald-50"
                               : "border-gray-200 hover:border-gray-300"
@@ -451,7 +451,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                         )
                       }
                       disabled={quantity <= (currentStock === 0 ? 0 : 1)}
-                      className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-2.5 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
@@ -463,7 +463,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                         const value = parseInt(e.target.value) || 1;
                         setQuantity(Math.max(1, Math.min(value, currentStock)));
                       }}
-                      className={`w-16 text-center py-1 text-sm border rounded-md focus:ring-2 focus:border-transparent ${
+                      className={`w-16 sm:w-16 text-center py-2 sm:py-1 text-sm sm:text-base border rounded-md focus:ring-2 focus:border-transparent touch-manipulation ${
                         currentStock === 0
                           ? "border-red-300 bg-red-50 text-red-500 cursor-not-allowed"
                           : "border-gray-300 focus:ring-emerald-500"
@@ -476,7 +476,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                     <button
                       onClick={() => setQuantity(quantity + 1)}
                       disabled={quantity >= currentStock || currentStock === 0}
-                      className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-2.5 sm:p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -561,14 +561,14 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t bg-gray-50 flex items-center justify-between">
+        <div className="p-3 sm:p-4 border-t bg-gray-50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onClose();
             }}
-            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+            className="px-4 py-3 sm:px-3 sm:py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors rounded-lg border border-gray-300 hover:bg-gray-100 min-h-[44px] flex items-center justify-center sm:w-auto"
           >
             გაუქმება
           </button>
@@ -584,7 +584,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
               stockStatus === "insufficient" ||
               stockStatus === "out_of_stock"
             }
-            className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 transition-colors"
+            className="px-4 py-3 sm:px-4 sm:py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-1 transition-colors min-h-[44px] font-medium active:scale-95"
           >
             <ShoppingCart className="w-4 h-4" />
             <span>დამატება</span>

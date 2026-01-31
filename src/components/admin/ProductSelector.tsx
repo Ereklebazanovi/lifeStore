@@ -45,16 +45,28 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onClick={() => setIsModalOpen(true)}
-          placeholder={placeholder}
-          className={`w-full pr-10 cursor-pointer ${className}`}
+          placeholder=""
+          className={`w-full pr-10 cursor-pointer ${className} placeholder-transparent sm:placeholder-gray-400`}
           readOnly
         />
+        {/* Mobile-only search icon placeholder */}
+        {!value && (
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400 sm:hidden">
+            <Search className="w-4 h-4" />
+          </div>
+        )}
+        {/* Desktop placeholder text */}
+        {!value && (
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400 hidden sm:block">
+            {placeholder}
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
           className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
         >
-          <Search className="w-5 h-5" />
+          <ChevronDown className="w-5 h-5" />
         </button>
       </div>
 

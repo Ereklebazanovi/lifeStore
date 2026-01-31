@@ -1096,24 +1096,24 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 px-2 md:px-0 pb-4 md:pb-0">
       {/* Mobile-First Header */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6 shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-6 shadow-sm">
         <div className="flex flex-col space-y-4">
           {/* Title Section */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between">
             <div>
-              <h2 className="text-lg md:text-xl font-semibold text-gray-900">
+              <h2 className="text-base md:text-xl font-semibold text-gray-900">
                 შეკვეთების მართვა
               </h2>
-              <p className="text-gray-600 text-xs md:text-sm mt-4 hidden sm:block">
+              <p className="text-gray-600 text-xs md:text-sm mt-2 md:mt-4 hidden sm:block">
                 გამოიყენეთ ფილტრები შეკვეთების ძებნისთვის
               </p>
             </div>
 
             {/* Stats Badge with Live Indicator */}
-            <div className="flex items-center gap-3">
-              <div className="bg-gray-100 rounded-lg px-3 py-2 text-xs md:text-sm w-fit">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+              <div className="bg-gray-100 rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm w-fit">
                 <span className="text-gray-600">სულ: </span>
                 <span className="font-semibold text-gray-900">
                   {filteredOrders.length} / {orders.length} შეკვეთა
@@ -1122,11 +1122,11 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
               {/* Live update indicator */}
               {activeTab === "live" && (
-                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                <div className="flex items-center gap-1.5 sm:gap-2 bg-green-50 border border-green-200 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-400 animate-pulse"></div>
                   <span className="text-green-700 font-medium">რეალური დრო</span>
                   {lastUpdated && (
-                    <span className="text-green-600 text-xs">
+                    <span className="text-green-600 text-xs hidden sm:inline">
                       {lastUpdated.toLocaleTimeString('ka-GE', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
@@ -1135,34 +1135,34 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             </div>
 
             {/* Mobile Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-3 sm:mt-0">
               {selectedOrderIds.length > 0 && (
                 <>
                   <button
                     onClick={handleExportMultipleOrders}
-                    className="flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium"
+                    className="flex items-center justify-center space-x-2 bg-green-600 text-white px-3 md:px-4 py-2.5 md:py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 text-xs md:text-sm font-medium min-h-[44px] active:scale-95"
                     title={`${selectedOrderIds.length} შეკვეთის ექსპორტი Excel-ში`}
                   >
-                    <FileSpreadsheet className="w-4 h-4" />
-                    <span>Excel Export ({selectedOrderIds.length})</span>
+                    <FileSpreadsheet className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">Excel ({selectedOrderIds.length})</span>
                   </button>
 
                   <button
                     onClick={generateMultipleLabels}
-                    className="flex items-center justify-center space-x-2 bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors duration-200 text-sm font-medium"
+                    className="flex items-center justify-center space-x-2 bg-purple-600 text-white px-3 md:px-4 py-2.5 md:py-3 rounded-lg hover:bg-purple-700 transition-colors duration-200 text-xs md:text-sm font-medium min-h-[44px] active:scale-95"
                     title={`${selectedOrderIds.length} შეკვეთის ლეიბლების დაბეჭდვა (76x92მმ)`}
                   >
-                    <Tags className="w-4 h-4" />
-                    <span>ლეიბლები ({selectedOrderIds.length})</span>
+                    <Tags className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">ლეიბლები ({selectedOrderIds.length})</span>
                   </button>
                 </>
               )}
 
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center justify-center space-x-2 bg-emerald-600 text-white px-4 py-3 rounded-lg hover:bg-emerald-700 transition-colors duration-200 text-sm font-medium"
+                className="flex items-center justify-center space-x-2 bg-emerald-600 text-white px-3 md:px-4 py-2.5 md:py-3 rounded-lg hover:bg-emerald-700 transition-colors duration-200 text-xs md:text-sm font-medium min-h-[44px] active:scale-95"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 flex-shrink-0" />
                 <span>ხელით შეკვეთა</span>
               </button>
             </div>
@@ -1170,8 +1170,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="mb-6">
-  <nav className="flex space-x-2 bg-gray-50/50 p-1 rounded-xl w-fit" aria-label="Tabs">
+        <div className="mb-4 md:mb-6">
+  <nav className="flex space-x-1 md:space-x-2 bg-gray-50/50 p-1 rounded-xl w-full sm:w-fit overflow-x-auto" aria-label="Tabs">
     {(() => {
       const tabs = [
         { id: "active", name: "შესასრულებელი", icon: ClipboardList, count: getTabFilteredOrders("active").length },
@@ -1188,20 +1188,20 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
             className={`
-              flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+              flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0
               ${isActive
                 ? "bg-white text-emerald-700 shadow-sm ring-1 ring-black/5"
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               }
             `}
           >
-            <Icon className={`w-4 h-4 ${isActive ? "text-emerald-600" : "text-gray-400"}`} />
+            <Icon className={`w-3.5 h-3.5 md:w-4 md:h-4 ${isActive ? "text-emerald-600" : "text-gray-400"} flex-shrink-0`} />
             
             {tab.name}
 
             {tab.count > 0 && (
               <span
-                className={`ml-1.5 py-0.5 px-2 rounded-md text-[11px] font-bold leading-none
+                className={`py-0.5 px-1.5 md:px-2 rounded-md text-[10px] md:text-[11px] font-bold leading-none flex-shrink-0
                   ${isActive
                     ? "bg-emerald-100 text-emerald-700"
                     : "bg-gray-200 text-gray-600"
@@ -1219,7 +1219,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 </div>
 
         {/* Mobile-Optimized Filters */}
-        <div className="space-y-3 mt-4">
+        <div className="space-y-3 mt-3 md:mt-4">
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -1228,31 +1228,37 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               placeholder="ძებნა ნომრით, სახელით ან ტელეფონით..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="pl-10 pr-4 py-3 md:py-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base touch-manipulation"
             />
           </div>
 
           {/* Compact Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
             {/* Date Range */}
             <div className="space-y-2">
               <label className="text-xs font-medium text-gray-700 flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 თარიღი
               </label>
-              <div className="flex gap-2">
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm flex-1"
-                />
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm flex-1"
-                />
+              <div className="flex flex-col sm:flex-row gap-2 min-w-0">
+                <div className="flex-1 min-w-0">
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="px-2 sm:px-3 py-2.5 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm md:text-base w-full min-w-0 touch-manipulation"
+                    placeholder="დაწყება"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="px-2 sm:px-3 py-2.5 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm md:text-base w-full min-w-0 touch-manipulation"
+                    placeholder="დასასრული"
+                  />
+                </div>
               </div>
             </div>
 
@@ -1265,7 +1271,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm flex-1"
+                  className="px-3 py-2.5 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base flex-1 touch-manipulation"
                 >
                   <option value="all">ყველა სტატუსი</option>
                   <option value="pending">📋 მოლოდინში</option>
@@ -1281,7 +1287,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       setDateTo("");
                       setStatusFilter("all");
                     }}
-                    className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                    className="px-3 py-2.5 md:py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm md:text-base min-h-[44px] md:min-h-[40px] active:scale-95"
                     title="ფილტრების გასუფთავება"
                   >
                     ✕
@@ -1308,7 +1314,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         <>
           {/* Desktop Table */}
           <div className="hidden lg:block bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto custom-scrollbar">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -1442,21 +1448,21 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         <div className="flex items-center space-x-1">
                           <button
                             onClick={() => setSelectedOrder(order)}
-                            className="text-blue-600 hover:text-blue-700 p-1 rounded hover:bg-blue-50"
+                            className="text-blue-600 hover:text-blue-700 p-2 rounded hover:bg-blue-50"
                             title="დეტალების ნახვა"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleExportSingleOrder(order)}
-                            className="text-green-600 hover:text-green-700 p-1 rounded hover:bg-green-50"
+                            className="text-green-600 hover:text-green-700 p-2 rounded hover:bg-green-50"
                             title="ექსელში ჩამოტვირთვა"
                           >
                             <FileSpreadsheet className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => generateShippingLabel(order)}
-                            className="text-purple-600 hover:text-purple-700 p-1 rounded hover:bg-purple-50"
+                            className="text-purple-600 hover:text-purple-700 p-2 rounded hover:bg-purple-50"
                             title="ლეიბლის ბეჭდვა (76x92მმ)"
                           >
                             <Tags className="w-4 h-4" />
@@ -1464,7 +1470,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           {order.orderStatus !== "cancelled" && (
                             <button
                               onClick={() => handleCancelOrder(order.id)}
-                              className="text-orange-600 hover:text-orange-700 p-1 rounded hover:bg-orange-50"
+                              className="text-orange-600 hover:text-orange-700 p-2 rounded hover:bg-orange-50"
                               title="შეკვეთის გაუქმება"
                             >
                               <XCircle className="w-4 h-4" />
@@ -1480,10 +1486,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           </div>
 
           {/* Mobile Card Layout */}
-          <div className="lg:hidden space-y-4">
+          <div className="lg:hidden space-y-3 md:space-y-4">
             {filteredOrders.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                <label className="flex items-center space-x-3 text-sm font-medium text-gray-700">
+              <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm">
+                <label className="flex items-center space-x-3 text-sm md:text-base font-medium text-gray-700">
                   <input
                     type="checkbox"
                     checked={
@@ -1513,7 +1519,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                 key={order.id}
                 className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
               >
-                <div className="p-4 border-b border-gray-100">
+                <div className="p-3 md:p-4 border-b border-gray-100">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       <input
@@ -1526,7 +1532,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       />
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-gray-900 text-sm">
+                          <h3 className="font-semibold text-gray-900 text-sm md:text-base">
                             {order.orderNumber}
                           </h3>
                           {order.orderStatus === "cancelled" && (
@@ -1536,7 +1542,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs md:text-sm text-gray-500">
                           {order.items.length} პროდუქტი
                         </p>
                         {order.orderStatus === "cancelled" &&
@@ -1593,54 +1599,54 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                   </div>
                 </div>
 
-                <div className="p-4">
+                <div className="p-3 md:p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
                       <Calendar className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm md:text-base text-gray-600">
                         {order.createdAt.toLocaleDateString("ka-GE")}
                       </span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <DollarSign className="w-4 h-4 text-gray-400" />
-                      <span className="text-lg font-semibold text-gray-900">
+                      <span className="text-lg md:text-xl font-semibold text-gray-900">
                         ₾{order.totalAmount.toFixed(2)}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center space-x-3">
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-center sm:space-x-3 sm:grid-cols-none">
                     <button
                       onClick={() => setSelectedOrder(order)}
-                      className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-3 py-3 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium min-h-[44px] active:scale-95"
                       title="დეტალების ნახვა"
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-4 h-4 flex-shrink-0" />
                       <span>ნახვა</span>
                     </button>
                     <button
                       onClick={() => handleExportSingleOrder(order)}
-                      className="flex items-center space-x-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+                      className="flex items-center justify-center space-x-2 bg-green-600 text-white px-3 py-3 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium min-h-[44px] active:scale-95"
                       title="ექსელში ჩამოტვირთვა"
                     >
-                      <FileSpreadsheet className="w-4 h-4" />
+                      <FileSpreadsheet className="w-4 h-4 flex-shrink-0" />
                       <span>Excel</span>
                     </button>
                     <button
                       onClick={() => generateShippingLabel(order)}
-                      className="flex items-center space-x-2 bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                      className="flex items-center justify-center space-x-2 bg-purple-600 text-white px-3 py-3 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium min-h-[44px] active:scale-95"
                       title="ლეიბლის ბეჭდვა (76x92მმ)"
                     >
-                      <Tags className="w-4 h-4" />
+                      <Tags className="w-4 h-4 flex-shrink-0" />
                       <span>ლეიბლი</span>
                     </button>
                     {order.orderStatus !== "cancelled" && (
                       <button
                         onClick={() => handleCancelOrder(order.id)}
-                        className="flex items-center space-x-2 bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm"
+                        className="flex items-center justify-center space-x-2 bg-orange-600 text-white px-3 py-3 rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium min-h-[44px] active:scale-95 col-span-2 sm:col-span-1"
                         title="შეკვეთის გაუქმება"
                       >
-                        <XCircle className="w-4 h-4" />
+                        <XCircle className="w-4 h-4 flex-shrink-0" />
                         <span>გაუქმება</span>
                       </button>
                     )}
@@ -1655,7 +1661,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       {/* Order Details Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 z-[9999] overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div className="flex items-end sm:items-center justify-center min-h-screen pt-4 px-2 sm:px-4 pb-4 sm:pb-20 text-center sm:block sm:p-0">
             <div
               className="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity"
               onClick={() => setSelectedOrder(null)}
@@ -1663,13 +1669,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen">
               &#8203;
             </span>
-            <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-[10000]">
-              <div className="bg-white px-6 pt-6 pb-4 border-b border-gray-200">
+            <div className="relative inline-block align-bottom bg-white rounded-t-xl sm:rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full w-full max-h-[90vh] z-[10000]">
+              <div className="bg-white px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Package className="w-6 h-6 text-blue-600" />
                     <div>
-                      <h3 className="text-xl font-semibold text-gray-900">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
                         შეკვეთა #{selectedOrder.orderNumber}
                       </h3>
                       <p className="text-sm text-gray-500">
@@ -1689,10 +1695,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:space-x-2">
                     <button
                       onClick={() => generateShippingLabel(selectedOrder)}
-                      className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-200"
+                      className="flex items-center justify-center space-x-2 bg-purple-600 text-white px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg hover:bg-purple-700 transition-colors duration-200 text-sm font-medium min-h-[44px] sm:min-h-[40px] w-full sm:w-auto"
                       title="ლეიბლის ბეჭდვა (76x92მმ)"
                     >
                       <Tags className="w-4 h-4" />
@@ -1704,7 +1710,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           handleCancelOrder(selectedOrder.id);
                           setSelectedOrder(null);
                         }}
-                        className="flex items-center space-x-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors duration-200"
+                        className="flex items-center justify-center space-x-2 bg-orange-600 text-white px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg hover:bg-orange-700 transition-colors duration-200 text-sm font-medium min-h-[44px] sm:min-h-[40px] w-full sm:w-auto"
                       >
                         <XCircle className="w-4 h-4" />
                         <span>გაუქმება</span>
@@ -1715,7 +1721,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         handleDeleteSingle(selectedOrder.id);
                         setSelectedOrder(null);
                       }}
-                      className="flex items-center space-x-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200"
+                      className="flex items-center justify-center space-x-2 bg-red-600 text-white px-3 py-2.5 sm:py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm font-medium min-h-[44px] sm:min-h-[40px] w-full sm:w-auto"
                       title="სრული წაშლა (შეუქცევადი)"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1730,9 +1736,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                 </div>
               </div>
 
-              <div className="bg-white px-6 py-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-white px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                     <h4 className="flex items-center text-lg font-semibold text-gray-900 mb-3">
                       <User className="w-5 h-5 mr-2 text-blue-600" />
                       მომხმარებლის ინფო
@@ -1773,7 +1779,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                     <h4 className="flex items-center text-lg font-semibold text-gray-900 mb-3">
                       ₾ შეკვეთის შეჯამება
                     </h4>

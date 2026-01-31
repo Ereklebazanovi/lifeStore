@@ -84,14 +84,14 @@ const InventoryAlerts: React.FC<InventoryAlertsProps> = ({
 
   if (alerts.length === 0) {
     return (
-      <div className={`bg-emerald-50 border border-emerald-200 rounded-lg p-3 ${className}`}>
-        <div className="flex items-center gap-2">
-          <Package className="w-4 h-4 text-emerald-600" />
-          <h3 className="text-sm font-medium text-emerald-900">
+      <div className={`bg-emerald-50 border border-emerald-200 rounded-md sm:rounded-lg p-2 sm:p-3 ${className}`}>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <Package className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-600" />
+          <h3 className="text-xs sm:text-sm font-medium text-emerald-900">
             მარაგის მდგომარეობა
           </h3>
         </div>
-        <p className="text-xs text-emerald-700 mt-1">
+        <p className="text-xs text-emerald-700 mt-0.5 sm:mt-1">
           ყველა პროდუქტი საკმარისი რაოდენობითაა ხელმისაწვდომი
         </p>
       </div>
