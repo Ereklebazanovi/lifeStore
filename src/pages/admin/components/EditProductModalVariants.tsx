@@ -105,7 +105,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
     try {
       const now = new Date();
 
-      const updatedData = {
+      const updatedData: Partial<Product> = {
         name: productName.trim(),
         productCode: productCode.trim().toUpperCase(),
         description: description.trim(),
@@ -117,11 +117,11 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
         // Main product data
         price: simplePrice,
-        ...(simpleSalePrice !== undefined && simpleSalePrice !== null ? { salePrice: simpleSalePrice } : { salePrice: null }),
+        salePrice: simpleSalePrice !== undefined && simpleSalePrice !== null ? simpleSalePrice : undefined,
         stock: simpleStock,
-        ...(simpleWeight !== undefined && { weight: simpleWeight }),
+        weight: simpleWeight,
 
-        // Legacy fields for consistency
+        // Computed fields for consistency
         minPrice: simplePrice,
         maxPrice: simplePrice,
         totalStock: simpleStock,
