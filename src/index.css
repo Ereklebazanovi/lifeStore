@@ -3,10 +3,33 @@ index.css
 this file is index.css
 */
 @import "tailwindcss";
+@import "./styles/scrollbar.css";
 
 /* Set global Georgian font */
 body {
   font-family: 'Noto Sans Georgian', Arial, sans-serif;
+}
+
+/* Global responsive improvements */
+* {
+  box-sizing: border-box;
+}
+
+/* Prevent horizontal scroll on small screens */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Better touch interactions on mobile */
+@media (max-width: 768px) {
+  button, .btn, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  input, textarea, select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
 }
 
 @media print {

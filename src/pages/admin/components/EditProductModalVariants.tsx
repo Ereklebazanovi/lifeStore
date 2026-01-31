@@ -117,7 +117,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
         // Main product data
         price: simplePrice,
-        ...(simpleSalePrice !== undefined && { salePrice: simpleSalePrice }),
+        ...(simpleSalePrice !== undefined && simpleSalePrice !== null ? { salePrice: simpleSalePrice } : { salePrice: null }),
         stock: simpleStock,
         ...(simpleWeight !== undefined && { weight: simpleWeight }),
 
@@ -370,7 +370,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                           type="number"
                           min="0"
                           step="0.01"
-                          value={simpleSalePrice === undefined || simpleSalePrice === 0 ? "" : simpleSalePrice}
+                          value={simpleSalePrice === undefined || simpleSalePrice === null || simpleSalePrice === 0 ? "" : simpleSalePrice}
                           onChange={(e) => {
                             const value = e.target.value;
                             if (value === "") {

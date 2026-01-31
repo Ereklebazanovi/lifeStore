@@ -93,17 +93,17 @@ const VariantStockModal: React.FC<VariantStockModalProps> = ({
   const newStock = isAdd ? currentStock + quantity : currentStock - quantity;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-md shadow-xl">
-        <div className="p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
+      <div className="bg-white rounded-lg w-full max-w-sm sm:max-w-md shadow-xl">
+        <div className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">
             {isAdd ? "მარაგის დამატება" : "მარაგის შემცირება"}
           </h3>
 
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <p className="font-medium text-gray-900">{productName}</p>
-            <p className="text-sm text-gray-600">ვარიანტი: {variant.name}</p>
-            <p className="text-sm text-gray-600">
+          <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-50 rounded-lg">
+            <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{productName}</p>
+            <p className="text-xs sm:text-sm text-gray-600 truncate">ვარიანტი: {variant.name}</p>
+            <p className="text-xs sm:text-sm text-gray-600">
               მიმდინარე მარაგი: <span className="font-bold">{currentStock} ცალი</span>
             </p>
           </div>
@@ -247,16 +247,16 @@ const SimpleStockModal: React.FC<SimpleStockModalProps> = ({
   const newStock = isAdd ? currentStock + quantity : currentStock - quantity;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-md shadow-xl">
-        <div className="p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
+      <div className="bg-white rounded-lg w-full max-w-sm sm:max-w-md shadow-xl">
+        <div className="p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">
             {isAdd ? "მარაგის დამატება" : "მარაგის შემცირება"}
           </h3>
 
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <p className="font-medium text-gray-900">{productName}</p>
-            <p className="text-sm text-gray-600">
+          <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-50 rounded-lg">
+            <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{productName}</p>
+            <p className="text-xs sm:text-sm text-gray-600">
               მიმდინარე მარაგი: <span className="font-bold">{currentStock} ცალი</span>
             </p>
           </div>
@@ -620,7 +620,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Stock Control Buttons */}
         <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-          <div className="flex items-center gap-3 w-full justify-center">
+          <div className="flex items-center gap-1 sm:gap-3 w-full justify-center">
             <button
               onClick={() =>
                 onStockAdjustment(
@@ -631,13 +631,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 )
               }
               disabled={!product.stock || product.stock <= 0}
-              className="flex items-center gap-1 px-4 py-2 bg-red-50 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-2 sm:px-4 py-2 bg-red-50 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 transition-all disabled:opacity-30 disabled:cursor-not-allowed text-xs sm:text-sm"
             >
-              <Minus className="w-4 h-4" />
-              შემცირება
+              <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">შემცირება</span>
+              <span className="sm:hidden">-</span>
             </button>
 
-            <div className="px-3 py-2 bg-gray-50 rounded-lg border">
+            <div className="px-2 sm:px-3 py-2 bg-gray-50 rounded-lg border min-w-[40px] text-center">
               <span className="text-sm font-bold text-gray-900">
                 {product.stock || 0}
               </span>
@@ -652,10 +653,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   "add"
                 )
               }
-              className="flex items-center gap-1 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-all"
+              className="flex items-center gap-1 px-2 sm:px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-all text-xs sm:text-sm"
             >
-              <Plus className="w-4 h-4" />
-              დამატება
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">დამატება</span>
+              <span className="sm:hidden">+</span>
             </button>
           </div>
         </div>
@@ -792,7 +794,7 @@ const InventoryManagerVariants: React.FC = () => {
       const endDate = new Date(turnoverDateRange.endDate);
 
       if (startDate > endDate) {
-        showToast("საწყისი თარიღი უნდა იყოს უფრო ადრინდელი საბოლოოზე", "error");
+        showToast("საწყისი თარიღი უნდა იყოს ვიდრე საბოლოო თარიღი", "error");
         return;
       }
 
@@ -879,73 +881,75 @@ const InventoryManagerVariants: React.FC = () => {
   }, 0);
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+    <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 lg:space-y-6">
       {/* Compact Header */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Package className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
-            საწყობი (მარაგის მართვა)
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
+            <Package className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-emerald-600 flex-shrink-0" />
+            <span className="truncate">საწყობი (მარაგის მართვა)</span>
           </h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
             <button
               onClick={() => setIsStockSnapshotModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm whitespace-nowrap"
             >
-              <Download className="w-4 h-4" />
-              მარაგის ნაშთი
+              <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">მარაგის ნაშთი</span>
+              <span className="sm:hidden">ნაშთი</span>
             </button>
             <button
               onClick={() => setIsTurnoverModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-xs sm:text-sm whitespace-nowrap"
             >
-              <Calendar className="w-4 h-4" />
-              ბრუნვითი უწყისი
+              <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">ბრუნვითი უწყისი</span>
+              <span className="sm:hidden">უწყისი</span>
             </button>
           </div>
         </div>
 
         {/* Summary Cards - Mobile: 2x3, Desktop: 1x5 */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-            <p className="text-2xl font-bold text-blue-600">{totalProducts}</p>
-            <p className="text-xs text-blue-700">პროდუქტი</p>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 mb-4">
+          <div className="bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-200">
+            <p className="text-lg sm:text-2xl font-bold text-blue-600">{totalProducts}</p>
+            <p className="text-xs text-blue-700 leading-tight">პროდუქტი</p>
           </div>
-          <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
-            <p className="text-2xl font-bold text-emerald-600">{totalStock}</p>
-            <p className="text-xs text-emerald-700">ჯამური მარაგი</p>
+          <div className="bg-emerald-50 p-2 sm:p-3 rounded-lg border border-emerald-200">
+            <p className="text-lg sm:text-2xl font-bold text-emerald-600">{totalStock}</p>
+            <p className="text-xs text-emerald-700 leading-tight">ჯამური მარაგი</p>
           </div>
-          <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-            <p className="text-xl font-bold text-purple-600">₾{totalInventoryValue.toFixed(2)}</p>
-            <p className="text-xs text-purple-700">ღირებულება</p>
+          <div className="bg-purple-50 p-2 sm:p-3 rounded-lg border border-purple-200">
+            <p className="text-base sm:text-xl font-bold text-purple-600">₾{totalInventoryValue.toFixed(0)}</p>
+            <p className="text-xs text-purple-700 leading-tight">ღირებულება</p>
           </div>
-          <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-            <p className="text-2xl font-bold text-yellow-600">{lowStockProducts}</p>
-            <p className="text-xs text-yellow-700">დაბალი მარაგი</p>
+          <div className="bg-yellow-50 p-2 sm:p-3 rounded-lg border border-yellow-200">
+            <p className="text-lg sm:text-2xl font-bold text-yellow-600">{lowStockProducts}</p>
+            <p className="text-xs text-yellow-700 leading-tight">დაბალი მარაგი</p>
           </div>
-          <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-            <p className="text-2xl font-bold text-red-600">{outOfStockProducts}</p>
-            <p className="text-xs text-red-700">ამოიწურა</p>
+          <div className="bg-red-50 p-2 sm:p-3 rounded-lg border border-red-200 lg:col-span-1 col-span-2">
+            <p className="text-lg sm:text-2xl font-bold text-red-600">{outOfStockProducts}</p>
+            <p className="text-xs text-red-700 leading-tight">ამოიწურა</p>
           </div>
         </div>
 
         {/* Search & Filters - Stack on mobile */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="პროდუქტის ძებნა..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="w-full pl-8 sm:pl-9 pr-3 sm:pr-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
             />
           </div>
 
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+            className="px-2 sm:px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white min-w-[120px]"
           >
             <option value="name">სახელით</option>
             <option value="stock">მარაგით</option>

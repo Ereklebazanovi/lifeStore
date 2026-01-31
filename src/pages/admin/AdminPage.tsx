@@ -85,29 +85,29 @@ const AdminPage: React.FC = () => {
             {user?.role === "admin" ? (
               // Admin Dashboard
               <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <button
                     onClick={() => setIsAddModalOpen(true)}
-                    className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+                    className="flex items-center space-x-3 p-3 sm:p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm"
                   >
-                    <Plus className="w-5 h-5 text-blue-600" />
-                    <span className="text-sm text-gray-700">
+                    <Plus className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                    <span className="text-sm font-medium text-gray-700 truncate">
                       ახალი პროდუქტი
                     </span>
                   </button>
                   <button
                     onClick={() => setActiveSection("orders")}
-                    className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+                    className="flex items-center space-x-3 p-3 sm:p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm"
                   >
-                    <ShoppingBag className="w-5 h-5 text-emerald-600" />
-                    <span className="text-sm text-gray-700">შეკვეთები</span>
+                    <ShoppingBag className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                    <span className="text-sm font-medium text-gray-700 truncate">შეკვეთები</span>
                   </button>
                   <button
                     onClick={() => setActiveSection("analytics")}
-                    className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+                    className="flex items-center space-x-3 p-3 sm:p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm sm:col-span-2 lg:col-span-1"
                   >
-                    <TrendingDown className="w-5 h-5 text-indigo-600" />
-                    <span className="text-sm text-gray-700">ანალიტიკა</span>
+                    <TrendingDown className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                    <span className="text-sm font-medium text-gray-700 truncate">ანალიტიკა</span>
                   </button>
                 </div>
                 <AdminStats products={products} />
@@ -115,55 +115,55 @@ const AdminPage: React.FC = () => {
             ) : (
               // Manager Dashboard (POS-focused)
               <>
-                <div className="bg-gradient-to-r from-blue-500 to-emerald-500 text-white p-6 rounded-lg shadow-lg">
-                  <h2 className="text-2xl font-bold mb-2">
+                <div className="bg-gradient-to-r from-blue-500 to-emerald-500 text-white p-4 sm:p-6 rounded-lg shadow-lg">
+                  <h2 className="text-xl sm:text-2xl font-bold mb-2">
                     📱 სწრაფი POS სისტემა
                   </h2>
-                  <p className="text-blue-100">
+                  <p className="text-blue-100 text-sm sm:text-base">
                     Instagram და Facebook გაყიდვების რეგისტრაცია
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <button
                     onClick={() => setIsManualOrderModalOpen(true)}
-                    className="flex items-center justify-center space-x-3 p-6 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors duration-200 shadow-lg"
+                    className="flex items-center justify-center space-x-3 p-4 sm:p-6 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors duration-200 shadow-lg"
                   >
-                    <Plus className="w-6 h-6" />
-                    <span className="text-lg font-semibold">ხელით შეკვეთა</span>
+                    <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <span className="text-base sm:text-lg font-semibold">ხელით შეკვეთა</span>
                   </button>
                   <button
                     onClick={() => setActiveSection("orders")}
-                    className="flex items-center justify-center space-x-3 p-6 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 shadow-lg"
+                    className="flex items-center justify-center space-x-3 p-4 sm:p-6 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 shadow-lg"
                   >
-                    <ShoppingBag className="w-6 h-6" />
-                    <span className="text-lg font-semibold">შეკვეთები</span>
+                    <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <span className="text-base sm:text-lg font-semibold">შეკვეთები</span>
                   </button>
                 </div>
 
                 {/* Manager Stats - Basic only */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center space-x-3">
-                      <Package className="w-8 h-8 text-blue-600" />
-                      <div>
-                        <p className="text-xs text-gray-600 font-medium">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm">
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <Package className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-gray-600 font-medium truncate">
                           სულ პროდუქტი
                         </p>
-                        <p className="text-lg font-bold text-gray-900">
+                        <p className="text-base sm:text-lg font-bold text-gray-900">
                           {products.filter((p) => p.isActive).length}
                         </p>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center space-x-3">
-                      <ShoppingBag className="w-8 h-8 text-emerald-600" />
-                      <div>
-                        <p className="text-xs text-gray-600 font-medium">
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm">
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <ShoppingBag className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-600 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-gray-600 font-medium truncate">
                           შეკვეთები დღეს
                         </p>
-                        <p className="text-lg font-bold text-gray-900">
+                        <p className="text-base sm:text-lg font-bold text-gray-900">
                           {
                             orders.filter((o) => {
                               const today = new Date();
@@ -178,14 +178,14 @@ const AdminPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center space-x-3">
-                      <Clock className="w-8 h-8 text-amber-600" />
-                      <div>
-                        <p className="text-xs text-gray-600 font-medium">
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm">
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-amber-600 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-gray-600 font-medium truncate">
                           მოლოდინში
                         </p>
-                        <p className="text-lg font-bold text-gray-900">
+                        <p className="text-base sm:text-lg font-bold text-gray-900">
                           {
                             orders.filter((o) => o.orderStatus === "pending")
                               .length
@@ -272,7 +272,7 @@ case "analytics": {
             </div>
 
             {/* Revenue Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                 <div className="flex items-center space-x-3">
                  
@@ -331,11 +331,11 @@ case "analytics": {
             </div>
 
             {/* Quick Insights */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 shadow-sm">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
                 სწრაფი ანალიზი
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">
                     ღირებული მომხმარებლები

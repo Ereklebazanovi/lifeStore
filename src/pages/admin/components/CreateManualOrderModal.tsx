@@ -240,31 +240,30 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      {/* ✅ გავზარდეთ მოდალის სიგანე max-w-4xl-ზე უფრო ფართო და კომფორტული განლაგებისთვის */}
-      <div className="bg-white rounded-xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm">
+      {/* ✅ Responsive modal that adapts to screen size */}
+      <div className="bg-white rounded-xl w-full max-w-sm sm:max-w-2xl lg:max-w-4xl shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[90vh] animate-in fade-in zoom-in duration-200">
         {/* --- Header (Fixed) --- */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 flex-shrink-0">
-          <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <Plus className="w-5 h-5 text-emerald-600" />
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-stone-100 flex-shrink-0">
+          <h2 className="text-lg sm:text-xl font-bold text-stone-900 flex items-center gap-2">
+            <div className="p-1.5 sm:p-2 bg-emerald-100 rounded-lg">
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
             </div>
-            შეკვეთის დამატება
+            <span className="hidden sm:inline">შეკვეთის დამატება</span>
+            <span className="sm:hidden">შეკვეთა</span>
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-stone-100 rounded-full transition-colors"
+            className="p-1.5 sm:p-2 hover:bg-stone-100 rounded-full transition-colors"
           >
-            <X className="w-6 h-6 text-stone-500" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6 text-stone-500" />
           </button>
         </div>
         {/* --- Scrollable Body --- */}
-        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-          <div
-            className="space-y-8"
-          >
-            {/* 1. Quick Settings Row - ✅ გავზარდეთ სივრცეები და ფონტები კომფორტისთვის */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-stone-50 p-4 rounded-lg border border-stone-100">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
+          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+            {/* 1. Quick Settings Row - Responsive layout */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 bg-stone-50 p-3 sm:p-4 rounded-lg border border-stone-100">
               <div>
                 <label className="block text-xs font-bold text-stone-500 uppercase mb-2">
                   წყარო
@@ -314,7 +313,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
               {/* 2. Customer Info - ✅ გავზარდეთ ინპუტები და სივრცეები */}
               <div>
                 <h3 className="text-base font-bold text-stone-800 mb-4 flex items-center gap-2">
@@ -451,14 +450,14 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
               </div>
               <div className="border border-stone-200 rounded-lg overflow-hidden mb-4">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-base text-left min-w-[600px]">
+                  <table className="w-full text-sm sm:text-base text-left min-w-[320px] sm:min-w-[600px]">
                     <thead className="bg-stone-50 text-stone-500 font-bold uppercase text-xs border-b border-stone-200">
                       <tr>
-                        <th className="px-4 py-3">დასახელება</th>
-                        <th className="px-4 py-3 w-32">ფასი</th>
-                        <th className="px-4 py-3 w-24">რაოდ.</th>
-                        <th className="px-4 py-3 w-32 text-right">სულ</th>
-                        <th className="px-4 py-3 w-12"></th>
+                        <th className="px-2 sm:px-4 py-2 sm:py-3">დასახელება</th>
+                        <th className="px-2 sm:px-4 py-2 sm:py-3 w-20 sm:w-32">ფასი</th>
+                        <th className="px-2 sm:px-4 py-2 sm:py-3 w-16 sm:w-24">რაოდ.</th>
+                        <th className="px-2 sm:px-4 py-2 sm:py-3 w-20 sm:w-32 text-right">სულ</th>
+                        <th className="px-2 sm:px-4 py-2 sm:py-3 w-8 sm:w-12"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
@@ -512,7 +511,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                               })()}
                             </div>
                           </td>
-                          <td className="p-3">
+                          <td className="p-2 sm:p-3">
                             <input
                               type="number"
                               min="0"
@@ -522,7 +521,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                               onChange={(e) =>
                                 handleItemChange(index, "price", e.target.value)
                               }
-                              className="w-full px-3 py-2 text-base border border-stone-200 rounded focus:ring-2 focus:ring-emerald-500 outline-none"
+                              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base border border-stone-200 rounded focus:ring-2 focus:ring-emerald-500 outline-none"
                             />
                           </td>
                           <td className="p-3">
@@ -602,12 +601,12 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
             </div>
           </div>
         </div>
-        {/* --- Footer (Fixed) - ✅ გავზარდეთ ღილაკები */}
-        <div className="flex items-center justify-end gap-4 p-5 border-t border-stone-100 bg-gray-50 rounded-b-xl flex-shrink-0">
+        {/* --- Footer (Fixed) - Responsive buttons */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 sm:gap-4 p-4 sm:p-5 border-t border-stone-100 bg-gray-50 rounded-b-xl flex-shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2.5 text-base font-medium text-stone-600 hover:text-stone-800 transition-colors"
+            className="px-4 sm:px-6 py-2.5 text-sm sm:text-base font-medium text-stone-600 hover:text-stone-800 transition-colors border border-stone-200 rounded-lg hover:bg-stone-100"
           >
             გაუქმება
           </button>
@@ -615,13 +614,13 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={isLoading}
-            className="px-7 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-base font-medium shadow-sm shadow-emerald-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all active:scale-95"
+            className="px-6 sm:px-7 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm sm:text-base font-medium shadow-sm shadow-emerald-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all active:scale-95"
           >
             {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               <>
-                <Save className="w-5 h-5" />
+                <Save className="w-4 h-4 sm:w-5 sm:h-5" />
                 შენახვა
               </>
             )}

@@ -184,10 +184,24 @@ const ProductManager: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <span className="text-sm font-semibold text-gray-900">
-                            ₾{product.price.toFixed(2)}
-                          </span>
+                        <div className="flex items-center space-x-2">
+                          {product.salePrice && product.salePrice > 0 ? (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm text-gray-500 line-through">
+                                ₾{product.price.toFixed(2)}
+                              </span>
+                              <span className="text-sm font-semibold text-red-600">
+                                ₾{product.salePrice.toFixed(2)}
+                              </span>
+                              <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                                -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm font-semibold text-gray-900">
+                              ₾{product.price.toFixed(2)}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -311,10 +325,24 @@ const ProductManager: React.FC = () => {
                     <div className="mt-3 flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="flex items-center">
-                         
-                          <span className="text-sm font-semibold text-gray-900">
-                            ₾{product.price.toFixed(2)}
-                          </span>
+                          <DollarSign className="w-4 h-4 text-gray-400 mr-1" />
+                          {product.salePrice && product.salePrice > 0 ? (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm text-gray-500 line-through">
+                                ₾{product.price.toFixed(2)}
+                              </span>
+                              <span className="text-sm font-semibold text-red-600">
+                                ₾{product.salePrice.toFixed(2)}
+                              </span>
+                              <span className="px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                                -{Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm font-semibold text-gray-900">
+                              ₾{product.price.toFixed(2)}
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center space-x-2">
                           <Package className="w-4 h-4 text-gray-400" />

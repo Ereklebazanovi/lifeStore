@@ -85,23 +85,23 @@ const AdminStats: React.FC<AdminStatsProps> = ({ products }) => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {stats.map((stat, index) => {
         const Icon = stat.icon;
 
         return (
           <div
             key={index}
-            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+            className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className={`p-2 rounded-lg ${
+            <div className="flex items-start justify-between mb-2 sm:mb-3">
+              <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${
                 stat.color === 'blue' ? 'bg-blue-100' :
                 stat.color === 'emerald' ? 'bg-emerald-100' :
                 stat.color === 'indigo' ? 'bg-indigo-100' :
                 'bg-red-100'
               }`}>
-                <Icon className={`w-4 h-4 ${
+                <Icon className={`w-3 h-3 sm:w-4 sm:h-4 ${
                   stat.color === 'blue' ? 'text-blue-600' :
                   stat.color === 'emerald' ? 'text-emerald-600' :
                   stat.color === 'indigo' ? 'text-indigo-600' :
@@ -109,7 +109,7 @@ const AdminStats: React.FC<AdminStatsProps> = ({ products }) => {
                 }`} />
               </div>
               <span className={`
-                text-xs px-2 py-1 rounded-full
+                text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-center leading-tight
                 ${stat.isPositive
                   ? 'bg-emerald-100 text-emerald-700'
                   : 'bg-red-100 text-red-700'
@@ -120,10 +120,10 @@ const AdminStats: React.FC<AdminStatsProps> = ({ products }) => {
             </div>
 
             <div>
-              <p className="text-xs text-gray-500 mb-1">
+              <p className="text-xs text-gray-500 mb-1 leading-tight">
                 {stat.label}
               </p>
-              <p className="text-lg font-bold text-gray-900">
+              <p className="text-base sm:text-lg font-bold text-gray-900 truncate">
                 {stat.value}
               </p>
             </div>
