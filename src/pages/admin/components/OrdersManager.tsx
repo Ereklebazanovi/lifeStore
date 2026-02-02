@@ -842,6 +842,15 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     try {
       await OrderService.updateOrderStatus(orderId, newStatus);
       showToast("შეკვეთის სტატუსი განახლდა", "success");
+
+      // Update selectedOrder if it's the same order being updated
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({
+          ...selectedOrder,
+          orderStatus: newStatus
+        });
+      }
+
       onRefresh();
     } catch (error) {
       console.error("Error updating order status:", error);
@@ -1669,8 +1678,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen">
               &#8203;
             </span>
-            <div className="relative inline-block align-bottom bg-white rounded-t-xl sm:rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full w-full max-h-[90vh] z-[10000]">
-              <div className="bg-white px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-gray-200">
+            <div className="relative inline-block align-bottom bg-white rounded-t-xl sm:rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full w-full max-h-[95vh] z-[10000] flex flex-col">
+              <div className="bg-white px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-gray-200 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Package className="w-6 h-6 text-blue-600" />
@@ -1736,7 +1745,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                 </div>
               </div>
 
-              <div className="bg-white px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto custom-scrollbar">
+              <div className="bg-white px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto custom-scrollbar flex-1">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                   <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                     <h4 className="flex items-center text-lg font-semibold text-gray-900 mb-3">
@@ -1832,7 +1841,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     პროდუქტები ({selectedOrder.items.length})
                   </h4>
                   <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="max-h-64 overflow-y-auto">
+                    <div className="max-h-80 overflow-y-auto custom-scrollbar">
                       {selectedOrder.items.map((item, index) => {
                         // Weight Extraction Logic
                         let weight = item.product.weight;
