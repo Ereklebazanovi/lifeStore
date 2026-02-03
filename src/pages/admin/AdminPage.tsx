@@ -13,7 +13,6 @@ import CreateManualOrderModal from "./components/CreateManualOrderModal";
 import InventoryManagerVariants from "./components/InventoryManagerVariants";
 import CategoryManager from "./components/CategoryManager";
 import ParametersPage from "./components/ParametersPage";
-
 import { showToast } from "../../components/ui/Toast";
 
 import {

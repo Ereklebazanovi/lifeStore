@@ -26,11 +26,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
     const uploadPromises = Array.from(files).map(async (file) => {
       try {
+        console.log('Starting upload for file:', file.name, 'size:', file.size, 'type:', file.type);
         const url = await uploadImage(file);
+        console.log('Upload successful:', url);
         return url;
       } catch (error) {
-        console.error('Upload failed:', error);
-        alert(`სურათის ატვირთვა ვერ მოხერხდა: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error('Upload failed for file:', file.name, 'Error:', error);
+        alert(`სურათის ატვირთვა ვერ მოხერხდა (${file.name}): ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
       }
     });

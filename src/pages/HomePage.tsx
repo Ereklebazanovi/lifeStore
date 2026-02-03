@@ -218,15 +218,15 @@ const HomePage: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="absolute bottom-6 lg:bottom-8 left-0 right-0 flex justify-center gap-3 z-30">
+          <div className="absolute bottom-6 lg:bottom-8 left-0 right-0 flex justify-center gap-2 z-30">
             {HERO_IMAGES.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`transition-all duration-500 rounded-full ${
+                className={`transition-all duration-300 rounded-full ${
                   index === currentSlide
-                    ? "bg-white w-8 lg:w-10 h-2 lg:h-2.5 shadow-lg"
-                    : "bg-white/50 w-2 lg:w-3 h-2 lg:h-2.5 hover:bg-white/80"
+                    ? "bg-white w-6 lg:w-8 h-1.5 lg:h-2 shadow-md"
+                    : "bg-white/40 w-1.5 lg:w-2 h-1.5 lg:h-2 hover:bg-white/70"
                 }`}
                 aria-label={`სლაიდზე გადასვლა ${index + 1}`}
               />
@@ -304,84 +304,84 @@ const HomePage: React.FC = () => {
               </Link>
             </div>
 
-            {/* 🔥 NEW COMPACT FILTER BAR 🔥 */}
+            {/* 🔥 IMPROVED MOBILE RESPONSIVE FILTER BAR 🔥 */}
             <div className="sticky top-0 z-20 md:static bg-stone-50 md:bg-transparent pb-4 md:pb-8 pt-2">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  {/* Filter Tabs - Horizontal Scroll on Mobile */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                    {filterOptions.map((option) => {
-                      const isActive = selectedFilter === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          onClick={() => setSelectedFilter(option.value)}
-                          className={`whitespace-nowrap flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border
-                                          ${
-                                            isActive
-                                              ? "bg-stone-900 text-white border-stone-900 shadow-md shadow-stone-200"
-                                              : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
-                                          }`}
-                        >
-                          {option.label}
-                          <span
-                            className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                              isActive
-                                ? "bg-white/20 text-white"
-                                : "bg-stone-100 text-stone-500"
-                            }`}
-                          >
-                            {getCount(option.value)}
-                          </span>
-                        </button>
-                      );
-                    })}
+              <div className="flex flex-col gap-3">
+                {/* Search Input - Mobile First */}
+                <div className="relative w-full">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-stone-400" />
                   </div>
-
-                  {/* Search Input - Compact */}
-                  <div className="relative w-full md:w-64 lg:w-72 flex-shrink-0">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                      <Search className="h-4 w-4 text-stone-400" />
-                    </div>
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="ძებნა..."
-                      className="w-full bg-white pl-10 pr-4 py-2.5 rounded-full border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-sm text-stone-900 placeholder:text-stone-400 transition-all shadow-sm"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="ძებნა..."
+                    className="w-full bg-white pl-10 pr-4 py-3 rounded-full border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-sm text-stone-900 placeholder:text-stone-400 transition-all shadow-sm"
+                  />
                 </div>
 
-                {/* Category Filter */}
-                {sortedCategories.length > 0 && (
-                  <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                    <span className="text-sm font-medium text-stone-700 whitespace-nowrap mr-2">კატეგორიები:</span>
-                    <button
-                      onClick={() => setSelectedCategory("all")}
-                      className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 border
-                                  ${
-                                    selectedCategory === "all"
-                                      ? "bg-emerald-600 text-white border-emerald-600"
-                                      : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
-                                  }`}
-                    >
-                      ყველა
-                    </button>
-                    {sortedCategories.map((category) => (
+                {/* Filter Tabs - Better Mobile Spacing */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
+                  {filterOptions.map((option) => {
+                    const isActive = selectedFilter === option.value;
+                    return (
                       <button
-                        key={category}
-                        onClick={() => setSelectedCategory(category)}
-                        className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 border
+                        key={option.value}
+                        onClick={() => setSelectedFilter(option.value)}
+                        className={`whitespace-nowrap flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-300 border flex-shrink-0
+                                        ${
+                                          isActive
+                                            ? "bg-stone-900 text-white border-stone-900 shadow-md shadow-stone-200"
+                                            : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                                        }`}
+                      >
+                        {option.label}
+                        <span
+                          className={`px-1 py-0.5 rounded-full text-[10px] font-bold min-w-[16px] text-center ${
+                            isActive
+                              ? "bg-white/20 text-white"
+                              : "bg-stone-100 text-stone-500"
+                          }`}
+                        >
+                          {getCount(option.value)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Category Filter - Mobile Optimized */}
+                {sortedCategories.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-medium text-stone-700 px-2">კატეგორიები</span>
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
+                      <button
+                        onClick={() => setSelectedCategory("all")}
+                        className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 border flex-shrink-0
                                     ${
-                                      selectedCategory === category
+                                      selectedCategory === "all"
                                         ? "bg-emerald-600 text-white border-emerald-600"
                                         : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
                                     }`}
                       >
-                        {category}
+                        ყველა
                       </button>
-                    ))}
+                      {sortedCategories.map((category) => (
+                        <button
+                          key={category}
+                          onClick={() => setSelectedCategory(category)}
+                          className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 border flex-shrink-0
+                                      ${
+                                        selectedCategory === category
+                                          ? "bg-emerald-600 text-white border-emerald-600"
+                                          : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                                      }`}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

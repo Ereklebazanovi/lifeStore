@@ -138,27 +138,39 @@ const ProductsPage: React.FC = () => {
             </p>
           </div>
 
-          {/* 🔥 Professional Sticky Filter Bar 🔥 */}
+          {/* 🔥 IMPROVED MOBILE RESPONSIVE FILTER BAR 🔥 */}
           <div className="sticky top-0 z-30 bg-stone-50/95 backdrop-blur-sm py-4 mb-8 border-b border-stone-200/50 transition-all">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              {/* Tabs Container */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+            <div className="flex flex-col gap-3">
+              {/* Search Container - Mobile First */}
+              <div className="relative w-full">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-stone-400" />
+                <input
+                  type="text"
+                  placeholder="ძებნა..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 bg-white border border-stone-200 rounded-full focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all text-sm outline-none shadow-sm placeholder:text-stone-400"
+                />
+              </div>
+
+              {/* Filter Tabs - Better Mobile Spacing */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
                 {filterOptions.map((option) => {
                   const isActive = selectedFilter === option.value;
                   return (
                     <button
                       key={option.value}
                       onClick={() => setSelectedFilter(option.value)}
-                      className={`whitespace-nowrap flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200
-                                    ${
-                                      isActive
-                                        ? "bg-stone-900 text-white shadow-lg shadow-stone-200 transform scale-105"
-                                        : "bg-white text-stone-600 border border-stone-200 hover:border-emerald-200 hover:text-emerald-700 hover:bg-emerald-50"
-                                    }`}
+                      className={`whitespace-nowrap flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 flex-shrink-0
+                                      ${
+                                        isActive
+                                          ? "bg-stone-900 text-white shadow-lg shadow-stone-200"
+                                          : "bg-white text-stone-600 border border-stone-200 hover:border-emerald-200 hover:text-emerald-700 hover:bg-emerald-50"
+                                      }`}
                     >
                       {option.label}
                       <span
-                        className={`ml-1 text-[10px] py-0.5 px-1.5 rounded-full ${
+                        className={`text-[10px] py-0.5 px-1 rounded-full min-w-[16px] text-center ${
                           isActive
                             ? "bg-white/20 text-white"
                             : "bg-stone-100 text-stone-400"
@@ -169,18 +181,6 @@ const ProductsPage: React.FC = () => {
                     </button>
                   );
                 })}
-              </div>
-
-              {/* Search Container */}
-              <div className="relative w-full md:w-72 lg:w-80 flex-shrink-0">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-stone-400" />
-                <input
-                  type="text"
-                  placeholder="ძებნა..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-white border border-stone-200 rounded-full focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all text-sm outline-none shadow-sm placeholder:text-stone-400"
-                />
               </div>
             </div>
           </div>
