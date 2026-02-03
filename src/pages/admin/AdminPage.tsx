@@ -12,6 +12,7 @@ import AddProductDrawer from "./components/AddProductDrawer";
 import CreateManualOrderModal from "./components/CreateManualOrderModal";
 import InventoryManagerVariants from "./components/InventoryManagerVariants";
 import CategoryManager from "./components/CategoryManager";
+import ParametersPage from "./components/ParametersPage";
 
 import { showToast } from "../../components/ui/Toast";
 
@@ -230,6 +231,23 @@ const AdminPage: React.FC = () => {
           );
         }
         return <CategoryManager />;
+
+      case "parameters":
+        // Parameters management - admin only
+        if (user?.role !== "admin") {
+          return (
+            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm text-center">
+              <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                წვდომა შეზღუდულია
+              </h3>
+              <p className="text-gray-600">
+                პარამეტრების მართვა მხოლოდ ადმინისტრატორისთვისაა ხელმისაწვდომი.
+              </p>
+            </div>
+          );
+        }
+        return <ParametersPage />;
 
 case "analytics": {
         // Analytics is admin-only
