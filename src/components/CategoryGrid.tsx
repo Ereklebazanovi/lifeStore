@@ -22,7 +22,7 @@ const CategoryGrid: React.FC = () => {
             ხელმისაწვდომი კატეგორიები
           </span>
           <h2 className="text-2xl lg:text-3xl font-bold text-stone-900">
-            კოოოლექცია
+            კოოოლექციააააა
           </h2>
         </div>
 
