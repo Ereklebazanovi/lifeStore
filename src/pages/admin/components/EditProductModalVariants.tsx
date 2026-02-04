@@ -117,9 +117,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
         // Main product data
         price: simplePrice,
-        salePrice: simpleSalePrice !== undefined && simpleSalePrice !== null ? simpleSalePrice : undefined,
         stock: simpleStock,
-        weight: simpleWeight,
 
         // Computed fields for consistency
         minPrice: simplePrice,
@@ -128,6 +126,15 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
         updatedAt: now,
       };
+
+      // Add optional fields only if they have valid values
+      if (simpleSalePrice !== undefined && simpleSalePrice !== null && simpleSalePrice > 0) {
+        updatedData.salePrice = simpleSalePrice;
+      }
+
+      if (simpleWeight !== undefined && simpleWeight !== null && simpleWeight > 0) {
+        updatedData.weight = simpleWeight;
+      }
 
       await updateProduct(product.id, updatedData);
       showToast("პროდუქტი წარმატებით განახლდა", "success");
