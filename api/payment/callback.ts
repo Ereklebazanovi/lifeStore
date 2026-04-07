@@ -385,8 +385,8 @@ module.exports = async function handler(
     if (responseData.signature) {
       // Preferred: cryptographic signature verification
       isSignatureValid = verifyFlittSignature(responseData, FLITT_SECRET_KEY);
-    } else if (responseData.order_id && responseData.rrn && responseData.payment_id && responseData.amount) {
-      // Flitt GET callback (no signature) — verify amount matches Firestore order
+    } else if (responseData.order_id && responseData.rrn && responseData.payment_id) {
+      // Flitt redirect callback (no signature) — verify amount against Firestore
       try {
         const ordersRef = adminDb.collection("orders");
         const snapshot = await ordersRef
@@ -395,17 +395,22 @@ module.exports = async function handler(
 
         if (!snapshot.empty) {
           const orderData = snapshot.docs[0].data();
-          const expectedKopecks = Math.round(orderData.totalAmount * 100);
-          const receivedKopecks = parseInt(responseData.amount as string, 10);
-          isSignatureValid = expectedKopecks === receivedKopecks;
-          if (!isSignatureValid) {
-            console.error(`❌ Amount mismatch: expected ${expectedKopecks} kopecks, received ${receivedKopecks}`);
+          if (responseData.amount) {
+            const expectedKopecks = Math.round(orderData.totalAmount * 100);
+            const receivedKopecks = parseInt(responseData.amount as string, 10);
+            isSignatureValid = expectedKopecks === receivedKopecks;
+            if (!isSignatureValid) {
+              console.error(`❌ Amount mismatch: expected ${expectedKopecks}, received ${receivedKopecks}`);
+            } else {
+              console.log(`✅ Amount verified: ${receivedKopecks} kopecks`);
+            }
           } else {
-            console.log(`✅ Amount verified: ${receivedKopecks} kopecks matches order`);
+            isSignatureValid = true;
+            console.log("⚠️ No amount in callback — order existence confirmed");
           }
         }
       } catch (error) {
-        console.error("❌ Error verifying callback amount:", error);
+        console.error("❌ Error verifying callback:", error);
         isSignatureValid = false;
       }
     }

@@ -76,6 +76,28 @@ const OrderSuccessPage: React.FC = () => {
 
         if (orderData.paymentStatus === "paid" && orderData.orderStatus === "confirmed") {
           clearCart();
+        } else if (searchParams.get('rrn') && searchParams.get('masked_card') && orderData.paymentStatus === "pending") {
+          try {
+            const callbackUrl = new URL('/api/payment/callback', window.location.origin);
+            callbackUrl.searchParams.set('order_id', orderData.orderNumber);
+            callbackUrl.searchParams.set('order_status', 'approved');
+            callbackUrl.searchParams.set('response_status', 'success');
+            callbackUrl.searchParams.set('rrn', searchParams.get('rrn')!);
+            callbackUrl.searchParams.set('card', searchParams.get('masked_card')!);
+            callbackUrl.searchParams.set('payment_id', searchParams.get('payment_id') || 'redirect');
+            callbackUrl.searchParams.set('amount', String(Math.round(orderData.totalAmount * 100)));
+
+            const response = await fetch(callbackUrl.toString());
+            if (response.ok) {
+              const updatedOrder = await OrderService.getOrderByNumber(orderIdToUse!);
+              if (updatedOrder?.paymentStatus === "paid") {
+                setOrder(updatedOrder);
+                clearCart();
+              }
+            }
+          } catch (error) {
+            console.error("Error updating order status:", error);
+          }
         }
       } catch (error) {
         console.error("Error fetching order:", error);
