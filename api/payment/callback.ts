@@ -379,15 +379,39 @@ module.exports = async function handler(
       return res.status(400).send("No data received");
     }
 
-    // ✅ SECURITY: Verify request authenticity via cryptographic signature only
+    // ✅ SECURITY: Verify request authenticity
     let isSignatureValid = false;
 
     if (responseData.signature) {
+      // Preferred: cryptographic signature verification
       isSignatureValid = verifyFlittSignature(responseData, FLITT_SECRET_KEY);
+    } else if (responseData.order_id && responseData.rrn && responseData.payment_id && responseData.amount) {
+      // Flitt GET callback (no signature) — verify amount matches Firestore order
+      try {
+        const ordersRef = adminDb.collection("orders");
+        const snapshot = await ordersRef
+          .where("orderNumber", "==", responseData.order_id as string)
+          .get();
+
+        if (!snapshot.empty) {
+          const orderData = snapshot.docs[0].data();
+          const expectedKopecks = Math.round(orderData.totalAmount * 100);
+          const receivedKopecks = parseInt(responseData.amount as string, 10);
+          isSignatureValid = expectedKopecks === receivedKopecks;
+          if (!isSignatureValid) {
+            console.error(`❌ Amount mismatch: expected ${expectedKopecks} kopecks, received ${receivedKopecks}`);
+          } else {
+            console.log(`✅ Amount verified: ${receivedKopecks} kopecks matches order`);
+          }
+        }
+      } catch (error) {
+        console.error("❌ Error verifying callback amount:", error);
+        isSignatureValid = false;
+      }
     }
 
     if (!isSignatureValid) {
-      console.error("❌ SECURITY: Missing or invalid Flitt signature. Request rejected.");
+      console.error("❌ SECURITY: Callback rejected — invalid signature or amount mismatch.");
       console.error("📋 Received data:", responseData);
       return res.status(200).send("OK");
     }
