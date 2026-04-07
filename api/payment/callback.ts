@@ -86,8 +86,7 @@ function verifyFlittSignature(responseData: any, secretKey: string): boolean {
  */
 async function updateOrderStatus(
   orderNumber: string,
-  isPaymentSuccessful: boolean,
-  paymentData: any
+  isPaymentSuccessful: boolean
 ): Promise<void> {
   try {
     // Find order by orderNumber first
@@ -380,41 +379,16 @@ module.exports = async function handler(
       return res.status(400).send("No data received");
     }
 
-    // ✅ SECURITY: Verify request authenticity
-    // TBC/Flitt callbacks don't include signature in query params
-    // Instead verify by checking if signature field exists (old Flitt format)
-    // or validate essential payment data fields
+    // ✅ SECURITY: Verify request authenticity via cryptographic signature only
     let isSignatureValid = false;
 
     if (responseData.signature) {
-      // Old Flitt format with signature
       isSignatureValid = verifyFlittSignature(responseData, FLITT_SECRET_KEY);
-    } else if (
-      responseData.order_id &&
-      responseData.rrn &&
-      responseData.payment_id
-    ) {
-      // New TBC/Flitt format - verify essential fields exist and order exists in our system
-      try {
-        const ordersRef = adminDb.collection("orders");
-        const snapshot = await ordersRef
-          .where("orderNumber", "==", responseData.order_id as string)
-          .get();
-        isSignatureValid = !snapshot.empty;
-        console.log(
-          "✅ TBC callback verification - Order exists:",
-          !snapshot.empty
-        );
-      } catch (error) {
-        console.error("❌ Error checking order existence:", error);
-        isSignatureValid = false;
-      }
     }
 
     if (!isSignatureValid) {
-      console.error("❌ SECURITY: Invalid callback or order not found!");
+      console.error("❌ SECURITY: Missing or invalid Flitt signature. Request rejected.");
       console.error("📋 Received data:", responseData);
-      // Return OK to avoid retries, but don't process the payment
       return res.status(200).send("OK");
     }
 
@@ -424,9 +398,6 @@ module.exports = async function handler(
     const {
       order_id: orderId,
       order_status: orderStatus,
-      payment_id: paymentId,
-      amount,
-      currency,
       response_status,
     } = responseData;
 
@@ -449,7 +420,7 @@ module.exports = async function handler(
     }
 
     // ✅ Update order status in Firestore
-    await updateOrderStatus(orderId, isPaymentSuccessful, responseData);
+    await updateOrderStatus(orderId, isPaymentSuccessful);
 
     // Always respond with 200 OK to acknowledge receipt
     return res.status(200).send("OK");
