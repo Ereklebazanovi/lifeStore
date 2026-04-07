@@ -36,10 +36,11 @@ function verifyFlittSignature(responseData: any, secretKey: string): boolean {
       return false;
     }
 
-    // Remove signature and response_signature_string from data for verification
+    // Remove fields that Flitt excludes from signature calculation
     const dataForVerification = { ...responseData };
     delete dataForVerification.signature;
     delete dataForVerification.response_signature_string;
+    delete dataForVerification.get_without_parameters;
 
     // Filter empty values
     const filteredData: Record<string, any> = {};
@@ -66,10 +67,12 @@ function verifyFlittSignature(responseData: any, secretKey: string): boolean {
       .update(signatureString, "utf8")
       .digest("hex");
 
-    // Signature verification (logging only in case of mismatch)
+    // Signature verification
     const isMatch = expectedSignature === signature;
     if (!isMatch) {
       console.log("🔐 Signature verification failed:");
+      console.log("  Fields used:", sortedKeys.join(", "));
+      console.log("  Signing string:", signatureString.replace(secretKey, "[SECRET]"));
       console.log("  Expected:", expectedSignature);
       console.log("  Received:", signature);
     }
