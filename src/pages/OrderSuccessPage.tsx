@@ -342,6 +342,7 @@ const OrderSuccessPage: React.FC = () => {
                     // ✅ print-break-avoid და კომპაქტური padding
                     className="flex gap-4 items-start border-b border-stone-100 pb-6 last:border-0 last:pb-0 print:border-stone-200 print:pb-2 print-break-avoid"
                   >
+                  
                     <div className="w-20 h-20 bg-stone-100 rounded-2xl overflow-hidden flex-shrink-0 border border-stone-100 print:hidden">
                       {/* სურათი დამალულია ბეჭდვისას, რომ ადგილი დაზოგოს */}
                       {item.product.images?.[0] ? (

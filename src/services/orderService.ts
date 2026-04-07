@@ -262,7 +262,10 @@ export class OrderService {
    * Calculate shipping cost
    */
   private static calculateShippingCost(city: string): number {
-    return 0; // TEMP: testing only — restore to: თბილისი/რუსთავი=5, სხვა=10
+    if (city === "თბილისი" || city === "რუსთავი") {
+      return 5;
+    }
+    return 10;
   }
 
   /**
