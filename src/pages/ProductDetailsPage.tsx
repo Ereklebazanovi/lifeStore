@@ -1,5 +1,5 @@
 // src/pages/ProductDetailsPage.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ShoppingCart,
@@ -13,6 +13,8 @@ import {
   Share2,
   Check,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
@@ -36,6 +38,7 @@ const ProductDetailsPage: React.FC = () => {
   );
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const touchStartX = useRef<number | null>(null);
 
   // ✅ Real-time inventory refresh კრიტიკული პროდუქტის გვერდზე
   useInventoryRefresh({ enabled: true, interval: 40000 }); // 40 წამი
@@ -254,6 +257,34 @@ ${product.description}
   const totalPrice = getCurrentPrice() * quantity;
   const currentStock = getCurrentStock();
 
+  const images = product?.images || [];
+  const currentImageIndex = images.indexOf(selectedImage);
+
+  const goPrevImage = () => {
+    if (images.length < 2) return;
+    const prev = (currentImageIndex - 1 + images.length) % images.length;
+    setSelectedImage(images[prev]);
+  };
+
+  const goNextImage = () => {
+    if (images.length < 2) return;
+    const next = (currentImageIndex + 1) % images.length;
+    setSelectedImage(images[next]);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? goNextImage() : goPrevImage();
+    }
+    touchStartX.current = null;
+  };
+
   // Discount Calculation Percentage
   const discountPercent = Math.round(
     ((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100
@@ -331,7 +362,48 @@ ${product.description}
             {/* --- LEFT COLUMN: IMAGES (Compact & Fixed Height) --- */}
             <div className="lg:col-span-7 bg-white relative">
                {/* Main Image Container */}
-              <div className="relative w-full h-80 lg:h-96 bg-stone-50 flex items-center justify-center overflow-hidden group rounded-2xl lg:rounded-3xl border border-stone-100">
+              <div
+                className="relative w-full h-80 lg:h-96 bg-stone-50 flex items-center justify-center overflow-hidden group rounded-2xl lg:rounded-3xl border border-stone-100"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
+                {/* Prev Arrow */}
+                {images.length > 1 && (
+                  <button
+                    onClick={goPrevImage}
+                    className="absolute left-2 z-10 bg-white/80 backdrop-blur-sm hover:bg-white text-stone-700 p-2 rounded-full shadow-md transition-all duration-200"
+                    aria-label="წინა სურათი"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                )}
+
+                {/* Next Arrow */}
+                {images.length > 1 && (
+                  <button
+                    onClick={goNextImage}
+                    className="absolute right-2 z-10 bg-white/80 backdrop-blur-sm hover:bg-white text-stone-700 p-2 rounded-full shadow-md transition-all duration-200"
+                    aria-label="შემდეგი სურათი"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                )}
+
+                {/* Dot indicators (mobile only) */}
+                {images.length > 1 && (
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 lg:hidden z-10">
+                    {images.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedImage(images[i])}
+                        className={`w-1.5 h-1.5 rounded-full transition-all ${
+                          i === currentImageIndex ? "bg-emerald-500 w-3" : "bg-stone-400/60"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+
                 {/* Badges */}
                 <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
                   {outOfStock ? (
@@ -651,12 +723,30 @@ ${product.description}
             </div>
 
             {/* Image - Limited Height */}
-            <div className="flex-1 flex items-center justify-center min-h-0 py-4">
+            <div className="flex-1 flex items-center justify-center min-h-0 py-4 relative">
+              {images.length > 1 && (
+                <button
+                  onClick={goPrevImage}
+                  className="absolute left-2 z-10 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full transition-all duration-200"
+                  aria-label="წინა სურათი"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+              )}
               <img
                 src={selectedImage}
                 alt={product?.name || ""}
                 className="max-w-full max-h-full object-contain"
               />
+              {images.length > 1 && (
+                <button
+                  onClick={goNextImage}
+                  className="absolute right-2 z-10 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full transition-all duration-200"
+                  aria-label="შემდეგი სურათი"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              )}
             </div>
 
             {/* Thumbnails Navigation - Always Visible at Bottom */}
