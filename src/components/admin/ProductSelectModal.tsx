@@ -101,6 +101,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
     const searchLower = searchTerm.toLowerCase();
     return (
       product.name.toLowerCase().includes(searchLower) ||
+      product.productCode?.toLowerCase().includes(searchLower) ||
       product.description?.toLowerCase().includes(searchLower) ||
       product.variants?.some((v) => v.name?.toLowerCase().includes(searchLower))
     );
@@ -301,10 +302,15 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className={`text-sm sm:text-sm font-medium ${!product.isActive ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className={`text-sm font-medium ${!product.isActive ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                               {product.name}
                             </h4>
+                            {product.productCode && (
+                              <span className="px-2 py-0.5 text-xs font-bold bg-blue-600 text-white rounded tracking-wide">
+                                {product.productCode}
+                              </span>
+                            )}
                             {!product.isActive && (
                               <span className="px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-600 rounded-full">
                                 არააქტიური
@@ -346,9 +352,16 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
           <div className="w-full sm:w-1/2 flex flex-col min-h-0">
             {selectedProduct ? (
               <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                  {selectedProduct.name}
-                </h3>
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    {selectedProduct.name}
+                  </h3>
+                  {selectedProduct.productCode && (
+                    <span className="px-2 py-0.5 text-xs font-bold bg-blue-600 text-white rounded tracking-wide">
+                      {selectedProduct.productCode}
+                    </span>
+                  )}
+                </div>
 
                 {/* Variants */}
                 {selectedProduct.variants &&
