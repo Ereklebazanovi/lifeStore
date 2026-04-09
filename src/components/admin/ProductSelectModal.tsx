@@ -44,6 +44,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
 }) => {
   const { products } = useProductStore();
   const [searchTerm, setSearchTerm] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
     null
@@ -228,6 +229,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
   if (!isOpen) return null;
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       onClick={(e) => {
@@ -294,12 +296,27 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                     <button
                       key={product.id}
                       onClick={() => handleProductClick(product)}
-                      className={`w-full text-left p-3 sm:p-2 rounded-md border transition-all min-h-[60px] sm:min-h-[44px] active:scale-[0.98] ${
+                      className={`w-full text-left p-2 rounded-md border transition-all min-h-[60px] sm:min-h-[44px] active:scale-[0.98] ${
                         isSelected
                           ? "border-emerald-500 bg-emerald-50"
                           : "border-gray-200 hover:border-gray-300"
                       } ${!product.isActive ? 'opacity-60 bg-gray-50/50' : ''}`}
                     >
+                      <div className="flex items-center gap-2">
+                        {/* Thumbnail */}
+                        {product.images?.[0] ? (
+                          <div
+                            className="w-10 h-10 flex-shrink-0 rounded overflow-hidden border border-gray-200 bg-gray-50 cursor-zoom-in"
+                            onClick={(e) => { e.stopPropagation(); setPreviewImage(product.images![0]); }}
+                          >
+                            <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 flex-shrink-0 rounded border border-gray-200 bg-gray-100 flex items-center justify-center">
+                            <Package className="w-4 h-4 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -341,6 +358,8 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
                           </span>
                         </div>
                       </div>
+                        </div>
+                      </div>
                     </button>
                   );
                 })}
@@ -352,6 +371,19 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
           <div className="w-full sm:w-1/2 flex flex-col min-h-0">
             {selectedProduct ? (
               <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+                {/* Product Image */}
+                {selectedProduct.images?.[0] && (
+                  <div
+                    className="w-full h-36 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 mb-3 cursor-zoom-in"
+                    onClick={() => setPreviewImage(selectedProduct.images![0])}
+                  >
+                    <img
+                      src={selectedProduct.images[0]}
+                      alt={selectedProduct.name}
+                      className="w-full h-full object-contain p-2"
+                    />
+                  </div>
+                )}
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <h3 className="text-sm font-semibold text-gray-700">
                     {selectedProduct.name}
@@ -605,6 +637,29 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
         </div>
       </div>
     </div>
+
+    {/* Image Preview Overlay */}
+    {previewImage && (
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"
+        onClick={() => setPreviewImage(null)}
+      >
+        <div className="relative max-w-sm w-full mx-4" onClick={(e) => e.stopPropagation()}>
+          <img
+            src={previewImage}
+            alt=""
+            className="w-full max-h-[70vh] object-contain rounded-xl shadow-2xl bg-white"
+          />
+          <button
+            onClick={() => setPreviewImage(null)}
+            className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white p-1.5 rounded-full transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
