@@ -471,7 +471,7 @@ ${product.description}
                 {images.length > 1 && (
                   <button
                     onClick={goPrevImage}
-                    className="absolute left-2 z-10 bg-white/80 backdrop-blur-sm hover:bg-white text-stone-700 p-2 rounded-full shadow-md transition-all duration-200"
+                    className="absolute left-2 z-10 bg-stone-800/60 hover:bg-stone-800/90 text-white p-2 rounded-full shadow-md transition-all duration-200"
                     aria-label="წინა სურათი"
                   >
                     <ChevronLeft className="w-5 h-5" />
@@ -482,7 +482,7 @@ ${product.description}
                 {images.length > 1 && (
                   <button
                     onClick={goNextImage}
-                    className="absolute right-2 z-10 bg-white/80 backdrop-blur-sm hover:bg-white text-stone-700 p-2 rounded-full shadow-md transition-all duration-200"
+                    className="absolute right-2 z-10 bg-stone-800/60 hover:bg-stone-800/90 text-white p-2 rounded-full shadow-md transition-all duration-200"
                     aria-label="შემდეგი სურათი"
                   >
                     <ChevronRight className="w-5 h-5" />
@@ -826,7 +826,7 @@ ${product.description}
               {images.length > 1 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); goPrevImage(); }}
-                  className="absolute left-2 z-10 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full transition-all duration-200"
+                  className="absolute left-2 z-10 bg-stone-800/60 hover:bg-stone-800/90 text-white p-3 rounded-full shadow-md transition-all duration-200"
                   aria-label="წინა სურათი"
                 >
                   <ChevronLeft className="w-6 h-6" />
@@ -845,7 +845,7 @@ ${product.description}
               {images.length > 1 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); goNextImage(); }}
-                  className="absolute right-2 z-10 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full transition-all duration-200"
+                  className="absolute right-2 z-10 bg-stone-800/60 hover:bg-stone-800/90 text-white p-3 rounded-full shadow-md transition-all duration-200"
                   aria-label="შემდეგი სურათი"
                 >
                   <ChevronRight className="w-6 h-6" />
