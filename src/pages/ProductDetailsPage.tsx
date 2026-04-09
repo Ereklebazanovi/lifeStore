@@ -790,8 +790,8 @@ ${product.description}
 
       {/* Fullscreen Image Modal */}
       {isImageModalOpen && (
-        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
-          <div className="relative max-w-6xl w-full h-screen flex flex-col">
+        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+          <div className="relative max-w-6xl w-full h-dvh flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-4 text-white flex-shrink-0">
               <div>
@@ -823,9 +823,9 @@ ${product.description}
               onTouchMove={handleModalTouchMove}
               onTouchEnd={handleModalTouchEnd}
             >
-              {images.length > 1 && modalZoom === 1 && (
+              {images.length > 1 && (
                 <button
-                  onClick={goPrevImage}
+                  onClick={(e) => { e.stopPropagation(); goPrevImage(); }}
                   className="absolute left-2 z-10 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full transition-all duration-200"
                   aria-label="წინა სურათი"
                 >
@@ -842,9 +842,9 @@ ${product.description}
                   transition: modalDragRef.current.active ? "none" : "transform 0.15s ease",
                 }}
               />
-              {images.length > 1 && modalZoom === 1 && (
+              {images.length > 1 && (
                 <button
-                  onClick={goNextImage}
+                  onClick={(e) => { e.stopPropagation(); goNextImage(); }}
                   className="absolute right-2 z-10 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full transition-all duration-200"
                   aria-label="შემდეგი სურათი"
                 >
