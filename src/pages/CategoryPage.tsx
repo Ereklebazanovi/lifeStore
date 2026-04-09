@@ -142,7 +142,7 @@ const CategoryPage: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
 
               {/* Text Content */}
-              <div className="space-y-6">
+              <div className="space-y-6 py-4">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900/5 rounded-full text-sm text-stone-600 font-medium">
                   <Leaf className="w-4 h-4 text-emerald-600" />
                   <span>კატეგორია</span>
@@ -214,40 +214,44 @@ const CategoryPage: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-4 lg:px-8 py-12">
           {/* Enhanced Filter Bar */}
-          <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md py-6 mb-10 border border-stone-200/60 rounded-2xl shadow-lg shadow-stone-200/20 transition-all">
-            <div className="px-6">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md py-3 lg:py-6 mb-6 lg:mb-10 border border-stone-200/60 rounded-2xl shadow-lg shadow-stone-200/20 transition-all">
+            <div className="px-3 lg:px-6">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-6">
 
                 {/* Filter Buttons */}
-                <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
-                  {filterOptions.map((option) => {
-                    const isActive = selectedFilter === option.value;
-                    const count = getCount(option.value);
+                <div className="relative">
+                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                    {filterOptions.map((option) => {
+                      const isActive = selectedFilter === option.value;
+                      const count = getCount(option.value);
 
-                    return (
-                      <button
-                        key={option.value}
-                        onClick={() => setSelectedFilter(option.value)}
-                        className={`whitespace-nowrap flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300
-                          ${
-                            isActive
-                              ? "bg-stone-900 text-white shadow-lg shadow-stone-300/30 transform scale-105"
-                              : "bg-stone-50 text-stone-700 hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-md hover:shadow-emerald-100/50 hover:scale-102"
-                          }`}
-                      >
-                        <span>{option.label}</span>
-                        <span
-                          className={`text-[10px] font-extrabold py-1 px-2 rounded-full min-w-[20px] text-center ${
-                            isActive
-                              ? "bg-white/20 text-white"
-                              : "bg-stone-200/70 text-stone-500"
-                          }`}
+                      return (
+                        <button
+                          key={option.value}
+                          onClick={() => setSelectedFilter(option.value)}
+                          className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200
+                            ${
+                              isActive
+                                ? "bg-stone-900 text-white shadow-md"
+                                : "bg-stone-100 text-stone-600 hover:bg-emerald-50 hover:text-emerald-700"
+                            }`}
                         >
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
+                          <span>{option.label}</span>
+                          <span
+                            className={`text-[10px] font-extrabold py-0.5 px-1.5 rounded-full min-w-[18px] text-center ${
+                              isActive
+                                ? "bg-white/20 text-white"
+                                : "bg-stone-200/70 text-stone-500"
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* fade hint */}
+                  <div className="absolute right-0 top-0 bottom-0 w-8 bg-linear-to-l from-white/90 to-transparent pointer-events-none lg:hidden" />
                 </div>
 
                 {/* Search Bar */}

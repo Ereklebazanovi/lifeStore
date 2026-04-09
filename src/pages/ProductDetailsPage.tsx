@@ -489,20 +489,6 @@ ${product.description}
                   </button>
                 )}
 
-                {/* Dot indicators (mobile only) */}
-                {images.length > 1 && (
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 lg:hidden z-10">
-                    {images.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setSelectedImage(images[i])}
-                        className={`w-1.5 h-1.5 rounded-full transition-all ${
-                          i === currentImageIndex ? "bg-emerald-500 w-3" : "bg-stone-400/60"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
 
                 {/* Badges */}
                 <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
