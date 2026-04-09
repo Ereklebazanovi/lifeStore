@@ -39,6 +39,10 @@ const ProductDetailsPage: React.FC = () => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const [modalZoom, setModalZoom] = useState(1);
+  const [modalPan, setModalPan] = useState({ x: 0, y: 0 });
+  const pinchDistRef = useRef<number | null>(null);
+  const modalDragRef = useRef({ active: false, startX: 0, startY: 0, panX: 0, panY: 0, moved: false });
 
   // ✅ Real-time inventory refresh კრიტიკული პროდუქტის გვერდზე
   useInventoryRefresh({ enabled: true, interval: 40000 }); // 40 წამი
@@ -71,6 +75,12 @@ const ProductDetailsPage: React.FC = () => {
 
     loadProduct();
   }, [id, getProductById]);
+
+  // Reset zoom when image changes or modal closes
+  useEffect(() => {
+    setModalZoom(1);
+    setModalPan({ x: 0, y: 0 });
+  }, [selectedImage, isImageModalOpen]);
 
   // --- LOGIC HELPERS ---
   const getSelectedVariant = () => {
@@ -283,6 +293,96 @@ ${product.description}
       diff > 0 ? goNextImage() : goPrevImage();
     }
     touchStartX.current = null;
+  };
+
+  const handleModalImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (modalDragRef.current.moved) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const dx = e.clientX - rect.left - rect.width / 2;
+    const dy = e.clientY - rect.top - rect.height / 2;
+    if (modalZoom > 1) {
+      setModalZoom(1);
+      setModalPan({ x: 0, y: 0 });
+    } else {
+      const newZoom = 2.5;
+      setModalZoom(newZoom);
+      setModalPan({ x: dx * (1 - newZoom), y: dy * (1 - newZoom) });
+    }
+  };
+
+  const handleModalWheel = (e: React.WheelEvent) => {
+    const delta = e.deltaY > 0 ? -0.4 : 0.4;
+    const newZoom = Math.min(Math.max(+(modalZoom + delta).toFixed(2), 1), 4);
+    if (newZoom === 1) {
+      setModalZoom(1);
+      setModalPan({ x: 0, y: 0 });
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const dx = e.clientX - rect.left - rect.width / 2;
+    const dy = e.clientY - rect.top - rect.height / 2;
+    const lx = (dx - modalPan.x) / modalZoom;
+    const ly = (dy - modalPan.y) / modalZoom;
+    setModalZoom(newZoom);
+    setModalPan({ x: dx - newZoom * lx, y: dy - newZoom * ly });
+  };
+
+  const handleModalMouseDown = (e: React.MouseEvent) => {
+    if (modalZoom <= 1) return;
+    modalDragRef.current = { active: true, moved: false, startX: e.clientX, startY: e.clientY, panX: modalPan.x, panY: modalPan.y };
+  };
+  const handleModalMouseMove = (e: React.MouseEvent) => {
+    if (!modalDragRef.current.active) return;
+    const dx = e.clientX - modalDragRef.current.startX;
+    const dy = e.clientY - modalDragRef.current.startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) modalDragRef.current.moved = true;
+    setModalPan({ x: modalDragRef.current.panX + dx, y: modalDragRef.current.panY + dy });
+  };
+  const handleModalMouseUp = () => { modalDragRef.current.active = false; };
+
+  const handleModalTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      pinchDistRef.current = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+    } else if (e.touches.length === 1) {
+      if (modalZoom > 1) {
+        modalDragRef.current = { active: true, startX: e.touches[0].clientX, startY: e.touches[0].clientY, panX: modalPan.x, panY: modalPan.y };
+      } else {
+        touchStartX.current = e.touches[0].clientX;
+      }
+    }
+  };
+  const handleModalTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchDistRef.current !== null) {
+      const newDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const ratio = newDist / pinchDistRef.current;
+      setModalZoom(z => {
+        const next = Math.min(Math.max(z * ratio, 1), 4);
+        if (next === 1) setModalPan({ x: 0, y: 0 });
+        return next;
+      });
+      pinchDistRef.current = newDist;
+    } else if (e.touches.length === 1 && modalDragRef.current.active) {
+      setModalPan({
+        x: modalDragRef.current.panX + (e.touches[0].clientX - modalDragRef.current.startX),
+        y: modalDragRef.current.panY + (e.touches[0].clientY - modalDragRef.current.startY),
+      });
+    }
+  };
+  const handleModalTouchEnd = (e: React.TouchEvent) => {
+    pinchDistRef.current = null;
+    if (modalDragRef.current.active) {
+      modalDragRef.current.active = false;
+    } else if (modalZoom === 1 && touchStartX.current !== null) {
+      const diff = touchStartX.current - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) diff > 0 ? goNextImage() : goPrevImage();
+      touchStartX.current = null;
+    }
   };
 
   // Discount Calculation Percentage
@@ -710,8 +810,9 @@ ${product.description}
             <div className="flex items-center justify-between p-4 text-white flex-shrink-0">
               <div>
                 <h3 className="text-lg font-semibold">{product?.name}</h3>
-                <p className="text-sm opacity-75">
-                  სურათი {(product?.images?.indexOf(selectedImage) || 0) + 1} / {product?.images?.length || 0}
+                <p className="text-sm opacity-50">
+                  {modalZoom > 1 ? "დააჭირე გასადიდებლად / გასადიდებლად" : "დააჭირე გასადიდებლად"}
+                  {" · "}სურათი {(product?.images?.indexOf(selectedImage) || 0) + 1}/{product?.images?.length || 0}
                 </p>
               </div>
               <button
@@ -723,8 +824,20 @@ ${product.description}
             </div>
 
             {/* Image - Limited Height */}
-            <div className="flex-1 flex items-center justify-center min-h-0 py-4 relative">
-              {images.length > 1 && (
+            <div
+              className="flex-1 flex items-center justify-center min-h-0 py-4 relative overflow-hidden"
+              style={{ touchAction: modalZoom > 1 ? "none" : "pan-x", cursor: modalZoom > 1 ? "zoom-out" : "zoom-in" }}
+              onWheel={handleModalWheel}
+              onClick={handleModalImageClick}
+              onMouseDown={handleModalMouseDown}
+              onMouseMove={handleModalMouseMove}
+              onMouseUp={handleModalMouseUp}
+              onMouseLeave={handleModalMouseUp}
+              onTouchStart={handleModalTouchStart}
+              onTouchMove={handleModalTouchMove}
+              onTouchEnd={handleModalTouchEnd}
+            >
+              {images.length > 1 && modalZoom === 1 && (
                 <button
                   onClick={goPrevImage}
                   className="absolute left-2 z-10 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full transition-all duration-200"
@@ -736,9 +849,14 @@ ${product.description}
               <img
                 src={selectedImage}
                 alt={product?.name || ""}
-                className="max-w-full max-h-full object-contain"
+                className="max-w-full max-h-full object-contain select-none"
+                draggable={false}
+                style={{
+                  transform: `scale(${modalZoom}) translate(${modalPan.x / modalZoom}px, ${modalPan.y / modalZoom}px)`,
+                  transition: modalDragRef.current.active ? "none" : "transform 0.15s ease",
+                }}
               />
-              {images.length > 1 && (
+              {images.length > 1 && modalZoom === 1 && (
                 <button
                   onClick={goNextImage}
                   className="absolute right-2 z-10 bg-white/15 hover:bg-white/30 text-white p-3 rounded-full transition-all duration-200"
