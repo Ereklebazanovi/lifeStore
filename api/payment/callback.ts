@@ -4,7 +4,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminDb } from "../lib/firebase-admin";
  
 const ADMIN_CONFIG = {
-  EMAIL: "ebazanovi@gmail.com",
+  EMAIL: "lifestoreorders@gmail.com",
   BUSINESS_NAME: "LifeStore",
   BUSINESS_PHONE: "+995 511 72 72 57",
   BUSINESS_EMAIL: "info@lifestore.ge",

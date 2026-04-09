@@ -3,7 +3,7 @@
 
 export const ADMIN_CONFIG = {
   // ადმინის მეილი - შეცვალე როცა საჭიროა
-  EMAIL: "ebazanovi@gmail.com", 
+  EMAIL: "lifestoreorders@gmail.com",
   // ბიზნეს ინფორმაცია
   BUSINESS_NAME: "LifeStore",
   //511 72 72 57
