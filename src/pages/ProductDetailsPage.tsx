@@ -348,7 +348,7 @@ ${product.description}
       );
     } else if (e.touches.length === 1) {
       if (modalZoom > 1) {
-        modalDragRef.current = { active: true, startX: e.touches[0].clientX, startY: e.touches[0].clientY, panX: modalPan.x, panY: modalPan.y };
+        modalDragRef.current = { active: true, moved: false, startX: e.touches[0].clientX, startY: e.touches[0].clientY, panX: modalPan.x, panY: modalPan.y };
       } else {
         touchStartX.current = e.touches[0].clientX;
       }
