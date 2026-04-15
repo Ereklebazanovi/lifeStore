@@ -1,12 +1,13 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { Badge } from "antd"
-import { ShoppingCart, Menu, X, ShieldCheck, User, LogOut, LogIn, History, Search } from "lucide-react"
+import { ShoppingCart, Menu, X, ShieldCheck, User, LogOut, LogIn, History, Search, ChevronDown, LayoutGrid } from "lucide-react"
 import { useCartStore } from "../store/cartStore"
 import { useAuthStore } from "../store/authStore"
+import { useCategoryStore } from "../store/categoryStore"
 import AuthButton from "./auth/AuthButton"
 
 const Navbar: React.FC = () => {
@@ -14,10 +15,20 @@ const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
+  const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { totalItems } = useCartStore()
   const { user, signInWithGoogle, signOut } = useAuthStore()
+  const { categories, fetchCategories } = useCategoryStore()
 
   const isActivePath = (path: string) => location.pathname === path
+  const isProductsActive = location.pathname === "/products" || location.pathname.startsWith("/category/")
+
+  useEffect(() => {
+    fetchCategories()
+  }, [fetchCategories])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,6 +41,7 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     setIsMenuOpen(false)
     setIsSearchOpen(false)
+    setIsCategoryDropdownOpen(false)
   }, [location])
 
   useEffect(() => {
@@ -37,8 +49,20 @@ const Navbar: React.FC = () => {
       document.body.style.overflow = "hidden"
     } else {
       document.body.style.overflow = "unset"
+      setIsMobileCategoriesOpen(false)
     }
   }, [isMenuOpen])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsCategoryDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   const handleMobileSignIn = async () => {
     setIsMenuOpen(false)
@@ -49,6 +73,8 @@ const Navbar: React.FC = () => {
     setIsMenuOpen(false)
     await signOut()
   }
+
+  const activeCategories = categories.filter(c => c.isActive !== false)
 
   return (
     <>
@@ -74,9 +100,83 @@ const Navbar: React.FC = () => {
               <NavLink to="/" isActive={isActivePath("/")}>
                 მთავარი
               </NavLink>
-              <NavLink to="/products" isActive={isActivePath("/products")}>
-                პროდუქტები
-              </NavLink>
+
+              {/* Products dropdown */}
+              <div
+                ref={dropdownRef}
+                className="relative"
+                onMouseEnter={() => {
+                  if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+                  setIsCategoryDropdownOpen(true)
+                }}
+                onMouseLeave={() => {
+                  closeTimerRef.current = setTimeout(() => setIsCategoryDropdownOpen(false), 150)
+                }}
+              >
+                <button
+                  className={`relative flex items-center gap-1.5 text-sm font-semibold transition-all duration-300 py-2.5 px-4 rounded-xl group ${
+                    isProductsActive
+                      ? "text-emerald-600 bg-emerald-50/80"
+                      : "text-neutral-700 hover:text-emerald-600 hover:bg-emerald-50/50"
+                  }`}
+                >
+                  პროდუქტები
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform duration-200 ${isCategoryDropdownOpen ? "rotate-180" : ""}`}
+                  />
+                  {isProductsActive && (
+                    <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-emerald-600 rounded-full" />
+                  )}
+                </button>
+
+                {/* Dropdown panel */}
+                <div
+                  className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 w-56 transition-all duration-200 origin-top ${
+                    isCategoryDropdownOpen
+                      ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                      : "opacity-0 scale-95 -translate-y-1 pointer-events-none"
+                  }`}
+                >
+                  <div className="bg-white rounded-2xl shadow-xl border border-neutral-100 overflow-hidden p-2">
+                    <Link
+                      to="/products"
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                        location.pathname === "/products"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "text-neutral-700 hover:bg-neutral-50 hover:text-emerald-600"
+                      }`}
+                    >
+                      <LayoutGrid className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                      ყველა პროდუქტი
+                    </Link>
+
+                    {activeCategories.length > 0 && (
+                      <>
+                        <div className="mx-3 my-1.5 border-t border-neutral-100" />
+                        {activeCategories.map((cat) => (
+                          <Link
+                            key={cat.id}
+                            to={`/category/${cat.slug}`}
+                            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                              location.pathname === `/category/${cat.slug}`
+                                ? "bg-emerald-50 text-emerald-700 font-semibold"
+                                : "text-neutral-600 hover:bg-neutral-50 hover:text-emerald-600"
+                            }`}
+                          >
+                            {cat.image ? (
+                              <img src={cat.image} alt="" className="w-4 h-4 rounded object-cover flex-shrink-0" />
+                            ) : (
+                              <span className="w-4 h-4 rounded-full bg-emerald-100 flex-shrink-0" />
+                            )}
+                            {cat.name}
+                          </Link>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <NavLink to="/about" isActive={isActivePath("/about")}>
                 ჩვენ შესახებ
               </NavLink>
@@ -125,7 +225,7 @@ const Navbar: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-             
+
               {/* Desktop Auth Button */}
               <div className="hidden md:block">
                 <AuthButton />
@@ -180,6 +280,7 @@ const Navbar: React.FC = () => {
         </div>
       </nav>
 
+      {/* Mobile Menu */}
       <div
         className={`fixed inset-0 z-[60] md:hidden transition-all duration-300 ${
           isMenuOpen ? "visible opacity-100" : "invisible opacity-0"
@@ -205,15 +306,71 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="flex flex-col h-[calc(100%-72px)] pt-6 px-5 pb-6 overflow-y-auto">
-            
 
             <div className="space-y-1.5 mb-6">
               <MobileNavLink to="/" isActive={isActivePath("/")} onClick={() => setIsMenuOpen(false)}>
                 მთავარი
               </MobileNavLink>
-              <MobileNavLink to="/products" isActive={isActivePath("/products")} onClick={() => setIsMenuOpen(false)}>
-                პროდუქტები
-              </MobileNavLink>
+
+              {/* Mobile Products + Categories */}
+              <div>
+                <button
+                  onClick={() => setIsMobileCategoriesOpen(!isMobileCategoriesOpen)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                    isProductsActive
+                      ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20"
+                      : "text-neutral-700 hover:bg-neutral-100 border border-transparent hover:border-neutral-200"
+                  }`}
+                >
+                  <span>პროდუქტები</span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 ${isMobileCategoriesOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {/* Expanded categories */}
+                <div
+                  className={`overflow-hidden transition-all duration-300 ${
+                    isMobileCategoriesOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+                  }`}
+                >
+                  <div className="mt-1 ml-3 pl-3 border-l-2 border-emerald-100 space-y-0.5 py-1">
+                    <Link
+                      to="/products"
+                      onClick={() => setIsMenuOpen(false)}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                        location.pathname === "/products"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "text-neutral-700 hover:bg-neutral-50 hover:text-emerald-600"
+                      }`}
+                    >
+                      <LayoutGrid className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                      ყველა პროდუქტი
+                    </Link>
+
+                    {activeCategories.map((cat) => (
+                      <Link
+                        key={cat.id}
+                        to={`/category/${cat.slug}`}
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          location.pathname === `/category/${cat.slug}`
+                            ? "bg-emerald-50 text-emerald-700 font-semibold"
+                            : "text-neutral-600 hover:bg-neutral-50 hover:text-emerald-600"
+                        }`}
+                      >
+                        {cat.image ? (
+                          <img src={cat.image} alt="" className="w-4 h-4 rounded object-cover flex-shrink-0" />
+                        ) : (
+                          <span className="w-4 h-4 rounded-full bg-emerald-100 flex-shrink-0" />
+                        )}
+                        {cat.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <MobileNavLink to="/about" isActive={isActivePath("/about")} onClick={() => setIsMenuOpen(false)}>
                 ჩვენ შესახებ
               </MobileNavLink>

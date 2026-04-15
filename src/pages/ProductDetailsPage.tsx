@@ -534,7 +534,7 @@ ${product.description}
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-semibold text-gray-700">
-                        სურათები ({product.images.length}/4)
+                        სურათები ({product.images.length}/6)
                       </h4>
                       {product.images.length > 1 && (
                         <span className="text-xs text-gray-500">

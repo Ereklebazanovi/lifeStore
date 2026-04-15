@@ -264,7 +264,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                 <ImageUpload
                   images={images}
                   onChange={setImages}
-                  maxImages={4}
+                  maxImages={6}
                 />
               </div>
 

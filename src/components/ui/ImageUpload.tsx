@@ -12,7 +12,7 @@ interface ImageUploadProps {
 const ImageUpload: React.FC<ImageUploadProps> = ({
   images,
   onChange,
-  maxImages = 4 // <--- შეიცვალა 4-ზე (default)
+  maxImages = 6
 }) => {
   const [dragActive, setDragActive] = useState(false);
   const { uploading, uploadImage, uploadProgress } = useImageUpload();
