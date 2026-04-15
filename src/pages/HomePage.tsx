@@ -175,62 +175,83 @@ const HomePage: React.FC = () => {
         structuredData={organizationStructuredData}
       />
       <div className="min-h-screen bg-stone-50 overflow-x-hidden">
-        {/* --- HERO SLIDER --- */}
-        <section className="relative h-[450px] lg:h-[600px] w-full overflow-hidden">
-          <div className="absolute inset-0">
-            {HERO_IMAGES.map((slide, index) => (
-              <div
-                key={index}
-                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                  index === currentSlide ? "opacity-100" : "opacity-0"
-                }`}
-              >
-                <div className="absolute inset-0 bg-stone-400" />
+        {/* --- HERO --- */}
+        <section className="w-full bg-white border-b border-stone-100 mt-[72px]">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row">
+
+            {/* Image — მობილურზე პირველი, desktop-ზე მარჯვნივ */}
+            <div className="relative md:w-[55%] h-[200px] md:h-[300px] lg:h-[320px] overflow-hidden bg-stone-100 order-first md:order-last shrink-0">
+              {HERO_IMAGES.map((slide, index) => (
                 <img
+                  key={index}
                   src={slide.url}
                   alt={slide.title}
-                  className="absolute inset-0 w-full h-full object-cover z-10"
                   loading={index === 0 ? "eager" : "lazy"}
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+                    index === currentSlide ? "opacity-100" : "opacity-0"
+                  }`}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-black/60 z-20" />
-              </div>
-            ))}
-          </div>
-
-          <div className="relative h-full flex flex-col justify-center items-center text-center px-4 z-20">
-            <div className="max-w-5xl mx-auto space-y-4 lg:space-y-6">
-              <span className="inline-block px-4 lg:px-6 py-2 lg:py-2.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs lg:text-sm font-medium tracking-wider uppercase">
-                Premium Home & Kitchen
-              </span>
-              <h1 className="text-2xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight drop-shadow-2xl">
-                {HERO_IMAGES[currentSlide].title}
-              </h1>
-              <p className="text-sm sm:text-lg lg:text-xl xl:text-2xl text-white/95 font-light max-w-3xl mx-auto drop-shadow-lg leading-relaxed">
-                {HERO_IMAGES[currentSlide].subtitle}
-              </p>
-              <div className="pt-4 lg:pt-6">
-                <Link
-                  to="/products"
-                  className="inline-flex items-center gap-3 bg-white text-stone-900 px-6 lg:px-10 py-3 lg:py-4 rounded-full font-bold text-sm lg:text-base hover:bg-emerald-600 hover:text-white transition-all duration-300 shadow-2xl hover:shadow-emerald-500/30 hover:scale-105 active:scale-95"
-                >
-                  ნახე კოლექცია <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5" />
-                </Link>
+              ))}
+              {/* Dots — მხოლოდ მობილურზე, ფოტოზე */}
+              <div className="absolute bottom-3 right-3 flex gap-1 md:hidden">
+                {HERO_IMAGES.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`transition-all duration-300 rounded-full ${
+                      index === currentSlide
+                        ? "bg-white w-4 h-1"
+                        : "bg-white/50 w-1 h-1 hover:bg-white/80"
+                    }`}
+                    aria-label={`სლაიდი ${index + 1}`}
+                  />
+                ))}
               </div>
             </div>
-          </div>
-          <div className="absolute bottom-6 lg:bottom-8 left-0 right-0 flex justify-center gap-2 z-30">
-            {HERO_IMAGES.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`transition-all duration-300 rounded-full ${
-                  index === currentSlide
-                    ? "bg-white w-6 lg:w-8 h-1.5 lg:h-2 shadow-md"
-                    : "bg-white/40 w-1.5 lg:w-2 h-1.5 lg:h-2 hover:bg-white/70"
-                }`}
-                aria-label={`სლაიდზე გადასვლა ${index + 1}`}
-              />
-            ))}
+
+            {/* ტექსტი — მობილურზე მეორე, desktop-ზე მარცხნივ */}
+            <div className="flex flex-col justify-center px-5 py-6 md:py-0 md:px-10 lg:px-16 md:w-[46%] lg:w-[42%] shrink-0 order-last md:order-first">
+              <span className="text-emerald-600 text-[11px] font-bold uppercase tracking-widest mb-2">
+                Premium Home & Kitchen
+              </span>
+              <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-stone-900 leading-tight mb-2 transition-all duration-700">
+                {HERO_IMAGES[currentSlide].title}
+              </h1>
+              <p className="text-stone-500 text-sm lg:text-base leading-relaxed mb-5 max-w-sm transition-all duration-700">
+                {HERO_IMAGES[currentSlide].subtitle}
+              </p>
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/products"
+                  className="inline-flex items-center gap-2 bg-stone-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all duration-300 shadow-sm active:scale-95"
+                >
+                  კოლექცია <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  to="/about"
+                  className="text-stone-500 hover:text-stone-900 text-sm font-medium transition-colors"
+                >
+                  ჩვენ შესახებ
+                </Link>
+              </div>
+
+              {/* Dots — მხოლოდ desktop-ზე */}
+              <div className="hidden md:flex items-center gap-1.5 mt-8">
+                {HERO_IMAGES.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`transition-all duration-300 rounded-full ${
+                      index === currentSlide
+                        ? "bg-stone-900 w-5 h-1.5"
+                        : "bg-stone-300 w-1.5 h-1.5 hover:bg-stone-400"
+                    }`}
+                    aria-label={`სლაიდი ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+
           </div>
         </section>
 

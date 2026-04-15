@@ -252,10 +252,11 @@ const Navbar: React.FC = () => {
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="md:hidden p-2.5 text-neutral-700 hover:bg-neutral-100/80 rounded-xl transition-all duration-300 active:scale-95 z-50 ml-1"
+                className="md:hidden flex items-center gap-1.5 px-3 py-2 text-neutral-700 hover:bg-neutral-100 rounded-xl border border-neutral-200 transition-all duration-200 active:scale-95 z-50 ml-1"
                 aria-label="Menu"
               >
-                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+                <span className="text-xs font-semibold">მენიუ</span>
               </button>
             </div>
           </div>
@@ -280,157 +281,157 @@ const Navbar: React.FC = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu — Floating Card */}
+      {isMenuOpen && (
+        <div
+          className="fixed inset-0 z-[60] md:hidden"
+          onClick={() => setIsMenuOpen(false)}
+        />
+      )}
       <div
-        className={`fixed inset-0 z-[60] md:hidden transition-all duration-300 ${
-          isMenuOpen ? "visible opacity-100" : "invisible opacity-0"
+        className={`fixed top-[76px] right-3 z-[61] md:hidden w-[calc(100%-24px)] max-w-[320px] transition-all duration-200 origin-top-right ${
+          isMenuOpen
+            ? "opacity-100 scale-100 pointer-events-auto"
+            : "opacity-0 scale-95 pointer-events-none"
         }`}
       >
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
+        <div className="bg-white rounded-2xl shadow-2xl shadow-neutral-900/15 border border-neutral-100 overflow-hidden">
 
-        <div
-          className={`absolute top-0 right-0 w-[85%] max-w-sm h-full bg-white shadow-2xl transition-transform duration-300 ease-out transform ${
-            isMenuOpen ? "translate-x-0" : "translate-x-full"
-          }`}
-        >
-          <div className="flex justify-between items-center px-5 h-[72px] border-b border-neutral-100 bg-gradient-to-r from-neutral-50 to-white">
-            <span className="text-xl font-extrabold bg-gradient-to-r from-neutral-900 to-emerald-600 bg-clip-text text-transparent tracking-tight">
-              LifeStore
-            </span>
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-neutral-100 bg-gradient-to-r from-stone-50 to-white">
+            <div className="flex items-center gap-2">
+              <img src="/Screenshot 2025-12-10 151703.png" alt="LifeStore" className="h-7 w-auto" />
+              <span className="font-extrabold text-base bg-gradient-to-r from-neutral-900 to-emerald-600 bg-clip-text text-transparent">
+                LifeStore
+              </span>
+            </div>
             <button
               onClick={() => setIsMenuOpen(false)}
-              className="p-2 bg-white rounded-xl shadow-sm text-neutral-500 hover:text-neutral-700 hover:shadow transition-all duration-300"
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-all"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="flex flex-col h-[calc(100%-72px)] pt-6 px-5 pb-6 overflow-y-auto">
+          {/* Nav Links */}
+          <div className="p-2">
+            <MobileNavLink to="/" isActive={isActivePath("/")} onClick={() => setIsMenuOpen(false)}>
+              მთავარი
+            </MobileNavLink>
 
-            <div className="space-y-1.5 mb-6">
-              <MobileNavLink to="/" isActive={isActivePath("/")} onClick={() => setIsMenuOpen(false)}>
-                მთავარი
-              </MobileNavLink>
+            {/* Products + Categories */}
+            <div>
+              <button
+                onClick={() => setIsMobileCategoriesOpen(!isMobileCategoriesOpen)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                  isProductsActive
+                    ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20"
+                    : "text-neutral-700 hover:bg-neutral-100"
+                }`}
+              >
+                <span>პროდუქტები</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${isMobileCategoriesOpen ? "rotate-180" : ""}`}
+                />
+              </button>
 
-              {/* Mobile Products + Categories */}
-              <div>
-                <button
-                  onClick={() => setIsMobileCategoriesOpen(!isMobileCategoriesOpen)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                    isProductsActive
-                      ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20"
-                      : "text-neutral-700 hover:bg-neutral-100 border border-transparent hover:border-neutral-200"
-                  }`}
-                >
-                  <span>პროდუქტები</span>
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform duration-200 ${isMobileCategoriesOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-
-                {/* Expanded categories */}
-                <div
-                  className={`overflow-hidden transition-all duration-300 ${
-                    isMobileCategoriesOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                  }`}
-                >
-                  <div className="mt-1 ml-3 pl-3 border-l-2 border-emerald-100 space-y-0.5 py-1">
+              <div
+                className={`overflow-hidden transition-all duration-200 ${
+                  isMobileCategoriesOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+                }`}
+              >
+                <div className="mx-2 my-1 pl-3 border-l-2 border-emerald-100 space-y-0.5">
+                  <Link
+                    to="/products"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 ${
+                      location.pathname === "/products"
+                        ? "text-emerald-700 bg-emerald-50"
+                        : "text-neutral-700 hover:text-emerald-600 hover:bg-neutral-50"
+                    }`}
+                  >
+                    <LayoutGrid className="w-4 h-4 text-emerald-500 shrink-0" />
+                    ყველა პროდუქტი
+                  </Link>
+                  {activeCategories.map((cat) => (
                     <Link
-                      to="/products"
+                      key={cat.id}
+                      to={`/category/${cat.slug}`}
                       onClick={() => setIsMenuOpen(false)}
-                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                        location.pathname === "/products"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "text-neutral-700 hover:bg-neutral-50 hover:text-emerald-600"
+                      className={`flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 ${
+                        location.pathname === `/category/${cat.slug}`
+                          ? "text-emerald-700 bg-emerald-50 font-semibold"
+                          : "text-neutral-700 hover:text-emerald-600 hover:bg-neutral-50"
                       }`}
                     >
-                      <LayoutGrid className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      ყველა პროდუქტი
+                      {cat.image ? (
+                        <img src={cat.image} alt="" className="w-4 h-4 rounded object-cover shrink-0" />
+                      ) : (
+                        <span className="w-4 h-4 rounded-full bg-emerald-100 shrink-0" />
+                      )}
+                      {cat.name}
                     </Link>
-
-                    {activeCategories.map((cat) => (
-                      <Link
-                        key={cat.id}
-                        to={`/category/${cat.slug}`}
-                        onClick={() => setIsMenuOpen(false)}
-                        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          location.pathname === `/category/${cat.slug}`
-                            ? "bg-emerald-50 text-emerald-700 font-semibold"
-                            : "text-neutral-600 hover:bg-neutral-50 hover:text-emerald-600"
-                        }`}
-                      >
-                        {cat.image ? (
-                          <img src={cat.image} alt="" className="w-4 h-4 rounded object-cover flex-shrink-0" />
-                        ) : (
-                          <span className="w-4 h-4 rounded-full bg-emerald-100 flex-shrink-0" />
-                        )}
-                        {cat.name}
-                      </Link>
-                    ))}
-                  </div>
+                  ))}
                 </div>
               </div>
+            </div>
 
-              <MobileNavLink to="/about" isActive={isActivePath("/about")} onClick={() => setIsMenuOpen(false)}>
-                ჩვენ შესახებ
+            <MobileNavLink to="/about" isActive={isActivePath("/about")} onClick={() => setIsMenuOpen(false)}>
+              ჩვენ შესახებ
+            </MobileNavLink>
+
+            {user && (
+              <MobileNavLink to="/order-history" isActive={isActivePath("/order-history")} onClick={() => setIsMenuOpen(false)}>
+                <span className="flex items-center gap-2"><History className="w-4 h-4" /> ჩემი შეკვეთები</span>
               </MobileNavLink>
+            )}
 
-              {user && (
-                <Link
-                  to="/order-history"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold shadow-md shadow-emerald-500/30 mt-3"
-                >
-                  <History className="w-[18px] h-[18px]" />
-                  ჩემი შეკვეთები
-                </Link>
-              )}
-
-              {user?.role === "admin" && (
-                <Link
-                  to="/admin"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold shadow-md shadow-orange-500/30 mt-2"
-                >
-                  <ShieldCheck className="w-[18px] h-[18px]" />
-                  ადმინ პანელი
-                </Link>
-              )}
-            </div>
-
-            <div className="mt-auto pt-6 border-t border-neutral-200">
-              {user ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 px-4 py-3.5 bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl border border-emerald-200/50">
-                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-base shadow-sm">
-                      {user.displayName?.[0]?.toUpperCase() || <User className="w-5 h-5" />}
-                    </div>
-                    <div className="overflow-hidden flex-1">
-                      <p className="font-bold text-neutral-900 text-sm truncate">
-                        {user.displayName || "მომხმარებელი"}
-                      </p>
-                      <p className="text-xs text-neutral-600 truncate">{user.email}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleMobileSignOut}
-                    className="w-full flex items-center justify-center gap-2 py-3 bg-neutral-100 border border-neutral-200 text-neutral-700 font-semibold rounded-xl hover:bg-neutral-200 transition-all duration-300"
-                  >
-                    <LogOut className="w-[18px] h-[18px]" />
-                    გასვლა
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={handleMobileSignIn}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold rounded-xl transition-all duration-300 shadow-md shadow-emerald-500/30"
-                >
-                  <LogIn className="w-5 h-5" />
-                  შესვლა
-                </button>
-              )}
-            </div>
+            {(user?.role === "admin" || user?.role === "manager") && (
+              <Link
+                to="/admin"
+                onClick={() => setIsMenuOpen(false)}
+                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 mt-0.5 ${
+                  user.role === "admin"
+                    ? "bg-orange-50 text-orange-700"
+                    : "bg-blue-50 text-blue-700"
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                {user.role === "admin" ? "ადმინ პანელი" : "POS სისტემა"}
+              </Link>
+            )}
           </div>
+
+          {/* Auth section */}
+          <div className="px-2 pb-2 pt-1 border-t border-neutral-100 mt-1">
+            {user ? (
+              <div className="flex items-center gap-2.5 p-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
+                  {user.displayName?.[0]?.toUpperCase() || <User className="w-4 h-4" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-neutral-900 text-xs truncate">{user.displayName || "მომხმარებელი"}</p>
+                  <p className="text-[11px] text-neutral-400 truncate">{user.email}</p>
+                </div>
+                <button
+                  onClick={handleMobileSignOut}
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                  title="გასვლა"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleMobileSignIn}
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl transition-all duration-200"
+              >
+                <LogIn className="w-4 h-4" />
+                შესვლა
+              </button>
+            )}
+          </div>
+
         </div>
       </div>
     </>

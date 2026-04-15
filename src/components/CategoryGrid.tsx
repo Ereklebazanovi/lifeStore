@@ -15,7 +15,7 @@ const CategoryGrid: React.FC = () => {
     .sort((a, b) => (b.priority || 0) - (a.priority || 0)); // მაღალი priority პირველი
 
   return (
-    <section className="py-12 lg:py-20 bg-white border-b border-stone-100">
+    <section className="lg:py-10 bg-white border-b border-stone-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 lg:mb-12">
           <span className="text-emerald-600 font-bold text-xs tracking-wider uppercase mb-2 block">
