@@ -29,7 +29,7 @@ import CategoryGrid from "../components/CategoryGrid";
 // ფოტოები: სამზარეულო, ხე, კერამიკა, ეკო-ნივთები (არა ავეჯი)
 const HERO_IMAGES = [
   {
-    url: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=75&w=1200&auto=format&fit=crop",
+    url: "https://images.unsplash.com/photo-1543352632-5a4b24e4d2a6?q=80&w=1025&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     title: "LifeStore - ჰარმონია დეტალებში",
     subtitle: "შექმენი ჯანსაღი და ესთეტიური გარემო შენს სამზარეულოში",
   },
