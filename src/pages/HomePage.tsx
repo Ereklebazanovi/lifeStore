@@ -193,17 +193,20 @@ const HomePage: React.FC = () => {
                 />
               ))}
               {/* Dots — მხოლოდ მობილურზე, ფოტოზე */}
-              <div className="absolute bottom-3 right-3 flex gap-1 md:hidden">
+              <div className="absolute bottom-3 right-3 flex items-center gap-1.5 md:hidden">
                 {HERO_IMAGES.map((_, index) => (
-                  <button
+                  <div
                     key={index}
                     onClick={() => setCurrentSlide(index)}
-                    className={`transition-all duration-300 rounded-full ${
-                      index === currentSlide
-                        ? "bg-white w-4 h-1"
-                        : "bg-white/50 w-1 h-1 hover:bg-white/80"
-                    }`}
-                    aria-label={`სლაიდი ${index + 1}`}
+                    style={{
+                      width: index === currentSlide ? 16 : 6,
+                      height: 6,
+                      borderRadius: 99,
+                      background: index === currentSlide ? "white" : "rgba(255,255,255,0.5)",
+                      transition: "all 0.3s",
+                      flexShrink: 0,
+                      cursor: "pointer",
+                    }}
                   />
                 ))}
               </div>

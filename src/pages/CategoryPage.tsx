@@ -136,79 +136,43 @@ const CategoryPage: React.FC = () => {
         structuredData={categoryStructuredData}
       />
       <div className="min-h-screen bg-stone-50">
-        {/* Modern Category Header */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-stone-50 via-white to-stone-100 border-b border-stone-200">
-          <div className="max-w-7xl mx-auto px-4 lg:px-8 py-16 md:py-20">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        {/* Category Header */}
+        <div className="bg-white border-b border-stone-100 mt-[72px]">
+          <div className="max-w-4xl mx-auto px-4 lg:px-8 py-8 md:py-10">
+            <div className="flex flex-col md:flex-row md:items-center gap-6">
 
-              {/* Text Content */}
-              <div className="space-y-6 py-4">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900/5 rounded-full text-sm text-stone-600 font-medium">
-                  <Leaf className="w-4 h-4 text-emerald-600" />
-                  <span>კატეგორია</span>
+              {/* Text */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Leaf className="w-4 h-4 text-emerald-500" />
+                  <span className="text-xs text-stone-400 font-semibold uppercase tracking-widest">კატეგორია</span>
                 </div>
-
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-stone-900 leading-tight">
+                <h1 className="text-2xl md:text-3xl font-bold text-stone-900 leading-tight mb-2">
                   {category.name}
                 </h1>
-
                 {category.description && (
-                  <p className="text-lg text-stone-600 max-w-lg leading-relaxed">
+                  <p className="text-sm text-stone-500 leading-relaxed max-w-lg mb-3">
                     {category.description}
                   </p>
                 )}
+                <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                  {filteredProducts.length} პროდუქტი
+                </span>
+              </div>
 
-                <div className="flex items-center gap-4 pt-4">
-                  <div className="flex items-center gap-2 text-emerald-600">
-                    <div className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-medium">{filteredProducts.length} პროდუქტი</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-stone-500">
-                    <Star className="w-4 h-4 fill-current text-amber-400" />
-                    <span className="text-sm font-medium">ექსკლუზიური კოლექცია</span>
-                  </div>
+              {/* Image */}
+              {category.image && (
+                <div className="shrink-0 w-full md:w-[280px] h-[160px] md:h-[140px] rounded-2xl overflow-hidden shadow-sm">
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-              </div>
-
-              {/* Image Section */}
-              <div className="relative lg:order-last">
-                {category.image ? (
-                  <div className="relative overflow-hidden rounded-3xl shadow-2xl shadow-stone-200/50">
-                    <div className="aspect-[4/3] relative">
-                      <img
-                        src={category.image}
-                        alt={category.name}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-stone-900/20 to-transparent"></div>
-                    </div>
-
-                    {/* Decorative elements */}
-                    <div className="absolute -top-4 -right-4 w-24 h-24 bg-emerald-100 rounded-full opacity-70"></div>
-                    <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-stone-100 rounded-full opacity-50"></div>
-                  </div>
-                ) : (
-                  <div className="aspect-[4/3] bg-gradient-to-br from-stone-100 to-stone-200 rounded-3xl flex items-center justify-center">
-                    <div className="text-center space-y-4">
-                      <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-2xl flex items-center justify-center">
-                        <Leaf className="w-10 h-10 text-emerald-600" />
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="font-bold text-stone-700">{category.name}</h3>
-                        <p className="text-sm text-stone-500">ეკომეგობრული პროდუქტები</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
 
             </div>
-          </div>
-
-          {/* Background Pattern */}
-          <div className="absolute inset-0 -z-10">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-100/30 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-stone-200/40 rounded-full blur-3xl"></div>
           </div>
         </div>
 
