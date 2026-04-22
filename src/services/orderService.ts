@@ -12,6 +12,7 @@ import {
   getDoc,
   deleteDoc,
   Timestamp,
+  deleteField,
   runTransaction,
   writeBatch,
   limit,
@@ -1169,6 +1170,8 @@ export class OrderService {
       };
       if (status === "delivered") {
         updates.deliveredAt = Timestamp.now();
+      } else {
+        updates.deliveredAt = deleteField();
       }
       await updateDoc(orderRef, updates);
       console.log("✅ Order status updated:", orderId, status);

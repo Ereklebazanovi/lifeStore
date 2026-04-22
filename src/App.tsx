@@ -33,6 +33,23 @@ import CategoryPage from "./pages/CategoryPage";
 import { useAuthStore } from "./store/authStore";
 import { useCartStore } from "./store/cartStore";
 import { ToastContainer } from "./components/ui/Toast";
+import { initGoogleAnalytics, trackPageView } from "./utils/analytics";
+
+const AnalyticsTracker: React.FC = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith("/admin");
+
+  useEffect(() => {
+    initGoogleAnalytics();
+  }, []);
+
+  useEffect(() => {
+    if (isAdminRoute) return;
+    trackPageView(`${location.pathname}${location.search}`);
+  }, [isAdminRoute, location.pathname, location.search]);
+
+  return null;
+};
 
 const CheckAndRenderLayout: React.FC = () => {
   const location = useLocation();
@@ -248,6 +265,7 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
+      <AnalyticsTracker />
       <CheckAndRenderLayout />
       {/* Toast Notifications */}
       <ToastContainer />

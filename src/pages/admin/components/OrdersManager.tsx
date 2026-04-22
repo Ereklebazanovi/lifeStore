@@ -858,6 +858,40 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
   };
 
+  const canInlineEditStatus = (
+    order: Order,
+    currentTab: "active" | "live" | "history"
+  ) => {
+    if (currentTab === "active") return order.orderStatus !== "cancelled";
+    // In archive we allow quick edits, but keep cancellation in its dedicated flow.
+    if (currentTab === "history") return order.orderStatus !== "cancelled";
+    return false;
+  };
+
+  const historyInlineStatusOptions: Order["orderStatus"][] = [
+    "pending",
+    "confirmed",
+    "shipped",
+    "delivered",
+  ];
+
+  const handleHistoryInlineStatusChange = (
+    order: Order,
+    newStatus: Order["orderStatus"]
+  ) => {
+    if (newStatus === order.orderStatus) return;
+
+    const fromText = getStandardStatusText(order.orderStatus);
+    const toText = getStandardStatusText(newStatus);
+
+    const confirmed = window.confirm(
+      `შეკვეთა #${order.orderNumber}\n\nსტატუსის შეცვლა:\n${fromText} → ${toText}\n\nგსურს შეცვლა?`
+    );
+    if (!confirmed) return;
+
+    void handleStatusChange(order.id, newStatus);
+  };
+
   const getStatusColor = (status: Order["orderStatus"]) => {
     switch (status) {
       case "pending":
@@ -1426,6 +1460,26 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             {getSmartStatusText(order, activeTab)}
                           </span>
 
+                          {activeTab === "history" &&
+                            canInlineEditStatus(order, activeTab) && (
+                            <select
+                              value={order.orderStatus}
+                              onChange={(e) =>
+                                handleHistoryInlineStatusChange(
+                                  order,
+                                  e.target.value as Order["orderStatus"]
+                                )
+                              }
+                              className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            >
+                              {historyInlineStatusOptions.map((status) => (
+                                <option key={status} value={status}>
+                                  {getStandardStatusText(status)}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+
                           {activeTab === "active" && (
                             <select
                               value={order.orderStatus}
@@ -1575,6 +1629,26 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         {getSmartStatusText(order, activeTab)}
                       </span>
 
+                      {activeTab === "history" &&
+                        canInlineEditStatus(order, activeTab) && (
+                        <select
+                          value={order.orderStatus}
+                          onChange={(e) =>
+                            handleHistoryInlineStatusChange(
+                              order,
+                              e.target.value as Order["orderStatus"]
+                            )
+                          }
+                          className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                        >
+                          {historyInlineStatusOptions.map((status) => (
+                            <option key={status} value={status}>
+                              {getStandardStatusText(status)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
                       {activeTab === "active" && (
                         <select
                           value={order.orderStatus}
@@ -1587,6 +1661,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                         >
                           <option value="pending">მზადებაში</option>
+                          <option value="confirmed">{getStandardStatusText("confirmed")}</option>
                           <option value="shipped">📦 გაგზავნე</option>
                           <option value="delivered">✅ მიტანილი</option>
                         </select>
