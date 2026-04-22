@@ -66,6 +66,15 @@ export class OrderService {
       return obj;
     }
 
+    // Preserve Firestore-special values (Timestamp, Date, etc.)
+    // cleanObject is only meant to strip undefined fields, not to serialize objects.
+    if (obj instanceof Date) {
+      return obj;
+    }
+    if (obj instanceof Timestamp) {
+      return obj;
+    }
+
     if (Array.isArray(obj)) {
       return obj.map(item => this.cleanObject(item));
     }
@@ -103,17 +112,67 @@ export class OrderService {
     return actualPrice;
   }
 
+  private static toDateSafe(value: any): Date | undefined {
+    if (!value) return undefined;
+
+    if (value instanceof Date) {
+      return !isNaN(value.getTime()) ? value : undefined;
+    }
+
+    // Firestore Timestamp (web SDK)
+    if (value?.toDate && typeof value.toDate === "function") {
+      try {
+        const converted = value.toDate();
+        return converted instanceof Date && !isNaN(converted.getTime())
+          ? converted
+          : undefined;
+      } catch {
+        return undefined;
+      }
+    }
+
+    // Plain object timestamp shape: { seconds, nanoseconds }
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      (typeof (value as any).seconds === "number" ||
+        typeof (value as any)._seconds === "number")
+    ) {
+      const seconds =
+        (typeof (value as any).seconds === "number"
+          ? (value as any).seconds
+          : (value as any)._seconds) as number;
+      const nanoseconds =
+        (typeof (value as any).nanoseconds === "number"
+          ? (value as any).nanoseconds
+          : typeof (value as any)._nanoseconds === "number"
+            ? (value as any)._nanoseconds
+            : 0) as number;
+      const millis = seconds * 1000 + Math.floor(nanoseconds / 1_000_000);
+      const converted = new Date(millis);
+      return !isNaN(converted.getTime()) ? converted : undefined;
+    }
+
+    // ISO string / numeric timestamps
+    try {
+      const parsed = new Date(value);
+      return !isNaN(parsed.getTime()) ? parsed : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
   /**
    * Helper function to convert Firestore timestamps to Date objects
    */
   private static convertFirestoreTimestamps(data: any): any {
     return {
       ...data,
-      createdAt: data.createdAt?.toDate?.() || data.createdAt,
-      updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
-      paidAt: data.paidAt?.toDate?.() || data.paidAt,
-      deliveredAt: data.deliveredAt?.toDate?.() || data.deliveredAt,
-      cancelledAt: data.cancelledAt?.toDate?.() || data.cancelledAt,
+      createdAt: this.toDateSafe(data.createdAt) || data.createdAt,
+      updatedAt: this.toDateSafe(data.updatedAt) || data.updatedAt,
+      paidAt: this.toDateSafe(data.paidAt) || data.paidAt,
+      deliveredAt: this.toDateSafe(data.deliveredAt) || data.deliveredAt,
+      cancelledAt: this.toDateSafe(data.cancelledAt) || data.cancelledAt,
     };
   }
 
@@ -1101,38 +1160,18 @@ export class OrderService {
               });
             }
 
-            // Safe date conversion - handle both Timestamp and Date objects
-            const toDate = (value: any): Date | undefined => {
-              if (!value) return undefined;
-              if (value instanceof Date) {
-                if (!isNaN(value.getTime())) return value;
-                return undefined;
-              }
-              if (value.toDate && typeof value.toDate === 'function') {
-                try {
-                  const converted = value.toDate();
-                  if (converted instanceof Date && !isNaN(converted.getTime())) {
-                    return converted;
-                  }
-                } catch (e) {
-                  return undefined;
-                }
-                return undefined;
-              }
-              try {
-                const parsed = new Date(value);
-                if (!isNaN(parsed.getTime())) return parsed;
-              } catch (e) {
-                // Invalid date format
-              }
-              return undefined;
-            };
+            const toDate = (value: any): Date | undefined => this.toDateSafe(value);
 
             return {
               ...this.createOrderObject(doc, data),
               // Override with safe date conversion for real-time subscription
-              createdAt: toDate(data.createdAt) || new Date(),
-              updatedAt: toDate(data.updatedAt) || new Date(),
+              // Never fall back to "now" for createdAt because it makes old orders look like today's.
+              // If createdAt is missing/invalid (legacy docs), fall back to updatedAt, else epoch.
+              createdAt: toDate(data.createdAt) || toDate(data.updatedAt) || new Date(0),
+              updatedAt:
+                toDate(data.updatedAt) ||
+                toDate(data.createdAt) ||
+                new Date(0),
               paidAt: toDate(data.paidAt),
               deliveredAt: toDate(data.deliveredAt),
               cancelledAt: toDate(data.cancelledAt),

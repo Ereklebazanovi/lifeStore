@@ -1054,6 +1054,18 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   };
 
   const filteredOrders = getFilteredOrders();
+  // Always show newest orders first, regardless of Firestore ordering quirks (legacy timestamp formats)
+  filteredOrders.sort((a, b) => {
+    const timeA =
+      a.createdAt instanceof Date && !isNaN(a.createdAt.getTime())
+        ? a.createdAt.getTime()
+        : 0;
+    const timeB =
+      b.createdAt instanceof Date && !isNaN(b.createdAt.getTime())
+        ? b.createdAt.getTime()
+        : 0;
+    return timeB - timeA;
+  });
 
   const handleCreateOrderSuccess = () => {
     setShowCreateModal(false);
