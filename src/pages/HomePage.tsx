@@ -26,29 +26,19 @@ import { getStockText, getStockColorClassesCompact } from "../utils/stock";
 import SEOHead from "../components/SEOHead";
 import CategoryGrid from "../components/CategoryGrid";
 
-// ფოტოები: სამზარეულო, ხე, კერამიკა, ეკო-ნივთები (არა ავეჯი)
-const HERO_IMAGES = [
-  {
-    url: "https://images.unsplash.com/photo-1543352632-5a4b24e4d2a6?q=80&w=1025&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    title: "LifeStore - ჰარმონია დეტალებში",
-    subtitle: "შექმენი ჯანსაღი და ესთეტიური გარემო შენს სამზარეულოში",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=75&w=1200&auto=format&fit=crop",
-    title: "ჯანმრთელობისთვის უვნებელი",
-    subtitle: "უმაღლესი ხარისხის, ეკო-მეგობრული მასალები შენი ოჯახისთვის",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?q=75&w=1200&auto=format&fit=crop",
-    title: "თანამედროვე დიზაინი",
-    subtitle: "დახვეწილი აქსესუარები, რომლებიც ალამაზებენ ყოველდღიურობას",
-  },
-];
+// HERO_IMAGE_CONFIG - ერთი მთავარი ფოტო
+// როცა ახალ ფოტოს მიიღებთ, ჩააგდეთ src/assets/hero.jpg და გამოიყენეთ:
+// import heroImg from "../assets/hero.jpg";
+// url: heroImg
+const HERO_IMAGE_CONFIG = {
+  url: "/hero.png",
+  title: "LifeStore - ჰარმონია დეტალებში",
+  subtitle: "შექმენი ჯანსაღი და ესთეტიური გარემო შენს სამზარეულოში",
+};
 
 const HomePage: React.FC = () => {
   const { products, fetchProducts, isLoading } = useProductStore();
   const { categories: categoryObjects, fetchCategories } = useCategoryStore();
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -64,18 +54,10 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
-    HERO_IMAGES.forEach((image) => {
-      const img = new Image();
-      img.src = image.url;
-    });
+    // Preload hero image
+    const img = new Image();
+    img.src = HERO_IMAGE_CONFIG.url;
   }, [fetchProducts, fetchCategories]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % HERO_IMAGES.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, []);
 
   const getFilteredProducts = () => {
     let filtered = products.filter((product) => product.isActive !== false);
@@ -181,35 +163,12 @@ const HomePage: React.FC = () => {
 
             {/* Image — მობილურზე პირველი, desktop-ზე მარჯვნივ */}
             <div className="relative md:w-[55%] h-[200px] md:h-[300px] lg:h-[320px] overflow-hidden bg-stone-100 order-first md:order-last shrink-0">
-              {HERO_IMAGES.map((slide, index) => (
-                <img
-                  key={index}
-                  src={slide.url}
-                  alt={slide.title}
-                  loading={index === 0 ? "eager" : "lazy"}
-                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-                    index === currentSlide ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-              ))}
-              {/* Dots — მხოლოდ მობილურზე, ფოტოზე */}
-              <div className="absolute bottom-3 right-3 flex items-center gap-1.5 md:hidden">
-                {HERO_IMAGES.map((_, index) => (
-                  <div
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    style={{
-                      width: index === currentSlide ? 16 : 6,
-                      height: 6,
-                      borderRadius: 99,
-                      background: index === currentSlide ? "white" : "rgba(255,255,255,0.5)",
-                      transition: "all 0.3s",
-                      flexShrink: 0,
-                      cursor: "pointer",
-                    }}
-                  />
-                ))}
-              </div>
+              <img
+                src={HERO_IMAGE_CONFIG.url}
+                alt={HERO_IMAGE_CONFIG.title}
+                loading="eager"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
             </div>
 
             {/* ტექსტი — მობილურზე მეორე, desktop-ზე მარცხნივ */}
@@ -217,11 +176,11 @@ const HomePage: React.FC = () => {
               <span className="text-emerald-600 text-[11px] font-bold uppercase tracking-widest mb-2">
                 Premium Home & Kitchen
               </span>
-              <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-stone-900 leading-tight mb-2 transition-all duration-700">
-                {HERO_IMAGES[currentSlide].title}
+              <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-stone-900 leading-tight mb-2">
+                {HERO_IMAGE_CONFIG.title}
               </h1>
-              <p className="text-stone-500 text-sm lg:text-base leading-relaxed mb-5 max-w-sm transition-all duration-700">
-                {HERO_IMAGES[currentSlide].subtitle}
+              <p className="text-stone-500 text-sm lg:text-base leading-relaxed mb-5 max-w-sm">
+                {HERO_IMAGE_CONFIG.subtitle}
               </p>
               <div className="flex items-center gap-3">
                 <Link
@@ -236,22 +195,6 @@ const HomePage: React.FC = () => {
                 >
                   ჩვენ შესახებ
                 </Link>
-              </div>
-
-              {/* Dots — მხოლოდ desktop-ზე */}
-              <div className="hidden md:flex items-center gap-1.5 mt-8">
-                {HERO_IMAGES.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`transition-all duration-300 rounded-full ${
-                      index === currentSlide
-                        ? "bg-stone-900 w-5 h-1.5"
-                        : "bg-stone-300 w-1.5 h-1.5 hover:bg-stone-400"
-                    }`}
-                    aria-label={`სლაიდი ${index + 1}`}
-                  />
-                ))}
               </div>
             </div>
 
