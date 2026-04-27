@@ -34,6 +34,7 @@ import { useAuthStore } from "./store/authStore";
 import { useCartStore } from "./store/cartStore";
 import { ToastContainer } from "./components/ui/Toast";
 import { initGoogleAnalytics, trackPageView } from "./utils/analytics";
+import { initFacebookPixel, trackPixelEvent } from "./utils/pixel";
 ///
 const AnalyticsTracker: React.FC = () => {
   const location = useLocation();
@@ -41,11 +42,13 @@ const AnalyticsTracker: React.FC = () => {
 
   useEffect(() => {
     initGoogleAnalytics();
+    initFacebookPixel();
   }, []);
 
   useEffect(() => {
     if (isAdminRoute) return;
     trackPageView(`${location.pathname}${location.search}`);
+    trackPixelEvent("PageView");
   }, [isAdminRoute, location.pathname, location.search]);
 
   return null;
