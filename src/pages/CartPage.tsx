@@ -220,7 +220,7 @@ const CartPage: React.FC = () => {
                     <span className="text-xs font-medium text-stone-700">5₾</span>
                   </div>
                   <div className="flex justify-between mt-0.5">
-                    <span className="text-xs text-stone-400">სხვა ქალაქები</span>
+                    <span className="text-xs text-stone-400">სხვა</span>
                     <span className="text-xs font-medium text-stone-700">10₾</span>
                   </div>
                 </div>
