@@ -213,9 +213,16 @@ const CartPage: React.FC = () => {
                     ₾{totalPrice.toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between text-stone-600 text-sm">
+                <div className="text-stone-600 text-sm">
                   <span>მიწოდება</span>
-                  <span className="font-medium text-emerald-600">უფასო</span>
+                  <div className="flex justify-between mt-1">
+                    <span className="text-xs text-stone-400">თბილისი / რუსთავი</span>
+                    <span className="text-xs font-medium text-stone-700">5₾</span>
+                  </div>
+                  <div className="flex justify-between mt-0.5">
+                    <span className="text-xs text-stone-400">სხვა ქალაქები</span>
+                    <span className="text-xs font-medium text-stone-700">10₾</span>
+                  </div>
                 </div>
                 <div className="border-t border-dashed border-stone-200 pt-4 mt-4">
                   <div className="flex justify-between items-center">
