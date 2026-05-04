@@ -5,6 +5,10 @@ import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
 import type { Order } from "../../../types";
 import KpiCards from "./KpiCards";
+import SourcePieChart from "./SourcePieChart";
+import TopProductsChart from "./TopProductsChart";
+import RevenueChart from "./RevenueChart";
+import InsightsPanel from "./InsightsPanel";
 
 const { RangePicker } = DatePicker;
 
@@ -117,14 +121,14 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ orders }) => {
       {/* KPI Cards */}
       <KpiCards orders={filteredOrders} />
 
-      {/* Placeholder for future charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex items-center justify-center h-48 text-gray-400 text-sm">
-          წყაროების ანალიტიკა — მომდევნო ეტაპი
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex items-center justify-center h-48 text-gray-400 text-sm">
-          პროდუქტების პერფორმანსი — მომდევნო ეტაპი
-        </div>
+      {/* Revenue Bar Chart — full width */}
+      <RevenueChart orders={filteredOrders} dateRange={dateRange} />
+
+      {/* Source + Products + Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <SourcePieChart orders={filteredOrders} />
+        <TopProductsChart orders={filteredOrders} />
+        <InsightsPanel orders={filteredOrders} />
       </div>
     </div>
   );

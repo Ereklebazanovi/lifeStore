@@ -65,6 +65,17 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [orderToRestore, setOrderToRestore] = useState<Order | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
 
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+
+  const syncScroll = (source: "top" | "table") => {
+    const top = topScrollRef.current;
+    const table = tableScrollRef.current;
+    if (!top || !table) return;
+    if (source === "top") table.scrollLeft = top.scrollLeft;
+    else top.scrollLeft = table.scrollLeft;
+  };
+
   const isManualOrder = (order: Order) =>
     typeof order.adminNotes === "string" &&
     order.adminNotes.includes("Manually added via Admin Panel");
@@ -1413,7 +1424,21 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         <>
           {/* Desktop Table */}
           <div className="hidden lg:block bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto custom-scrollbar">
+            {/* Top scrollbar — სინქრონიზებული ცხრილთან */}
+            <div
+              ref={topScrollRef}
+              className="overflow-x-auto custom-scrollbar"
+              onScroll={() => syncScroll("top")}
+            >
+              <div style={{ height: 1, minWidth: "max-content", visibility: "hidden" }}>
+                <table className="min-w-full"><tbody><tr>
+                  <td style={{ minWidth: 48 }} /><td style={{ minWidth: 220 }} /><td style={{ minWidth: 200 }} />
+                  <td style={{ minWidth: 120 }} /><td style={{ minWidth: 220 }} /><td style={{ minWidth: 140 }} />
+                  <td style={{ minWidth: 120 }} />
+                </tr></tbody></table>
+              </div>
+            </div>
+            <div ref={tableScrollRef} className="overflow-x-auto custom-scrollbar" onScroll={() => syncScroll("table")}>
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
