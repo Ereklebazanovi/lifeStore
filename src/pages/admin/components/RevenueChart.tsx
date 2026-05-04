@@ -26,9 +26,17 @@ const toDate = (val: unknown): Date => {
 
 type Granularity = "hour" | "day" | "month";
 
-const getGranularity = (range: [Date, Date] | null): Granularity => {
-  if (!range) return "month";
-  const diffDays = (range[1].getTime() - range[0].getTime()) / 86400000;
+const getGranularity = (range: [Date, Date] | null, orders?: Order[]): Granularity => {
+  let effectiveRange = range;
+
+  // "სულ" — range გამოვიანგარიშოთ რეალური მონაცემებიდან
+  if (!range && orders && orders.length > 0) {
+    const dates = orders.map((o) => toDate(o.createdAt).getTime());
+    effectiveRange = [new Date(Math.min(...dates)), new Date(Math.max(...dates))];
+  }
+
+  if (!effectiveRange) return "month";
+  const diffDays = (effectiveRange[1].getTime() - effectiveRange[0].getTime()) / 86400000;
   if (diffDays <= 1) return "hour";
   if (diffDays <= 90) return "day";
   return "month";
@@ -84,7 +92,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     <div className="bg-white border border-gray-100 rounded-xl px-3 py-2.5 shadow-lg text-xs">
       <p className="font-semibold text-gray-600 mb-1">{label}</p>
       <p className="text-blue-600 font-bold text-sm">₾{payload[0]?.value?.toFixed(2)}</p>
-      <p className="text-gray-400 mt-0.5">{payload[0]?.payload?.count} შეკვეთა</p>
+      <p className="text-gray-400 mt-0.5">{payload[0]?.payload?.count} შეკვ. (გაუქმებ. გარდა)</p>
     </div>
   );
 };
@@ -98,7 +106,7 @@ const CustomDot = (props: any) => {
 };
 
 const RevenueChart: React.FC<RevenueChartProps> = ({ orders, dateRange }) => {
-  const granularity = getGranularity(dateRange);
+  const granularity = getGranularity(dateRange, orders);
 
   const chartData = useMemo(() => {
     const activeOrders = orders.filter((o) => o.orderStatus !== "cancelled");
@@ -117,8 +125,15 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ orders, dateRange }) => {
       }
     });
 
+    // "სულ"-ისთვის რეალური range გამოვიანგარიშოთ
+    let effectiveDateRange = dateRange;
+    if (!dateRange && activeOrders.length > 0) {
+      const dates = activeOrders.map((o) => toDate(o.createdAt).getTime());
+      effectiveDateRange = [new Date(Math.min(...dates)), new Date(Math.max(...dates))];
+    }
+
     // Fill in empty buckets
-    const allKeys = buildAllBuckets(dateRange, granularity);
+    const allKeys = buildAllBuckets(effectiveDateRange, granularity);
     if (allKeys.length > 0) {
       return allKeys.map((key) => ({
         label: key,
@@ -160,6 +175,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ orders, dateRange }) => {
             გაყიდვების დინამიკა
             <span className="text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{granularityLabel}</span>
           </h3>
+          <p className="text-xs text-gray-400 mt-0.5">ყველა სტატუსი · გაუქმებულების გარეშე</p>
           <div className="flex items-center gap-4 mt-1">
             <span className="text-xs text-gray-500">
               სულ: <span className="font-semibold text-gray-800">₾{totalRevenue.toFixed(2)}</span>
