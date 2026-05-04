@@ -1,6 +1,6 @@
 // src/pages/admin/components/InsightsPanel.tsx
 import React, { useMemo } from "react";
-import { TrendingUp, TrendingDown, Star } from "lucide-react";
+import { TrendingUp, TrendingDown, Star, PackageX } from "lucide-react";
 import type { Order } from "../../../types";
 
 interface InsightsPanelProps {
@@ -59,9 +59,13 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ orders }) => {
       });
     });
 
-    const topProduct = Array.from(productMap.values()).sort((a, b) => b.qty - a.qty)[0] ?? null;
+    const sortedProducts = Array.from(productMap.values()).sort((a, b) => b.qty - a.qty);
+    const topProduct = sortedProducts[0] ?? null;
+    // ყველაზე ნაკლებად გაყიდვადი Top 3 (ერთი და იგივე qty-ს შემთხვევაში რამდენიმე)
+    const minQty = sortedProducts[sortedProducts.length - 1]?.qty ?? 0;
+    const bottomProducts = sortedProducts.filter((p) => p.qty === minQty).slice(0, 3);
 
-    return { bestDay, worstDay, topProduct };
+    return { bestDay, worstDay, topProduct, bottomProducts };
   }, [orders]);
 
   if (!insights) {
@@ -75,7 +79,7 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ orders }) => {
   const formatDay = (d: Date) =>
     `${GEO_DAYS[d.getDay()]}, ${d.getDate()} ${GEO_MONTHS[d.getMonth()]}`;
 
-  const { bestDay, worstDay, topProduct } = insights;
+  const { bestDay, worstDay, topProduct, bottomProducts } = insights;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col gap-3">
@@ -136,6 +140,31 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ orders }) => {
           <p className="text-xs font-semibold text-amber-600 shrink-0">
             {topProduct.qty} ც.
           </p>
+        </div>
+      )}
+
+      {/* Bottom products */}
+      {bottomProducts.length > 0 && bottomProducts[0] !== topProduct && (
+        <div className="p-3 bg-gray-50 rounded-xl">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-1.5 bg-gray-200 rounded-lg shrink-0">
+              <PackageX className="w-3.5 h-3.5 text-gray-500" />
+            </div>
+            <p className="text-xs text-gray-500 font-medium">ყველაზე ნაკლებად გაყიდვადი</p>
+            <span className="text-xs text-gray-400">({bottomProducts[0].qty} ც.)</span>
+          </div>
+          <div className="space-y-1.5">
+            {bottomProducts.map((p, i) => (
+              <div key={i} className="flex items-center gap-2">
+                {p.image ? (
+                  <img src={p.image} alt="" className="w-6 h-6 rounded object-cover shrink-0" />
+                ) : (
+                  <div className="w-6 h-6 rounded bg-gray-200 shrink-0" />
+                )}
+                <p className="text-xs text-gray-700 truncate">{p.name}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

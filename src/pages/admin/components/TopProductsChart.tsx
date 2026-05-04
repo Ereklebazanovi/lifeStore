@@ -1,6 +1,6 @@
 // src/pages/admin/components/TopProductsChart.tsx
 import React, { useState, useMemo } from "react";
-import { Search } from "lucide-react";
+import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import type { Order } from "../../../types";
 
 interface TopProductsChartProps {
@@ -11,6 +11,7 @@ const TOP_N = 10;
 
 const TopProductsChart: React.FC<TopProductsChartProps> = ({ orders }) => {
   const [search, setSearch] = useState("");
+  const [showAll, setShowAll] = useState(false);
 
   const allProducts = useMemo(() => {
     const map = new Map<string, { name: string; qty: number; revenue: number; image?: string }>();
@@ -46,8 +47,9 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ orders }) => {
     return Array.from(map.values()).sort((a, b) => b.qty - a.qty);
   }, [orders]);
 
-  const topProducts = allProducts.slice(0, TOP_N);
-  const maxQty = topProducts[0]?.qty ?? 1;
+  const displayedProducts = showAll ? allProducts : allProducts.slice(0, TOP_N);
+  const topProducts = displayedProducts;
+  const maxQty = allProducts[0]?.qty ?? 1;
 
   const searchResults = search.trim()
     ? allProducts.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
@@ -75,7 +77,7 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ orders }) => {
         <h3 className="text-sm font-semibold text-gray-800">
           TOP პროდუქტები
           <span className="ml-2 text-xs font-normal text-gray-400">
-            Top {topProducts.length}
+            {showAll ? `სულ ${allProducts.length}` : `Top ${Math.min(TOP_N, allProducts.length)}`}
           </span>
         </h3>
         <span className="text-xs text-gray-400">ცალი · ₾</span>
@@ -84,7 +86,22 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ orders }) => {
       {/* Ranked list */}
       <div className="space-y-2">
         {topProducts.map((p, i) => (
-          <div key={p.name} className="flex items-center gap-3">
+          <div key={i} className="relative flex items-center gap-3 group">
+            {/* Hover tooltip */}
+            <div className="absolute bottom-full left-0 mb-2 z-50 hidden group-hover:flex items-center gap-3 bg-white border border-gray-200 rounded-xl shadow-lg px-3 py-2.5 min-w-max pointer-events-none">
+              {p.image && (
+                <img
+                  src={p.image}
+                  alt=""
+                  className="w-12 h-12 rounded-lg object-cover border border-gray-100 shrink-0"
+                />
+              )}
+              <div>
+                <p className="text-xs font-semibold text-gray-800 max-w-xs">{p.name}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{p.qty} ც. · ₾{p.revenue.toFixed(0)}</p>
+              </div>
+            </div>
+
             {/* Rank badge */}
             <span className="w-5 text-center text-xs font-bold text-gray-400 shrink-0">
               {i + 1}
@@ -94,8 +111,9 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ orders }) => {
             {p.image ? (
               <img
                 src={p.image}
-                alt={p.name}
+                alt=""
                 className="w-8 h-8 rounded-lg object-cover border border-gray-100 shrink-0"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
             ) : (
               <div className="w-8 h-8 rounded-lg bg-gray-100 shrink-0" />
@@ -123,6 +141,20 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ orders }) => {
         ))}
       </div>
 
+      {/* Show all / collapse */}
+      {allProducts.length > TOP_N && (
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+        >
+          {showAll ? (
+            <><ChevronUp className="w-3.5 h-3.5" /> დახურვა</>
+          ) : (
+            <><ChevronDown className="w-3.5 h-3.5" /> ყველას ნახვა ({allProducts.length})</>
+          )}
+        </button>
+      )}
+
       {/* Search */}
       <div className="border-t border-gray-100 pt-3">
         <div className="relative">
@@ -141,9 +173,9 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ orders }) => {
             {searchResults.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-3">ვერ მოიძებნა</p>
             ) : (
-              searchResults.map((p) => (
+              searchResults.map((p, i) => (
                 <div
-                  key={p.name}
+                  key={i}
                   className="flex items-center justify-between text-xs px-2 py-1.5 rounded-lg bg-gray-50"
                 >
                   <span className="text-gray-700 truncate flex-1 mr-3">{p.name}</span>
