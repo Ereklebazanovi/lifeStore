@@ -120,30 +120,20 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ orders, dateRange }) => {
       }
     });
 
-    // "სულ"-ისთვის რეალური range გამოვიანგარიშოთ
+    // "სულ"-ზე მიმდინარე წლის იან-დეკ, სხვა ფილტრზე — dateRange-ის range
     let effectiveDateRange = dateRange;
-    if (!dateRange && activeOrders.length > 0) {
-      const dates = activeOrders.map((o) => toDate(o.createdAt).getTime());
-      effectiveDateRange = [new Date(Math.min(...dates)), new Date(Math.max(...dates))];
+    if (!dateRange) {
+      const year = new Date().getFullYear();
+      effectiveDateRange = [new Date(year, 0, 1), new Date(year, 11, 31)];
     }
 
     // Fill in empty buckets
     const allKeys = buildAllBuckets(effectiveDateRange, granularity);
-    if (allKeys.length > 0) {
-      return allKeys.map((key) => ({
-        label: key,
-        revenue: parseFloat((map.get(key)?.revenue ?? 0).toFixed(2)),
-        count: map.get(key)?.count ?? 0,
-      }));
-    }
-
-    // "სულ" — no empty fill, just what we have sorted
-    return Array.from(map.entries())
-      .map(([label, v]) => ({
-        label,
-        revenue: parseFloat(v.revenue.toFixed(2)),
-        count: v.count,
-      }));
+    return allKeys.map((key) => ({
+      label: key,
+      revenue: parseFloat((map.get(key)?.revenue ?? 0).toFixed(2)),
+      count: map.get(key)?.count ?? 0,
+    }));
   }, [orders, dateRange, granularity]);
 
   const totalRevenue = chartData.reduce((s, d) => s + d.revenue, 0);
@@ -183,7 +173,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ orders, dateRange }) => {
       </div>
 
       {/* Chart */}
-      <ResponsiveContainer width="100%" height={240}>
+      <ResponsiveContainer width="100%" height={320}>
         {granularity === "month" ? (
           <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
@@ -199,6 +189,11 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ orders, dateRange }) => {
               axisLine={false}
               tickFormatter={(v) => `₾${v}`}
               width={50}
+              domain={[0, (dataMax: number) => {
+                const withPadding = dataMax * 1.25;
+                const magnitude = Math.pow(10, Math.floor(Math.log10(withPadding)));
+                return Math.ceil(withPadding / magnitude) * magnitude;
+              }]}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "#EFF6FF" }} />
             <Bar dataKey="revenue" radius={[6, 6, 0, 0]} maxBarSize={48}>
@@ -229,6 +224,11 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ orders, dateRange }) => {
               axisLine={false}
               tickFormatter={(v) => `₾${v}`}
               width={50}
+              domain={[0, (dataMax: number) => {
+                const withPadding = dataMax * 1.25;
+                const magnitude = Math.pow(10, Math.floor(Math.log10(withPadding)));
+                return Math.ceil(withPadding / magnitude) * magnitude;
+              }]}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#DBEAFE", strokeWidth: 1 }} />
             <Area
