@@ -128,6 +128,8 @@ export interface Order {
   cancelReason?: string;
   cancellationReason?: string;
   cancelledAt?: Date | { seconds: number; nanoseconds: number };
+  stockRestored?: boolean;
+  stockRestoredAt?: Date | { seconds: number; nanoseconds: number };
 }
 
 export interface OrderItem {
@@ -204,6 +206,24 @@ export interface CreateManualOrderRequest {
   };
   shippingCost: number;
   status: "pending" | "confirmed" | "shipped" | "delivered";
+  paymentMethod: Order["paymentMethod"];
+}
+
+export interface UpdateManualOrderRequest {
+  items: ManualOrderItem[];
+  source: OrderSource;
+  customerInfo: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email?: string;
+  };
+  deliveryInfo: {
+    city: string;
+    address: string;
+    comment?: string;
+  };
+  shippingCost: number;
   paymentMethod: Order["paymentMethod"];
 }
 

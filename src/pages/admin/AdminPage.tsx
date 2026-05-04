@@ -13,6 +13,7 @@ import CreateManualOrderModal from "./components/CreateManualOrderModal";
 import InventoryManagerVariants from "./components/InventoryManagerVariants";
 import CategoryManager from "./components/CategoryManager";
 import ParametersPage from "./components/ParametersPage";
+import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import { showToast } from "../../components/ui/Toast";
 
 import {
@@ -21,7 +22,6 @@ import {
   Package,
   ShoppingBag,
   TrendingDown,
-  DollarSign,
   Clock,
 } from "lucide-react";
 import type { Order } from "../../types";
@@ -31,7 +31,9 @@ const AdminPage: React.FC = () => {
   const { products, subscribeToProducts } = useProductStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<string>("dashboard");
+  const [activeSection, setActiveSection] = useState<string>(
+    () => (user?.role === "manager" ? "orders" : "dashboard")
+  );
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
@@ -53,11 +55,6 @@ const AdminPage: React.FC = () => {
           setOrdersLoading(false);
         }
       );
-
-      // Manager-ისთვის automatic redirect Orders page-ზე
-      if (user?.role === "manager") {
-        setActiveSection("orders");
-      }
 
       // Cleanup function
       return () => {
@@ -264,144 +261,7 @@ case "analytics": {
           );
         }
 
-        const totalRevenue = orders
-          .filter((o) => o.orderStatus === "delivered")
-          .reduce((sum, order) => sum + order.totalAmount, 0);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const pendingRevenue = orders
-          .filter((o) => o.orderStatus === "pending")
-          .reduce((sum, order) => sum + order.totalAmount, 0);
-        const totalOrdersCount = orders.length;
-        const deliveredOrdersCount = orders.filter(
-          (o) => o.orderStatus === "delivered"
-        ).length;
-
-        return (
-          <div className="space-y-6">
-            {/* Analytics Header */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                ანალიტიკა და რეპორტები
-              </h2>
-              <p className="text-gray-600 text-sm">
-                ბიზნესის პერფორმანსის ანალიზი
-              </p>
-            </div>
-
-            {/* Revenue Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <div className="flex items-center space-x-3">
-                 
-                  <div>
-                    <p className="text-xs text-emerald-600 font-medium">
-                      მიღებული შემოსავალი
-                    </p>
-                    <p className="text-lg font-bold text-emerald-900">
-                      ₾{totalRevenue.toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <div className="flex items-center space-x-3">
-                  <Package className="w-8 h-8 text-blue-600" />
-                  <div>
-                    <p className="text-xs text-blue-600 font-medium">
-                      მიტანილი შეკვეთები
-                    </p>
-                    <p className="text-lg font-bold text-blue-900">
-                      {deliveredOrdersCount}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <div className="flex items-center space-x-3">
-                  <Clock className="w-8 h-8 text-amber-600" />
-                  <div>
-                    <p className="text-xs text-amber-600 font-medium">
-                      მოლოდინში შეკვეთები
-                    </p>
-                    <p className="text-lg font-bold text-amber-900">
-                      {orders.filter((o) => o.orderStatus === "pending").length}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <div className="flex items-center space-x-3">
-                  <TrendingDown className="w-8 h-8 text-gray-600" />
-                  <div>
-                    <p className="text-xs text-gray-600 font-medium">
-                      საშ. შეკვეთის ღირ.
-                    </p>
-                    <p className="text-lg font-bold text-gray-900">
-                      ₾
-                      {totalOrdersCount > 0
-                        ? (totalRevenue / deliveredOrdersCount || 0).toFixed(2)
-                        : "0.00"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Insights */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 shadow-sm">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-                სწრაფი ანალიზი
-              </h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">
-                    ღირებული მომხმარებლები
-                  </h4>
-                  <div className="space-y-2">
-                    {orders
-                      .filter((o) => o.orderStatus === "delivered")
-                      .slice(0, 3)
-                      .map((order, index) => (
-                        <div
-                          key={index}
-                          className="flex justify-between text-sm"
-                        >
-                          <span>
-                            {order.customerInfo.firstName}{" "}
-                            {order.customerInfo.lastName}
-                          </span>
-                          <span className="font-semibold">
-                            ₾{order.totalAmount.toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">
-                    მაღალი მარაგები
-                  </h4>
-                  <div className="space-y-2">
-                    {products
-                      .sort((a, b) => (b.priority || 0) - (a.priority || 0))
-                      .slice(0, 3)
-                      .map((product, index) => (
-                        <div
-                          key={index}
-                          className="flex justify-between text-sm"
-                        >
-                          <span>{product.name}</span>
-                          <span className="text-gray-500">
-                            {product.stock} ცალი
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+        return <AnalyticsDashboard orders={orders} />;
       }
 
       default:

@@ -29,6 +29,8 @@ import {
   Globe,
   Tags,
   FileSpreadsheet,
+  Pencil,
+  RotateCcw,
 } from "lucide-react";
 
 interface OrdersManagerProps {
@@ -57,6 +59,43 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [orderToEdit, setOrderToEdit] = useState<Order | null>(null);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [orderToRestore, setOrderToRestore] = useState<Order | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  const isManualOrder = (order: Order) =>
+    typeof order.adminNotes === "string" &&
+    order.adminNotes.includes("Manually added via Admin Panel");
+
+  const handleEditOrder = (order: Order) => {
+    setOrderToEdit(order);
+    setShowEditModal(true);
+  };
+
+  const handleRestoreStock = (order: Order) => {
+    if (order.stockRestored) return;
+    setOrderToRestore(order);
+    setShowRestoreConfirm(true);
+  };
+
+  const confirmRestoreStock = async () => {
+    if (!orderToRestore) return;
+    setIsRestoring(true);
+    try {
+      await OrderService.restoreOrderStock(orderToRestore.id);
+      showToast("მარაგი წარმატებით დაბრუნდა საწყობში!", "success");
+      onRefresh();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "";
+      showToast(msg || "მარაგის დაბრუნება ვერ მოხერხდა", "error");
+    } finally {
+      setIsRestoring(false);
+      setShowRestoreConfirm(false);
+      setOrderToRestore(null);
+    }
+  };
 
   // Update last updated timestamp when orders change
   useEffect(() => {
@@ -966,13 +1005,18 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     status: Order["orderStatus"],
     paymentStatus?: string,
     createdAt?: Date,
-    paymentMethod?: string
+    paymentMethod?: string,
+    source?: string
   ) => {
     switch (status) {
       case "pending":
         if (paymentStatus === "pending" && createdAt) {
           if (paymentMethod === "cash") {
             return "💰 ნაღდი ფული - ადგილზე გადახდა";
+          }
+          // countdown მხოლოდ website-ის ბარათით გადახდისთვის
+          if (source !== "website") {
+            return "მოლოდინში";
           }
           const minutesAgo = Math.floor(
             (new Date().getTime() - createdAt.getTime()) / (1000 * 60)
@@ -1116,7 +1160,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
     try {
       await OrderService.cancelOrder(orderToCancel, cancelReason);
-      showToast("შეკვეთა გაუქმდა. მარაგი ხელით აღადგინეთ საწყობში.", "success");
+      showToast("შეკვეთა გაუქმდა. მარაგი აღადგინეთ შეკვეთებში.", "success");
       setShowCancelModal(false);
       setOrderToCancel(null);
       setCancelReason("");
@@ -1435,6 +1479,12 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                                 მიზეზი: {order.cancelReason}
                               </div>
                             )}
+                          {order.orderStatus === "cancelled" && order.stockRestored && (
+                            <div className="inline-flex items-center gap-1 text-xs text-teal-700 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5 mt-1">
+                              <RotateCcw className="w-3 h-3" />
+                              მარაგი აღდგენილია
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -1528,6 +1578,15 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
+                          {isManualOrder(order) && order.orderStatus !== "cancelled" && order.orderStatus !== "delivered" && order.orderStatus !== "shipped" && (
+                            <button
+                              onClick={() => handleEditOrder(order)}
+                              className="text-amber-600 hover:text-amber-700 p-2 rounded hover:bg-amber-50"
+                              title="შეკვეთის რედაქტირება"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleExportSingleOrder(order)}
                             className="text-green-600 hover:text-green-700 p-2 rounded hover:bg-green-50"
@@ -1550,6 +1609,20 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             >
                               <XCircle className="w-4 h-4" />
                             </button>
+                          )}
+                          {order.orderStatus === "cancelled" && !order.stockRestored && (
+                            <button
+                              onClick={() => handleRestoreStock(order)}
+                              className="text-teal-600 hover:text-teal-700 p-2 rounded hover:bg-teal-50"
+                              title="მარაგის დაბრუნება საწყობში"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          )}
+                          {order.orderStatus === "cancelled" && order.stockRestored && (
+                            <span className="text-xs text-teal-600 font-medium px-1">
+                              ✓ მარაგი დაბრ.
+                            </span>
                           )}
                         </div>
                       </td>
@@ -1626,6 +1699,12 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                               მიზეზი: {order.cancelReason || order.cancellationReason}
                             </p>
                           )}
+                        {order.orderStatus === "cancelled" && order.stockRestored && (
+                          <div className="inline-flex items-center gap-1 text-xs text-teal-700 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5 mt-1">
+                            <RotateCcw className="w-3 h-3" />
+                            მარაგი აღდგენილია
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-col gap-1">
@@ -1720,6 +1799,16 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       <Eye className="w-4 h-4 flex-shrink-0" />
                       <span>ნახვა</span>
                     </button>
+                    {isManualOrder(order) && order.orderStatus !== "cancelled" && order.orderStatus !== "delivered" && order.orderStatus !== "shipped" && (
+                      <button
+                        onClick={() => handleEditOrder(order)}
+                        className="flex items-center justify-center space-x-2 bg-amber-500 text-white px-3 py-3 rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium min-h-[44px] active:scale-95"
+                        title="შეკვეთის რედაქტირება"
+                      >
+                        <Pencil className="w-4 h-4 flex-shrink-0" />
+                        <span>რედაქტ.</span>
+                      </button>
+                    )}
                     <button
                       onClick={() => handleExportSingleOrder(order)}
                       className="flex items-center justify-center space-x-2 bg-green-600 text-white px-3 py-3 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium min-h-[44px] active:scale-95"
@@ -1745,6 +1834,22 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         <XCircle className="w-4 h-4 flex-shrink-0" />
                         <span>გაუქმება</span>
                       </button>
+                    )}
+                    {order.orderStatus === "cancelled" && !order.stockRestored && (
+                      <button
+                        onClick={() => handleRestoreStock(order)}
+                        className="flex items-center justify-center space-x-2 bg-teal-600 text-white px-3 py-3 rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium min-h-[44px] active:scale-95 col-span-2 sm:col-span-1"
+                        title="მარაგის დაბრუნება საწყობში"
+                      >
+                        <RotateCcw className="w-4 h-4 flex-shrink-0" />
+                        <span>მარაგი დაბრ.</span>
+                      </button>
+                    )}
+                    {order.orderStatus === "cancelled" && order.stockRestored && (
+                      <div className="flex items-center justify-center space-x-2 bg-teal-50 text-teal-700 border border-teal-200 px-3 py-3 rounded-lg text-sm font-medium col-span-2 sm:col-span-1">
+                        <RotateCcw className="w-4 h-4 flex-shrink-0" />
+                        <span>მარაგი დაბრუნდა</span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1785,7 +1890,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             selectedOrder.orderStatus,
                             selectedOrder.paymentStatus,
                             selectedOrder.createdAt,
-                            selectedOrder.paymentMethod
+                            selectedOrder.paymentMethod,
+                            selectedOrder.source
                           )}
                         </span>
                       </p>
@@ -2154,6 +2260,80 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           onClose={() => setShowCreateModal(false)}
           onOrderCreated={handleCreateOrderSuccess}
         />
+      )}
+
+      {/* Edit Manual Order Modal */}
+      {showEditModal && orderToEdit && (
+        <CreateManualOrderModal
+          isOpen={showEditModal}
+          onClose={() => { setShowEditModal(false); setOrderToEdit(null); }}
+          onOrderCreated={() => { onRefresh(); setShowEditModal(false); setOrderToEdit(null); }}
+          order={orderToEdit}
+        />
+      )}
+
+      {/* Restore Stock Confirm Modal */}
+      {showRestoreConfirm && orderToRestore && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100">
+              <div className="p-2 bg-teal-100 rounded-lg">
+                <RotateCcw className="w-5 h-5 text-teal-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 text-base">მარაგის დაბრუნება</h3>
+                <p className="text-xs text-gray-500">შეკვეთა #{orderToRestore.orderNumber}</p>
+              </div>
+            </div>
+
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-600 mb-4">
+                შემდეგი პროდუქტები დაემატება საწყობის მარაგს:
+              </p>
+              <div className="space-y-2 bg-teal-50 border border-teal-100 rounded-lg p-3">
+                {orderToRestore.items
+                  .filter(item => item.productId && !item.productId.startsWith("manual_") && item.productId !== "manual_entry")
+                  .map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-sm">
+                      <span className="text-gray-800 font-medium">
+                        {getOrderItemDisplayName(item)}
+                      </span>
+                      <span className="text-teal-700 font-bold ml-4 whitespace-nowrap">
+                        +{item.quantity} ც.
+                      </span>
+                    </div>
+                  ))
+                }
+                {orderToRestore.items.filter(item => item.productId && !item.productId.startsWith("manual_") && item.productId !== "manual_entry").length === 0 && (
+                  <p className="text-sm text-gray-500 text-center py-1">
+                    ეს შეკვეთა მხოლოდ ხელით ჩაწერილ პროდუქტებს შეიცავს — მარაგი არ შეიცვლება.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
+              <button
+                onClick={() => { setShowRestoreConfirm(false); setOrderToRestore(null); }}
+                disabled={isRestoring}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                გაუქმება
+              </button>
+              <button
+                onClick={confirmRestoreStock}
+                disabled={isRestoring}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+              >
+                {isRestoring
+                  ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : <RotateCcw className="w-4 h-4" />
+                }
+                დადასტურება
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

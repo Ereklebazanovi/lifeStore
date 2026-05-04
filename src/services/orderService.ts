@@ -24,6 +24,7 @@ import type {
   Order,
   CreateOrderRequest,
   CreateManualOrderRequest,
+  UpdateManualOrderRequest,
   CartItem,
   OrderItem,
   ManualOrderItem,
@@ -206,6 +207,8 @@ export class OrderService {
       ...(convertedData.trackingNumber && { trackingNumber: convertedData.trackingNumber }),
       ...(convertedData.cancelReason && { cancelReason: convertedData.cancelReason }),
       ...(convertedData.cancellationReason && { cancellationReason: convertedData.cancellationReason }),
+      ...(convertedData.stockRestored !== undefined && { stockRestored: convertedData.stockRestored }),
+      ...(convertedData.stockRestoredAt && { stockRestoredAt: convertedData.stockRestoredAt }),
     } as Order;
   }
 
@@ -625,6 +628,54 @@ export class OrderService {
   }
 
   /**
+   * ✅ RESTORE ORDER STOCK (Manual - Admin/Manager action)
+   * მენეჯერი ხელით აბრუნებს გაუქმებული შეკვეთის პროდუქტების მარაგს
+   */
+  static async restoreOrderStock(orderId: string): Promise<void> {
+    try {
+      const orderDoc = await getDoc(doc(db, this.COLLECTION_NAME, orderId));
+      if (!orderDoc.exists()) {
+        throw new Error("შეკვეთა ვერ მოიძებნა");
+      }
+
+      const orderData = orderDoc.data();
+
+      if (orderData.orderStatus !== "cancelled") {
+        throw new Error("მარაგის დაბრუნება მხოლოდ გაუქმებულ შეკვეთებზეა შესაძლებელი");
+      }
+
+      if (orderData.stockRestored === true) {
+        throw new Error("ამ შეკვეთის მარაგი უკვე დაბრუნებულია");
+      }
+
+      // inventory rollback
+      const inventoryItems = (orderData.items || [])
+        .filter((item: { productId?: string }) => item.productId && !item.productId.startsWith("manual_") && item.productId !== "manual_entry")
+        .map((item: { productId: string; quantity: number; variantId?: string }) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          ...(item.variantId ? { variantId: item.variantId } : {}),
+        }));
+
+      if (inventoryItems.length > 0) {
+        await this.rollbackProductInventory(inventoryItems);
+      }
+
+      // შეკვეთაზე ვნიშნავთ რომ მარაგი დაბრუნდა
+      await updateDoc(doc(db, this.COLLECTION_NAME, orderId), {
+        stockRestored: true,
+        stockRestoredAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+
+      console.log(`✅ Stock restored for cancelled order ${orderData.orderNumber}`);
+    } catch (error) {
+      console.error("❌ Error restoring order stock:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Send Email Notification
    * Made public to be called from payment callback
    */
@@ -738,7 +789,7 @@ export class OrderService {
    * ✅ Rollback Product Inventory (Emergency Recovery)
    * With History Logging!
    */
-  private static async rollbackProductInventory(
+  public static async rollbackProductInventory(
     items: { productId: string; quantity: number; variantId?: string }[]
   ): Promise<void> {
     const realProducts = items.filter(
@@ -1082,6 +1133,247 @@ export class OrderService {
         throw error;
       }
       throw new Error("მექანიკური შეკვეთის შექმნა ვერ მოხერხდა");
+    }
+  }
+
+  /**
+   * ✅ ADJUST INVENTORY FOR ORDER EDIT (Diff-based, Atomic Transaction)
+   * ითვლის ძველ და ახალ items-ებს შორის სხვაობას და ატომურად ასწორებს stock-ს
+   */
+  private static async adjustInventoryForOrderEdit(
+    oldItems: { productId: string; quantity: number; variantId?: string }[],
+    newItems: { productId: string; quantity: number; variantId?: string }[],
+    orderNumber: string
+  ): Promise<void> {
+    // ვაგზავნით მხოლოდ რეალური პროდუქტების items-ებს
+    const filterReal = (
+      items: { productId: string; quantity: number; variantId?: string }[]
+    ) =>
+      items.filter(
+        (i) => i.productId && !i.productId.startsWith("manual_") && i.productId !== "manual_entry"
+      );
+
+    const realOld = filterReal(oldItems);
+    const realNew = filterReal(newItems);
+
+    // key = productId|variantId (ან productId| თუ variant არ არის)
+    const makeKey = (productId: string, variantId?: string) =>
+      `${productId}|${variantId || ""}`;
+
+    // ვაგებთ map-ებს
+    const oldMap = new Map<string, { productId: string; quantity: number; variantId?: string }>();
+    realOld.forEach((i) => oldMap.set(makeKey(i.productId, i.variantId), i));
+
+    const newMap = new Map<string, { productId: string; quantity: number; variantId?: string }>();
+    realNew.forEach((i) => newMap.set(makeKey(i.productId, i.variantId), i));
+
+    // ვითვლით diff-ს: positive = მეტი ჩამოვაჭრათ, negative = დავაბრუნოთ
+    const diffs = new Map<string, { productId: string; variantId?: string; diff: number }>();
+
+    // ძველი items
+    oldMap.forEach((item, key) => {
+      const newItem = newMap.get(key);
+      const newQty = newItem ? newItem.quantity : 0;
+      const diff = newQty - item.quantity; // negative = restore, positive = deduct more
+      if (diff !== 0) {
+        diffs.set(key, { productId: item.productId, variantId: item.variantId, diff });
+      }
+    });
+
+    // ახალი items, რომლებიც ძველში არ იყო (სრულად ახალი პროდუქტები)
+    newMap.forEach((item, key) => {
+      if (!oldMap.has(key)) {
+        diffs.set(key, { productId: item.productId, variantId: item.variantId, diff: item.quantity });
+      }
+    });
+
+    if (diffs.size === 0) {
+      console.log("📦 No inventory changes needed for order edit");
+      return;
+    }
+
+    // დავაჯგუფოთ productId-ით
+    const groupedByProduct = new Map<string, { variantId?: string; diff: number }[]>();
+    diffs.forEach(({ productId, variantId, diff }) => {
+      if (!groupedByProduct.has(productId)) {
+        groupedByProduct.set(productId, []);
+      }
+      groupedByProduct.get(productId)!.push({ variantId, diff });
+    });
+
+    const uniqueProductIds = Array.from(groupedByProduct.keys());
+    const productRefs = uniqueProductIds.map((id) => doc(db, "products", id));
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const productDocs = await Promise.all(
+          productRefs.map((ref) => transaction.get(ref))
+        );
+
+        for (let i = 0; i < productDocs.length; i++) {
+          const productDoc = productDocs[i];
+          const productId = uniqueProductIds[i];
+          const diffsForProduct = groupedByProduct.get(productId)!;
+
+          if (!productDoc.exists()) {
+            throw new Error(`პროდუქტი ვერ მოიძებნა: ${productId}`);
+          }
+
+          const productData = productDoc.data();
+          const updateData: Record<string, unknown> = { updatedAt: Timestamp.now() };
+
+          const variantDiffs = diffsForProduct.filter((d) => d.variantId);
+          const simpleDiffs = diffsForProduct.filter((d) => !d.variantId);
+
+          if (variantDiffs.length > 0) {
+            const variants = [...(productData.variants || [])];
+
+            variantDiffs.forEach(({ variantId, diff }) => {
+              const variantIndex = variants.findIndex((v) => v.id === variantId);
+              if (variantIndex === -1) {
+                throw new Error(`ვარიანტი ვერ მოიძებნა: ${variantId}`);
+              }
+
+              const currentStock = variants[variantIndex].stock || 0;
+              const newStock = currentStock - diff; // diff>0 deduct, diff<0 restore
+
+              if (newStock < 0) {
+                throw new Error(
+                  `არასაკმარისი მარაგი: "${productData.name}" (${variants[variantIndex].name}) (ხელმისაწვდომია: ${currentStock}, საჭირო: ${diff})`
+                );
+              }
+
+              const existingHistory = variants[variantIndex].stockHistory || [];
+              const historyEntry: StockHistory = {
+                timestamp: new Date(),
+                quantity: newStock,
+                reason: `Order Edit #${orderNumber}`,
+                notes: diff > 0
+                  ? `Stock reduced by ${diff} (order edit)`
+                  : `Stock restored by ${Math.abs(diff)} (order edit)`,
+              };
+
+              variants[variantIndex] = {
+                ...variants[variantIndex],
+                stock: newStock,
+                updatedAt: Timestamp.now(),
+                stockHistory: [...existingHistory, historyEntry],
+              };
+            });
+
+            updateData.variants = variants;
+            updateData.stock = variants.reduce((sum: number, v: { stock?: number }) => sum + (v.stock || 0), 0);
+            updateData.totalStock = updateData.stock;
+          }
+
+          if (simpleDiffs.length > 0) {
+            const totalDiff = simpleDiffs.reduce((sum, d) => sum + d.diff, 0);
+            const currentStock = productData.stock || 0;
+            const newStock = currentStock - totalDiff;
+
+            if (newStock < 0) {
+              throw new Error(
+                `არასაკმარისი მარაგი: "${productData.name}" (ხელმისაწვდომია: ${currentStock}, საჭირო: ${totalDiff})`
+              );
+            }
+
+            const existingHistory = productData.stockHistory || [];
+            const historyEntry: StockHistory = {
+              timestamp: new Date(),
+              quantity: newStock,
+              reason: `Order Edit #${orderNumber}`,
+              notes: totalDiff > 0
+                ? `Stock reduced by ${totalDiff} (order edit)`
+                : `Stock restored by ${Math.abs(totalDiff)} (order edit)`,
+            };
+
+            updateData.stock = newStock;
+            updateData.totalStock = newStock;
+            updateData.stockHistory = [...existingHistory, historyEntry];
+          }
+
+          transaction.update(productRefs[i], updateData);
+        }
+
+        console.log("📦 Inventory adjusted for order edit successfully");
+      });
+    } catch (error) {
+      console.error("❌ Error adjusting inventory for order edit:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * ✅ UPDATE MANUAL ORDER (FROM ADMIN PANEL)
+   * განაახლებს ხელით გატარებულ შეკვეთას და ასწორებს inventory-ს diff-ის მიხედვით
+   */
+  static async updateManualOrder(
+    orderId: string,
+    data: UpdateManualOrderRequest,
+    originalOrder: Order
+  ): Promise<void> {
+    // 1. ვამზადებთ ახალ items-ებს
+    const newOrderItems = await this.convertManualItemsToOrderItems(data.items);
+
+    // 2. ძველი inventory items (originalOrder-იდან)
+    const oldInventoryItems = originalOrder.items
+      .filter((item) => item.productId && !item.productId.startsWith("manual_") && item.productId !== "manual_entry")
+      .map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        ...(item.variantId ? { variantId: item.variantId } : {}),
+      }));
+
+    // 3. ახალი inventory items
+    const newInventoryItems = data.items
+      .filter((item) => item.productId && !item.productId.startsWith("manual_"))
+      .map((item) => ({
+        productId: item.productId!,
+        quantity: item.quantity,
+        ...(item.variantId ? { variantId: item.variantId } : {}),
+      }));
+
+    try {
+      // 4. Inventory diff - atomic transaction
+      await this.adjustInventoryForOrderEdit(
+        oldInventoryItems,
+        newInventoryItems,
+        originalOrder.orderNumber
+      );
+
+      // 5. გამოვთვალოთ ახალი totals
+      const subtotal = newOrderItems.reduce((sum, item) => sum + item.total, 0);
+      const totalAmount = subtotal + data.shippingCost;
+
+      // 6. განვაახლოთ Firestore document
+      const updatePayload = this.cleanObject({
+        source: data.source,
+        items: newOrderItems,
+        subtotal,
+        shippingCost: data.shippingCost,
+        totalAmount,
+        customerInfo: {
+          firstName: data.customerInfo.firstName,
+          lastName: data.customerInfo.lastName,
+          phone: data.customerInfo.phone,
+          email: data.customerInfo.email || "",
+          isGuest: true,
+        },
+        deliveryInfo: {
+          ...data.deliveryInfo,
+          shippingCost: data.shippingCost,
+        },
+        paymentMethod: data.paymentMethod,
+        updatedAt: Timestamp.now(),
+        adminNotes: "Manually added via Admin Panel",
+      });
+
+      await updateDoc(doc(db, this.COLLECTION_NAME, orderId), updatePayload);
+
+      console.log(`✅ Manual order ${originalOrder.orderNumber} updated successfully`);
+    } catch (error) {
+      console.error("❌ Error updating manual order:", error);
+      throw error;
     }
   }
 

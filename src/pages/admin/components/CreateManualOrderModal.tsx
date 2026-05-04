@@ -10,14 +10,18 @@ import {
   MapPin,
   DollarSign,
   Globe,
+  Pencil,
 } from "lucide-react";
 import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
 import type {
+  Order,
   CreateManualOrderRequest,
+  UpdateManualOrderRequest,
   ManualOrderItem,
   OrderSource,
 } from "../../../types";
+import { getOrderItemDisplayName } from "../../../utils/displayHelpers";
 // ✅ 1. იმპორტი
 import PhoneInput from "../../../components/ui/PhoneInput";
 import ProductSelector from "../../../components/admin/ProductSelector";
@@ -28,13 +32,16 @@ interface CreateManualOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOrderCreated: () => void;
+  order?: Order; // თუ გადაეცა — edit mode
 }
 
 const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   isOpen,
   onClose,
   onOrderCreated,
+  order,
 }) => {
+  const isEditMode = !!order;
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { products, setIsCreatingOrder } = useProductStore();
@@ -78,24 +85,51 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setCustomerInfo({ firstName: "", lastName: "", phone: "", email: "" });
-      setDeliveryInfo({ city: "თბილისი", address: "", comment: "" });
-      setItems([{ name: "", price: 0, quantity: 1 }]);
-      setSource("instagram");
-      setStatus("pending");
-      setPaymentMethod("cash");
-      setShippingCost(5);
-      setIsShippingCostManuallySet(false);
+      if (order) {
+        // Edit mode — form-ს ვავსებთ არსებული შეკვეთის მონაცემებით
+        setCustomerInfo({
+          firstName: order.customerInfo.firstName,
+          lastName: order.customerInfo.lastName || "",
+          phone: order.customerInfo.phone,
+          email: order.customerInfo.email || "",
+        });
+        setDeliveryInfo({
+          city: order.deliveryInfo.city,
+          address: order.deliveryInfo.address,
+          comment: order.deliveryInfo.comment || "",
+        });
+        const editItems: ManualOrderItem[] = order.items.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          name: getOrderItemDisplayName(item),
+          price: item.price,
+          quantity: item.quantity,
+          weight: item.product?.weight,
+        }));
+        setItems(editItems.length > 0 ? editItems : [{ name: "", price: 0, quantity: 1 }]);
+        setSource((order.source as OrderSource) || "instagram");
+        setPaymentMethod((order.paymentMethod as "cash" | "other" | "bank_transfer") || "cash");
+        setShippingCost(order.shippingCost);
+        setIsShippingCostManuallySet(true);
+      } else {
+        // Create mode — ვასუფთავებთ ფორმს
+        setCustomerInfo({ firstName: "", lastName: "", phone: "", email: "" });
+        setDeliveryInfo({ city: "თბილისი", address: "", comment: "" });
+        setItems([{ name: "", price: 0, quantity: 1 }]);
+        setSource("instagram");
+        setStatus("pending");
+        setPaymentMethod("cash");
+        setShippingCost(5);
+        setIsShippingCostManuallySet(false);
+      }
     } else {
-      // Reset isCreatingOrder when modal closes to avoid freezing
       setIsCreatingOrder(false);
     }
 
-    // Cleanup: reset flag when component unmounts
     return () => {
       setIsCreatingOrder(false);
     };
-  }, [isOpen, setIsCreatingOrder]);
+  }, [isOpen, order, setIsCreatingOrder]);
 
   // --- Handlers ---
   const handleItemChange = (
@@ -205,31 +239,52 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       setIsLoading(true);
       setIsCreatingOrder(true);
 
-      const orderData: CreateManualOrderRequest = {
-        source,
-        items,
-        customerInfo,
-        deliveryInfo,
-        shippingCost,
-        status,
-        paymentMethod: paymentMethod as any,
-      };
-
       const timeoutId = setTimeout(() => {
-        console.warn("⚠️ Order creation timeout - resetting isCreatingOrder flag");
+        console.warn("⚠️ Operation timeout - resetting flags");
         setIsCreatingOrder(false);
         setIsSubmitting(false);
-      }, 15000); // 15 second timeout
+      }, 15000);
 
-      await OrderService.createManualOrder(orderData);
-      clearTimeout(timeoutId);
+      if (isEditMode && order) {
+        const updateData: UpdateManualOrderRequest = {
+          source,
+          items,
+          customerInfo,
+          deliveryInfo,
+          shippingCost,
+          paymentMethod: paymentMethod as Order["paymentMethod"],
+        };
+        await OrderService.updateManualOrder(order.id, updateData, order);
+        clearTimeout(timeoutId);
+        showToast("შეკვეთა წარმატებით განახლდა!", "success");
+      } else {
+        const orderData: CreateManualOrderRequest = {
+          source,
+          items,
+          customerInfo,
+          deliveryInfo,
+          shippingCost,
+          status,
+          paymentMethod: paymentMethod as Order["paymentMethod"],
+        };
+        await OrderService.createManualOrder(orderData);
+        clearTimeout(timeoutId);
+        showToast("შეკვეთა წარმატებით შეიქმნა!", "success");
+      }
 
-      showToast("შეკვეთა წარმატებით შეიქმნა!", "success");
       onOrderCreated();
       onClose();
     } catch (error) {
       console.error(error);
-      showToast("შეკვეთის შექმნა ვერ მოხერხდა", "error");
+      const msg = error instanceof Error ? error.message : "";
+      showToast(
+        msg.includes("არასაკმარისი მარაგი")
+          ? msg
+          : isEditMode
+          ? "შეკვეთის განახლება ვერ მოხერხდა"
+          : "შეკვეთის შექმნა ვერ მოხერხდა",
+        "error"
+      );
     } finally {
       setIsLoading(false);
       setIsSubmitting(false);
@@ -246,11 +301,16 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
         {/* --- Header (Fixed) --- */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-stone-100 flex-shrink-0">
           <h2 className="text-lg sm:text-xl font-bold text-stone-900 flex items-center gap-2">
-            <div className="p-1.5 sm:p-2 bg-emerald-100 rounded-lg">
-              <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+            <div className={`p-1.5 sm:p-2 rounded-lg ${isEditMode ? "bg-amber-100" : "bg-emerald-100"}`}>
+              {isEditMode
+                ? <Pencil className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+                : <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+              }
             </div>
-            <span className="hidden sm:inline">შეკვეთის დამატება</span>
-            <span className="sm:hidden">შეკვეთა</span>
+            <span className="hidden sm:inline">
+              {isEditMode ? `#${order!.orderNumber} — რედაქტირება` : "შეკვეთის დამატება"}
+            </span>
+            <span className="sm:hidden">{isEditMode ? "რედაქტირება" : "შეკვეთა"}</span>
           </h2>
           <button
             onClick={onClose}
@@ -283,21 +343,23 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                   </select>
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-stone-500 uppercase mb-2">
-                  სტატუსი
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as any)}
-                  className="w-full px-3 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
-                >
-                  <option value="pending">📋 მოლოდინში</option>
-                  <option value="confirmed">💳 გადახდილი</option>
-                  <option value="shipped">📦 გაგზავნილი</option>
-                  <option value="delivered">🎉 მიტანილი</option>
-                </select>
-              </div>
+              {!isEditMode && (
+                <div>
+                  <label className="block text-xs font-bold text-stone-500 uppercase mb-2">
+                    სტატუსი
+                  </label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as "pending" | "confirmed" | "shipped" | "delivered")}
+                    className="w-full px-3 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
+                  >
+                    <option value="pending">📋 მოლოდინში</option>
+                    <option value="confirmed">💳 გადახდილი</option>
+                    <option value="shipped">📦 გაგზავნილი</option>
+                    <option value="delivered">🎉 მიტანილი</option>
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-bold text-stone-500 uppercase mb-2">
                   გადახდა
