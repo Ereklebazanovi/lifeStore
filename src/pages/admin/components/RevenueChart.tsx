@@ -3,6 +3,9 @@ import React, { useMemo } from "react";
 import {
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -26,17 +29,9 @@ const toDate = (val: unknown): Date => {
 
 type Granularity = "hour" | "day" | "month";
 
-const getGranularity = (range: [Date, Date] | null, orders?: Order[]): Granularity => {
-  let effectiveRange = range;
-
-  // "სულ" — range გამოვიანგარიშოთ რეალური მონაცემებიდან
-  if (!range && orders && orders.length > 0) {
-    const dates = orders.map((o) => toDate(o.createdAt).getTime());
-    effectiveRange = [new Date(Math.min(...dates)), new Date(Math.max(...dates))];
-  }
-
-  if (!effectiveRange) return "month";
-  const diffDays = (effectiveRange[1].getTime() - effectiveRange[0].getTime()) / 86400000;
+const getGranularity = (range: [Date, Date] | null): Granularity => {
+  if (!range) return "month"; // "სულ" → ყოველთვის თვიური
+  const diffDays = (range[1].getTime() - range[0].getTime()) / 86400000;
   if (diffDays <= 1) return "hour";
   if (diffDays <= 90) return "day";
   return "month";
@@ -106,7 +101,7 @@ const CustomDot = (props: any) => {
 };
 
 const RevenueChart: React.FC<RevenueChartProps> = ({ orders, dateRange }) => {
-  const granularity = getGranularity(dateRange, orders);
+  const granularity = getGranularity(dateRange);
 
   const chartData = useMemo(() => {
     const activeOrders = orders.filter((o) => o.orderStatus !== "cancelled");
@@ -189,39 +184,64 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ orders, dateRange }) => {
 
       {/* Chart */}
       <ResponsiveContainer width="100%" height={240}>
-        <AreaChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <defs>
-            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#2563EB" stopOpacity={0.15} />
-              <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 10, fill: "#9CA3AF" }}
-            tickLine={false}
-            axisLine={false}
-            interval="preserveStartEnd"
-          />
-          <YAxis
-            tick={{ fontSize: 10, fill: "#9CA3AF" }}
-            tickLine={false}
-            axisLine={false}
-            tickFormatter={(v) => `₾${v}`}
-            width={50}
-          />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#DBEAFE", strokeWidth: 1 }} />
-          <Area
-            type="monotone"
-            dataKey="revenue"
-            stroke="#2563EB"
-            strokeWidth={2}
-            fill="url(#revenueGradient)"
-            dot={<CustomDot />}
-            activeDot={{ r: 5, fill: "#2563EB", stroke: "#fff", strokeWidth: 2 }}
-          />
-        </AreaChart>
+        {granularity === "month" ? (
+          <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10, fill: "#9CA3AF" }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              tick={{ fontSize: 10, fill: "#9CA3AF" }}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(v) => `₾${v}`}
+              width={50}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "#EFF6FF" }} />
+            <Bar dataKey="revenue" radius={[6, 6, 0, 0]} maxBarSize={48}>
+              {chartData.map((_, i) => (
+                <Cell key={i} fill={i === chartData.length - 1 ? "#2563EB" : "#93C5FD"} />
+              ))}
+            </Bar>
+          </BarChart>
+        ) : (
+          <AreaChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <defs>
+              <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#2563EB" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10, fill: "#9CA3AF" }}
+              tickLine={false}
+              axisLine={false}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              tick={{ fontSize: 10, fill: "#9CA3AF" }}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(v) => `₾${v}`}
+              width={50}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#DBEAFE", strokeWidth: 1 }} />
+            <Area
+              type="monotone"
+              dataKey="revenue"
+              stroke="#2563EB"
+              strokeWidth={2}
+              fill="url(#revenueGradient)"
+              dot={<CustomDot />}
+              activeDot={{ r: 5, fill: "#2563EB", stroke: "#fff", strokeWidth: 2 }}
+            />
+          </AreaChart>
+        )}
       </ResponsiveContainer>
     </div>
   );
