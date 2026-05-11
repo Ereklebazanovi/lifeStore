@@ -127,9 +127,11 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
         updatedAt: now,
       };
 
-      // Add optional fields only if they have valid values
+      // Always include salePrice so Firestore clears it when removed (null triggers deleteField in store)
       if (simpleSalePrice !== undefined && simpleSalePrice !== null && simpleSalePrice > 0) {
         updatedData.salePrice = simpleSalePrice;
+      } else {
+        (updatedData as Record<string, unknown>).salePrice = null;
       }
 
       if (simpleWeight !== undefined && simpleWeight !== null && simpleWeight > 0) {

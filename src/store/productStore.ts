@@ -5,10 +5,11 @@ import {
   collection,
   addDoc,
   getDocs,
-  getDoc, // <--- ახალი იმპორტი
+  getDoc,
   doc,
   updateDoc,
   deleteDoc,
+  deleteField,
   query,
   orderBy,
   onSnapshot,
@@ -198,18 +199,28 @@ export const useProductStore = create<ProductState & ProductActions>(
         set({ isLoading: true });
         const productRef = doc(db, "products", id);
 
-        await updateDoc(productRef, {
-          ...updates,
-          updatedAt: new Date(),
-        });
+        // Replace null values with deleteField() to actually remove fields from Firestore
+        const firestoreUpdates: Record<string, unknown> = { updatedAt: new Date() };
+        for (const [key, value] of Object.entries(updates)) {
+          firestoreUpdates[key] = value === null ? deleteField() : value;
+        }
 
-        // Update local state
+        await updateDoc(productRef, firestoreUpdates);
+
+        // Update local state — remove null fields (they were deleted in Firestore)
+        const localUpdates = Object.fromEntries(
+          Object.entries(updates).filter(([, v]) => v !== null)
+        ) as Partial<Product>;
         set({
-          products: get().products.map((product) =>
-            product.id === id
-              ? { ...product, ...updates, updatedAt: new Date() }
-              : product
-          ),
+          products: get().products.map((product) => {
+            if (product.id !== id) return product;
+            const merged = { ...product, ...localUpdates, updatedAt: new Date() };
+            // Remove keys that were null (deleted)
+            for (const [key, value] of Object.entries(updates)) {
+              if (value === null) delete (merged as Record<string, unknown>)[key];
+            }
+            return merged;
+          }),
           isLoading: false,
         });
       } catch (error) {
