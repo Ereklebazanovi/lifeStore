@@ -69,7 +69,8 @@ export const useCartStore = create<CartStoreState & CartActions>()(
               : variant.price;
           }
         }
-        return item.product.price || 0;
+        const p = item.product;
+        return p.salePrice && p.salePrice < p.price ? p.salePrice : p.price || 0;
       };
 
       const calculateTotalPrice = (items: any[]) => {
@@ -248,15 +249,17 @@ export const useCartStore = create<CartStoreState & CartActions>()(
             currentStock = product.stock || 0;
           }
 
-          // Get current price considering sale price for variants
-          let currentPrice = product.price || 0;
+          // Get current price considering sale price
+          let currentPrice: number;
           if (variantId && product.variants) {
             const variant = product.variants.find((v: any) => v.id === variantId);
-            if (variant) {
-              currentPrice = variant.salePrice && variant.salePrice < variant.price
-                ? variant.salePrice
-                : variant.price;
-            }
+            currentPrice = variant
+              ? (variant.salePrice && variant.salePrice < variant.price ? variant.salePrice : variant.price)
+              : product.price || 0;
+          } else {
+            currentPrice = product.salePrice && product.salePrice < product.price
+              ? product.salePrice
+              : product.price || 0;
           }
 
           // Remove variant-specific fields from product object for storage
