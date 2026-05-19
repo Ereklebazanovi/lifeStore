@@ -1497,7 +1497,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           )}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {order.items.length} პროდუქტი
+                          {order.items.reduce((sum, i) => sum + i.quantity, 0)} ცალი
                           {order.orderStatus === "cancelled" &&
                             order.cancelReason && (
                               <div className="text-xs text-red-600 mt-1 truncate max-w-xs">
@@ -1716,7 +1716,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           )}
                         </div>
                         <p className="text-xs md:text-sm text-gray-500">
-                          {order.items.length} პროდუქტი
+                          {order.items.reduce((sum, i) => sum + i.quantity, 0)} ცალი
                         </p>
                         {order.orderStatus === "cancelled" &&
                           (order.cancelReason || order.cancellationReason) && (

@@ -396,7 +396,7 @@ ${product.description}
         title={`${product.name} - ₾${getCurrentPrice().toFixed(2)} | Life Store`}
         description={`${product.description.slice(0, 120)} ✅ მარაგშია ${currentStock} ცალი 🚚 მიწოდება: თბილისი/რუსთავი 5₾, სხვა 10₾`}
         keywords={`${product.name}, ეკო პროდუქტები, ${product.category}`}
-        ogImage={product.images?.[0] || "https://lifestore.ge/Screenshot 2025-12-10 151703.png"}
+        ogImage={product.images?.[0] || "https://lifestore.ge/logo.png"}
         ogType="product"
         canonicalUrl={`https://lifestore.ge/product/${product.id}`}
         structuredData={{
@@ -404,7 +404,7 @@ ${product.description}
           "@type": "Product",
           "name": product.name,
           "description": product.description,
-          "image": product.images?.[0] || "",
+          "image": product.images?.[0] || "https://lifestore.ge/logo.png",
           "offers": {
             "@type": "Offer",
             "price": getCurrentPrice(),

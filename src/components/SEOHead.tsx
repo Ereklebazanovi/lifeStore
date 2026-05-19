@@ -14,7 +14,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({
   title = "Life Store - ჰარმონია დეტალებშია | ეკომეგობრული სახლის ნივთები",
   description = "Life Store - თანამედროვე დიზაინისა და ჯანმრთელობისთვის უვნებელი ეკომეგობრული სახლისა და სამზარეულოს ნივთები. გახადე შენი სახლი კომფორტული და დახვეწილი სივრცე.",
   keywords = "ეკომეგობრული ნივთები, სახლის ნივთები, სამზარეულო, თანამედროვე დიზაინი, ჯანსაღი ცხოვრება, Life Store",
-  ogImage = "https://lifestore.ge/Screenshot 2025-12-10 151703.png",
+  ogImage = "https://lifestore.ge/logo.png",
   ogType = "website",
   canonicalUrl,
   structuredData

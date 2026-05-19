@@ -2,7 +2,7 @@
 <html lang="ka">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/Screenshot 2025-12-10 151703.png" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Primary Meta Tags -->
@@ -18,7 +18,7 @@
     <meta property="og:url" content="https://lifestore.ge/" />
     <meta property="og:title" content="Life Store - ჰარმონია დეტალებშია | ეკომეგობრული სახლის ნივთები" />
     <meta property="og:description" content="Life Store - თანამედროვე დიზაინისა და ჯანმრთელობისთვის უვნებელი ეკომეგობრული სახლისა და სამზარეულოს ნივთები. გახადე შენი სახლი კომფორტული და დახვეწილი სივრცე." />
-    <meta property="og:image" content="https://lifestore.ge/Screenshot 2025-12-10 151703.png" />
+    <meta property="og:image" content="https://lifestore.ge/logo.png" />
     <meta property="og:site_name" content="Life Store" />
     <meta property="og:locale" content="ka_GE" />
 
@@ -27,7 +27,7 @@
     <meta property="twitter:url" content="https://lifestore.ge/" />
     <meta property="twitter:title" content="Life Store - ჰარმონია დეტალებშია | ეკომეგობრული სახლის ნივთები" />
     <meta property="twitter:description" content="Life Store - თანამედროვე დიზაინისა და ჯანმრთელობისთვის უვნებელი ეკომეგობრული სახლისა და სამზარეულოს ნივთები. გახადე შენი სახლი კომფორტული და დახვეწილი სივრცე." />
-    <meta property="twitter:image" content="https://lifestore.ge/Screenshot 2025-12-10 151703.png" />
+    <meta property="twitter:image" content="https://lifestore.ge/logo.png" />
 
     <!-- Additional SEO Meta Tags -->
     <meta name="theme-color" content="#68d391" />
@@ -38,21 +38,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Google Analytics 4 (GA4) - Replace with your actual GA tracking ID -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
-    <script>
-      // Replace GA_MEASUREMENT_ID with your actual Google Analytics 4 measurement ID
-      const GA_MEASUREMENT_ID = 'GA_MEASUREMENT_ID'; // e.g., 'G-XXXXXXXXXX'
-
-      if (GA_MEASUREMENT_ID && GA_MEASUREMENT_ID !== 'GA_MEASUREMENT_ID') {
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', GA_MEASUREMENT_ID);
-      } else {
-        console.log('Google Analytics not initialized - please set your GA_MEASUREMENT_ID');
-      }
-    </script>
+    <!-- Google Analytics 4 is initialized in src/utils/analytics.ts via VITE_GA_MEASUREMENT_ID env var -->
   </head>
   <body>
     <div id="root"></div>
