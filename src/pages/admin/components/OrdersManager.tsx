@@ -53,6 +53,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [orderTypeFilter, setOrderTypeFilter] = useState<"all" | "website" | "manual">("all");
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
@@ -1104,7 +1105,12 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       const matchesStatus =
         statusFilter === "all" || order.orderStatus === statusFilter;
 
-      return matchesSearch && matchesDateFrom && matchesDateTo && matchesStatus;
+      const matchesType =
+        orderTypeFilter === "all" ||
+        (orderTypeFilter === "website" && !isManualOrder(order)) ||
+        (orderTypeFilter === "manual" && isManualOrder(order));
+
+      return matchesSearch && matchesDateFrom && matchesDateTo && matchesStatus && matchesType;
     });
   };
 
@@ -1390,12 +1396,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                   <option value="delivered">🎉 მიტანილი</option>
                   <option value="cancelled">❌ გაუქმებული</option>
                 </select>
-                {(dateFrom || dateTo || statusFilter !== "all") && (
+                {(dateFrom || dateTo || statusFilter !== "all" || orderTypeFilter !== "all") && (
                   <button
                     onClick={() => {
                       setDateFrom("");
                       setDateTo("");
                       setStatusFilter("all");
+                      setOrderTypeFilter("all");
                     }}
                     className="px-3 py-2.5 md:py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm md:text-base min-h-[44px] md:min-h-[40px] active:scale-95"
                     title="ფილტრების გასუფთავება"
@@ -1406,6 +1413,23 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Order Type Filter */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-gray-700 flex items-center gap-1">
+            <Tags className="w-3 h-3" />
+            შეკვეთის ტიპი
+          </label>
+          <select
+            value={orderTypeFilter}
+            onChange={(e) => setOrderTypeFilter(e.target.value as "all" | "website" | "manual")}
+            className="px-3 py-2.5 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base w-full touch-manipulation"
+          >
+            <option value="all">ყველა ტიპი</option>
+            <option value="website">🌐 ვებსაიტი</option>
+            <option value="manual">✍️ ხელით</option>
+          </select>
         </div>
       </div>
 
