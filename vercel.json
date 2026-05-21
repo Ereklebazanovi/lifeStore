@@ -1,16 +1,5 @@
 {
   "rewrites": [
-    {
-      "source": "/product/:id",
-      "destination": "/api/product/:id",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": ".*(Googlebot|Google-InspectionTool|Storebot-Google|AdsBot-Google|Mediapartners-Google|bingbot|Slurp|DuckDuckBot|YandexBot|Baiduspider|facebookexternalhit|LinkedInBot|Twitterbot|WhatsApp|TelegramBot|Discordbot|Slackbot).*"
-        }
-      ]
-    },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "crons": [
