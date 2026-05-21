@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/product/:id",
-      "destination": "/api/product/:id",
+      "destination": "/api/seo-product?id=:id",
       "missing": [{ "type": "query", "key": "_spa" }]
     },
     { "source": "/(.*)", "destination": "/index.html" }
