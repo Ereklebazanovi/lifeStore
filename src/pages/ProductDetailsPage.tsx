@@ -29,7 +29,6 @@ const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isReviewMode = new URLSearchParams(window.location.search).get("review") === "1";
-  console.log("[REVIEW_DEBUG] search:", window.location.search, "| isReviewMode:", isReviewMode);
   const { getProductById, isLoading } = useProductStore();
   const { addItem } = useCartStore();
   const { user } = useAuthStore();
@@ -42,6 +41,7 @@ const ProductDetailsPage: React.FC = () => {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [reviewModalDismissed, setReviewModalDismissed] = useState(false);
+  const [manualReviewModal, setManualReviewModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [isFetching, setIsFetching] = useState(true);
@@ -95,7 +95,7 @@ const ProductDetailsPage: React.FC = () => {
   }, [id]);
 
   // showReviewModal — პირდაპირ render-ში გამოითვლება, useEffect არ სჭირდება
-  const showReviewModal = isReviewMode && !!product && !reviewModalDismissed;
+  const showReviewModal = ((isReviewMode && !reviewModalDismissed) || manualReviewModal) && !!product;
 
   // შეამოწმე მომხმარებელმა უკვე შეაფასა თუ არა
   useEffect(() => {
@@ -256,6 +256,7 @@ const ProductDetailsPage: React.FC = () => {
       setNewReviewText("");
       setNewReviewRating(0);
       setReviewModalDismissed(true);
+      setManualReviewModal(false);
       const updated = await ReviewService.getByProduct(product.id);
       setReviews(updated);
       showToast("შეფასება გამოქვეყნდა!", "success");
@@ -838,6 +839,18 @@ ${product.description}
           <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-stone-900">შეფასებები</h2>
+            <div className="flex items-center gap-3">
+            {!(user && hasReviewed) && (
+              <button
+                onClick={() => setManualReviewModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                შეაფასე
+              </button>
+            )}
             {reviews.length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-stone-900">
@@ -860,6 +873,7 @@ ${product.description}
                 </div>
               </div>
             )}
+            </div>{/* end flex items-center gap-3 */}
           </div>
 
           {/* შეფასებების სია */}
@@ -1243,7 +1257,7 @@ ${product.description}
                 </div>
               </div>
               <button
-                onClick={() => setReviewModalDismissed(true)}
+                onClick={() => { setReviewModalDismissed(true); setManualReviewModal(false); }}
                 className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400"
               >
                 <X className="w-5 h-5" />
