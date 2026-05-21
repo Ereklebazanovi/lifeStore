@@ -40,7 +40,7 @@ function urlEntry(
 }
 
 export default async function handler(
-  _req: VercelRequest,
+  req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
   try {
@@ -50,6 +50,19 @@ export default async function handler(
       adminDb.collection("products").get(),
       adminDb.collection("categories").get(),
     ]);
+
+    // Debug mode: return raw Firestore data to diagnose slug reading
+    if (req.query.debug === "1") {
+      const sample = productsSnap.docs.slice(0, 3).map((doc) => ({
+        id: doc.id,
+        fields: Object.keys(doc.data()),
+        slug: doc.data().slug,
+        name: doc.data().name,
+      }));
+      res.setHeader("Content-Type", "application/json");
+      res.status(200).json({ count: productsSnap.size, sample });
+      return;
+    }
 
     const entries: string[] = [];
 
