@@ -407,7 +407,7 @@ const HomePage: React.FC = () => {
                     >
                       {/* Image Area */}
                       <Link
-                        to={`/product/${product.id}`}
+                        to={`/product/${product.slug || product.id}`}
                         className="relative aspect-[4/5] overflow-hidden bg-stone-100"
                       >
                         {/* Badges */}
@@ -456,7 +456,7 @@ const HomePage: React.FC = () => {
 
                       {/* Content */}
                       <div className="p-4 flex flex-col flex-grow">
-                        <Link to={`/product/${product.id}`}>
+                        <Link to={`/product/${product.slug || product.id}`}>
                           <h3 className="font-bold text-stone-900 text-sm line-clamp-2 leading-snug hover:text-emerald-700 transition-colors mb-2 min-h-[2.5rem]">
                             {product.name}
                           </h3>

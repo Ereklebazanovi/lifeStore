@@ -34,6 +34,7 @@ export interface ProductVariant {
 export interface Product {
   id: string;
   name: string; // Base product name (e.g., "Lunchbox", "Glass Container Set")
+  slug?: string; // SEO-friendly URL slug (e.g., "bambukis-lanchboksi")
   productCode: string; // Unique product code for accounting (e.g., "LC001", "GCS002")
   description: string;
   images: string[];

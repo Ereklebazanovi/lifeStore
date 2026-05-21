@@ -24,6 +24,7 @@ import { showToast } from "../components/ui/Toast";
 import SEOHead from "../components/SEOHead";
 import { ReviewService } from "../services/reviewService";
 import type { Product, Review } from "../types";
+import { isFirestoreId, getProductUrl } from "../utils/slug";
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,7 +33,7 @@ const ProductDetailsPage: React.FC = () => {
   const isReviewMode =
     location.pathname.endsWith("/review") ||
     new URLSearchParams(location.search).get("review") === "1";
-  const { getProductById, isLoading } = useProductStore();
+  const { getProductById, getProductBySlug, isLoading } = useProductStore();
   const { addItem } = useCartStore();
   const { user } = useAuthStore();
 
@@ -66,7 +67,21 @@ const ProductDetailsPage: React.FC = () => {
     const loadProduct = async () => {
       if (!id) return;
       setIsFetching(true);
-      const data = await getProductById(id);
+
+      let data: Product | null = null;
+
+      if (isFirestoreId(id)) {
+        // Old-style URL with Firestore doc ID — redirect to slug URL if available
+        data = await getProductById(id);
+        if (data?.slug) {
+          setIsFetching(false);
+          navigate(`/product/${data.slug}`, { replace: true });
+          return;
+        }
+      } else {
+        data = await getProductBySlug(id);
+      }
+
       if (data) {
         setProduct(data);
         if (data.images && data.images.length > 0) {
@@ -89,22 +104,23 @@ const ProductDetailsPage: React.FC = () => {
     };
 
     loadProduct();
-  }, [id, getProductById]);
+  }, [id, getProductById, getProductBySlug, navigate]);
 
-  // შეფასებების ჩატვირთვა
+  // შეფასებების ჩატვირთვა — product.id გამოვიყენებთ (Firestore doc ID, არ slug)
+  const productId = product?.id;
   useEffect(() => {
-    if (!id) return;
-    ReviewService.getByProduct(id).then(setReviews);
-  }, [id]);
+    if (!productId) return;
+    ReviewService.getByProduct(productId).then(setReviews);
+  }, [productId]);
 
   // showReviewModal — პირდაპირ render-ში გამოითვლება, useEffect არ სჭირდება
   const showReviewModal = ((isReviewMode && !reviewModalDismissed) || manualReviewModal) && !!product;
 
   // შეამოწმე მომხმარებელმა უკვე შეაფასა თუ არა
   useEffect(() => {
-    if (!id || !user) return;
-    ReviewService.hasReviewed(user.id, id).then(setHasReviewed);
-  }, [id, user]);
+    if (!productId || !user) return;
+    ReviewService.hasReviewed(user.id, productId).then(setHasReviewed);
+  }, [productId, user]);
 
   // Reset zoom when image changes or modal closes
   useEffect(() => {
@@ -273,14 +289,12 @@ const ProductDetailsPage: React.FC = () => {
   const handleShare = () => {
     if (!product) return;
 
-    // Different URLs for different purposes
-    const regularUrl = `https://lifestore.ge/product/${product.id}`;
-    const facebookUrl = `https://lifestore.ge/api/og/${product.id}`; // Special URL for Facebook bot
+    const productSlug = product.slug || product.id;
+    const regularUrl = `https://lifestore.ge/product/${productSlug}`;
     const shareText = `🛍️ ${product.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
 
-    // Use the main product page for Facebook sharing (since SEOHead handles OG tags)
-    const cacheBuster = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`; // More unique cache busting
-    const shareUrl = `https://lifestore.ge/product/${product.id}?fb=${cacheBuster}`;
+    const cacheBuster = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const shareUrl = `https://lifestore.ge/product/${productSlug}?fb=${cacheBuster}`;
 
     const detailedQuote = `🛍️ ${product.name}
 💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
@@ -290,7 +304,7 @@ ${product.description}
 
 🌿 Life Store - ეკომეგობრული სახლის ნივთები
 🚚 მიწოდება: თბილისი/რუსთავი 5₾, სხვა 10₾
-🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${product.id}`;
+🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${productSlug}`;
 
     const facebookParams = new URLSearchParams({
       u: shareUrl, // Use main product URL which has proper SEOHead OG tags
@@ -477,7 +491,7 @@ ${product.description}
         keywords={`${product.name}, ეკო პროდუქტები, ${product.category}`}
         ogImage={product.images?.[0] || "https://lifestore.ge/logo.png"}
         ogType="product"
-        canonicalUrl={`https://lifestore.ge/product/${product.id}`}
+        canonicalUrl={`https://lifestore.ge/product/${product.slug || product.id}`}
         structuredData={{
           "@context": "https://schema.org",
           "@type": "Product",
@@ -1101,8 +1115,9 @@ ${product.description}
               <button
                 onClick={() => {
                   if (!product) return;
+                  const productSlug = product.slug || product.id;
                   const cacheBuster = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                  const shareUrl = `https://lifestore.ge/product/${product.id}?fb=${cacheBuster}`;
+                  const shareUrl = `https://lifestore.ge/product/${productSlug}?fb=${cacheBuster}`;
                   const detailedQuote = `🛍️ ${product.name}
 💰 ფასი: ₾${getCurrentPrice().toFixed(2)}${hasCurrentDiscount() ? ` (ფასდაკლება ${Math.round(((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100)}%)` : ''}
 📦 კატეგორია: ${product.category}${getCurrentWeight() ? `\n⚖️ წონა: ${getCurrentWeight()}გრ` : ''}
@@ -1111,7 +1126,7 @@ ${product.description}
 
 🌿 Life Store - ეკომეგობრული სახლის ნივთები
 🚚 მიწოდება: თბილისი/რუსთავი 5₾, სხვა 10₾
-🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${product.id}`;
+🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${productSlug}`;
 
                   const facebookParams = new URLSearchParams({
                     u: shareUrl,
@@ -1131,8 +1146,9 @@ ${product.description}
 
               <button
                 onClick={() => {
+                  const productSlug = product?.slug || product?.id;
+                  const regularUrl = `https://lifestore.ge/product/${productSlug}`;
                   const shareText = `🛍️ ${product?.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
-                  const regularUrl = `https://lifestore.ge/product/${product?.id}`;
                   const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText}\n${regularUrl}`)}`;
                   window.open(whatsappUrl, '_blank');
                   setIsShareModalOpen(false);
@@ -1147,7 +1163,7 @@ ${product.description}
 
               <button
                 onClick={() => {
-                  const regularUrl = `https://lifestore.ge/product/${product?.id}`;
+                  const regularUrl = `https://lifestore.ge/product/${product?.slug || product?.id}`;
                   navigator.clipboard.writeText(regularUrl);
                   showToast("ლინკი დაკოპირდა!", "success");
                   setIsShareModalOpen(false);
@@ -1163,7 +1179,7 @@ ${product.description}
               <button
                 onClick={() => {
                   const shareText = `🛍️ ${product?.name}\n💰 ₾${getCurrentPrice().toFixed(2)}\n✅ მარაგშია ${getCurrentStock()} ცალი\n\n📦 Life Store - ეკომეგობრული სახლის ნივთები`;
-                  const regularUrl = `https://lifestore.ge/product/${product?.id}`;
+                  const regularUrl = `https://lifestore.ge/product/${product?.slug || product?.id}`;
                   const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(regularUrl)}&text=${encodeURIComponent(shareText)}`;
                   window.open(telegramUrl, '_blank');
                   setIsShareModalOpen(false);

@@ -4,6 +4,7 @@ import { Plus, Edit2, Trash2, ChevronUp, ChevronDown, Upload, X, Loader2 } from 
 import { showToast } from "../../../components/ui/Toast";
 import { useCloudinaryUpload } from "../../../hooks/useCloudinaryUpload";
 import type { Category } from "../../../types";
+import { generateProductSlug } from "../../../utils/slug";
 
 const CategoryManager: React.FC = () => {
   const { categories, fetchCategories, addCategory, updateCategory, deleteCategory, isLoading } = useCategoryStore();
@@ -32,12 +33,7 @@ const CategoryManager: React.FC = () => {
     }));
   };
 
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-  };
+  const generateSlug = (name: string) => generateProductSlug(name);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;

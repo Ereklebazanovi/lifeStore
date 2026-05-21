@@ -4,6 +4,7 @@ import { X, Package, Save, Info } from "lucide-react";
 import { useProductStore } from "../../../store/productStore";
 import ImageUpload from "../../../components/ui/ImageUpload";
 import { PRIORITY_PRESETS, getPriorityEmoji } from "../../../utils/priority";
+import { generateProductSlug } from "../../../utils/slug";
 import { showToast } from "../../../components/ui/Toast";
 import ProductService from "../../../services/productService";
 interface AddProductDrawerProps {
@@ -94,6 +95,7 @@ const AddProductDrawer: React.FC<AddProductDrawerProps> = ({
 
       const productData = {
         name: productName.trim(),
+        slug: generateProductSlug(productName.trim()),
         productCode: productCode.trim().toUpperCase(),
         description: description.trim(),
         category: category.trim(),

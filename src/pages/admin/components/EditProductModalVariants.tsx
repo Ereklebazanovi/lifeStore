@@ -4,6 +4,7 @@ import { X, Package, Save, Edit3, Info } from "lucide-react";
 import { useProductStore } from "../../../store/productStore";
 import ImageUpload from "../../../components/ui/ImageUpload";
 import { PRIORITY_PRESETS, getPriorityEmoji } from "../../../utils/priority";
+import { generateProductSlug } from "../../../utils/slug";
 import { showToast } from "../../../components/ui/Toast";
 import type { Product } from "../../../types";
 
@@ -24,6 +25,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
   // ძირითადი ინფორმაცია
   const [productName, setProductName] = useState("");
+  const [productSlug, setProductSlug] = useState("");
   const [productCode, setProductCode] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -47,6 +49,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
   useEffect(() => {
     if (product && isOpen) {
       setProductName(product.name || "");
+      setProductSlug(product.slug || "");
       setProductCode(product.productCode || "");
       setDescription(product.description || "");
       setCategory(product.category || "");
@@ -107,6 +110,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
 
       const updatedData: Partial<Product> = {
         name: productName.trim(),
+        slug: productSlug.trim() || generateProductSlug(productName.trim()),
         productCode: productCode.trim().toUpperCase(),
         description: description.trim(),
         category: category.trim(),
@@ -205,6 +209,32 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                   <p className="text-red-500 text-sm mt-1">
                     {errors.productName}
                   </p>
+                )}
+              </div>
+
+              {/* URL Slug */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  URL Slug <span className="text-xs text-gray-500 ml-1">(SEO, მაგ: bambukis-lanchboksi)</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={productSlug}
+                    onChange={(e) => setProductSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-'))}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                    placeholder="auto-generated from name"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setProductSlug(generateProductSlug(productName.trim()))}
+                    className="px-3 py-2 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    auto-generate
+                  </button>
+                </div>
+                {productSlug && (
+                  <p className="text-xs text-gray-500 mt-1">URL: /product/{productSlug}</p>
                 )}
               </div>
 

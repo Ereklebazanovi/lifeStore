@@ -111,7 +111,7 @@ const ProductsPage: React.FC = () => {
         "@type": "Product",
         position: index + 1,
         name: product.name,
-        url: `https://lifestore.ge/product/${product.id}`,
+        url: `https://lifestore.ge/product/${product.slug || product.id}`,
       })),
     },
   };
@@ -235,7 +235,7 @@ const ProductsPage: React.FC = () => {
                     >
                       {/* Image Area */}
                       <Link
-                        to={`/product/${product.id}`}
+                        to={`/product/${product.slug || product.id}`}
                         className="relative aspect-[4/5] overflow-hidden bg-stone-50 block"
                       >
                         {/* Badges */}
@@ -284,7 +284,7 @@ const ProductsPage: React.FC = () => {
 
                       {/* Content */}
                       <div className="p-4 flex flex-col flex-grow">
-                        <Link to={`/product/${product.id}`}>
+                        <Link to={`/product/${product.slug || product.id}`}>
                           <h3 className="font-bold text-stone-900 text-sm line-clamp-2 leading-relaxed hover:text-emerald-700 transition-colors mb-2 min-h-[2.5rem]">
                             {product.name}
                           </h3>

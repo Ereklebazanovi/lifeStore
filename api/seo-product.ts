@@ -3,12 +3,17 @@
 // Real users are routed to the SPA via vercel.json rewrites.
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminDb } from "./lib/firebase-admin";
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp, DocumentData } from "firebase-admin/firestore";
 
 const SITE_URL = "https://lifestore.ge";
 
 const BOT_PATTERN =
   /Googlebot|Google-InspectionTool|Storebot-Google|AdsBot-Google|Mediapartners-Google|bingbot|Slurp|DuckDuckBot|YandexBot|Baiduspider|facebookexternalhit|LinkedInBot|Twitterbot|WhatsApp|TelegramBot|Discordbot|Slackbot/i;
+
+// Firestore auto-generated IDs always contain uppercase letters; slugs never do
+function isFirestoreId(value: string): boolean {
+  return /[A-Z]/.test(value);
+}
 
 export default async function handler(
   req: VercelRequest,
@@ -29,22 +34,47 @@ export default async function handler(
   }
 
   try {
-    // Fetch product + approved reviews in parallel
-    const [productDoc, reviewsSnap] = await Promise.all([
-      adminDb.collection("products").doc(id).get(),
-      adminDb
-        .collection("reviews")
-        .where("productId", "==", id)
-        .where("isApproved", "==", true)
-        .get(),
-    ]);
+    let docId: string;
+    let p: DocumentData;
 
-    if (!productDoc.exists) {
-      res.redirect(302, `${SITE_URL}/product/${id}`);
-      return;
+    if (isFirestoreId(id)) {
+      // Direct Firestore document ID lookup
+      const productDoc = await adminDb.collection("products").doc(id).get();
+      if (!productDoc.exists) {
+        res.status(404).send("Not found");
+        return;
+      }
+      docId = productDoc.id;
+      p = productDoc.data()!;
+
+      // 301 redirect old ID-based URLs to slug URL for search engine crawlers
+      if (p.slug) {
+        res.setHeader("Cache-Control", "no-store, no-cache");
+        res.redirect(301, `${SITE_URL}/product/${p.slug}`);
+        return;
+      }
+    } else {
+      // Slug-based lookup
+      const slugSnap = await adminDb
+        .collection("products")
+        .where("slug", "==", id)
+        .limit(1)
+        .get();
+      if (slugSnap.empty) {
+        res.status(404).send("Not found");
+        return;
+      }
+      const slugDoc = slugSnap.docs[0];
+      docId = slugDoc.id;
+      p = slugDoc.data();
     }
 
-    const p = productDoc.data()!;
+    // Fetch approved reviews by Firestore doc ID
+    const reviewsSnap = await adminDb
+      .collection("reviews")
+      .where("productId", "==", docId)
+      .where("isApproved", "==", true)
+      .get();
 
     // Reviews
     const reviews = reviewsSnap.docs.map((doc) => {
@@ -87,7 +117,7 @@ export default async function handler(
         ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
         : null;
 
-    const productUrl = `${SITE_URL}/product/${id}`;
+    const productUrl = `${SITE_URL}/product/${p.slug || docId}`;
     const imageUrl = p.images?.[0] || `${SITE_URL}/logo.png`;
     const priceLabel = finalPrice.toFixed(2);
     const title = `${p.name} - ₾${priceLabel} | Life Store`;

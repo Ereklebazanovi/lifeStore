@@ -27,6 +27,7 @@ interface ProductActions {
   deleteProduct: (id: string) => Promise<void>;
   toggleProductStatus: (id: string) => Promise<void>;
   getProductById: (id: string) => Promise<Product | null>;
+  getProductBySlug: (slug: string) => Promise<Product | null>;
   updateStock: (id: string, newStock: number, reason?: string) => Promise<void>;
   updateVariantStock: (productId: string, variantId: string, newStock: number, reason?: string) => Promise<void>;
   addVariant: (productId: string, variant: Omit<ProductVariant, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
@@ -121,6 +122,30 @@ export const useProductStore = create<ProductState & ProductActions>(
       }
     },
     // -----------------------------------------------------
+
+    getProductBySlug: async (slug: string) => {
+      const existing = get().products.find((p) => p.slug === slug);
+      if (existing) return existing;
+
+      try {
+        const q = query(
+          collection(db, "products"),
+          where("slug", "==", slug)
+        );
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        const d = snap.docs[0];
+        return {
+          id: d.id,
+          ...d.data(),
+          createdAt: d.data().createdAt?.toDate() || new Date(),
+          updatedAt: d.data().updatedAt?.toDate() || new Date(),
+        } as Product;
+      } catch (error) {
+        console.error("Error fetching product by slug:", error);
+        return null;
+      }
+    },
 
     addProduct: async (productData) => {
       try {

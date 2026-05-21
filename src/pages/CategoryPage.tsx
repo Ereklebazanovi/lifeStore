@@ -298,7 +298,7 @@ const CategoryPage: React.FC = () => {
                       className="group bg-white rounded-3xl border border-stone-100/70 hover:border-emerald-200/70 overflow-hidden hover:shadow-2xl hover:shadow-stone-200/30 transition-all duration-500 flex flex-col hover:-translate-y-1"
                     >
                       <Link
-                        to={`/product/${product.id}`}
+                        to={`/product/${product.slug || product.id}`}
                         className="relative aspect-[4/5] overflow-hidden bg-stone-50 block"
                       >
                         <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
@@ -343,7 +343,7 @@ const CategoryPage: React.FC = () => {
                       </Link>
 
                       <div className="p-4 flex flex-col flex-grow">
-                        <Link to={`/product/${product.id}`}>
+                        <Link to={`/product/${product.slug || product.id}`}>
                           <h3 className="font-bold text-stone-900 text-sm line-clamp-2 leading-relaxed hover:text-emerald-700 transition-colors mb-2 min-h-[2.5rem]">
                             {product.name}
                           </h3>

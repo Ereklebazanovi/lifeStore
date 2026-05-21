@@ -74,7 +74,7 @@ const ReviewsManager: React.FC = () => {
   useEffect(() => { fetchReviews(); }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("შეფასება წაიშლება. გრძელდება?")) return;
+    if (!confirm("შეფასება წაიშლება. ადასტურებთ?")) return;
     setDeletingId(id);
     try {
       await deleteDoc(doc(db, "reviews", id));
