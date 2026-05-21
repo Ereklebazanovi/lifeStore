@@ -60,17 +60,9 @@ const CheckAndRenderLayout: React.FC = () => {
   const navigate = useNavigate();
   const isAdminRoute = location.pathname.startsWith('/admin');
 
-  // Handle redirect parameter from static product pages
+  // Strip _spa marker (added by api/product/[id].ts redirect for non-bots) from the URL
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    const redirectPath = urlParams.get('redirect');
-
-    if (redirectPath) {
-      navigate(`/${redirectPath}`, { replace: true });
-      return;
-    }
-
-    // Strip _spa marker (added by bot pre-render redirect) from the URL
     if (urlParams.has('_spa')) {
       navigate(location.pathname, { replace: true });
     }

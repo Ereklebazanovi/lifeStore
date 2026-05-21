@@ -219,7 +219,7 @@ ${productEntries}
 
 async function generateAllProductPages() {
   try {
-    console.log('🚀 Starting product pages generation...');
+    console.log('🚀 Starting sitemap generation...');
 
     const productsSnapshot = await getDocs(collection(db, 'products'));
     const products = [];
@@ -230,29 +230,7 @@ async function generateAllProductPages() {
 
     console.log(`📦 Found ${products.length} products`);
 
-    const productDir = path.join(process.cwd(), 'dist', 'product');
-    if (!fs.existsSync(productDir)) {
-      fs.mkdirSync(productDir, { recursive: true });
-    }
-
-    const activeProducts = [];
-    let generated = 0;
-
-    for (const product of products) {
-      if (!product.isActive) continue;
-
-      const productPath = path.join(productDir, product.id);
-      const htmlPath = path.join(productPath, 'index.html');
-
-      if (!fs.existsSync(productPath)) {
-        fs.mkdirSync(productPath, { recursive: true });
-      }
-
-      fs.writeFileSync(htmlPath, generateProductHTML(product), 'utf-8');
-      activeProducts.push(product);
-      generated++;
-      console.log(`✅ Generated: /product/${product.id}/index.html`);
-    }
+    const activeProducts = products.filter((p) => p.isActive);
 
     // Update sitemap.xml with all product URLs
     const today = new Date().toISOString().split('T')[0];
@@ -262,10 +240,10 @@ async function generateAllProductPages() {
     fs.writeFileSync(sitemapPath, sitemapContent, 'utf-8');
     console.log(`🗺️  Updated sitemap.xml with ${activeProducts.length} products`);
 
-    console.log(`🎉 Successfully generated ${generated} product pages!`);
+    console.log(`🎉 Sitemap generated successfully!`);
 
   } catch (error) {
-    console.error('❌ Error generating product pages:', error);
+    console.error('❌ Error generating sitemap:', error);
     process.exit(1);
   }
 }
