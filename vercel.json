@@ -5,6 +5,7 @@
       "destination": "/api/seo-product?id=:id",
       "missing": [{ "type": "query", "key": "_spa" }]
     },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "crons": [
