@@ -240,9 +240,7 @@ export default async function handler(
 </html>`;
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
-    // Cache 5 min on CDN edge, serve stale for 1 min while revalidating
-    res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=60");
-    res.setHeader("Vary", "User-Agent");
+    res.setHeader("Cache-Control", "no-store, no-cache");
     res.status(200).send(html);
   } catch (error) {
     console.error("[SEO] /api/product/[id] error:", error);
