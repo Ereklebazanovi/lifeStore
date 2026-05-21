@@ -7,6 +7,9 @@ import { Timestamp } from "firebase-admin/firestore";
 
 const SITE_URL = "https://lifestore.ge";
 
+const BOT_PATTERN =
+  /Googlebot|Google-InspectionTool|Storebot-Google|AdsBot-Google|Mediapartners-Google|bingbot|Slurp|DuckDuckBot|YandexBot|Baiduspider|facebookexternalhit|LinkedInBot|Twitterbot|WhatsApp|TelegramBot|Discordbot|Slackbot/i;
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
@@ -15,6 +18,13 @@ export default async function handler(
 
   if (!id || typeof id !== "string") {
     res.status(404).send("Not found");
+    return;
+  }
+
+  const ua = (req.headers["user-agent"] as string) || "";
+  if (!BOT_PATTERN.test(ua)) {
+    res.setHeader("Cache-Control", "no-store, no-cache");
+    res.redirect(302, `/product/${id}?_spa=1`);
     return;
   }
 

@@ -1,5 +1,10 @@
 {
   "rewrites": [
+    {
+      "source": "/product/:id",
+      "destination": "/api/product/:id",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "crons": [

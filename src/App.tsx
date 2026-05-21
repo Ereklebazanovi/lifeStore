@@ -47,6 +47,7 @@ const AnalyticsTracker: React.FC = () => {
 
   useEffect(() => {
     if (isAdminRoute) return;
+    if (new URLSearchParams(location.search).has('_spa')) return;
     trackPageView(`${location.pathname}${location.search}`);
     trackPixelEvent("PageView");
   }, [isAdminRoute, location.pathname, location.search]);
@@ -65,10 +66,15 @@ const CheckAndRenderLayout: React.FC = () => {
     const redirectPath = urlParams.get('redirect');
 
     if (redirectPath) {
-      // Remove query parameter and navigate to the redirect path
       navigate(`/${redirectPath}`, { replace: true });
+      return;
     }
-  }, [location.search, navigate]);
+
+    // Strip _spa marker (added by bot pre-render redirect) from the URL
+    if (urlParams.has('_spa')) {
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.search, navigate, location.pathname]);
 
   if (isAdminRoute) {
     return <AnimatedRoutes />;
