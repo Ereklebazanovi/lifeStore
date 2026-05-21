@@ -23,4 +23,4 @@ Allow: /*.gif$
 Allow: /*.svg$
 
 # Sitemap location
-Sitemap: https://lifestore.ge/sitemap.xml
+Sitemap: https://lifestore.ge/api/sitemap
