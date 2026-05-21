@@ -35,7 +35,7 @@ const ProductDetailsPage: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [hasReviewed, setHasReviewed] = useState(false);
-  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewRating, setNewReviewRating] = useState(0);
   const [newReviewText, setNewReviewText] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [guestName, setGuestName] = useState("");
@@ -227,6 +227,10 @@ const ProductDetailsPage: React.FC = () => {
 
     if (!reviewerName) {
       showToast("გთხოვთ შეიყვანოთ სახელი", "error");
+      return;
+    }
+    if (newReviewRating === 0) {
+      showToast("გთხოვთ აირჩიოთ ვარსვლავები", "error");
       return;
     }
     if (newReviewText.trim().length < 5) {
