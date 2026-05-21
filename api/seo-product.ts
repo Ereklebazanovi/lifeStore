@@ -2,7 +2,7 @@
 // Serves pre-rendered HTML + JSON-LD structured data to search engine crawlers.
 // Real users are routed to the SPA via vercel.json rewrites.
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { adminDb } from "../lib/firebase-admin";
+import { adminDb } from "./lib/firebase-admin";
 import { Timestamp } from "firebase-admin/firestore";
 
 const SITE_URL = "https://lifestore.ge";
