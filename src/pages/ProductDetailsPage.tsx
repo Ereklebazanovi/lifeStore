@@ -29,6 +29,7 @@ const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isReviewMode = new URLSearchParams(window.location.search).get("review") === "1";
+  console.log("[REVIEW_DEBUG] search:", window.location.search, "| isReviewMode:", isReviewMode);
   const { getProductById, isLoading } = useProductStore();
   const { addItem } = useCartStore();
   const { user } = useAuthStore();
