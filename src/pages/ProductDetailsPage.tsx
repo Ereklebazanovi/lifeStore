@@ -91,6 +91,18 @@ const ProductDetailsPage: React.FC = () => {
     ReviewService.getByProduct(id).then(setReviews);
   }, [id]);
 
+  // #reviews hash-ზე ავტო-სქროლი (email ლინკებისთვის)
+  useEffect(() => {
+    if (isFetching) return;
+    if (window.location.hash !== "#reviews") return;
+    const el = document.getElementById("reviews");
+    if (!el) return;
+    const timer = setTimeout(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [isFetching]);
+
   // შეამოწმე მომხმარებელმა უკვე შეაფასა თუ არა
   useEffect(() => {
     if (!id || !user) return;
