@@ -75,7 +75,8 @@ const ProductDetailsPage: React.FC = () => {
         data = await getProductById(id);
         if (data?.slug) {
           setIsFetching(false);
-          navigate(`/product/${data.slug}`, { replace: true });
+          const reviewSuffix = location.pathname.endsWith('/review') ? '/review' : '';
+          navigate(`/product/${data.slug}${reviewSuffix}`, { replace: true });
           return;
         }
       } else {
