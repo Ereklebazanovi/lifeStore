@@ -645,7 +645,7 @@ ${product.description}
                         <button
                           key={index}
                           onClick={() => setSelectedImage(img)}
-                          className={`relative flex-shrink-0 w-20 h-20 lg:w-24 lg:h-24 rounded-lg border-2 overflow-hidden transition-all duration-200 cursor-pointer ${
+                          className={`relative shrink-0 w-20 h-20 lg:w-24 lg:h-24 rounded-lg border-2 overflow-hidden transition-all duration-200 cursor-pointer ${
                             selectedImage === img
                               ? "border-emerald-500 ring-2 ring-emerald-100 opacity-100 transform scale-105"
                               : "border-stone-200 opacity-70 hover:opacity-100 hover:border-emerald-300 hover:scale-110"
@@ -1041,7 +1041,7 @@ ${product.description}
         <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
           <div className="relative max-w-6xl w-full h-dvh flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 text-white flex-shrink-0">
+            <div className="flex items-center justify-between p-4 text-white shrink-0">
               <div>
                 <h3 className="text-lg font-semibold">{product?.name}</h3>
                 <p className="text-sm opacity-50">
@@ -1103,13 +1103,13 @@ ${product.description}
 
             {/* Thumbnails Navigation - Always Visible at Bottom */}
             {product?.images && product.images.length > 1 && (
-              <div className="p-4 border-t border-white/20 flex-shrink-0">
+              <div className="p-4 border-t border-white/20 shrink-0">
                 <div className="flex gap-2 justify-center overflow-x-auto">
                   {product.images.map((img, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImage(img)}
-                      className={`flex-shrink-0 w-20 h-20 lg:w-24 lg:h-24 rounded-lg border-2 overflow-hidden transition-all ${
+                      className={`shrink-0 w-20 h-20 lg:w-24 lg:h-24 rounded-lg border-2 overflow-hidden transition-all ${
                         selectedImage === img
                           ? "border-emerald-400 opacity-100 scale-105"
                           : "border-white/30 opacity-60 hover:opacity-100"
@@ -1234,31 +1234,31 @@ ${product.description}
         </div>
       )}
 
-      {/* Review Modal — email ლინკიდან მოსულებისთვის */}
+      {/* Review Modal */}
       {showReviewModal && product && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center">
           <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden">
 
             {/* Header */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-stone-100">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-2 min-w-0">
                 {product.images?.[0] && (
                   <img
                     src={product.images[0]}
                     alt={product.name}
-                    className="w-10 h-10 rounded-lg object-cover"
+                    className="w-9 h-9 rounded-lg object-cover shrink-0"
                   />
                 )}
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-stone-400">შეაფასე</p>
-                  <p className="font-semibold text-stone-900 text-sm leading-tight line-clamp-1">
+                  <p className="font-semibold text-stone-900 text-sm leading-tight truncate">
                     {product.name}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => { setReviewModalDismissed(true); setManualReviewModal(false); }}
-                className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400"
+                className="shrink-0 ml-2 p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1270,7 +1270,7 @@ ${product.description}
                 <p className="text-emerald-600 font-medium">✓ უკვე შეაფასეთ ეს პროდუქტი</p>
               </div>
             ) : (
-              <form onSubmit={handleSubmitReview} className="p-5 space-y-4">
+              <form onSubmit={handleSubmitReview} className="px-4 py-4 space-y-3">
                 {!user && (
                   <input
                     type="text"
@@ -1284,16 +1284,16 @@ ${product.description}
 
                 <div>
                   <p className="text-xs text-stone-500 mb-2">შეფასება *</p>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     {[1, 2, 3, 4, 5].map((s) => (
                       <button
                         key={s}
                         type="button"
                         onClick={() => setNewReviewRating(s)}
-                        className="transition-transform hover:scale-110"
+                        className="transition-transform hover:scale-110 active:scale-95"
                       >
                         <svg
-                          className={`w-9 h-9 ${s <= newReviewRating ? "text-yellow-400" : "text-stone-200"}`}
+                          className={`w-8 h-8 ${s <= newReviewRating ? "text-yellow-400" : "text-stone-200"}`}
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -1301,12 +1301,12 @@ ${product.description}
                         </svg>
                       </button>
                     ))}
-                    {newReviewRating > 0 && (
-                      <span className="ml-1 text-sm text-stone-500">
-                        {["", "ცუდი", "ნეიტრალური", "კარგი", "ძალიან კარგი", "შესანიშნავი"][newReviewRating]}
-                      </span>
-                    )}
                   </div>
+                  {newReviewRating > 0 && (
+                    <p className="text-sm text-stone-500 mt-1">
+                      {["", "ცუდი", "ნეიტრალური", "კარგი", "ძალიან კარგი", "შესანიშნავი"][newReviewRating]}
+                    </p>
+                  )}
                 </div>
 
                 <textarea
