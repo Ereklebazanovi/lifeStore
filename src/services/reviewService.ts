@@ -51,12 +51,16 @@ export class ReviewService {
     return !snapshot.empty;
   }
 
-  // ახალი შეფასების დამატება
+  // ახალი შეფასების დამატება (auth არ არის საჭირო — guest-ებიც წერენ)
   static async add(
     review: Omit<Review, "id" | "createdAt" | "isApproved">
   ): Promise<void> {
     await addDoc(collection(db, REVIEWS_COLLECTION), {
-      ...review,
+      productId: review.productId,
+      userName: review.userName,
+      rating: review.rating,
+      text: review.text,
+      ...(review.userId ? { userId: review.userId } : {}),
       isApproved: true,
       createdAt: serverTimestamp(),
     });

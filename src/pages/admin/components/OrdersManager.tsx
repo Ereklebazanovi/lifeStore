@@ -895,10 +895,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       .map(
         (item) =>
           `<tr>
-            <td style="padding:8px 0;border-bottom:1px solid #f0f0f0;">
-              <a href="https://lifestore.ge/product/${item.productId}#reviews"
-                 style="color:#059669;text-decoration:none;font-weight:600;">
+            <td style="padding:12px 0;border-bottom:1px solid #f0f0f0;">
+              <p style="margin:0 0 8px 0;font-weight:600;color:#1a1a1a;font-size:14px;">
                 ${item.product?.name || "პროდუქტი"}
+              </p>
+              <a href="https://lifestore.ge/product/${item.productId}#reviews"
+                 style="display:inline-block;background-color:#1a1a1a;color:#ffffff;padding:9px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">
+                შეაფასე პროდუქტი →
               </a>
             </td>
           </tr>`

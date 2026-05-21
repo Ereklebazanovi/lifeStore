@@ -38,6 +38,7 @@ const ProductDetailsPage: React.FC = () => {
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [newReviewText, setNewReviewText] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [guestName, setGuestName] = useState("");
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [isFetching, setIsFetching] = useState(true);
@@ -218,7 +219,16 @@ const ProductDetailsPage: React.FC = () => {
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !product) return;
+    if (!product) return;
+
+    const reviewerName = user
+      ? (user.displayName || user.email.split("@")[0])
+      : guestName.trim();
+
+    if (!reviewerName) {
+      showToast("გთხოვთ შეიყვანოთ სახელი", "error");
+      return;
+    }
     if (newReviewText.trim().length < 5) {
       showToast("შეფასება მინიმუმ 5 სიმბოლო უნდა იყოს", "error");
       return;
@@ -227,8 +237,8 @@ const ProductDetailsPage: React.FC = () => {
     try {
       await ReviewService.add({
         productId: product.id,
-        userId: user.id,
-        userName: user.displayName || user.email.split("@")[0],
+        ...(user ? { userId: user.id } : {}),
+        userName: reviewerName,
         rating: newReviewRating,
         text: newReviewText.trim(),
       });
@@ -885,68 +895,67 @@ ${product.description}
           )}
 
           {/* შეფასების ფორმა */}
-          {user ? (
-            hasReviewed ? (
-              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
-                <p className="text-emerald-700 font-medium text-sm">
-                  ✓ თქვენ უკვე შეაფასეთ ეს პროდუქტი
-                </p>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleSubmitReview}
-                className="bg-white border border-stone-200 rounded-xl p-5"
-              >
-                <h3 className="font-semibold text-stone-900 mb-4">დატოვე შეფასება</h3>
-                <div className="flex flex-wrap items-center gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => setNewReviewRating(s)}
-                      className="transition-transform hover:scale-110"
-                    >
-                      <svg
-                        className={`w-7 h-7 sm:w-8 sm:h-8 ${s <= newReviewRating ? "text-yellow-400" : "text-stone-200"}`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    </button>
-                  ))}
-                  <span className="ml-1 text-xs sm:text-sm text-stone-500 whitespace-nowrap">
-                    {["", "ცუდი", "სამართლიანი", "კარგი", "ძალიან კარგი", "შესანიშნავი"][newReviewRating]}
-                  </span>
-                </div>
-                <textarea
-                  value={newReviewText}
-                  onChange={(e) => setNewReviewText(e.target.value)}
-                  placeholder="გაგვიზიარე შენი გამოცდილება..."
-                  rows={3}
-                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-                />
-                <button
-                  type="submit"
-                  disabled={submittingReview}
-                  className="mt-3 w-full bg-stone-900 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50"
-                >
-                  {submittingReview ? "იგზავნება..." : "შეფასების გამოქვეყნება"}
-                </button>
-              </form>
-            )
-          ) : (
-            <div className="border border-stone-200 rounded-xl p-5 text-center">
-              <p className="text-stone-500 text-sm mb-3">
-                შეფასების დასამატებლად შედი სისტემაში
+          {user && hasReviewed ? (
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
+              <p className="text-emerald-700 font-medium text-sm">
+                ✓ თქვენ უკვე შეაფასეთ ეს პროდუქტი
               </p>
-              <button
-                onClick={() => showToast("Google-ით შესვლისთვის დააჭირე ზედა მარჯვნივ", "info" as any)}
-                className="bg-stone-900 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors"
-              >
-                სისტემაში შესვლა
-              </button>
             </div>
+          ) : (
+            <form
+              onSubmit={handleSubmitReview}
+              className="bg-white border border-stone-200 rounded-xl p-5"
+            >
+              <h3 className="font-semibold text-stone-900 mb-4">დატოვე შეფასება</h3>
+
+              {!user && (
+                <input
+                  type="text"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  placeholder="სახელი *"
+                  maxLength={50}
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent mb-3"
+                />
+              )}
+
+              <div className="flex flex-wrap items-center gap-1 mb-4">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setNewReviewRating(s)}
+                    className="transition-transform hover:scale-110"
+                  >
+                    <svg
+                      className={`w-7 h-7 sm:w-8 sm:h-8 ${s <= newReviewRating ? "text-yellow-400" : "text-stone-200"}`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  </button>
+                ))}
+                <span className="ml-1 text-xs sm:text-sm text-stone-500 whitespace-nowrap">
+                  {["", "ცუდი", "ნეიტრალური", "კარგი", "ძალიან კარგი", "შესანიშნავი"][newReviewRating]}
+                </span>
+              </div>
+
+              <textarea
+                value={newReviewText}
+                onChange={(e) => setNewReviewText(e.target.value)}
+                placeholder="გაგვიზიარე შენი გამოცდილება..."
+                rows={3}
+                className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+              />
+              <button
+                type="submit"
+                disabled={submittingReview}
+                className="mt-3 w-full bg-stone-900 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50"
+              >
+                {submittingReview ? "იგზავნება..." : "შეფასების გამოქვეყნება"}
+              </button>
+            </form>
           )}
           </div>{/* end max-w-3xl */}
         </div>
