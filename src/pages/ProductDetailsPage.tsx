@@ -814,6 +814,7 @@ ${product.description}
 
         {/* --- REVIEWS SECTION --- */}
         <div id="reviews" className="px-4 lg:px-0 py-10 border-t border-stone-100 mt-6">
+          <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-stone-900">შეფასებები</h2>
             {reviews.length > 0 && (
@@ -897,7 +898,7 @@ ${product.description}
                 className="bg-white border border-stone-200 rounded-xl p-5"
               >
                 <h3 className="font-semibold text-stone-900 mb-4">დატოვე შეფასება</h3>
-                <div className="flex items-center gap-1 mb-4">
+                <div className="flex flex-wrap items-center gap-1 mb-4">
                   {[1, 2, 3, 4, 5].map((s) => (
                     <button
                       key={s}
@@ -906,7 +907,7 @@ ${product.description}
                       className="transition-transform hover:scale-110"
                     >
                       <svg
-                        className={`w-8 h-8 ${s <= newReviewRating ? "text-yellow-400" : "text-stone-200"}`}
+                        className={`w-7 h-7 sm:w-8 sm:h-8 ${s <= newReviewRating ? "text-yellow-400" : "text-stone-200"}`}
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -914,7 +915,7 @@ ${product.description}
                       </svg>
                     </button>
                   ))}
-                  <span className="ml-2 text-sm text-stone-500">
+                  <span className="ml-1 text-xs sm:text-sm text-stone-500 whitespace-nowrap">
                     {["", "ცუდი", "სამართლიანი", "კარგი", "ძალიან კარგი", "შესანიშნავი"][newReviewRating]}
                   </span>
                 </div>
@@ -947,6 +948,7 @@ ${product.description}
               </button>
             </div>
           )}
+          </div>{/* end max-w-3xl */}
         </div>
 
         {/* --- MOBILE STICKY ACTIONS --- */}
