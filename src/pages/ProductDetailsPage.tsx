@@ -1,6 +1,6 @@
 // src/pages/ProductDetailsPage.tsx
 import React, { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import {
   ShoppingCart,
   ArrowLeft,
@@ -28,6 +28,8 @@ import type { Product, Review } from "../types";
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isReviewMode = searchParams.get("review") === "1";
   const { getProductById, isLoading } = useProductStore();
   const { addItem } = useCartStore();
   const { user } = useAuthStore();
@@ -39,6 +41,7 @@ const ProductDetailsPage: React.FC = () => {
   const [newReviewText, setNewReviewText] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [guestName, setGuestName] = useState("");
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [isFetching, setIsFetching] = useState(true);
@@ -91,17 +94,12 @@ const ProductDetailsPage: React.FC = () => {
     ReviewService.getByProduct(id).then(setReviews);
   }, [id]);
 
-  // #reviews hash-ზე ავტო-სქროლი (email ლინკებისთვის)
+  // ?review=1 — email ლინკიდან მოსულებისთვის მოდალი
   useEffect(() => {
-    if (isFetching) return;
-    if (window.location.hash !== "#reviews") return;
-    const el = document.getElementById("reviews");
-    if (!el) return;
-    const timer = setTimeout(() => {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [isFetching]);
+    if (!isFetching && isReviewMode && product) {
+      setShowReviewModal(true);
+    }
+  }, [isFetching, isReviewMode, product]);
 
   // შეამოწმე მომხმარებელმა უკვე შეაფასა თუ არა
   useEffect(() => {
@@ -260,7 +258,8 @@ const ProductDetailsPage: React.FC = () => {
       });
       setHasReviewed(true);
       setNewReviewText("");
-      setNewReviewRating(5);
+      setNewReviewRating(0);
+      setShowReviewModal(false);
       const updated = await ReviewService.getByProduct(product.id);
       setReviews(updated);
       showToast("შეფასება გამოქვეყნდა!", "success");
@@ -1221,6 +1220,102 @@ ${product.description}
                 <span className="font-medium">Telegram</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Modal — email ლინკიდან მოსულებისთვის */}
+      {showReviewModal && product && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-3">
+                {product.images?.[0] && (
+                  <img
+                    src={product.images[0]}
+                    alt={product.name}
+                    className="w-10 h-10 rounded-lg object-cover"
+                  />
+                )}
+                <div>
+                  <p className="text-xs text-stone-400">შეაფასე</p>
+                  <p className="font-semibold text-stone-900 text-sm leading-tight line-clamp-1">
+                    {product.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            {user && hasReviewed ? (
+              <div className="p-6 text-center">
+                <p className="text-emerald-600 font-medium">✓ უკვე შეაფასეთ ეს პროდუქტი</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitReview} className="p-5 space-y-4">
+                {!user && (
+                  <input
+                    type="text"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    placeholder="სახელი *"
+                    maxLength={50}
+                    className="w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                )}
+
+                <div>
+                  <p className="text-xs text-stone-500 mb-2">შეფასება *</p>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setNewReviewRating(s)}
+                        className="transition-transform hover:scale-110"
+                      >
+                        <svg
+                          className={`w-9 h-9 ${s <= newReviewRating ? "text-yellow-400" : "text-stone-200"}`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </button>
+                    ))}
+                    {newReviewRating > 0 && (
+                      <span className="ml-1 text-sm text-stone-500">
+                        {["", "ცუდი", "ნეიტრალური", "კარგი", "ძალიან კარგი", "შესანიშნავი"][newReviewRating]}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <textarea
+                  value={newReviewText}
+                  onChange={(e) => setNewReviewText(e.target.value)}
+                  placeholder="გაგვიზიარე შენი გამოცდილება..."
+                  rows={3}
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                />
+
+                <button
+                  type="submit"
+                  disabled={submittingReview}
+                  className="w-full bg-stone-900 hover:bg-emerald-600 text-white font-semibold py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
+                >
+                  {submittingReview ? "იგზავნება..." : "შეფასების გამოქვეყნება"}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}

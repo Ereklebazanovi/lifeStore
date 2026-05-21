@@ -899,7 +899,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               <p style="margin:0 0 8px 0;font-weight:600;color:#1a1a1a;font-size:14px;">
                 ${item.product?.name || "პროდუქტი"}
               </p>
-              <a href="https://lifestore.ge/product/${item.productId}#reviews"
+              <a href="https://lifestore.ge/product/${item.productId}?review=1"
                  style="display:inline-block;background-color:#1a1a1a;color:#ffffff;padding:9px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">
                 შეაფასე პროდუქტი →
               </a>
@@ -911,7 +911,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     await addDoc(collection(db, "mail"), {
       to: [order.customerInfo.email],
       message: {
-        subject: `Life Store — შეგვაფასეთ! შეკვეთა #${order.orderNumber}`,
+        subject: `Life Store - შეგვაფასეთ! შეკვეთა #${order.orderNumber}`,
         html: `
           <div style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto;">
             <h2 style="color:#059669;border-bottom:2px solid #059669;padding-bottom:10px;">
@@ -924,7 +924,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               ${productLinks}
             </table>
             <p style="font-size:13px;color:#888;margin-top:30px;">
-              გმადლობთ — Life Store გუნდი
+              გმადლობთ - Life Store გუნდი
             </p>
           </div>
         `,
