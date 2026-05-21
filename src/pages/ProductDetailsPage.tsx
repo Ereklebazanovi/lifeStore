@@ -96,10 +96,10 @@ const ProductDetailsPage: React.FC = () => {
 
   // ?review=1 — email ლინკიდან მოსულებისთვის მოდალი
   useEffect(() => {
-    if (!isFetching && isReviewMode && product) {
+    if (isReviewMode && product) {
       setShowReviewModal(true);
     }
-  }, [isFetching, isReviewMode, product]);
+  }, [product, isReviewMode]);
 
   // შეამოწმე მომხმარებელმა უკვე შეაფასა თუ არა
   useEffect(() => {
