@@ -41,7 +41,7 @@ const ProductDetailsPage: React.FC = () => {
   const [newReviewText, setNewReviewText] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [guestName, setGuestName] = useState("");
-  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewModalDismissed, setReviewModalDismissed] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [isFetching, setIsFetching] = useState(true);
@@ -94,12 +94,8 @@ const ProductDetailsPage: React.FC = () => {
     ReviewService.getByProduct(id).then(setReviews);
   }, [id]);
 
-  // ?review=1 — email ლინკიდან მოსულებისთვის მოდალი
-  useEffect(() => {
-    if (isReviewMode && product) {
-      setShowReviewModal(true);
-    }
-  }, [product, isReviewMode]);
+  // showReviewModal — პირდაპირ render-ში გამოითვლება, useEffect არ სჭირდება
+  const showReviewModal = isReviewMode && !!product && !reviewModalDismissed;
 
   // შეამოწმე მომხმარებელმა უკვე შეაფასა თუ არა
   useEffect(() => {
@@ -259,7 +255,7 @@ const ProductDetailsPage: React.FC = () => {
       setHasReviewed(true);
       setNewReviewText("");
       setNewReviewRating(0);
-      setShowReviewModal(false);
+      setReviewModalDismissed(true);
       const updated = await ReviewService.getByProduct(product.id);
       setReviews(updated);
       showToast("შეფასება გამოქვეყნდა!", "success");
@@ -1247,7 +1243,7 @@ ${product.description}
                 </div>
               </div>
               <button
-                onClick={() => setShowReviewModal(false)}
+                onClick={() => setReviewModalDismissed(true)}
                 className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400"
               >
                 <X className="w-5 h-5" />
