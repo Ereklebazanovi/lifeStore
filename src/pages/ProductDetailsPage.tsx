@@ -1,6 +1,6 @@
 // src/pages/ProductDetailsPage.tsx
 import React, { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import {
   ShoppingCart,
   ArrowLeft,
@@ -28,7 +28,10 @@ import type { Product, Review } from "../types";
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const isReviewMode = new URLSearchParams(window.location.search).get("review") === "1";
+  const location = useLocation();
+  const isReviewMode =
+    location.pathname.endsWith("/review") ||
+    new URLSearchParams(location.search).get("review") === "1";
   const { getProductById, isLoading } = useProductStore();
   const { addItem } = useCartStore();
   const { user } = useAuthStore();

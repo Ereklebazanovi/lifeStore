@@ -899,7 +899,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               <p style="margin:0 0 8px 0;font-weight:600;color:#1a1a1a;font-size:14px;">
                 ${item.product?.name || "პროდუქტი"}
               </p>
-              <a href="https://lifestore.ge/product/${item.productId}?review=1"
+              <a href="https://lifestore.ge/product/${item.productId}/review"
                  style="display:inline-block;background-color:#1a1a1a;color:#ffffff;padding:9px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">
                 შეაფასე პროდუქტი →
               </a>

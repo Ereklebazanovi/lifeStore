@@ -132,6 +132,14 @@ const AnimatedRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/product/:id/review"
+          element={
+            <PageTransition>
+              <ProductDetailsPage />
+            </PageTransition>
+          }
+        />
+        <Route
           path="/refund-policy"
           element={
             <PageTransition>
