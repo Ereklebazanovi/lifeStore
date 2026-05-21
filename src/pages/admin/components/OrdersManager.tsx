@@ -1,5 +1,7 @@
 // src/pages/admin/components/OrdersManager.tsx
 import React, { useState, useEffect, useRef } from "react";
+import { addDoc, collection } from "firebase/firestore";
+import { db } from "../../../services/firebase";
 import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
@@ -886,6 +888,47 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     showToast(`${selectedOrders.length} ლეიბლი მზადდება დაბეჭდვისთვის`, "success");
   };
 
+  const sendReviewRequestEmail = async (order: Order) => {
+    if (!order.customerInfo.email) return;
+
+    const productLinks = order.items
+      .map(
+        (item) =>
+          `<tr>
+            <td style="padding:8px 0;border-bottom:1px solid #f0f0f0;">
+              <a href="https://lifestore.ge/product/${item.productId}#reviews"
+                 style="color:#059669;text-decoration:none;font-weight:600;">
+                ${item.product?.name || "პროდუქტი"}
+              </a>
+            </td>
+          </tr>`
+      )
+      .join("");
+
+    await addDoc(collection(db, "mail"), {
+      to: [order.customerInfo.email],
+      message: {
+        subject: `Life Store — შეგვაფასეთ! შეკვეთა #${order.orderNumber}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto;">
+            <h2 style="color:#059669;border-bottom:2px solid #059669;padding-bottom:10px;">
+              გმადლობთ შეკვეთისთვის!
+            </h2>
+            <p>გამარჯობა <strong>${order.customerInfo.firstName}</strong>,</p>
+            <p>თქვენი შეკვეთა <strong>#${order.orderNumber}</strong> ჩაბარდა. ვიმედოვნებთ, მოგეწონათ!</p>
+            <p>თქვენი მოსაზრება ძალიან მნიშვნელოვანია ჩვენთვის. გთხოვთ, დაუთმოთ 1 წუთი და შეაფასოთ შეძენილი პროდუქტები:</p>
+            <table style="width:100%;margin:20px 0;">
+              ${productLinks}
+            </table>
+            <p style="font-size:13px;color:#888;margin-top:30px;">
+              გმადლობთ — Life Store გუნდი
+            </p>
+          </div>
+        `,
+      },
+    });
+  };
+
   const handleStatusChange = async (
     orderId: string,
     newStatus: Order["orderStatus"]
@@ -894,12 +937,16 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       await OrderService.updateOrderStatus(orderId, newStatus);
       showToast("შეკვეთის სტატუსი განახლდა", "success");
 
-      // Update selectedOrder if it's the same order being updated
+      // "მიტანილი" — შეფასების მოთხოვნის გაგზავნა
+      if (newStatus === "delivered") {
+        const order = orders.find((o) => o.id === orderId);
+        if (order) {
+          sendReviewRequestEmail(order).catch(() => {});
+        }
+      }
+
       if (selectedOrder && selectedOrder.id === orderId) {
-        setSelectedOrder({
-          ...selectedOrder,
-          orderStatus: newStatus
-        });
+        setSelectedOrder({ ...selectedOrder, orderStatus: newStatus });
       }
 
       onRefresh();

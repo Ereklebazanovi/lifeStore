@@ -18,18 +18,26 @@ import {
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
 import { useCartStore } from "../store/cartStore";
+import { useAuthStore } from "../store/authStore";
 import { useInventoryRefresh } from "../hooks/useInventoryRefresh";
 import { showToast } from "../components/ui/Toast";
 import SEOHead from "../components/SEOHead";
-import type { Product } from "../types";
+import { ReviewService } from "../services/reviewService";
+import type { Product, Review } from "../types";
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getProductById, isLoading } = useProductStore();
   const { addItem } = useCartStore();
+  const { user } = useAuthStore();
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewText, setNewReviewText] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [isFetching, setIsFetching] = useState(true);
@@ -75,6 +83,18 @@ const ProductDetailsPage: React.FC = () => {
 
     loadProduct();
   }, [id, getProductById]);
+
+  // შეფასებების ჩატვირთვა
+  useEffect(() => {
+    if (!id) return;
+    ReviewService.getByProduct(id).then(setReviews);
+  }, [id]);
+
+  // შეამოწმე მომხმარებელმა უკვე შეაფასა თუ არა
+  useEffect(() => {
+    if (!id || !user) return;
+    ReviewService.hasReviewed(user.id, id).then(setHasReviewed);
+  }, [id, user]);
 
   // Reset zoom when image changes or modal closes
   useEffect(() => {
@@ -188,6 +208,40 @@ const ProductDetailsPage: React.FC = () => {
     const newQuantity = quantity + delta;
     if (newQuantity >= 1 && newQuantity <= currentStock) {
       setQuantity(newQuantity);
+    }
+  };
+
+  const avgRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : 0;
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !product) return;
+    if (newReviewText.trim().length < 5) {
+      showToast("შეფასება მინიმუმ 5 სიმბოლო უნდა იყოს", "error");
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      await ReviewService.add({
+        productId: product.id,
+        userId: user.id,
+        userName: user.displayName || user.email.split("@")[0],
+        rating: newReviewRating,
+        text: newReviewText.trim(),
+      });
+      setHasReviewed(true);
+      setNewReviewText("");
+      setNewReviewRating(5);
+      const updated = await ReviewService.getByProduct(product.id);
+      setReviews(updated);
+      showToast("შეფასება გამოქვეყნდა!", "success");
+    } catch {
+      showToast("შეფასება ვერ გამოქვეყნდა", "error");
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -414,7 +468,28 @@ ${product.description}
           "brand": {
             "@type": "Brand",
             "name": "Life Store"
-          }
+          },
+          ...(reviews.length > 0 && {
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": avgRating.toFixed(1),
+              "reviewCount": reviews.length,
+              "bestRating": "5",
+              "worstRating": "1"
+            },
+            "review": reviews.slice(0, 5).map((r) => ({
+              "@type": "Review",
+              "author": { "@type": "Person", "name": r.userName },
+              "reviewRating": {
+                "@type": "Rating",
+                "ratingValue": r.rating,
+                "bestRating": "5",
+                "worstRating": "1"
+              },
+              "reviewBody": r.text,
+              "datePublished": r.createdAt.toISOString().split("T")[0]
+            }))
+          })
         }}
       />
 
@@ -735,6 +810,143 @@ ${product.description}
               </div>
             </div>
           </div>
+        </div>
+
+        {/* --- REVIEWS SECTION --- */}
+        <div id="reviews" className="px-4 lg:px-0 py-10 border-t border-stone-100 mt-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-stone-900">შეფასებები</h2>
+            {reviews.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-stone-900">
+                  {avgRating.toFixed(1)}
+                </span>
+                <div>
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <svg
+                        key={s}
+                        className={`w-4 h-4 ${s <= Math.round(avgRating) ? "text-yellow-400" : "text-stone-200"}`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <p className="text-xs text-stone-500 mt-0.5">{reviews.length} შეფასება</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* შეფასებების სია */}
+          {reviews.length === 0 ? (
+            <p className="text-stone-400 text-sm mb-8">
+              ჯერ შეფასება არ არის. იყავი პირველი!
+            </p>
+          ) : (
+            <div className="space-y-4 mb-8">
+              {reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="bg-stone-50 rounded-xl p-4 border border-stone-100"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm">
+                        {review.userName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium text-stone-900 text-sm">{review.userName}</p>
+                        <p className="text-xs text-stone-400">
+                          {review.createdAt.toLocaleDateString("ka-GE")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <svg
+                          key={s}
+                          className={`w-4 h-4 ${s <= review.rating ? "text-yellow-400" : "text-stone-200"}`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-stone-700 text-sm leading-relaxed">{review.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* შეფასების ფორმა */}
+          {user ? (
+            hasReviewed ? (
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
+                <p className="text-emerald-700 font-medium text-sm">
+                  ✓ თქვენ უკვე შეაფასეთ ეს პროდუქტი
+                </p>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSubmitReview}
+                className="bg-white border border-stone-200 rounded-xl p-5"
+              >
+                <h3 className="font-semibold text-stone-900 mb-4">დატოვე შეფასება</h3>
+                <div className="flex items-center gap-1 mb-4">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setNewReviewRating(s)}
+                      className="transition-transform hover:scale-110"
+                    >
+                      <svg
+                        className={`w-8 h-8 ${s <= newReviewRating ? "text-yellow-400" : "text-stone-200"}`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm text-stone-500">
+                    {["", "ცუდი", "სამართლიანი", "კარგი", "ძალიან კარგი", "შესანიშნავი"][newReviewRating]}
+                  </span>
+                </div>
+                <textarea
+                  value={newReviewText}
+                  onChange={(e) => setNewReviewText(e.target.value)}
+                  placeholder="გაგვიზიარე შენი გამოცდილება..."
+                  rows={3}
+                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+                />
+                <button
+                  type="submit"
+                  disabled={submittingReview}
+                  className="mt-3 w-full bg-stone-900 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50"
+                >
+                  {submittingReview ? "იგზავნება..." : "შეფასების გამოქვეყნება"}
+                </button>
+              </form>
+            )
+          ) : (
+            <div className="border border-stone-200 rounded-xl p-5 text-center">
+              <p className="text-stone-500 text-sm mb-3">
+                შეფასების დასამატებლად შედი სისტემაში
+              </p>
+              <button
+                onClick={() => showToast("Google-ით შესვლისთვის დააჭირე ზედა მარჯვნივ", "info" as any)}
+                className="bg-stone-900 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors"
+              >
+                სისტემაში შესვლა
+              </button>
+            </div>
+          )}
         </div>
 
         {/* --- MOBILE STICKY ACTIONS --- */}

@@ -231,6 +231,17 @@ export type OrderStatus = "pending" | "confirmed" | "shipped" | "delivered" | "c
 // ეს რჩება როგორც არის (სტრინგების ტიპი)
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
+export interface Review {
+  id: string;
+  productId: string;
+  userId: string;
+  userName: string;
+  rating: number;      // 1–5
+  text: string;
+  createdAt: Date;
+  isApproved: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
