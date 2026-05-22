@@ -1,5 +1,5 @@
 // src/pages/ProductDetailsPage.tsx
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import {
   ShoppingCart,
@@ -34,7 +34,7 @@ const ProductDetailsPage: React.FC = () => {
   const isReviewMode =
     location.pathname.endsWith("/review") ||
     new URLSearchParams(location.search).get("review") === "1";
-  const { getProductById, getProductBySlug, isLoading, products: allProducts } = useProductStore();
+  const { getProductById, getProductBySlug, isLoading, products: allProducts, fetchProducts } = useProductStore();
   const { addItem } = useCartStore();
   const { user } = useAuthStore();
 
@@ -124,8 +124,16 @@ const ProductDetailsPage: React.FC = () => {
     ReviewService.hasReviewed(user.id, productId).then(setHasReviewed);
   }, [productId, user]);
 
-  const relatedProducts = useMemo(() => {
-    if (!product || allProducts.length === 0) return [];
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const relatedComputedForRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (allProducts.length === 0) fetchProducts();
+  }, [allProducts.length, fetchProducts]);
+
+  useEffect(() => {
+    if (!product || allProducts.length === 0) return;
+    if (relatedComputedForRef.current === product.id) return;
     const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
     const active = allProducts.filter((p) => p.isActive !== false && p.id !== product.id);
     const shuffledSame = shuffle(active.filter((p) => p.category === product.category));
@@ -136,8 +144,9 @@ const ProductDetailsPage: React.FC = () => {
     if (result.length < 4) {
       result = [...result, ...shuffledSame.slice(fromSame.length, fromSame.length + (4 - result.length))];
     }
-    return result.slice(0, 4);
-  }, [product, allProducts]);
+    relatedComputedForRef.current = product.id;
+    setRelatedProducts(result.slice(0, 4));
+  }, [product, allProducts, fetchProducts]);
 
   // Reset zoom when image changes or modal closes
   useEffect(() => {
