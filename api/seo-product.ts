@@ -69,12 +69,30 @@ export default async function handler(
       p = slugDoc.data();
     }
 
-    // Fetch approved reviews by Firestore doc ID
-    const reviewsSnap = await adminDb
-      .collection("reviews")
-      .where("productId", "==", docId)
-      .where("isApproved", "==", true)
-      .get();
+    // Fetch reviews and related products in parallel
+    const [reviewsSnap, relatedSnap] = await Promise.all([
+      adminDb
+        .collection("reviews")
+        .where("productId", "==", docId)
+        .where("isApproved", "==", true)
+        .get(),
+      p.category
+        ? adminDb
+            .collection("products")
+            .where("isActive", "==", true)
+            .where("category", "==", p.category)
+            .limit(8)
+            .get()
+        : Promise.resolve({ docs: [] as any[] }),
+    ]);
+
+    const relatedProducts = relatedSnap.docs
+      .filter((doc) => doc.id !== docId)
+      .slice(0, 4)
+      .map((doc) => {
+        const d = doc.data();
+        return { slug: (d.slug || doc.id) as string, name: d.name as string };
+      });
 
     // Reviews
     const reviews = reviewsSnap.docs.map((doc) => {
@@ -265,6 +283,13 @@ export default async function handler(
         : ""
     }
     <a href="${productUrl}">პროდუქტის ნახვა</a>
+    ${relatedProducts.length > 0 ? `
+    <section>
+      <h2>იხილეთ ასევე</h2>
+      <ul>
+        ${relatedProducts.map((r) => `<li><a href="${SITE_URL}/product/${r.slug}">${esc(r.name)}</a></li>`).join("")}
+      </ul>
+    </section>` : ""}
   </main>
 </body>
 </html>`;
