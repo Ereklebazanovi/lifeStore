@@ -6,6 +6,7 @@ const SITE_URL = "https://lifestore.ge";
 const STATIC_PAGES = [
   { loc: "/",              priority: "1.0", changefreq: "daily"   },
   { loc: "/products",      priority: "0.9", changefreq: "daily"   },
+  { loc: "/blog",          priority: "0.8", changefreq: "weekly"  },
   { loc: "/about",         priority: "0.7", changefreq: "monthly" },
   { loc: "/privacy-policy",priority: "0.4", changefreq: "monthly" },
   { loc: "/terms",         priority: "0.4", changefreq: "monthly" },
@@ -46,9 +47,10 @@ export default async function handler(
   try {
     const today = new Date().toISOString().split("T")[0];
 
-    const [productsSnap, categoriesSnap] = await Promise.all([
+    const [productsSnap, categoriesSnap, blogSnap] = await Promise.all([
       adminDb.collection("products").get(),
       adminDb.collection("categories").get(),
+      adminDb.collection("blogPosts").where("isPublished", "==", true).get(),
     ]);
 
     // Debug mode: return raw Firestore data to diagnose slug reading
@@ -82,6 +84,19 @@ export default async function handler(
         toDate(d.updatedAt),
         "weekly",
         "0.8"
+      ));
+    }
+
+    // Blog posts — only published, must have a slug
+    for (const doc of blogSnap.docs) {
+      const d = doc.data();
+      const slug: string | undefined = d.slug;
+      if (!slug) continue;
+      entries.push(urlEntry(
+        `/blog/${slug}`,
+        toDate(d.publishedAt),
+        "monthly",
+        "0.7"
       ));
     }
 

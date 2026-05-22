@@ -15,6 +15,7 @@ import CategoryManager from "./components/CategoryManager";
 import ParametersPage from "./components/ParametersPage";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import ReviewsManager from "./components/ReviewsManager";
+import BlogManager from "./components/BlogManager";
 import { showToast } from "../../components/ui/Toast";
 
 import {
@@ -257,6 +258,18 @@ const AdminPage: React.FC = () => {
           );
         }
         return <ReviewsManager />;
+
+      case "blog":
+        if (user?.role !== "admin") {
+          return (
+            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm text-center">
+              <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">წვდომა შეზღუდულია</h3>
+              <p className="text-gray-600">ბლოგის მართვა მხოლოდ ადმინისტრატორისთვისაა.</p>
+            </div>
+          );
+        }
+        return <BlogManager />;
 
 case "analytics": {
         // Analytics is admin-only

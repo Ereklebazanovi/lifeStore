@@ -15,6 +15,7 @@ import {
   Layers,
   Settings,
   Star,
+  BookOpen,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -75,6 +76,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     { id: "categories", icon: Layers, label: "კატეგორიები" },
     { id: "parameters", icon: Settings, label: "პარამეტრები" },
     { id: "reviews", icon: Star, label: "შეფასებები" },
+    { id: "blog", icon: BookOpen, label: "ბლოგი" },
     // { id: "analytics", icon: BarChart3, label: "ანალიტიკა" },
   ];
 

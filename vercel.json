@@ -10,6 +10,16 @@
       "destination": "/api/seo-category?slug=:slug",
       "missing": [{ "type": "query", "key": "_spa" }]
     },
+    {
+      "source": "/blog/:slug",
+      "destination": "/api/seo-blog-post?slug=:slug",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
+      "source": "/blog",
+      "destination": "/api/seo-blog",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],

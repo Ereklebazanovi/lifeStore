@@ -177,6 +177,10 @@ const Navbar: React.FC = () => {
                 </div>
               </div>
 
+              <NavLink to="/blog" isActive={isActivePath("/blog") || location.pathname.startsWith("/blog/")}>
+                ბლოგი
+              </NavLink>
+
               <NavLink to="/about" isActive={isActivePath("/about")}>
                 ჩვენ შესახებ
               </NavLink>
@@ -375,6 +379,10 @@ const Navbar: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <MobileNavLink to="/blog" isActive={isActivePath("/blog") || location.pathname.startsWith("/blog/")} onClick={() => setIsMenuOpen(false)}>
+              ბლოგი
+            </MobileNavLink>
 
             <MobileNavLink to="/about" isActive={isActivePath("/about")} onClick={() => setIsMenuOpen(false)}>
               ჩვენ შესახებ
