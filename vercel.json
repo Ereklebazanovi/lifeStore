@@ -5,6 +5,11 @@
       "destination": "/api/seo-product?id=:id",
       "missing": [{ "type": "query", "key": "_spa" }]
     },
+    {
+      "source": "/category/:slug",
+      "destination": "/api/seo-category?slug=:slug",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
