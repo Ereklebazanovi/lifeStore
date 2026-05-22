@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   Leaf,
@@ -38,6 +38,11 @@ const CategoryPage: React.FC = () => {
   }, [selectedFilter, searchTerm]);
 
   const category = categories.find((cat) => cat.slug === slug && cat.isActive !== false);
+
+  const otherCategories = useMemo(() => {
+    const others = categories.filter((c) => c.slug !== slug && c.isActive !== false);
+    return [...others].sort(() => Math.random() - 0.5).slice(0, 6);
+  }, [categories, slug]);
 
   const getFilteredProducts = () => {
     let filtered = products.filter(
@@ -426,6 +431,27 @@ const CategoryPage: React.FC = () => {
                 </div>
               )}
             </>
+          )}
+
+          {/* Other Categories */}
+          {otherCategories.length > 0 && (
+            <div className="mt-12 pt-10 border-t border-stone-100">
+              <p className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-4">იხილეთ ასევე</p>
+              <div className="flex flex-wrap gap-3">
+                {otherCategories.map((cat) => (
+                  <Link
+                    key={cat.id || cat.slug}
+                    to={`/category/${cat.slug}`}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-stone-200 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 rounded-full text-sm font-medium text-stone-700 transition-all duration-200"
+                  >
+                    {cat.image && (
+                      <img src={cat.image} alt={cat.name} className="w-5 h-5 rounded-full object-cover" />
+                    )}
+                    {cat.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>

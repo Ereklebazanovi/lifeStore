@@ -1,5 +1,5 @@
 // src/pages/ProductDetailsPage.tsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import {
   ShoppingCart,
@@ -24,7 +24,8 @@ import { showToast } from "../components/ui/Toast";
 import SEOHead from "../components/SEOHead";
 import { ReviewService } from "../services/reviewService";
 import type { Product, Review } from "../types";
-import { isFirestoreId, getProductUrl } from "../utils/slug";
+import { isFirestoreId } from "../utils/slug";
+import { getProductDisplayPrice } from "../utils/productHelpers";
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,7 +34,7 @@ const ProductDetailsPage: React.FC = () => {
   const isReviewMode =
     location.pathname.endsWith("/review") ||
     new URLSearchParams(location.search).get("review") === "1";
-  const { getProductById, getProductBySlug, isLoading } = useProductStore();
+  const { getProductById, getProductBySlug, isLoading, products: allProducts } = useProductStore();
   const { addItem } = useCartStore();
   const { user } = useAuthStore();
 
@@ -122,6 +123,21 @@ const ProductDetailsPage: React.FC = () => {
     if (!productId || !user) return;
     ReviewService.hasReviewed(user.id, productId).then(setHasReviewed);
   }, [productId, user]);
+
+  const relatedProducts = useMemo(() => {
+    if (!product || allProducts.length === 0) return [];
+    const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
+    const active = allProducts.filter((p) => p.isActive !== false && p.id !== product.id);
+    const shuffledSame = shuffle(active.filter((p) => p.category === product.category));
+    const shuffledOther = shuffle(active.filter((p) => p.category !== product.category));
+    const fromSame = shuffledSame.slice(0, 2);
+    const fromOther = shuffledOther.slice(0, 4 - fromSame.length);
+    let result = [...fromSame, ...fromOther];
+    if (result.length < 4) {
+      result = [...result, ...shuffledSame.slice(fromSame.length, fromSame.length + (4 - result.length))];
+    }
+    return result.slice(0, 4);
+  }, [product, allProducts]);
 
   // Reset zoom when image changes or modal closes
   useEffect(() => {
@@ -851,6 +867,54 @@ ${product.description}
             </div>
           </div>
         </div>
+
+        {/* --- DISCOVER ALSO --- */}
+        {relatedProducts.length > 0 && (
+          <div className="px-4 lg:px-0 py-10 border-t border-stone-100 mt-6">
+            <div className="max-w-7xl mx-auto">
+              <h2 className="text-xl font-bold text-stone-900 mb-6">იხილეთ ასევე</h2>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                {relatedProducts.map((p) => (
+                  <Link
+                    key={p.id}
+                    to={`/product/${p.slug || p.id}`}
+                    className="group bg-white rounded-2xl border border-stone-100 hover:border-emerald-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col"
+                  >
+                    <div className="aspect-square overflow-hidden bg-stone-50">
+                      {p.images?.[0] ? (
+                        <img
+                          src={p.images[0]}
+                          alt={p.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Leaf className="w-10 h-10 text-emerald-200" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3 flex flex-col grow">
+                      <h3 className="font-semibold text-stone-900 text-sm line-clamp-2 leading-snug mb-2 group-hover:text-emerald-700 transition-colors grow">
+                        {p.name}
+                      </h3>
+                      <div className="flex items-center justify-between mt-auto">
+                        <span className="text-base font-bold text-emerald-700">
+                          {getProductDisplayPrice(p)}
+                        </span>
+                        {(p.hasVariants
+                          ? (p.variants?.reduce((s, v) => s + (v.stock || 0), 0) ?? 0)
+                          : (p.stock ?? 0)) === 0 && (
+                          <span className="text-xs text-stone-400">ამოწურულია</span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* --- REVIEWS SECTION --- */}
         <div id="reviews" className="px-4 lg:px-0 py-10 border-t border-stone-100 mt-6">
