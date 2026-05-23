@@ -23,27 +23,49 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   placeholder = "სტატიის ტექსტი...",
   minHeight = 320,
 }) => {
-  // outerRef is a stable wrapper — we create the Quill host div programmatically
-  // so StrictMode's double-mount/unmount fully removes it each time.
   const outerRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  // Track the value at mount time without adding it to the dep array
   const initialValueRef = useRef(value);
 
-  useEffect(() => {
-    if (!outerRef.current) return;
+  // In React StrictMode (dev), effects run twice: mount → cleanup → mount.
+  // After cleanup, ref VALUES are preserved (unlike actual unmount where the
+  // ref object itself is recreated). So setting isInitialized=true here and
+  // NOT resetting it in cleanup means the second StrictMode run skips init,
+  // while a real remount (drawer close → open) starts fresh.
+  const isInitialized = useRef(false);
 
-    // Create a fresh host node each time so Quill starts clean
+  useEffect(() => {
+    if (!outerRef.current || isInitialized.current) return;
+    isInitialized.current = true;
+
     const host = document.createElement("div");
     outerRef.current.appendChild(host);
 
     const quill = new Quill(host, {
       theme: "snow",
       placeholder,
-      modules: { toolbar: TOOLBAR },
+      modules: {
+        toolbar: {
+          container: TOOLBAR,
+          handlers: {
+            link: () => {
+              const range = quill.getSelection();
+              if (!range) return;
+              const existing = quill.getFormat(range).link as string | undefined;
+              const url = window.prompt("ბმულის URL:", existing || "https://");
+              if (url === null) return;
+              if (url.trim() === "") {
+                quill.format("link", false);
+              } else {
+                quill.format("link", url.trim());
+              }
+            },
+          },
+        },
+      },
     });
 
     quillRef.current = quill;
@@ -60,20 +82,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return () => {
       quill.off("text-change");
       quillRef.current = null;
-      // Remove everything Quill injected (toolbar + container)
-      outerRef.current?.replaceChildren();
+      // intentionally NOT resetting isInitialized — see comment above
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Sync when the parent switches to a different post (edit mode)
-  useEffect(() => {
-    const quill = quillRef.current;
-    if (!quill) return;
-    if (quill.root.innerHTML !== value) {
-      quill.clipboard.dangerouslyPasteHTML(value || "");
-    }
-  }, [value]);
 
   return (
     <div

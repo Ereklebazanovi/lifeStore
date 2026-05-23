@@ -77,6 +77,9 @@ html, body {
   margin-bottom: 8px;
 }
 
+/* Hide Quill's default link tooltip — replaced by native prompt */
+.ql-tooltip { display: none !important; }
+
 /* Blog post content rendering (dangerouslySetInnerHTML) */
 .blog-content h2 {
   font-size: 1.5rem;

@@ -50,7 +50,7 @@ const BlogPostPage: React.FC = () => {
   if (!post) return null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-20 sm:py-20">
       {/* Back link */}
       <Link
         to="/blog"
@@ -88,7 +88,7 @@ const BlogPostPage: React.FC = () => {
         </span>
         <span className="flex items-center gap-1.5">
           <Clock className="w-4 h-4" />
-          {post.readTime} წუთი კითხვა
+          {post.readTime} წუთი
         </span>
       </div>
 
