@@ -150,6 +150,11 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
+    if (formData.paymentMethod === "flitt" && !formData.email) {
+      showToast("ონლაინ გადახდისთვის გთხოვთ ჩაწეროთ ელ-ფოსტა", "error");
+      return;
+    }
+
     setShowConfirmModal(true);
   };
 
@@ -346,11 +351,13 @@ const CheckoutPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className={labelStyle}>ელ-ფოსტა</label>
+                    <label className={labelStyle}>
+                      ელ-ფოსტა{" "}
+                      <span className="text-stone-300 normal-case font-normal">(არასავალდებულო)</span>
+                    </label>
                     <input
                       type="email"
                       name="email"
-                      required
                       value={formData.email}
                       onChange={handleChange}
                       className={inputBaseStyle}
