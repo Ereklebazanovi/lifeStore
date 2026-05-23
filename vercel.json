@@ -20,6 +20,11 @@
       "destination": "/api/seo-blog",
       "missing": [{ "type": "query", "key": "_spa" }]
     },
+    {
+      "source": "/about",
+      "destination": "/api/seo-about",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
