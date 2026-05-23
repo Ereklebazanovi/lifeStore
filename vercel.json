@@ -1,12 +1,4 @@
 {
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "www.lifestore.ge" }],
-      "destination": "https://lifestore.ge/$1",
-      "permanent": true
-    }
-  ],
   "rewrites": [
     {
       "source": "/product/:id",
