@@ -15,6 +15,7 @@ import {
 import { BlogService, BlogPost } from "../../../services/blogService";
 import { generateProductSlug } from "../../../utils/slug";
 import RichTextEditor from "../../../components/ui/RichTextEditor";
+import ImageUpload from "../../../components/ui/ImageUpload";
 
 const EMPTY_FORM = {
   title: "",
@@ -348,26 +349,11 @@ const BlogManager: React.FC = () => {
               </div>
 
               {/* Image */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  სურათის URL
-                </label>
-                <input
-                  type="url"
-                  value={form.image}
-                  onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://..."
-                />
-                {form.image && (
-                  <img
-                    src={form.image}
-                    alt="preview"
-                    className="mt-2 w-full h-32 object-cover rounded-lg bg-gray-100"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                  />
-                )}
-              </div>
+              <ImageUpload
+                images={form.image ? [form.image] : []}
+                onChange={(urls) => setForm((f) => ({ ...f, image: urls[0] || "" }))}
+                maxImages={1}
+              />
 
               {/* Tags + Read time */}
               <div className="grid grid-cols-2 gap-4">
