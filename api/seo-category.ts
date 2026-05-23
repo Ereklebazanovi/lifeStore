@@ -89,8 +89,18 @@ export default async function handler(
       itemListElement: products.map((p, i) => ({
         "@type": "ListItem",
         position: i + 1,
-        url: `${SITE_URL}/product/${p.slug}`,
-        name: p.name,
+        item: {
+          "@type": "Product",
+          name: p.name,
+          url: `${SITE_URL}/product/${p.slug}`,
+          ...(p.image ? { image: p.image } : {}),
+          offers: {
+            "@type": "Offer",
+            price: p.price,
+            priceCurrency: "GEL",
+            availability: "https://schema.org/InStock",
+          },
+        },
       })),
     };
 
