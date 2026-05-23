@@ -34,15 +34,19 @@ html, body {
 
 /* ─── Quill Rich Text Editor overrides ──────────────────────────── */
 .quill-wrapper .ql-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   border: none !important;
   border-bottom: 1px solid #e5e7eb !important;
   background: #f9fafb;
   padding: 8px 12px !important;
-  border-radius: 0 !important;
+  border-radius: 0.5rem 0.5rem 0 0;
 }
 
 .quill-wrapper .ql-container {
   border: none !important;
+  border-radius: 0 0 0.5rem 0.5rem;
   font-family: 'Noto Sans Georgian', Arial, sans-serif;
   font-size: 14px;
 }

@@ -112,7 +112,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   return (
     <div
       ref={outerRef}
-      className="quill-wrapper border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500"
+      className="quill-wrapper border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500"
       style={{ minHeight }}
     />
   );

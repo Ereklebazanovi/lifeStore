@@ -112,7 +112,7 @@ const BlogPostPage: React.FC = () => {
       {/* CTA */}
       <div className="bg-linear-to-br from-emerald-50 to-stone-50 border border-emerald-100 rounded-2xl p-6 sm:p-8 mb-12 text-center">
         <p className="text-stone-600 mb-4 text-sm sm:text-base">
-          ეკომეგობრული ნივთები სახლისა და სამზარეულოსთვის — პირდაპირ Life Store-ში
+          ეკომეგობრული ნივთები სახლისა და სამზარეულოსთვის - პირდაპირ Life Store-ში
         </p>
         <Link
           to="/products"
