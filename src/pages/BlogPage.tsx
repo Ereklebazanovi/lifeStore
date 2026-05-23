@@ -30,7 +30,7 @@ const BlogPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-20 sm:py-20">
       <div className="mb-10">
         <h1 className="text-3xl sm:text-4xl font-bold text-stone-800 mb-3">ბლოგი</h1>
         <p className="text-stone-500 text-lg">
