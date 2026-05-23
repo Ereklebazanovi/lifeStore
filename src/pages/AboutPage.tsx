@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { Leaf, ShieldCheck, Sparkles, ArrowRight, Quote } from "lucide-react";
 
 const CAROUSEL_IMAGES = [
-  "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=1000&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1616047006789-b7af5afb8c20?q=80&w=1000&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1595428774223-ef52624120d2?q=80&w=1000&auto=format&fit=crop",
+  "/about-1.webp",
+  "/about-2.webp",
+  "/about-3.webp",
 ];
 
 const AboutPage: React.FC = () => {
@@ -50,7 +50,7 @@ const AboutPage: React.FC = () => {
             {/* Text */}
             <div className="space-y-7 order-1 lg:order-2">
               <h1 className="text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
-                გაიცანით <strong className="text-emerald-700">Life Store</strong> —{" "}
+                გაიცანით <strong className="text-emerald-700">Life Store</strong> -{" "}
                 ეკომეგობრული ცხოვრების სტილი თქვენი ყოველდღიურობისთვის
               </h1>
 
@@ -80,13 +80,13 @@ const AboutPage: React.FC = () => {
       <section className="py-14 bg-emerald-50 border-y border-emerald-100">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-5">
-            ჩვენი მისია: ნაკლები პლასტმასი, მეტი ჯანმრთელობა
+            ჩვენი მისია: უსაფრთხო ალტერნატივა ყოველდღიურობისთვის
           </h2>
           <p className="text-stone-600 text-lg leading-relaxed">
-            ჩვენ არ ვყიდით უბრალოდ ნივთებს — ჩვენ ვქმნით გარემოს, სადაც{" "}
-            <strong>თქვენ და თქვენი ოჯახის წევრები დაცულები ხართ</strong> ტოქსიკური
-            ნივთიერებებისგან. ყოველი ნაბიჯი, რომელსაც ეკომეგობრული
-            ალტერნატივებისკენ დგამთ, არის ინვესტიცია ჯანსაღ მომავალში.
+            ჩვენი მიზანი მარტივია - დაგეხმაროთ პლასტმასის მოხმარების შემცირებაში
+            ისე, რომ არ მოგიწიოთ კომფორტზე უარის თქმა. Life Store-ში წარმოდგენილი
+            თითოეული ნივთი შერჩეულია იმისთვის, რომ თქვენი კვების რუტინა გახდეს
+            უფრო ჯანსაღი, ხოლო სახლის გარემო - ბევრად უსაფრთხო.
           </p>
         </div>
       </section>
