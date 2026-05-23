@@ -79,8 +79,30 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       onChangeRef.current(html === "<p><br></p>" ? "" : html);
     });
 
+    // Click on existing link → prompt to edit URL
+    const handleLinkClick = (e: MouseEvent) => {
+      const link = (e.target as HTMLElement).closest("a[href]");
+      if (!link) return;
+      e.preventDefault();
+
+      const existingUrl = link.getAttribute("href") || "";
+      const url = window.prompt("ბმულის URL:", existingUrl);
+      if (url === null) return;
+
+      // Find blot position and select the whole link, then reformat
+      const blot = (Quill as any).find(link);
+      if (!blot) return;
+      const index = quill.getIndex(blot);
+      const length: number = typeof blot.length === "function" ? blot.length() : (link.textContent?.length ?? 1);
+      quill.setSelection(index, length);
+      quill.format("link", url.trim() === "" ? false : url.trim());
+    };
+
+    quill.root.addEventListener("click", handleLinkClick);
+
     return () => {
       quill.off("text-change");
+      quill.root.removeEventListener("click", handleLinkClick);
       quillRef.current = null;
       // intentionally NOT resetting isInitialized — see comment above
     };
