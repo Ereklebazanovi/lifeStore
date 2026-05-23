@@ -43,8 +43,13 @@ export default async function handler(
 
     const publishedDate =
       p.publishedAt instanceof Timestamp
-        ? p.publishedAt.toDate().toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0];
+        ? p.publishedAt.toDate().toISOString()
+        : new Date().toISOString();
+
+    const modifiedDate =
+      p.updatedAt instanceof Timestamp
+        ? p.updatedAt.toDate().toISOString()
+        : publishedDate;
 
     const postUrl = `${SITE_URL}/blog/${slug}`;
     const imageUrl = (p.image as string | undefined) || `${SITE_URL}/logo.png`;
@@ -75,7 +80,7 @@ export default async function handler(
       image: [imageUrl],
       url: postUrl,
       datePublished: publishedDate,
-      dateModified: publishedDate,
+      dateModified: modifiedDate,
       author: { "@type": "Organization", name: "Life Store", url: SITE_URL },
       publisher: {
         "@type": "Organization",
@@ -139,7 +144,7 @@ export default async function handler(
   </nav>
   <main>
     <h1>${esc(p.title as string)}</h1>
-    <p><time datetime="${publishedDate}">${publishedDate}</time> · ${readTime} წუთი კითხვა</p>
+    <p><time datetime="${publishedDate}">${publishedDate.split("T")[0]}</time> · ${readTime} წუთი კითხვა</p>
     ${p.image ? `<img src="${esc(p.image as string)}" alt="${esc(p.title as string)}" loading="lazy">` : ""}
     ${rawContent}
     ${relatedPosts.length > 0 ? `
