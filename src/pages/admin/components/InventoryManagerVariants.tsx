@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useProductStore } from "../../../store/productStore";
 import { showToast } from "../../../components/ui/Toast";
+import { stockNotificationService } from "../../../services/stockNotificationService";
 import type { Product, ProductVariant } from "../../../types";
 import { exportInventoryToExcel, exportTurnoverToExcel } from "../../../utils/excelExporter";
 
@@ -70,6 +71,10 @@ const VariantStockModal: React.FC<VariantStockModalProps> = ({
         adjustmentType === "add" ? currentStock + quantity : currentStock - quantity;
 
       await updateVariantStock(productId, variant.id, newStock, reason);
+
+      if (currentStock === 0 && newStock > 0) {
+        stockNotificationService.sendNotifications(productId, productName, productId).catch(console.error);
+      }
 
       showToast(
         `${variant.name} - მარაგი განახლდა: ${newStock} ცალი`,
@@ -225,6 +230,10 @@ const SimpleStockModal: React.FC<SimpleStockModalProps> = ({
           : currentStock - quantity;
 
       await updateStock(productId, newStock, reason);
+
+      if (currentStock === 0 && newStock > 0) {
+        stockNotificationService.sendNotifications(productId, productName, productId).catch(console.error);
+      }
 
       showToast(
         `${productName} - მარაგი განახლდა: ${newStock} ცალი`,

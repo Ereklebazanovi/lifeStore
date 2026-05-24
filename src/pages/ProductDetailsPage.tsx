@@ -23,6 +23,7 @@ import { useInventoryRefresh } from "../hooks/useInventoryRefresh";
 import { showToast } from "../components/ui/Toast";
 import SEOHead from "../components/SEOHead";
 import { ReviewService } from "../services/reviewService";
+import { stockNotificationService } from "../services/stockNotificationService";
 import type { Product, Review } from "../types";
 import { isFirestoreId } from "../utils/slug";
 import { getProductDisplayPrice } from "../utils/productHelpers";
@@ -55,6 +56,9 @@ const ProductDetailsPage: React.FC = () => {
   );
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [notifyEmail, setNotifyEmail] = useState("");
+  const [notifySubmitting, setNotifySubmitting] = useState(false);
+  const [notifySuccess, setNotifySuccess] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const [modalZoom, setModalZoom] = useState(1);
   const [modalPan, setModalPan] = useState({ x: 0, y: 0 });
@@ -214,6 +218,25 @@ const ProductDetailsPage: React.FC = () => {
 
   const isOutOfStock = () => {
     return getCurrentStock() <= 0;
+  };
+
+  const handleNotifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!product || !notifyEmail.trim()) return;
+    setNotifySubmitting(true);
+    try {
+      await stockNotificationService.subscribe(
+        product.id,
+        product.name,
+        notifyEmail.trim()
+      );
+      setNotifySuccess(true);
+      setNotifyEmail("");
+    } catch {
+      showToast("შეცდომა. სცადეთ თავიდან.", "error");
+    } finally {
+      setNotifySubmitting(false);
+    }
   };
 
   const handleAddToCart = () => {
@@ -873,6 +896,41 @@ ${product.description}
                   )}
                 </button>
               </div>
+
+              {/* Notify when in stock */}
+              {outOfStock && (
+                <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  {notifySuccess ? (
+                    <div className="flex items-center gap-2 text-emerald-700 text-sm font-medium">
+                      <Check className="w-4 h-4 shrink-0" />
+                      მეილი დარეგისტრირდა! შეგატყობინებთ მარაგის შევსებისას.
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-stone-700 mb-3 font-medium">
+                        🔔 შეგატყობინოთ, როცა დაემატება?
+                      </p>
+                      <form onSubmit={handleNotifySubmit} className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="email"
+                          required
+                          value={notifyEmail}
+                          onChange={(e) => setNotifyEmail(e.target.value)}
+                          placeholder="mail@example.com"
+                          className="flex-1 min-w-0 px-3 py-2.5 text-sm border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white"
+                        />
+                        <button
+                          type="submit"
+                          disabled={notifySubmitting}
+                          className="w-full sm:w-auto px-5 py-2.5 bg-stone-900 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
+                        >
+                          {notifySubmitting ? "..." : "გაგზავნა"}
+                        </button>
+                      </form>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
