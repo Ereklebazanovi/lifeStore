@@ -38,7 +38,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Google Analytics 4 is initialized in src/utils/analytics.ts via VITE_GA_MEASUREMENT_ID env var -->
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-SKS4V3GRNX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-SKS4V3GRNX');
+    </script>
   </head>
   <body>
     <div id="root"></div>
