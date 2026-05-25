@@ -114,5 +114,24 @@ service cloud.firestore {
       allow read, update: if isAdmin();
       allow delete: if false;
     }
+
+    // 8. Categories - public read
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 9. Blog Posts - published posts are public
+    match /blogPosts/{postId} {
+      allow read: if resource.data.isPublished == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // 10. Reviews - approved reviews are public
+    match /reviews/{reviewId} {
+      allow read: if resource.data.isApproved == true || isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
   }
 }
