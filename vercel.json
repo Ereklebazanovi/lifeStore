@@ -76,8 +76,10 @@
       "missing": [{ "type": "query", "key": "_spa" }]
     },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
-    { "source": "/cdn", "destination": "/", "permanent": true },
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "redirects": [
+    { "source": "/cdn", "destination": "/", "permanent": true }
   ],
   "crons": [
     {
