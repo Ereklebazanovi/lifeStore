@@ -2,8 +2,11 @@ import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useCategoryStore } from "../store/categoryStore";
+import { useTranslation } from "react-i18next";
+import { getLocalizedCategoryName } from "../utils/i18nHelpers";
 
 const CategoryGrid: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { categories, fetchCategories, isLoading } = useCategoryStore();
 
   useEffect(() => {
@@ -19,10 +22,10 @@ const CategoryGrid: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 lg:mb-12">
           <span className="text-emerald-600 font-bold text-xs tracking-wider uppercase mb-2 block">
-            ხელმისაწვდომი კატეგორიები
+            {t('home.categoriesSubtitle')}
           </span>
           <h2 className="text-2xl lg:text-3xl font-bold text-stone-900">
-            აირჩიე თემატური კოლექცია
+            {t('home.categoriesTitle')}
           </h2>
         </div>
 
@@ -37,7 +40,7 @@ const CategoryGrid: React.FC = () => {
           </div>
         ) : activeCategories.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-stone-500">კატეგორიები ჯერ არ არის</p>
+            <p className="text-stone-500">{t('home.noCategories')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
@@ -62,10 +65,10 @@ const CategoryGrid: React.FC = () => {
                 <div className="absolute inset-0 flex flex-col justify-end p-4">
                   <div>
                     <h3 className="text-lg md:text-xl font-bold text-white mb-2 group-hover:text-emerald-300 transition-colors">
-                      {category.name}
+                      {getLocalizedCategoryName(category, i18n.language)}
                     </h3>
                     <div className="flex items-center gap-2 text-emerald-300 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                      <span className="text-sm font-bold">გადასვლა</span>
+                      <span className="text-sm font-bold">{t('common.navigate')}</span>
                       <ArrowRight className="w-4 h-4" />
                     </div>
                   </div>

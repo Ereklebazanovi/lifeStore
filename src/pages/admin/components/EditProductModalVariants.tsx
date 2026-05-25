@@ -28,6 +28,10 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
   const [productSlug, setProductSlug] = useState("");
   const [productCode, setProductCode] = useState("");
   const [description, setDescription] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [nameRu, setNameRu] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
+  const [descriptionRu, setDescriptionRu] = useState("");
   const [category, setCategory] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [priority, setPriority] = useState(0);
@@ -52,6 +56,10 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
       setProductSlug(product.slug || "");
       setProductCode(product.productCode || "");
       setDescription(product.description || "");
+      setNameEn(product.nameEn || "");
+      setNameRu(product.nameRu || "");
+      setDescriptionEn(product.descriptionEn || "");
+      setDescriptionRu(product.descriptionRu || "");
       setCategory(product.category || "");
       setImages(product.images || []);
       setPriority(product.priority || 0);
@@ -113,6 +121,10 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
         slug: productSlug.trim() || generateProductSlug(productName.trim()),
         productCode: productCode.trim().toUpperCase(),
         description: description.trim(),
+        ...(nameEn.trim() && { nameEn: nameEn.trim() }),
+        ...(nameRu.trim() && { nameRu: nameRu.trim() }),
+        ...(descriptionEn.trim() && { descriptionEn: descriptionEn.trim() }),
+        ...(descriptionRu.trim() && { descriptionRu: descriptionRu.trim() }),
         category: category.trim(),
         images,
         priority,
@@ -272,6 +284,58 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                   rows={3}
                   placeholder="პროდუქტის დეტალური აღწერა..."
                 />
+              </div>
+
+              {/* Translations */}
+              <div className="border border-blue-100 rounded-lg p-4 bg-blue-50/40 space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-semibold text-blue-700">🌍 თარგმანები (EN / RU)</span>
+                  <span className="text-xs text-blue-500">— არასავალდებულო</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">სახელი — English</label>
+                    <input
+                      type="text"
+                      value={nameEn}
+                      onChange={(e) => setNameEn(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-sm"
+                      placeholder="e.g. Bamboo Lunchbox"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">სახელი — Русский</label>
+                    <input
+                      type="text"
+                      value={nameRu}
+                      onChange={(e) => setNameRu(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-sm"
+                      placeholder="напр. Ланч-бокс из бамбука"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">აღწერა — English</label>
+                    <textarea
+                      value={descriptionEn}
+                      onChange={(e) => setDescriptionEn(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-sm"
+                      rows={2}
+                      placeholder="Product description in English..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">აღწერა — Русский</label>
+                    <textarea
+                      value={descriptionRu}
+                      onChange={(e) => setDescriptionRu(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-sm"
+                      rows={2}
+                      placeholder="Описание продукта на русском..."
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Category */}

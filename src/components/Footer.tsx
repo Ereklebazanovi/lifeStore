@@ -2,23 +2,23 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Leaf, Mail, Phone, MapPin, Facebook, Instagram } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ADMIN_CONFIG } from "../config/constants";
 
 const Footer: React.FC = () => {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
 
-  // 1. ძირითადი ნავიგაცია
   const navigationLinks = [
-    { to: "/", label: "მთავარი" },
-    { to: "/products", label: "პროდუქტები" },
-    { to: "/about", label: "ჩვენ შესახებ" },
+    { to: "/", label: t("nav.home") },
+    { to: "/products", label: t("nav.products") },
+    { to: "/about", label: t("nav.about") },
   ];
 
-  // 2. ✅ დახმარება & სამართლებრივი
   const supportLinks = [
-    { to: "/refund-policy", label: "დაბრუნების პოლიტიკა" },
-    { to: "/terms", label: "წესები და პირობები" },
-    { to: "/privacy-policy", label: "კონფიდენციალურობა" },
+    { to: "/refund-policy", label: t("footer.refundPolicy") },
+    { to: "/terms", label: t("footer.terms") },
+    { to: "/privacy-policy", label: t("footer.privacy") },
   ];
 
   const socialLinks = [
@@ -58,8 +58,7 @@ const Footer: React.FC = () => {
                 </span>
               </div>
               <p className="text-stone-600 leading-relaxed text-sm">
-                ეკო-მეგობრული ნივთები შენი სახლისთვის. ბუნებრივი მასალები და
-                ჯანსაღი გარემო.
+                {t("footer.tagline")}
               </p>
             </motion.div>
 
@@ -72,7 +71,7 @@ const Footer: React.FC = () => {
               viewport={{ once: true }}
             >
               <h3 className="font-bold text-stone-900 tracking-tight text-lg">
-                ნავიგაცია
+                {t("footer.navigation")}
               </h3>
               <ul className="space-y-3">
                 {navigationLinks.map((link, index) => (
@@ -97,7 +96,7 @@ const Footer: React.FC = () => {
               viewport={{ once: true }}
             >
               <h3 className="font-bold text-stone-900 tracking-tight text-lg">
-                დახმარება
+                {t("footer.support")}
               </h3>
               <ul className="space-y-3">
                 {supportLinks.map((link, index) => (
@@ -122,7 +121,7 @@ const Footer: React.FC = () => {
               viewport={{ once: true }}
             >
               <h3 className="font-bold text-stone-900 tracking-tight text-lg">
-                საკონტაქტო
+                {t("footer.contact")}
               </h3>
               <div className="space-y-4">
                 <div className="flex items-start space-x-3 group">
@@ -140,7 +139,7 @@ const Footer: React.FC = () => {
                 <div className="flex items-start space-x-3 group">
                   <MapPin className="w-5 h-5 text-emerald-600 mt-0.5 group-hover:scale-110 transition-transform" />
                   <span className="text-stone-600 font-medium text-sm">
-                    თბილისი, საქართველო
+                    {t("footer.location")}
                   </span>
                 </div>
               </div>
@@ -161,7 +160,7 @@ const Footer: React.FC = () => {
             
             {/* Copyright და იურიდიული ინფორმაცია */}
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-stone-500 font-medium text-sm text-center md:text-left">
-              <p>&copy; {currentYear} LifeStore. ყველა უფლება დაცულია.</p>
+              <p>&copy; {currentYear} LifeStore. {t("footer.rights")}.</p>
               
               {/* გამყოფი ხაზი/წერტილი მხოლოდ დიდ ეკრანებზე */}
               <span className="hidden md:block w-1 h-1 bg-stone-400 rounded-full"></span>

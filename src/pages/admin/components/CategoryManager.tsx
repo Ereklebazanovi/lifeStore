@@ -16,6 +16,10 @@ const CategoryManager: React.FC = () => {
     name: "",
     slug: "",
     description: "",
+    nameEn: "",
+    nameRu: "",
+    descriptionEn: "",
+    descriptionRu: "",
     image: "",
     isActive: true,
     priority: 0,
@@ -92,6 +96,10 @@ const CategoryManager: React.FC = () => {
       name: category.name,
       slug: category.slug,
       description: category.description,
+      nameEn: category.nameEn || "",
+      nameRu: category.nameRu || "",
+      descriptionEn: category.descriptionEn || "",
+      descriptionRu: category.descriptionRu || "",
       image: category.image,
       isActive: category.isActive,
       priority: category.priority,
@@ -125,6 +133,10 @@ const CategoryManager: React.FC = () => {
       name: "",
       slug: "",
       description: "",
+      nameEn: "",
+      nameRu: "",
+      descriptionEn: "",
+      descriptionRu: "",
       image: "",
       isActive: true,
       priority: 0,
@@ -334,6 +346,57 @@ const CategoryManager: React.FC = () => {
                   placeholder="კატეგორიის აღწერილობა"
                   rows={3}
                 />
+              </div>
+
+              {/* Translations */}
+              <div className="border border-blue-200 rounded-lg p-4 bg-blue-50/40 space-y-3">
+                <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">🌍 თარგმანები (EN / RU)</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">სახელი EN</label>
+                    <input
+                      type="text"
+                      name="nameEn"
+                      value={formData.nameEn || ""}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder="Lunchbox"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">სახელი RU</label>
+                    <input
+                      type="text"
+                      name="nameRu"
+                      value={formData.nameRu || ""}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder="Ланчбокс"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">აღწერა EN</label>
+                  <textarea
+                    name="descriptionEn"
+                    value={formData.descriptionEn || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    rows={2}
+                    placeholder="Category description in English"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">აღწერა RU</label>
+                  <textarea
+                    name="descriptionRu"
+                    value={formData.descriptionRu || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    rows={2}
+                    placeholder="Описание категории на русском"
+                  />
+                </div>
               </div>
 
               <div>

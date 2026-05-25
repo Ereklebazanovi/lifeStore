@@ -27,17 +27,22 @@ import { stockNotificationService } from "../services/stockNotificationService";
 import type { Product, Review } from "../types";
 import { isFirestoreId } from "../utils/slug";
 import { getProductDisplayPrice } from "../utils/productHelpers";
+import { getLocalizedProductName, getLocalizedProductDescription, getLocalizedCategoryName } from "../utils/i18nHelpers";
+import { useCategoryStore } from "../store/categoryStore";
+import { useTranslation } from "react-i18next";
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, i18n } = useTranslation();
   const isReviewMode =
     location.pathname.endsWith("/review") ||
     new URLSearchParams(location.search).get("review") === "1";
   const { getProductById, getProductBySlug, isLoading, products: allProducts, fetchProducts } = useProductStore();
   const { addItem } = useCartStore();
   const { user } = useAuthStore();
+  const { categories } = useCategoryStore();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -251,7 +256,7 @@ const ProductDetailsPage: React.FC = () => {
     }
 
     if (currentStock <= 0) {
-      showToast("პროდუქტი მარაგში არ არის", "error");
+      showToast(t("product.outOfStock"), "error");
       return;
     }
 
@@ -271,10 +276,10 @@ const ProductDetailsPage: React.FC = () => {
     addItem(cartItem, quantity);
 
     const itemName = selectedVariant
-      ? `${product.name} (${selectedVariant.name})`
-      : product.name;
+      ? `${getLocalizedProductName(product, i18n.language)} (${selectedVariant.name})`
+      : getLocalizedProductName(product, i18n.language);
 
-    showToast(`${quantity} x ${itemName} კალათაში დაემატა!`, "success");
+    showToast(`${quantity} x ${itemName} — ${t("product.addedToCart")}`, "success");
   };
 
   const handleQuantityChange = (delta: number) => {
@@ -304,11 +309,11 @@ const ProductDetailsPage: React.FC = () => {
       return;
     }
     if (newReviewRating === 0) {
-      showToast("გთხოვთ აირჩიოთ ვარსვლავები", "error");
+      showToast(t("product.ratingRequired"), "error");
       return;
     }
     if (newReviewText.trim().length < 5) {
-      showToast("შეფასება მინიმუმ 5 სიმბოლო უნდა იყოს", "error");
+      showToast(t("product.reviewTooShort"), "error");
       return;
     }
     setSubmittingReview(true);
@@ -327,9 +332,9 @@ const ProductDetailsPage: React.FC = () => {
       setManualReviewModal(false);
       const updated = await ReviewService.getByProduct(product.id);
       setReviews(updated);
-      showToast("შეფასება გამოქვეყნდა!", "success");
+      showToast(t("product.reviewPublished"), "success");
     } catch {
-      showToast("შეფასება ვერ გამოქვეყნდა", "error");
+      showToast(t("product.reviewFailed"), "error");
     } finally {
       setSubmittingReview(false);
     }
@@ -532,6 +537,9 @@ ${product.description}
     ((getOriginalPrice() - getCurrentPrice()) / getOriginalPrice()) * 100
   );
 
+  const displayName = getLocalizedProductName(product, i18n.language);
+  const displayDescription = getLocalizedProductDescription(product, i18n.language);
+
   return (
     <>
       <SEOHead
@@ -591,7 +599,7 @@ ${product.description}
             <ArrowLeft className="w-6 h-6" />
           </button>
           <span className="font-bold text-stone-900 truncate max-w-[200px] text-sm">
-            {product.name}
+            {displayName}
           </span>
           <button
             onClick={handleShare}
@@ -616,7 +624,7 @@ ${product.description}
             </Link>
             <span className="text-stone-300">/</span>
             <span className="text-emerald-600 truncate max-w-[300px]">
-              {product.name}
+              {displayName}
             </span>
           </div>
 
@@ -657,7 +665,7 @@ ${product.description}
                 <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
                   {outOfStock ? (
                     <span className="bg-stone-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">
-                      ამოწურულია
+                      {t("product.outOfStock")}
                     </span>
                   ) : hasCurrentDiscount() ? (
                     <span className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">
@@ -697,11 +705,11 @@ ${product.description}
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-semibold text-gray-700">
-                        სურათები ({product.images.length}/6)
+                        {t("product.images")} ({product.images.length}/6)
                       </h4>
                       {product.images.length > 1 && (
                         <span className="text-xs text-gray-500">
-                          არჩეულია: {product.images.indexOf(selectedImage) + 1}
+                          {t("product.selected")}: {product.images.indexOf(selectedImage) + 1}
                         </span>
                       )}
                     </div>
@@ -745,12 +753,15 @@ ${product.description}
               {/* Stock & Category */}
               <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50 px-2.5 py-1 rounded-lg">
-                      {product.category}
+                      {getLocalizedCategoryName(
+                        categories.find((c) => c.name === product.category) ?? { name: product.category, nameEn: undefined, nameRu: undefined } as never,
+                        i18n.language
+                      )}
                   </span>
                   <div className="flex items-center gap-3">
                       <div className={`flex items-center gap-1.5 text-sm font-medium ${outOfStock ? "text-red-600" : "text-emerald-700"}`}>
                           <div className={`w-2 h-2 rounded-full ${outOfStock ? "bg-red-500" : "bg-emerald-500"}`}></div>
-                          <span>{outOfStock ? "მარაგში არ არის" : "მარაგშია"}</span>
+                          <span>{outOfStock ? t("product.outOfStock") : t("product.inStock")}</span>
                       </div>
                       {getCurrentWeight() && (
                           <div className="flex items-center gap-1.5 text-sm font-medium text-stone-600">
@@ -761,7 +772,7 @@ ${product.description}
               </div>
 
               <h1 className="text-2xl lg:text-3xl font-bold text-stone-900 leading-tight mb-4 font-bpg-arial">
-                {product.name}
+                {displayName}
               </h1>
 
               {/* Price */}
@@ -827,19 +838,19 @@ ${product.description}
 
               {/* Description */}
               <div className="prose prose-stone prose-sm max-w-none text-stone-600 mb-6 leading-relaxed line-clamp-5 hover:line-clamp-none transition-all">
-                <p className="whitespace-pre-line">{product.description}</p>
+                <p className="whitespace-pre-line">{displayDescription}</p>
               </div>
 
               {/* Features List (Very Compact) */}
               <ul className="space-y-2 mb-6 bg-stone-50 p-4 rounded-xl border border-stone-100 text-sm text-stone-700 font-medium">
                   <li className="flex items-center gap-2">
-                      <Leaf className="w-4 h-4 text-emerald-600" /> 100% ეკომეგობრული
+                      <Leaf className="w-4 h-4 text-emerald-600" /> {t("product.eco")}
                   </li>
                    <li className="flex items-center gap-2">
-                      <Truck className="w-4 h-4 text-emerald-600" /> მიწოდება: თბილისი/რუსთავი 5₾, სხვა 10₾
+                      <Truck className="w-4 h-4 text-emerald-600" /> {t("product.delivery")}
                   </li>
                    <li className="flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600" /> ხარისხის გარანტია
+                      <ShieldCheck className="w-4 h-4 text-emerald-600" /> {t("product.qualityGuarantee")}
                   </li>
               </ul>
 
@@ -850,7 +861,7 @@ ${product.description}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-stone-600 hover:text-stone-900 border border-stone-200 hover:border-stone-300 rounded-lg transition-all"
                 >
                   <Share2 className="w-4 h-4" />
-                  <span>გაზიარება</span>
+                  <span>{t("product.share")}</span>
                 </button>
               </div>
 
@@ -887,11 +898,11 @@ ${product.description}
                             }`}
                 >
                   {outOfStock ? (
-                    "მარაგი ამოწურულია"
+                    t("product.outOfStock")
                   ) : (
                     <>
                       <ShoppingCart className="w-5 h-5" />
-                      <span>დამატება — ₾{totalPrice.toFixed(2)}</span>
+                      <span>{t("product.addToCart")} — ₾{totalPrice.toFixed(2)}</span>
                     </>
                   )}
                 </button>
@@ -939,7 +950,7 @@ ${product.description}
         {relatedProducts.length > 0 && (
           <div className="px-4 lg:px-0 py-10 border-t border-stone-100 mt-6">
             <div className="max-w-7xl mx-auto">
-              <h2 className="text-xl font-bold text-stone-900 mb-6">იხილეთ ასევე</h2>
+              <h2 className="text-xl font-bold text-stone-900 mb-6">{t('product.discoverAlso')}</h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 {relatedProducts.map((p) => (
                   <Link
@@ -963,7 +974,7 @@ ${product.description}
                     </div>
                     <div className="p-3 flex flex-col grow">
                       <h3 className="font-semibold text-stone-900 text-sm line-clamp-2 leading-snug mb-2 group-hover:text-emerald-700 transition-colors grow">
-                        {p.name}
+                        {getLocalizedProductName(p, i18n.language)}
                       </h3>
                       <div className="flex items-center justify-between mt-auto">
                         <span className="text-base font-bold text-emerald-700">
@@ -972,7 +983,7 @@ ${product.description}
                         {(p.hasVariants
                           ? (p.variants?.reduce((s, v) => s + (v.stock || 0), 0) ?? 0)
                           : (p.stock ?? 0)) === 0 && (
-                          <span className="text-xs text-stone-400">ამოწურულია</span>
+                          <span className="text-xs text-stone-400">{t("product.outOfStock")}</span>
                         )}
                       </div>
                     </div>
@@ -987,7 +998,7 @@ ${product.description}
         <div id="reviews" className="px-4 lg:px-0 py-10 border-t border-stone-100 mt-6">
           <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-stone-900">შეფასებები</h2>
+            <h2 className="text-xl font-bold text-stone-900">{t("product.reviews")}</h2>
             {reviews.length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-stone-900">
@@ -1006,7 +1017,7 @@ ${product.description}
                       </svg>
                     ))}
                   </div>
-                  <p className="text-xs text-stone-500 mt-0.5">{reviews.length} შეფასება</p>
+                  <p className="text-xs text-stone-500 mt-0.5">{t("product.reviewCount", { count: reviews.length })}</p>
                 </div>
               </div>
             )}
@@ -1015,7 +1026,7 @@ ${product.description}
           {/* შეფასებების სია */}
           {reviews.length === 0 ? (
             <p className="text-stone-400 text-sm mb-8">
-              ჯერ შეფასება არ არის. იყავი პირველი!
+              {t("product.noReviews")}
             </p>
           ) : (
             <div className="space-y-4 mb-8">
@@ -1061,7 +1072,7 @@ ${product.description}
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span className="font-medium text-sm">თქვენ უკვე შეაფასეთ ეს პროდუქტი</span>
+              <span className="font-medium text-sm">{t("product.alreadyReviewed")}</span>
             </div>
           ) : (
             <button
@@ -1071,7 +1082,7 @@ ${product.description}
               <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-              შეაფასე პროდუქტი
+              {t("product.writeReview")}
             </button>
           )}
           </div>{/* end max-w-3xl */}
@@ -1111,12 +1122,12 @@ ${product.description}
                         }`}
             >
               {outOfStock ? (
-                "ამოწურულია"
+                t("product.outOfStock")
               ) : (
                 <>
                   <ShoppingCart className="w-5 h-5" />
                   <div className="flex flex-col items-start leading-tight">
-                    <span>დამატება</span>
+                    <span>{t("product.addToCart")}</span>
                     <span className="text-[10px] opacity-80">
                       ₾{totalPrice.toFixed(2)}
                     </span>
@@ -1137,8 +1148,8 @@ ${product.description}
               <div>
                 <h3 className="text-lg font-semibold">{product?.name}</h3>
                 <p className="text-sm opacity-50">
-                  {modalZoom > 1 ? "დააჭირე გასადიდებლად / გასადიდებლად" : "დააჭირე გასადიდებლად"}
-                  {" · "}სურათი {(product?.images?.indexOf(selectedImage) || 0) + 1}/{product?.images?.length || 0}
+                  {t("product.tapToZoom")}
+                  {" · "}{t("product.imageOf", { current: (product?.images?.indexOf(selectedImage) || 0) + 1, total: product?.images?.length || 0 })}
                 </p>
               </div>
               <button
@@ -1229,7 +1240,7 @@ ${product.description}
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">გაზიარება</h3>
+              <h3 className="text-xl font-bold text-gray-900">{t("product.share")}</h3>
               <button
                 onClick={() => setIsShareModalOpen(false)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -1344,7 +1355,7 @@ ${product.description}
                   />
                 )}
                 <div className="min-w-0">
-                  <p className="text-xs text-stone-400">შეაფასე</p>
+                  <p className="text-xs text-stone-400">{t("product.reviewLabel")}</p>
                   <p className="font-semibold text-stone-900 text-sm leading-tight truncate">
                     {product.name}
                   </p>
@@ -1361,7 +1372,7 @@ ${product.description}
             {/* Form */}
             {user && hasReviewed ? (
               <div className="p-6 text-center">
-                <p className="text-emerald-600 font-medium">✓ უკვე შეაფასეთ ეს პროდუქტი</p>
+                <p className="text-emerald-600 font-medium">✓ {t("product.alreadyReviewed")}</p>
               </div>
             ) : (
               <form onSubmit={handleSubmitReview} className="px-4 py-4 space-y-3">
@@ -1370,14 +1381,14 @@ ${product.description}
                     type="text"
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
-                    placeholder="სახელი *"
+                    placeholder={`${t("product.namePlaceholder")} *`}
                     maxLength={50}
                     className="w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 )}
 
                 <div>
-                  <p className="text-xs text-stone-500 mb-2">შეფასება *</p>
+                  <p className="text-xs text-stone-500 mb-2">{t("product.rating")} *</p>
                   <div className="flex items-center gap-1.5">
                     {[1, 2, 3, 4, 5].map((s) => (
                       <button
@@ -1398,7 +1409,7 @@ ${product.description}
                   </div>
                   {newReviewRating > 0 && (
                     <p className="text-sm text-stone-500 mt-1">
-                      {["", "ცუდი", "ნეიტრალური", "კარგი", "ძალიან კარგი", "შესანიშნავი"][newReviewRating]}
+                      {["", t("product.rating1"), t("product.rating2"), t("product.rating3"), t("product.rating4"), t("product.rating5")][newReviewRating]}
                     </p>
                   )}
                 </div>
@@ -1406,7 +1417,7 @@ ${product.description}
                 <textarea
                   value={newReviewText}
                   onChange={(e) => setNewReviewText(e.target.value)}
-                  placeholder="გაგვიზიარე შენი გამოცდილება..."
+                  placeholder={t("product.reviewPlaceholder")}
                   rows={3}
                   className="w-full border border-stone-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                 />
@@ -1416,7 +1427,7 @@ ${product.description}
                   disabled={submittingReview}
                   className="w-full bg-stone-900 hover:bg-emerald-600 text-white font-semibold py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
                 >
-                  {submittingReview ? "იგზავნება..." : "შეფასების გამოქვეყნება"}
+                  {submittingReview ? t("product.reviewSubmitting") : t("product.reviewSubmit")}
                 </button>
               </form>
             )}

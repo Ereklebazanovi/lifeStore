@@ -19,8 +19,14 @@ export interface BlogPost {
   id: string;
   slug: string;
   title: string;
+  titleEn?: string;
+  titleRu?: string;
   excerpt: string;
+  excerptEn?: string;
+  excerptRu?: string;
   content: string;
+  contentEn?: string;
+  contentRu?: string;
   image?: string;
   tags: string[];
   readTime: number;
@@ -48,6 +54,12 @@ function fromDoc(id: string, data: Record<string, unknown>): BlogPost {
     title: (data.title as string) || "",
     excerpt: (data.excerpt as string) || "",
     content: (data.content as string) || "",
+    titleEn: (data.titleEn as string) || undefined,
+    titleRu: (data.titleRu as string) || undefined,
+    excerptEn: (data.excerptEn as string) || undefined,
+    excerptRu: (data.excerptRu as string) || undefined,
+    contentEn: (data.contentEn as string) || undefined,
+    contentRu: (data.contentRu as string) || undefined,
     image: data.image as string | undefined,
     tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
     readTime: (data.readTime as number) || 1,

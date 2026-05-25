@@ -5,17 +5,14 @@ import {
   Leaf,
   ArrowRight,
   Star,
-  CheckCircle,
   Facebook,
   Instagram,
   Utensils,
   ShieldCheck,
   Search,
-  Filter,
 } from "lucide-react";
 import { useProductStore } from "../store/productStore";
 import { useCategoryStore } from "../store/categoryStore";
-import { showToast } from "../components/ui/Toast";
 import { hasDiscount, getDiscountText } from "../utils/discount";
 import {
   getProductDisplayPrice,
@@ -25,6 +22,8 @@ import {
 import { getStockText, getStockColorClassesCompact } from "../utils/stock";
 import SEOHead from "../components/SEOHead";
 import CategoryGrid from "../components/CategoryGrid";
+import { useTranslation } from "react-i18next";
+import { getLocalizedProductName, getLocalizedCategoryName } from "../utils/i18nHelpers";
 
 // HERO_IMAGE_CONFIG - ერთი მთავარი ფოტო
 // როცა ახალ ფოტოს მიიღებთ, ჩააგდეთ src/assets/hero.jpg და გამოიყენეთ:
@@ -37,6 +36,7 @@ const HERO_IMAGE_CONFIG = {
 };
 
 const HomePage: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { products, fetchProducts, isLoading } = useProductStore();
   const { categories: categoryObjects, fetchCategories } = useCategoryStore();
   const [selectedFilter, setSelectedFilter] = useState("all");
@@ -46,9 +46,8 @@ const HomePage: React.FC = () => {
 
   // პრიორიტეტის მიხედვით დალაგებული კატეგორიების სია
   const sortedCategories = categoryObjects
-    .filter((cat) => cat.isActive !== false) // მხოლოდ აქტიური კატეგორიები
-    .sort((a, b) => (b.priority || 0) - (a.priority || 0)) // მაღალი priority პირველი
-    .map((cat) => cat.name); // მხოლოდ სახელები
+    .filter((cat) => cat.isActive !== false)
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
 
   useEffect(() => {
@@ -70,7 +69,9 @@ const HomePage: React.FC = () => {
     // Filter by search term
     if (searchTerm.trim()) {
       filtered = filtered.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getLocalizedProductName(product, i18n.language)
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
         (product.productCode && product.productCode.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
@@ -141,10 +142,10 @@ const HomePage: React.FC = () => {
   };
 
   const filterOptions = [
-    { value: "all", label: "ყველა" },
-    { value: "popular", label: "პოპულარული" },
-    { value: "discounts", label: "ფასდაკლება" },
-    { value: "new", label: "ახალი" },
+    { value: "all", label: t('home.filterAll') },
+    { value: "popular", label: t('home.filterPopular') },
+    { value: "discounts", label: t('home.filterDiscounts') },
+    { value: "new", label: t('home.filterNew') },
   ];
 
   return (
@@ -177,23 +178,23 @@ const HomePage: React.FC = () => {
                 Premium Home & Kitchen
               </span>
               <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-stone-900 leading-tight mb-2">
-                {HERO_IMAGE_CONFIG.title}
+                {t('home.hero.title')}
               </h1>
               <p className="text-stone-500 text-sm lg:text-base leading-relaxed mb-5 max-w-sm">
-                {HERO_IMAGE_CONFIG.subtitle}
+                {t('home.hero.subtitle')}
               </p>
               <div className="flex items-center gap-3">
                 <Link
                   to="/products"
                   className="inline-flex items-center gap-2 bg-stone-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all duration-300 shadow-sm active:scale-95"
                 >
-                  კოლექცია <ArrowRight className="w-4 h-4" />
+                  {t('home.hero.shopNow')} <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
                   to="/about"
                   className="text-stone-500 hover:text-stone-900 text-sm font-medium transition-colors"
                 >
-                  ჩვენ შესახებ
+                  {t('home.hero.ourStory')}
                 </Link>
               </div>
             </div>
@@ -211,20 +212,20 @@ const HomePage: React.FC = () => {
               {[
                 {
                   icon: Leaf,
-                  title: "ეკო & უსაფრთხო",
-                  text: "ჯანმრთელობისთვის უვნებელი, ეკოლოგიურად სუფთა მასალები.",
+                  title: t('home.brandEcoTitle'),
+                  text: t('home.brandEcoText'),
                   color: "bg-emerald-50 text-emerald-700",
                 },
                 {
                   icon: Utensils,
-                  title: "პრემიუმ ხარისხი",
-                  text: "თანამედროვე დიზაინს მორგებული სამზარეულოს და სახლის ნივთები.",
+                  title: t('home.brandPremiumTitle'),
+                  text: t('home.brandPremiumText'),
                   color: "bg-stone-100 text-stone-700",
                 },
                 {
                   icon: ShieldCheck,
-                  title: "პირდაპირი იმპორტი",
-                  text: "ვახდენთ პირდაპირ იმპორტს, რაც საუკეთესო ფასს განაპირობებს.",
+                  title: t('home.brandImportTitle'),
+                  text: t('home.brandImportText'),
                   color: "bg-blue-50 text-blue-700",
                 },
               ].map((item, idx) => (
@@ -256,17 +257,17 @@ const HomePage: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6 lg:mb-8">
               <div>
                 <span className="text-emerald-600 font-bold text-xs tracking-wider uppercase mb-2 block">
-                  ჩვენი კოლექცია
+                  {t('home.ourCollection')}
                 </span>
                 <h2 className="text-2xl lg:text-3xl font-bold text-stone-900">
-                  აღმოაჩინე რჩეული ნივთები
+                  {t('home.discoverProducts')}
                 </h2>
               </div>
               <Link
                 to="/products"
                 className="hidden md:flex text-stone-500 hover:text-stone-900 font-medium items-center gap-2 group transition-colors text-sm"
               >
-                სრული კატალოგი{" "}
+                {t('home.allProducts')}{" "}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -283,7 +284,7 @@ const HomePage: React.FC = () => {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="ძებნა..."
+                    placeholder={t('nav.searchPlaceholder')}
                     className="w-full bg-white pl-10 pr-4 py-3 rounded-full border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-sm text-stone-900 placeholder:text-stone-400 transition-all shadow-sm"
                   />
                 </div>
@@ -321,7 +322,7 @@ const HomePage: React.FC = () => {
                 {/* Category Filter - Mobile Optimized */}
                 {sortedCategories.length > 0 && (
                   <div className="flex flex-col gap-2">
-                    <span className="text-xs font-medium text-stone-700 px-2">კატეგორიები</span>
+                    <span className="text-xs font-medium text-stone-700 px-2">{t('home.categories')}</span>
                     <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
                       <button
                         onClick={() => setSelectedCategory("all")}
@@ -332,20 +333,20 @@ const HomePage: React.FC = () => {
                                         : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
                                     }`}
                       >
-                        ყველა
+                        {t('home.filterAll')}
                       </button>
-                      {sortedCategories.map((category) => (
+                      {sortedCategories.map((cat) => (
                         <button
-                          key={category}
-                          onClick={() => setSelectedCategory(category)}
+                          key={cat.id}
+                          onClick={() => setSelectedCategory(cat.name)}
                           className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 border flex-shrink-0
                                       ${
-                                        selectedCategory === category
+                                        selectedCategory === cat.name
                                           ? "bg-emerald-600 text-white border-emerald-600"
                                           : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:bg-stone-50"
                                       }`}
                         >
-                          {category}
+                          {getLocalizedCategoryName(cat, i18n.language)}
                         </button>
                       ))}
                     </div>
@@ -376,12 +377,12 @@ const HomePage: React.FC = () => {
                   <Search className="w-8 h-8 text-stone-300" />
                 </div>
                 <h3 className="text-lg font-bold text-stone-900 mb-1">
-                  {searchTerm ? "ვერაფერი მოიძებნა" : "კოლექცია ცარიელია"}
+                  {searchTerm ? t('home.nothingFound') : t('home.collectionEmpty')}
                 </h3>
                 <p className="text-stone-500 text-sm">
                   {searchTerm
-                    ? `სცადეთ სხვა სიტყვა ან შეცვალეთ ფილტრი`
-                    : "ამ კატეგორიაში პროდუქტები ჯერ არ არის"}
+                    ? t('home.tryOtherSearch')
+                    : t('home.noCategoryProducts')}
                 </p>
                 {(searchTerm || selectedFilter !== "all" || selectedCategory !== "all") && (
                   <button
@@ -392,7 +393,7 @@ const HomePage: React.FC = () => {
                     }}
                     className="mt-4 px-6 py-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-full transition-colors"
                   >
-                    ყველას ნახვა
+                    {t('common.seeAll')}
                   </button>
                 )}
               </div>
@@ -414,7 +415,7 @@ const HomePage: React.FC = () => {
                         <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
                           {isOutOfStock ? (
                             <span className="bg-stone-900/90 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded-md">
-                              ამოწურულია
+                              {t('product.outOfStock')}
                             </span>
                           ) : hasDiscount(product) ? (
                             <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
@@ -448,7 +449,7 @@ const HomePage: React.FC = () => {
                         {!isOutOfStock && (
                           <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center pb-6 bg-gradient-to-t from-black/20 to-transparent">
                             <span className="bg-white text-stone-900 text-xs font-bold px-4 py-2 rounded-full shadow-lg">
-                              დაწვრილებით
+                              {t('common.viewDetails')}
                             </span>
                           </div>
                         )}
@@ -458,7 +459,7 @@ const HomePage: React.FC = () => {
                       <div className="p-4 flex flex-col flex-grow">
                         <Link to={`/product/${product.slug || product.id}`}>
                           <h3 className="font-bold text-stone-900 text-sm line-clamp-2 leading-snug hover:text-emerald-700 transition-colors mb-2 min-h-[2.5rem]">
-                            {product.name}
+                            {getLocalizedProductName(product, i18n.language)}
                           </h3>
                         </Link>
 
@@ -468,7 +469,7 @@ const HomePage: React.FC = () => {
                               product
                             )}`}
                           >
-                            {getStockText(product)}
+                            {getStockText(product, t)}
                           </span>
                         </div>
 
@@ -507,8 +508,7 @@ const HomePage: React.FC = () => {
                   onClick={handleLoadMore}
                   className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-300 px-6 py-3 rounded-full transition-all duration-200 shadow-sm hover:shadow-md"
                 >
-                  მეტის ნახვა ({filteredProducts.length - displayCount}{" "}
-                  დარჩენილი) <ArrowRight className="w-4 h-4" />
+                  {t('home.loadMore')} ({filteredProducts.length - displayCount}) <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -518,7 +518,7 @@ const HomePage: React.FC = () => {
                 to="/products"
                 className="inline-flex items-center gap-2 text-sm font-bold text-emerald-600 bg-emerald-50 px-6 py-3 rounded-full"
               >
-                სრული კატალოგი <ArrowRight className="w-4 h-4" />
+                {t('home.allProducts')} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
@@ -537,11 +537,10 @@ const HomePage: React.FC = () => {
               <Leaf className="w-8 h-8 text-emerald-400" />
             </div>
             <h2 className="text-2xl lg:text-4xl font-bold mb-4">
-              LifeStore - შენი სახლისთვის
+              {t('home.socialTitle')}
             </h2>
             <p className="text-stone-400 mb-8 max-w-lg mx-auto text-sm lg:text-base">
-              გამოგვყვევით სოციალურ ქსელებში, ნახეთ ახალი კოლექციები და მიიღეთ
-              რჩევები სახლის მოწყობაზე.
+              {t('home.socialText')}
             </p>
             <div className="flex justify-center gap-4">
               <a

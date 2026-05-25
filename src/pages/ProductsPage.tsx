@@ -19,8 +19,11 @@ import {
   hasDiscount as hasProductDiscount,
 } from "../utils/productHelpers";
 import SEOHead from "../components/SEOHead";
+import { useTranslation } from "react-i18next";
+import { getLocalizedProductName } from "../utils/i18nHelpers";
 
 const ProductsPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,7 +47,9 @@ const ProductsPage: React.FC = () => {
     // ძებნა
     if (searchTerm.trim()) {
       filtered = filtered.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+        getLocalizedProductName(product, i18n.language)
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
       );
     }
 
@@ -75,10 +80,10 @@ const ProductsPage: React.FC = () => {
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
   const filterOptions = [
-    { value: "all", label: "ყველა" },
-    { value: "popular", label: "პოპულარული" },
-    { value: "discounts", label: "ფასდაკლებები" },
-    { value: "new", label: "ახალი" },
+    { value: "all", label: t("home.filterAll") },
+    { value: "popular", label: t("home.filterPopular") },
+    { value: "discounts", label: t("home.filterDiscounts") },
+    { value: "new", label: t("home.filterNew") },
   ];
 
   // Helper for counts
@@ -130,11 +135,10 @@ const ProductsPage: React.FC = () => {
           {/* Header Section */}
           <div className="mb-8">
             <h1 className="text-3xl lg:text-4xl font-bold text-stone-900 tracking-tight mb-3 font-bpg-arial">
-              ყველა პროდუქტი
+              {t("home.allProducts")}
             </h1>
             <p className="text-stone-600 max-w-2xl">
-              აღმოაჩინეთ ჩვენი ეკო-მეგობრული პროდუქტების სრული კოლექცია.
-              შეარჩიეთ საუკეთესო თქვენი სახლისთვის.
+              {t("home.discoverProducts")}
             </p>
           </div>
 
@@ -207,10 +211,10 @@ const ProductsPage: React.FC = () => {
                 <Search className="w-8 h-8 text-stone-300" />
               </div>
               <h3 className="text-xl font-bold text-stone-900">
-                ვერაფერი მოიძებნა
+                {t("home.nothingFound")}
               </h3>
               <p className="text-stone-500 mt-2">
-                სცადეთ შეცვალოთ ფილტრი ან საძიებო სიტყვა
+                {t("home.tryOtherSearch")}
               </p>
               <button
                 onClick={() => {
@@ -219,7 +223,7 @@ const ProductsPage: React.FC = () => {
                 }}
                 className="mt-6 px-6 py-2.5 bg-stone-900 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-colors"
               >
-                ფილტრის გასუფთავება
+                {t("common.clearFilters")}
               </button>
             </div>
           ) : (
@@ -242,7 +246,7 @@ const ProductsPage: React.FC = () => {
                         <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
                           {isOutOfStock ? (
                             <span className="bg-stone-900/90 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded-md">
-                              ამოწურულია
+                              {t("product.outOfStock")}
                             </span>
                           ) : hasDiscount(product) ? (
                             <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
@@ -276,7 +280,7 @@ const ProductsPage: React.FC = () => {
                         {!isOutOfStock && (
                           <div className="hidden lg:flex absolute inset-x-0 bottom-4 justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
                             <span className="bg-white/95 backdrop-blur text-stone-900 text-xs font-bold px-4 py-2.5 rounded-full shadow-lg border border-stone-100">
-                              პროდუქტის ნახვა
+                              {t("common.viewDetails")}
                             </span>
                           </div>
                         )}
@@ -286,7 +290,7 @@ const ProductsPage: React.FC = () => {
                       <div className="p-4 flex flex-col flex-grow">
                         <Link to={`/product/${product.slug || product.id}`}>
                           <h3 className="font-bold text-stone-900 text-sm line-clamp-2 leading-relaxed hover:text-emerald-700 transition-colors mb-2 min-h-[2.5rem]">
-                            {product.name}
+                            {getLocalizedProductName(product, i18n.language)}
                           </h3>
                         </Link>
 
@@ -298,7 +302,7 @@ const ProductsPage: React.FC = () => {
                               .replace("text-", "border-")
                               .replace("bg-", "bg-opacity-10 ")}`}
                           >
-                            {getStockText(product)}
+                            {getStockText(product, t)}
                           </span>
                         </div>
 

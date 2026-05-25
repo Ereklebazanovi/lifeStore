@@ -6,8 +6,28 @@
       "missing": [{ "type": "query", "key": "_spa" }]
     },
     {
+      "source": "/en/product/:id",
+      "destination": "/api/seo-product?id=:id&lang=en",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
+      "source": "/ru/product/:id",
+      "destination": "/api/seo-product?id=:id&lang=ru",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
       "source": "/category/:slug",
       "destination": "/api/seo-category?slug=:slug",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
+      "source": "/en/category/:slug",
+      "destination": "/api/seo-category?slug=:slug&lang=en",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
+      "source": "/ru/category/:slug",
+      "destination": "/api/seo-category?slug=:slug&lang=ru",
       "missing": [{ "type": "query", "key": "_spa" }]
     },
     {
@@ -16,13 +36,43 @@
       "missing": [{ "type": "query", "key": "_spa" }]
     },
     {
+      "source": "/en/blog/:slug",
+      "destination": "/api/seo-blog-post?slug=:slug&lang=en",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
+      "source": "/ru/blog/:slug",
+      "destination": "/api/seo-blog-post?slug=:slug&lang=ru",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
       "source": "/blog",
       "destination": "/api/seo-blog",
       "missing": [{ "type": "query", "key": "_spa" }]
     },
     {
+      "source": "/en/blog",
+      "destination": "/api/seo-blog?lang=en",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
+      "source": "/ru/blog",
+      "destination": "/api/seo-blog?lang=ru",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
       "source": "/about",
       "destination": "/api/seo-about",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
+      "source": "/en/about",
+      "destination": "/api/seo-about?lang=en",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
+      "source": "/ru/about",
+      "destination": "/api/seo-about?lang=ru",
       "missing": [{ "type": "query", "key": "_spa" }]
     },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },

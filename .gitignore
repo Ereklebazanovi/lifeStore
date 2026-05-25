@@ -31,3 +31,8 @@ dist-ssr
 .env.production
 .env.local
 .vercel
+
+# Firebase service account (NEVER commit this)
+serviceAccount.json
+products-translations.json
+blog-translations/

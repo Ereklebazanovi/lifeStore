@@ -5,9 +5,11 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
+  Outlet,
   useLocation,
   useNavigate,
 } from "react-router-dom";
+import i18n from "./i18n";
 import { AnimatePresence } from "framer-motion";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -37,6 +39,16 @@ import { useCartStore } from "./store/cartStore";
 import { ToastContainer } from "./components/ui/Toast";
 import { initGoogleAnalytics, trackPageView } from "./utils/analytics";
 import { initFacebookPixel, trackPixelEvent } from "./utils/pixel";
+const LANG_PREFIXES = ["en", "ru"] as const;
+type LangPrefix = (typeof LANG_PREFIXES)[number];
+
+const LanguageRoute: React.FC<{ lang: LangPrefix }> = ({ lang }) => {
+  useEffect(() => {
+    i18n.changeLanguage(lang);
+  }, [lang]);
+  return <Outlet />;
+};
+
 ///
 const AnalyticsTracker: React.FC = () => {
   const location = useLocation();
@@ -246,6 +258,20 @@ const AnimatedRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+
+        {/* Multilingual routes: /en/... and /ru/... */}
+        {LANG_PREFIXES.map((lang) => (
+          <Route key={lang} path={`/${lang}`} element={<LanguageRoute lang={lang} />}>
+            <Route index element={<PageTransition><HomePage /></PageTransition>} />
+            <Route path="products" element={<PageTransition><ProductsPage /></PageTransition>} />
+            <Route path="category/:slug" element={<PageTransition><CategoryPage /></PageTransition>} />
+            <Route path="blog" element={<PageTransition><BlogPage /></PageTransition>} />
+            <Route path="blog/:slug" element={<PageTransition><BlogPostPage /></PageTransition>} />
+            <Route path="about" element={<PageTransition><AboutPage /></PageTransition>} />
+            <Route path="product/:id" element={<PageTransition><ProductDetailsPage /></PageTransition>} />
+            <Route path="product/:id/review" element={<PageTransition><ProductDetailsPage /></PageTransition>} />
+          </Route>
+        ))}
       </Routes>
     </AnimatePresence>
   );
@@ -263,10 +289,10 @@ function App() {
   useEffect(() => {
     initializeAuth();
 
-    // ეს მხოლოდ ვიზუალური ეფექტისთვისაა (2.5 წამი აჩვენებს ლოგოს)
+    // ვიზუალური splash — მინიმუმ 1.5 წამი, შემდეგ auth-ს ვუცდით
     const timer = setTimeout(() => {
       setIsSplashLoading(false);
-    }, 2500);
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, [initializeAuth]);

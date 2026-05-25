@@ -2,38 +2,64 @@
 
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { Badge } from "antd"
-import { ShoppingCart, Menu, X, ShieldCheck, User, LogOut, LogIn, History, Search, ChevronDown, LayoutGrid } from "lucide-react"
+import { ShoppingCart, Menu, X, ShieldCheck, User, LogOut, LogIn, History, Search, ChevronDown, LayoutGrid, Globe } from "lucide-react"
 import { useCartStore } from "../store/cartStore"
 import { useAuthStore } from "../store/authStore"
 import { useCategoryStore } from "../store/categoryStore"
 import AuthButton from "./auth/AuthButton"
+import { useTranslation } from "react-i18next"
+import { getLocalizedCategoryName } from "../utils/i18nHelpers"
+
+const LANGUAGES = [
+  { code: "ka", label: "ქარ" },
+  { code: "en", label: "ENG" },
+  { code: "ru", label: "РУС" },
+] as const
 
 const Navbar: React.FC = () => {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
   const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false)
+  const [isLangOpen, setIsLangOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const langRef = useRef<HTMLDivElement>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { totalItems } = useCartStore()
   const { user, signInWithGoogle, signOut } = useAuthStore()
   const { categories, fetchCategories } = useCategoryStore()
 
-  const isActivePath = (path: string) => location.pathname === path
-  const isProductsActive = location.pathname === "/products" || location.pathname.startsWith("/category/")
+  // Strip language prefix for path matching
+  const cleanPath = location.pathname.replace(/^\/(en|ru)(\/|$)/, "/")
+  const isActivePath = (path: string) => cleanPath === path
+  const isProductsActive = cleanPath === "/products" || cleanPath.startsWith("/category/")
+
+  // Build language-aware path prefix
+  const lang = i18n.language
+  const langPrefix = lang === "ka" ? "" : `/${lang}`
+  const localePath = (path: string) => `${langPrefix}${path}`
+
+  const switchLanguage = (newLang: string) => {
+    const stripped = location.pathname.replace(/^\/(en|ru)(\/|$)/, "/")
+    const newPath = newLang === "ka" ? stripped : `/${newLang}${stripped}`
+    i18n.changeLanguage(newLang)
+    navigate(newPath, { replace: true })
+    setIsLangOpen(false)
+    setIsMenuOpen(false)
+  }
 
   useEffect(() => {
     fetchCategories()
   }, [fetchCategories])
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20)
-    }
+    const handleScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
@@ -42,6 +68,7 @@ const Navbar: React.FC = () => {
     setIsMenuOpen(false)
     setIsSearchOpen(false)
     setIsCategoryDropdownOpen(false)
+    setIsLangOpen(false)
   }, [location])
 
   useEffect(() => {
@@ -53,11 +80,13 @@ const Navbar: React.FC = () => {
     }
   }, [isMenuOpen])
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsCategoryDropdownOpen(false)
+      }
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setIsLangOpen(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
@@ -75,6 +104,7 @@ const Navbar: React.FC = () => {
   }
 
   const activeCategories = categories.filter(c => c.isActive !== false)
+  const currentLangLabel = LANGUAGES.find(l => l.code === lang)?.label ?? "ქარ"
 
   return (
     <>
@@ -87,7 +117,7 @@ const Navbar: React.FC = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-[72px]">
-            <Link to="/" className="flex items-center space-x-2.5 group z-50 relative">
+            <Link to={localePath("/")} className="flex items-center space-x-2.5 group z-50 relative">
               <div className="relative overflow-hidden rounded-xl shadow-sm group-hover:shadow-lg transition-all duration-300 transform group-hover:scale-105">
                 <img src="/Screenshot 2025-12-10 151703.png" alt="LifeStore" className="h-11 w-auto object-cover" />
               </div>
@@ -97,8 +127,8 @@ const Navbar: React.FC = () => {
             </Link>
 
             <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2 space-x-1">
-              <NavLink to="/" isActive={isActivePath("/")}>
-                მთავარი
+              <NavLink to={localePath("/")} isActive={isActivePath("/")}>
+                {t("nav.home")}
               </NavLink>
 
               {/* Products dropdown */}
@@ -120,7 +150,7 @@ const Navbar: React.FC = () => {
                       : "text-neutral-700 hover:text-emerald-600 hover:bg-emerald-50/50"
                   }`}
                 >
-                  პროდუქტები
+                  {t("nav.products")}
                   <ChevronDown
                     className={`w-3.5 h-3.5 transition-transform duration-200 ${isCategoryDropdownOpen ? "rotate-180" : ""}`}
                   />
@@ -129,7 +159,6 @@ const Navbar: React.FC = () => {
                   )}
                 </button>
 
-                {/* Dropdown panel */}
                 <div
                   className={`absolute top-full left-1/2 -translate-x-1/2 pt-2 w-56 transition-all duration-200 origin-top ${
                     isCategoryDropdownOpen
@@ -139,15 +168,15 @@ const Navbar: React.FC = () => {
                 >
                   <div className="bg-white rounded-2xl shadow-xl border border-neutral-100 overflow-hidden p-2">
                     <Link
-                      to="/products"
+                      to={localePath("/products")}
                       className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                        location.pathname === "/products"
+                        cleanPath === "/products"
                           ? "bg-emerald-50 text-emerald-700"
                           : "text-neutral-700 hover:bg-neutral-50 hover:text-emerald-600"
                       }`}
                     >
                       <LayoutGrid className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      ყველა პროდუქტი
+                      {t("nav.allProducts")}
                     </Link>
 
                     {activeCategories.length > 0 && (
@@ -156,9 +185,9 @@ const Navbar: React.FC = () => {
                         {activeCategories.map((cat) => (
                           <Link
                             key={cat.id}
-                            to={`/category/${cat.slug}`}
+                            to={localePath(`/category/${cat.slug}`)}
                             className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                              location.pathname === `/category/${cat.slug}`
+                              cleanPath === `/category/${cat.slug}`
                                 ? "bg-emerald-50 text-emerald-700 font-semibold"
                                 : "text-neutral-600 hover:bg-neutral-50 hover:text-emerald-600"
                             }`}
@@ -168,7 +197,7 @@ const Navbar: React.FC = () => {
                             ) : (
                               <span className="w-4 h-4 rounded-full bg-emerald-100 flex-shrink-0" />
                             )}
-                            {cat.name}
+                            {getLocalizedCategoryName(cat, i18n.language)}
                           </Link>
                         ))}
                       </>
@@ -177,12 +206,12 @@ const Navbar: React.FC = () => {
                 </div>
               </div>
 
-              <NavLink to="/blog" isActive={isActivePath("/blog") || location.pathname.startsWith("/blog/")}>
-                ბლოგი
+              <NavLink to={localePath("/blog")} isActive={isActivePath("/blog") || cleanPath.startsWith("/blog/")}>
+                {t("nav.blog")}
               </NavLink>
 
-              <NavLink to="/about" isActive={isActivePath("/about")}>
-                ჩვენ შესახებ
+              <NavLink to={localePath("/about")} isActive={isActivePath("/about")}>
+                {t("nav.about")}
               </NavLink>
 
               {user && (
@@ -195,7 +224,7 @@ const Navbar: React.FC = () => {
                   }`}
                 >
                   <History className="w-[18px] h-[18px]" />
-                  <span className="hidden lg:inline">ჩემი შეკვეთები</span>
+                  <span className="hidden lg:inline">{t("nav.myOrders")}</span>
                 </Link>
               )}
 
@@ -223,12 +252,46 @@ const Navbar: React.FC = () => {
                   }`}
                 >
                   <ShieldCheck className="w-[18px] h-[18px]" />
-                  <span className="hidden lg:inline">POS სისტემა</span>
+                  <span className="hidden lg:inline">{t("nav.posSystem")}</span>
                 </Link>
               )}
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Language Switcher — Desktop */}
+              <div ref={langRef} className="hidden md:block relative">
+                <button
+                  onClick={() => setIsLangOpen(!isLangOpen)}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-neutral-600 hover:text-emerald-600 hover:bg-emerald-50/50 rounded-xl border border-neutral-100 hover:border-emerald-200 transition-all duration-200"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  {currentLangLabel}
+                  <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isLangOpen ? "rotate-180" : ""}`} />
+                </button>
+                <div
+                  className={`absolute top-full right-0 pt-2 w-28 transition-all duration-200 origin-top-right ${
+                    isLangOpen
+                      ? "opacity-100 scale-100 pointer-events-auto"
+                      : "opacity-0 scale-95 pointer-events-none"
+                  }`}
+                >
+                  <div className="bg-white rounded-xl shadow-xl border border-neutral-100 overflow-hidden p-1">
+                    {LANGUAGES.map((l) => (
+                      <button
+                        key={l.code}
+                        onClick={() => switchLanguage(l.code)}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-150 ${
+                          lang === l.code
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "text-neutral-600 hover:bg-neutral-50 hover:text-emerald-600"
+                        }`}
+                      >
+                        {l.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               {/* Desktop Auth Button */}
               <div className="hidden md:block">
@@ -260,7 +323,7 @@ const Navbar: React.FC = () => {
                 aria-label="Menu"
               >
                 {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-                <span className="text-xs font-semibold">მენიუ</span>
+                <span className="text-xs font-semibold">{t("nav.menu")}</span>
               </button>
             </div>
           </div>
@@ -276,7 +339,7 @@ const Navbar: React.FC = () => {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
               <input
                 type="text"
-                placeholder="ძიება პროდუქტების..."
+                placeholder={t("nav.searchPlaceholder")}
                 className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-neutral-200 bg-white/90 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 text-neutral-900 placeholder:text-neutral-400 shadow-sm"
                 autoFocus
               />
@@ -317,10 +380,28 @@ const Navbar: React.FC = () => {
             </button>
           </div>
 
+          {/* Language Switcher — Mobile */}
+          <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-neutral-100">
+            <Globe className="w-3.5 h-3.5 text-neutral-400" />
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => switchLanguage(l.code)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all duration-150 ${
+                  lang === l.code
+                    ? "bg-emerald-600 text-white"
+                    : "text-neutral-500 hover:bg-neutral-100"
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+
           {/* Nav Links */}
           <div className="p-2">
-            <MobileNavLink to="/" isActive={isActivePath("/")} onClick={() => setIsMenuOpen(false)}>
-              მთავარი
+            <MobileNavLink to={localePath("/")} isActive={isActivePath("/")} onClick={() => setIsMenuOpen(false)}>
+              {t("nav.home")}
             </MobileNavLink>
 
             {/* Products + Categories */}
@@ -333,7 +414,7 @@ const Navbar: React.FC = () => {
                     : "text-neutral-700 hover:bg-neutral-100"
                 }`}
               >
-                <span>პროდუქტები</span>
+                <span>{t("nav.products")}</span>
                 <ChevronDown
                   className={`w-3.5 h-3.5 transition-transform duration-200 ${isMobileCategoriesOpen ? "rotate-180" : ""}`}
                 />
@@ -346,24 +427,24 @@ const Navbar: React.FC = () => {
               >
                 <div className="mx-2 my-1 pl-3 border-l-2 border-emerald-100 space-y-0.5">
                   <Link
-                    to="/products"
+                    to={localePath("/products")}
                     onClick={() => setIsMenuOpen(false)}
                     className={`flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 ${
-                      location.pathname === "/products"
+                      cleanPath === "/products"
                         ? "text-emerald-700 bg-emerald-50"
                         : "text-neutral-700 hover:text-emerald-600 hover:bg-neutral-50"
                     }`}
                   >
                     <LayoutGrid className="w-4 h-4 text-emerald-500 shrink-0" />
-                    ყველა პროდუქტი
+                    {t("nav.allProducts")}
                   </Link>
                   {activeCategories.map((cat) => (
                     <Link
                       key={cat.id}
-                      to={`/category/${cat.slug}`}
+                      to={localePath(`/category/${cat.slug}`)}
                       onClick={() => setIsMenuOpen(false)}
                       className={`flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 ${
-                        location.pathname === `/category/${cat.slug}`
+                        cleanPath === `/category/${cat.slug}`
                           ? "text-emerald-700 bg-emerald-50 font-semibold"
                           : "text-neutral-700 hover:text-emerald-600 hover:bg-neutral-50"
                       }`}
@@ -373,24 +454,28 @@ const Navbar: React.FC = () => {
                       ) : (
                         <span className="w-4 h-4 rounded-full bg-emerald-100 shrink-0" />
                       )}
-                      {cat.name}
+                      {getLocalizedCategoryName(cat, i18n.language)}
                     </Link>
                   ))}
                 </div>
               </div>
             </div>
 
-            <MobileNavLink to="/blog" isActive={isActivePath("/blog") || location.pathname.startsWith("/blog/")} onClick={() => setIsMenuOpen(false)}>
-              ბლოგი
+            <MobileNavLink
+              to={localePath("/blog")}
+              isActive={isActivePath("/blog") || cleanPath.startsWith("/blog/")}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              {t("nav.blog")}
             </MobileNavLink>
 
-            <MobileNavLink to="/about" isActive={isActivePath("/about")} onClick={() => setIsMenuOpen(false)}>
-              ჩვენ შესახებ
+            <MobileNavLink to={localePath("/about")} isActive={isActivePath("/about")} onClick={() => setIsMenuOpen(false)}>
+              {t("nav.about")}
             </MobileNavLink>
 
             {user && (
               <MobileNavLink to="/order-history" isActive={isActivePath("/order-history")} onClick={() => setIsMenuOpen(false)}>
-                <span className="flex items-center gap-2"><History className="w-4 h-4" /> ჩემი შეკვეთები</span>
+                <span className="flex items-center gap-2"><History className="w-4 h-4" /> {t("nav.myOrders")}</span>
               </MobileNavLink>
             )}
 
@@ -405,7 +490,7 @@ const Navbar: React.FC = () => {
                 }`}
               >
                 <ShieldCheck className="w-4 h-4" />
-                {user.role === "admin" ? "ადმინ პანელი" : "POS სისტემა"}
+                {user.role === "admin" ? t("nav.adminPanel") : t("nav.posSystem")}
               </Link>
             )}
           </div>
@@ -418,13 +503,13 @@ const Navbar: React.FC = () => {
                   {user.displayName?.[0]?.toUpperCase() || <User className="w-4 h-4" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-neutral-900 text-xs truncate">{user.displayName || "მომხმარებელი"}</p>
+                  <p className="font-semibold text-neutral-900 text-xs truncate">{user.displayName || t("nav.user")}</p>
                   <p className="text-[11px] text-neutral-400 truncate">{user.email}</p>
                 </div>
                 <button
                   onClick={handleMobileSignOut}
                   className="p-1.5 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-all"
-                  title="გასვლა"
+                  title={t("nav.signOut")}
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -435,7 +520,7 @@ const Navbar: React.FC = () => {
                 className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl transition-all duration-200"
               >
                 <LogIn className="w-4 h-4" />
-                შესვლა
+                {t("nav.signIn")}
               </button>
             )}
           </div>

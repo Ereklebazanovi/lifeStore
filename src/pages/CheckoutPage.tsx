@@ -9,6 +9,7 @@ import { OrderService } from "../services/orderService";
 import { PaymentService } from "../services/paymentService";
 import PhoneInput from "../components/ui/PhoneInput";
 import { useInventoryRefresh } from "../hooks/useInventoryRefresh";
+import { useTranslation } from "react-i18next";
 
 import {
   MapPin,
@@ -39,6 +40,7 @@ interface CheckoutFormData {
 }
 
 const CheckoutPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { items, getCartTotal, clearCart, validateAndCleanCart, getItemPrice } =
     useCartStore();
@@ -226,10 +228,10 @@ const CheckoutPage: React.FC = () => {
         {/* Header */}
         <div className="mb-8 text-center lg:text-left">
            <h1 className="text-2xl lg:text-3xl font-bold text-stone-900 font-bpg-arial">
-            შეკვეთის გაფორმება
+            {t('checkout.title')}
           </h1>
           <p className="text-stone-500 mt-2 text-sm">
-            შეავსეთ მონაცემები და მიიღეთ ნივთი სწრაფად
+            {t('checkout.subtitle')}
           </p>
         </div>
 
@@ -242,7 +244,7 @@ const CheckoutPage: React.FC = () => {
             <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-stone-100">
                <h2 className="text-lg font-bold text-stone-800 mb-4 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-emerald-600" />
-                გადახდის მეთოდი
+                {t('checkout.paymentMethod')}
               </h2>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -268,7 +270,7 @@ const CheckoutPage: React.FC = () => {
                     </div>
                   )}
                   <CreditCard className={`w-8 h-8 mb-3 ${formData.paymentMethod === "flitt" ? "text-emerald-600" : "text-stone-400"}`} />
-                  <span className="font-bold text-sm text-stone-900">ონლაინ გადახდა</span>
+                  <span className="font-bold text-sm text-stone-900">{t('checkout.onlinePayment')}</span>
                   <span className="text-[11px] text-stone-500 mt-1 text-center leading-tight">
                     Visa / Mastercard / Amex <br/> ნებისმიერი ბანკით
                   </span>
@@ -296,7 +298,7 @@ const CheckoutPage: React.FC = () => {
                     </div>
                   )}
                   <Banknote className={`w-8 h-8 mb-3 ${formData.paymentMethod === "cash" ? "text-emerald-600" : "text-stone-400"}`} />
-                  <span className="font-bold text-sm text-stone-900">ადგილზე გადახდა</span>
+                  <span className="font-bold text-sm text-stone-900">{t('checkout.cashOnDelivery')}</span>
                   <span className="text-[11px] text-stone-500 mt-1 text-center leading-tight">
                     ქეშით ან ბარათით<br/>კურიერთან
                   </span>
@@ -308,14 +310,14 @@ const CheckoutPage: React.FC = () => {
             <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-stone-100">
               <h2 className="text-lg font-bold text-stone-800 mb-5 flex items-center gap-2">
                 <User className="w-5 h-5 text-emerald-600" />
-                პირადი ინფორმაცია
+                {t('checkout.personalInfo')}
               </h2>
 
               <div className="space-y-4">
                 {/* Name Row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={labelStyle}>სახელი</label>
+                    <label className={labelStyle}>{t('checkout.firstName')}</label>
                     <input
                       type="text"
                       name="firstName"
@@ -327,7 +329,7 @@ const CheckoutPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className={labelStyle}>გვარი</label>
+                    <label className={labelStyle}>{t('checkout.lastName')}</label>
                     <input
                       type="text"
                       name="lastName"
@@ -343,7 +345,7 @@ const CheckoutPage: React.FC = () => {
                 {/* Phone & Email Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelStyle}>მობილური</label>
+                    <label className={labelStyle}>{t('checkout.phone')}</label>
                     <PhoneInput
                       value={formData.phone}
                       onChange={(val) => setFormData((prev) => ({ ...prev, phone: val }))}
@@ -352,8 +354,8 @@ const CheckoutPage: React.FC = () => {
                   </div>
                   <div>
                     <label className={labelStyle}>
-                      ელ-ფოსტა{" "}
-                      <span className="text-stone-300 normal-case font-normal">(არასავალდებულო)</span>
+                      {t('checkout.email')}{" "}
+                      <span className="text-stone-300 normal-case font-normal">{t('checkout.optionalNote')}</span>
                     </label>
                     <input
                       type="email"
@@ -384,14 +386,14 @@ const CheckoutPage: React.FC = () => {
 
               <h2 className="text-lg font-bold text-stone-800 mb-5 flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-emerald-600" />
-                მისამართი
+                {t('checkout.delivery')}
               </h2>
 
               <div className="space-y-4">
                  {/* City & Address */}
                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                    <div className="sm:col-span-1">
-                      <label className={labelStyle}>ქალაქი</label>
+                      <label className={labelStyle}>{t('checkout.city')}</label>
                       <select
                         name="city"
                         value={formData.city}
@@ -406,7 +408,7 @@ const CheckoutPage: React.FC = () => {
                       </select>
                    </div>
                    <div className="sm:col-span-2">
-                      <label className={labelStyle}>ზუსტი მისამართი</label>
+                      <label className={labelStyle}>{t('checkout.address')}</label>
                       <input
                         type="text"
                         name="address"
@@ -421,7 +423,7 @@ const CheckoutPage: React.FC = () => {
 
                  {/* Comment */}
                  <div>
-                    <label className={labelStyle}>კომენტარი კურიერისთვის</label>
+                    <label className={labelStyle}>{t('checkout.comment')}</label>
                     <textarea
                       name="comment"
                       rows={2}
@@ -442,7 +444,7 @@ const CheckoutPage: React.FC = () => {
               <div className="p-5 bg-stone-50 border-b border-stone-100">
                 <h2 className="text-lg font-bold text-stone-800 flex items-center gap-2">
                   <Package className="w-5 h-5 text-stone-400" />
-                  თქვენი შეკვეთა
+                  {t('checkout.orderSummary')}
                   <span className="ml-auto bg-stone-200 text-stone-600 text-xs py-1 px-2 rounded-full">
                     {items.length} ნივთი
                   </span>
@@ -480,13 +482,13 @@ const CheckoutPage: React.FC = () => {
               {/* Totals */}
               <div className="p-5 bg-stone-50/50 border-t border-stone-100 space-y-2">
                 <div className="flex justify-between text-sm text-stone-600">
-                  <span>ჯამი</span>
+                  <span>{t('checkout.subtotal')}</span>
                   <span>₾{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-stone-600">
                   <span className="flex items-center gap-1">
-                    <Truck className="w-3 h-3" /> 
-                    მიწოდება ({formData.city})
+                    <Truck className="w-3 h-3" />
+                    {t('checkout.shipping')} ({formData.city})
                   </span>
                   <span className="text-stone-900">
                     + ₾{shippingCost.toFixed(2)}
@@ -496,7 +498,7 @@ const CheckoutPage: React.FC = () => {
                 <div className="my-3 border-t border-stone-200 border-dashed"></div>
 
                 <div className="flex justify-between items-end">
-                  <span className="text-base font-bold text-stone-900">სულ გადასახდელი</span>
+                  <span className="text-base font-bold text-stone-900">{t('checkout.totalToPay')}</span>
                   <span className="text-2xl font-bold text-emerald-600">
                     ₾{grandTotal.toFixed(2)}
                   </span>
@@ -530,10 +532,10 @@ const CheckoutPage: React.FC = () => {
                     }`}
                 >
                   {isSubmitting ? (
-                    "მუშავდება..."
+                    t('checkout.processing')
                   ) : (
                     <>
-                      <span>შეკვეთის დადასტურება</span>
+                      <span>{t('checkout.confirmOrder')}</span>
                       <ArrowRight className="w-5 h-5" />
                     </>
                   )}

@@ -10,10 +10,10 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
-import {
-  getCartItemDisplayName,
-  getVariantDisplayName,
-} from "../utils/displayHelpers";
+import { useCategoryStore } from "../store/categoryStore";
+import { useTranslation } from "react-i18next";
+import { getVariantDisplayName } from "../utils/displayHelpers";
+import { getLocalizedProductName, getLocalizedCategoryName } from "../utils/i18nHelpers";
 
 const CartPage: React.FC = () => {
   const {
@@ -27,6 +27,8 @@ const CartPage: React.FC = () => {
     getItemPrice,
   } = useCartStore();
 
+  const { t, i18n } = useTranslation();
+  const { categories } = useCategoryStore();
   const [isValidating, setIsValidating] = useState(false);
 
   // Validate cart when page loads
@@ -54,16 +56,15 @@ const CartPage: React.FC = () => {
           <div className="w-24 h-24 mx-auto bg-stone-100 rounded-full flex items-center justify-center mb-4">
             <ShoppingCart className="w-10 h-10 text-stone-400" />
           </div>
-          <h1 className="text-2xl font-bold text-stone-900">კალათა ცარიელია</h1>
+          <h1 className="text-2xl font-bold text-stone-900">{t('cart.empty')}</h1>
           <p className="text-stone-500">
-            დაამატეთ პროდუქტები თქვენს კალათაში და დაიწყეთ ეკო-მეგობრული
-            შოპინგი.
+            {t('cart.emptySubtitle')}
           </p>
           <Link
             to="/products"
             className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl transition-all shadow-lg hover:shadow-emerald-200 hover:-translate-y-1"
           >
-            პროდუქტების ნახვა
+            {t('home.hero.shopNow')}
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
@@ -78,10 +79,10 @@ const CartPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-stone-900">
-              თქვენი კალათა
+              {t('cart.title')}
             </h1>
             <p className="text-stone-500 text-sm mt-1">
-              {totalItems} ნივთი შერჩეულია
+              {totalItems} {t('cart.itemsSelected')}
             </p>
           </div>
           <button
@@ -89,7 +90,7 @@ const CartPage: React.FC = () => {
             className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors flex items-center gap-1 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100"
           >
             <Trash2 className="w-4 h-4" />
-            გასუფთავება
+            {t('cart.clearCart')}
           </button>
         </div>
 
@@ -124,10 +125,17 @@ const CartPage: React.FC = () => {
                     <div className="flex justify-between items-start gap-2 mb-2">
                       <div>
                         <h3 className="text-lg font-bold text-stone-900 line-clamp-1">
-                          {getCartItemDisplayName(item)}
+                          {(() => {
+                            const base = getLocalizedProductName(item.product, i18n.language);
+                            const variant = getVariantDisplayName(item);
+                            return variant ? `${base} (${variant})` : base;
+                          })()}
                         </h3>
                         <p className="text-xs text-stone-500 line-clamp-1">
-                          {item.product.category}
+                          {(() => {
+                            const cat = categories.find(c => c.name === item.product.category);
+                            return cat ? getLocalizedCategoryName(cat, i18n.language) : item.product.category;
+                          })()}
                         </p>
                       </div>
                       <button
@@ -146,7 +154,7 @@ const CartPage: React.FC = () => {
                       {/* Quantity Selector */}
                       <div className="flex flex-col gap-1">
                         <span className="text-xs text-stone-500 font-medium ml-1">
-                          რაოდენობა
+                          {t('cart.quantity')}
                         </span>
                         <div className="flex items-center bg-stone-50 border border-stone-200 rounded-lg h-10">
                           <button
@@ -188,7 +196,7 @@ const CartPage: React.FC = () => {
                         </div>
                         {item.quantity > 1 && (
                           <div className="text-xs text-stone-400 font-medium">
-                            ₾{getItemPrice(item).toFixed(2)} / ცალი
+                            ₾{getItemPrice(item).toFixed(2)} / {t('cart.pricePerUnit')}
                           </div>
                         )}
                       </div>
@@ -203,31 +211,31 @@ const CartPage: React.FC = () => {
           <div className="lg:col-span-4 mt-6 lg:mt-0">
             <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm sticky top-24">
               <h2 className="text-lg font-bold text-stone-900 mb-6 border-b border-stone-100 pb-4">
-                შეკვეთის დეტალები
+                {t('cart.orderDetails')}
               </h2>
 
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-stone-600 text-sm">
-                  <span>პროდუქტები ({totalItems})</span>
+                  <span>{t('cart.items')} ({totalItems})</span>
                   <span className="font-medium text-stone-900">
                     ₾{totalPrice.toFixed(2)}
                   </span>
                 </div>
                 <div className="text-stone-600 text-sm">
-                  <span>მიწოდება</span>
+                  <span>{t('cart.shipping')}</span>
                   <div className="flex justify-between mt-1">
-                    <span className="text-xs text-stone-400">თბილისი / რუსთავი</span>
+                    <span className="text-xs text-stone-400">{t('cart.tbilisiRustavi')}</span>
                     <span className="text-xs font-medium text-stone-700">5₾</span>
                   </div>
                   <div className="flex justify-between mt-0.5">
-                    <span className="text-xs text-stone-400">სხვა</span>
+                    <span className="text-xs text-stone-400">{t('cart.other')}</span>
                     <span className="text-xs font-medium text-stone-700">10₾</span>
                   </div>
                 </div>
                 <div className="border-t border-dashed border-stone-200 pt-4 mt-4">
                   <div className="flex justify-between items-center">
                     <span className="text-base font-bold text-stone-900">
-                      სულ გადასახდელი
+                      {t('cart.totalToPay')}
                     </span>
                     <span className="text-2xl font-bold text-emerald-700">
                       ₾{totalPrice.toFixed(2)}
@@ -240,7 +248,7 @@ const CartPage: React.FC = () => {
                 to="/checkout" // შეცვლილია /checkout-ზე
                 className="w-full bg-stone-900 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95"
               >
-                შეკვეთის გაფორმება
+                {t('cart.checkout')}
                 <ArrowRight className="w-5 h-5" />
               </Link>
 
@@ -249,7 +257,7 @@ const CartPage: React.FC = () => {
                 className="flex items-center justify-center gap-2 w-full text-center text-stone-500 hover:text-stone-900 py-4 text-sm font-medium transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                შოპინგის გაგრძელება
+                {t('cart.continueShopping')}
               </Link>
             </div>
           </div>

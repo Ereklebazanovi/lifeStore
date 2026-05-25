@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Leaf, ShieldCheck, Sparkles, ArrowRight, Quote } from "lucide-react";
+import { useTranslation, Trans } from "react-i18next";
 
 const CAROUSEL_IMAGES = [
   "/about-1.webp",
@@ -10,10 +11,11 @@ const CAROUSEL_IMAGES = [
 
 const AboutPage: React.FC = () => {
   const [imgIdx, setImgIdx] = useState(0);
+  const { t } = useTranslation();
 
   useEffect(() => {
-    const t = setInterval(() => setImgIdx((i) => (i + 1) % CAROUSEL_IMAGES.length), 5000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setImgIdx((i) => (i + 1) % CAROUSEL_IMAGES.length), 5000);
+    return () => clearInterval(timer);
   }, []);
 
   return (
@@ -32,7 +34,7 @@ const AboutPage: React.FC = () => {
                   <img
                     key={i}
                     src={src}
-                    alt={`Life Store ეკომეგობრული ნივთები ${i + 1}`}
+                    alt={t("about.imageAlt", { index: i + 1 })}
                     className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
                       i === imgIdx ? "opacity-100 scale-105" : "opacity-0 scale-100"
                     }`}
@@ -42,7 +44,7 @@ const AboutPage: React.FC = () => {
               <div className="absolute -bottom-6 -right-4 md:-right-8 bg-white p-6 rounded-xl shadow-xl border border-stone-100 max-w-xs hidden md:block z-20">
                 <Quote className="w-8 h-8 text-emerald-200 mb-2" />
                 <p className="text-stone-600 text-sm font-medium italic">
-                  "ჩვენ გვჯერა, რომ ჯანსაღი გარემო იწყება სახლიდან."
+                  "{t("about.heroQuote")}"
                 </p>
               </div>
             </div>
@@ -50,25 +52,24 @@ const AboutPage: React.FC = () => {
             {/* Text */}
             <div className="space-y-7 order-1 lg:order-2">
               <h1 className="text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
-                გაიცანით <strong className="text-emerald-700">Life Store</strong> -{" "}
-                ეკომეგობრული ცხოვრების სტილი თქვენი ყოველდღიურობისთვის
+                <Trans
+                  i18nKey="about.heroTitle"
+                  components={{ brand: <strong className="text-emerald-700" /> }}
+                />
               </h1>
 
               <p className="text-stone-600 text-lg leading-relaxed">
-                დღევანდელ სწრაფად განვითარებად სამყაროში, სადაც პლასტმასის მოხმარებამ
-                კრიტიკულ ზღვარს მიაღწია, ჯანმრთელობაზე და გარემოზე ზრუნვა თითოეული
-                ჩვენგანის პასუხისმგებლობაა. <strong>Life Store</strong> შეიქმნა ზუსტად
-                იმისთვის, რომ შემოგთავაზოთ პლასტმასის ჭურჭლისა და საყოფაცხოვრებო
-                ნივთების <strong>უსაფრთხო, გრძელვადიანი და ესთეტიკური ალტერნატივები</strong>.
-                ჩვენი მიზანია, ეკომეგობრული ცხოვრების წესი ყველასთვის ხელმისაწვდომი
-                და კომფორტული გავხადოთ.
+                <Trans
+                  i18nKey="about.heroText"
+                  components={{ bold: <strong /> }}
+                />
               </p>
 
               <Link
                 to="/products"
                 className="group inline-flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-xl hover:bg-emerald-600 transition-all shadow-md hover:shadow-lg"
               >
-                კოლექციის ნახვა
+                {t("about.viewCollection")}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -80,13 +81,10 @@ const AboutPage: React.FC = () => {
       <section className="py-14 bg-emerald-50 border-y border-emerald-100">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-5">
-            ჩვენი მისია: უსაფრთხო ალტერნატივა ყოველდღიურობისთვის
+            {t("about.missionTitle")}
           </h2>
           <p className="text-stone-600 text-lg leading-relaxed">
-            ჩვენი მიზანი მარტივია - დაგეხმაროთ პლასტმასის მოხმარების შემცირებაში
-            ისე, რომ არ მოგიწიოთ კომფორტზე უარის თქმა. Life Store-ში წარმოდგენილი
-            თითოეული ნივთი შერჩეულია იმისთვის, რომ თქვენი კვების რუტინა გახდეს
-            უფრო ჯანსაღი, ხოლო სახლის გარემო - ბევრად უსაფრთხო.
+            {t("about.missionText")}
           </p>
         </div>
       </section>
@@ -96,29 +94,28 @@ const AboutPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-3">
-              რატომ უნდა ენდოთ Life Store-ის ხარისხს?
+              {t("about.trustTitle")}
             </h2>
             <p className="text-stone-500 max-w-2xl mx-auto">
-              ინტერნეტში უამრავი შემოთავაზებაა, თუმცა ჩვენთვის ხარისხი და
-              უსაფრთხოება უპირველესია. თითოეული პროდუქტი გადის მკაცრ შერჩევას.
+              {t("about.trustSubtitle")}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <ValueCard
               icon={<ShieldCheck className="w-6 h-6" />}
-              title="პრემიუმ მასალები"
-              desc="ჩვენი ლანჩბოქსები და კონტეინერები დამზადებულია უმაღლესი სტანდარტის SUS 304 უჟანგავი ფოლადისა და ნაწრთობი მინისგან, რომლებიც არ შეიცავენ მავნე BPA-ს."
+              title={t("about.card1Title")}
+              desc={t("about.card1Desc")}
             />
             <ValueCard
               icon={<Leaf className="w-6 h-6" />}
-              title="ბუნებრივი ესთეტიკა"
-              desc="სათავსოები და აქსესუარები დამზადებულია 100%-ით ნატურალური, განახლებადი ბამბუკისგან, რომელიც სააბაზანოსა თუ სამზარეულოს გამორჩეულ სიმყუდროვეს სძენს."
+              title={t("about.card2Title")}
+              desc={t("about.card2Desc")}
             />
             <ValueCard
               icon={<Sparkles className="w-6 h-6" />}
-              title="ერგონომიულობა და სტილი"
-              desc="ყოველი ნივთი შერჩეულია ისე, რომ იყოს მაქსიმალურად პრაქტიკული ოფისში, სკოლაში თუ მოგზაურობისას სატარებლად."
+              title={t("about.card3Title")}
+              desc={t("about.card3Desc")}
             />
           </div>
         </div>
@@ -128,19 +125,19 @@ const AboutPage: React.FC = () => {
       <section className="py-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <h3 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-5">
-            მდგრადი მომავალი იწყება დღეს
+            {t("about.ctaTitle")}
           </h3>
           <p className="text-stone-600 text-lg leading-relaxed mb-8">
-            ჩვენ გვჯერა, რომ დიდი ცვლილებები{" "}
-            <strong>პატარა, ყოველდღიური არჩევანით</strong> იწყება. Life Store
-            თქვენი საიმედო პარტნიორია ამ გზაზე. შემოუერთდით ჩვენს ეკომეგობრულ
-            ოჯახს და შეცვალეთ თქვენი ყოველდღიურობა უკეთესობისკენ.
+            <Trans
+              i18nKey="about.ctaText"
+              components={{ bold: <strong /> }}
+            />
           </p>
           <Link
             to="/products"
             className="group inline-flex items-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-full transition-all shadow-lg hover:shadow-emerald-200"
           >
-            პროდუქტების ნახვა
+            {t("about.viewProducts")}
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>

@@ -34,9 +34,13 @@ export interface ProductVariant {
 export interface Product {
   id: string;
   name: string; // Base product name (e.g., "Lunchbox", "Glass Container Set")
+  nameEn?: string; // English translation (optional)
+  nameRu?: string; // Russian translation (optional)
   slug?: string; // SEO-friendly URL slug (e.g., "bambukis-lanchboksi")
   productCode: string; // Unique product code for accounting (e.g., "LC001", "GCS002")
   description: string;
+  descriptionEn?: string; // English translation (optional)
+  descriptionRu?: string; // Russian translation (optional)
   images: string[];
   category: string;
 
@@ -68,8 +72,12 @@ export interface Product {
 export interface Category {
   id: string;
   name: string;
+  nameEn?: string;
+  nameRu?: string;
   slug: string;
   description?: string;
+  descriptionEn?: string;
+  descriptionRu?: string;
   image?: string;
   isActive?: boolean;
   priority?: number;

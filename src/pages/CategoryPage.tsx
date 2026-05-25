@@ -18,8 +18,11 @@ import {
   hasDiscount as hasProductDiscount,
 } from "../utils/productHelpers";
 import SEOHead from "../components/SEOHead";
+import { useTranslation } from "react-i18next";
+import { getLocalizedProductName, getLocalizedCategoryName, getLocalizedCategoryDescription } from "../utils/i18nHelpers";
 
 const CategoryPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const { products, fetchProducts, isLoading } = useProductStore();
   const { categories, fetchCategories } = useCategoryStore();
@@ -53,7 +56,9 @@ const CategoryPage: React.FC = () => {
 
     if (searchTerm.trim()) {
       filtered = filtered.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getLocalizedProductName(product, i18n.language)
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
         (product.productCode &&
           product.productCode.toLowerCase().includes(searchTerm.toLowerCase()))
       );
@@ -84,10 +89,10 @@ const CategoryPage: React.FC = () => {
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
   const filterOptions = [
-    { value: "all", label: "ყველა" },
-    { value: "popular", label: "პოპულარული" },
-    { value: "discounts", label: "ფასდაკლება" },
-    { value: "new", label: "ახალი" },
+    { value: "all", label: t('home.filterAll') },
+    { value: "popular", label: t('home.filterPopular') },
+    { value: "discounts", label: t('home.filterDiscounts') },
+    { value: "new", label: t('home.filterNew') },
   ];
 
   const getCount = (type: string) => {
@@ -150,14 +155,14 @@ const CategoryPage: React.FC = () => {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <Leaf className="w-4 h-4 text-emerald-500" />
-                  <span className="text-xs text-stone-400 font-semibold uppercase tracking-widest">კატეგორია</span>
+                  <span className="text-xs text-stone-400 font-semibold uppercase tracking-widest">{t('product.category')}</span>
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold text-stone-900 leading-tight mb-2">
-                  {category.name}
+                  {getLocalizedCategoryName(category, i18n.language)}
                 </h1>
                 {category.description && (
                   <p className="text-sm text-stone-500 leading-relaxed max-w-lg mb-3">
-                    {category.description}
+                    {getLocalizedCategoryDescription(category, i18n.language)}
                   </p>
                 )}
                 <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium">
@@ -229,7 +234,7 @@ const CategoryPage: React.FC = () => {
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-stone-400" />
                     <input
                       type="text"
-                      placeholder="მოძებნეთ პროდუქტი..."
+                      placeholder={t('nav.searchPlaceholder')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-12 pr-4 py-3.5 bg-stone-50 border border-stone-200/60 rounded-xl focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 focus:bg-white transition-all text-sm outline-none shadow-sm placeholder:text-stone-500 font-medium"
@@ -281,13 +286,13 @@ const CategoryPage: React.FC = () => {
                   }}
                   className="px-8 py-3.5 bg-stone-900 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all duration-300 shadow-lg hover:shadow-emerald-200/50 transform hover:scale-105"
                 >
-                  ფილტრის გასუფთავება
+                  {t('common.clearFilters')}
                 </button>
                 <Link
                   to="/products"
                   className="px-8 py-3.5 bg-stone-100 text-stone-700 rounded-xl text-sm font-bold hover:bg-stone-200 transition-all duration-300"
                 >
-                  ყველა პროდუქტი
+                  {t('home.allProducts')}
                 </Link>
               </div>
             </div>
@@ -309,7 +314,7 @@ const CategoryPage: React.FC = () => {
                         <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
                           {isOutOfStock ? (
                             <span className="bg-stone-900/90 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded-md">
-                              ამოწურულია
+                              {t("product.outOfStock")}
                             </span>
                           ) : hasDiscount(product) ? (
                             <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
@@ -341,7 +346,7 @@ const CategoryPage: React.FC = () => {
                         {!isOutOfStock && (
                           <div className="hidden lg:flex absolute inset-x-0 bottom-4 justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
                             <span className="bg-white/95 backdrop-blur text-stone-900 text-xs font-bold px-4 py-2.5 rounded-full shadow-lg border border-stone-100">
-                              პროდუქტის ნახვა
+                              {t("common.viewDetails")}
                             </span>
                           </div>
                         )}
@@ -350,7 +355,7 @@ const CategoryPage: React.FC = () => {
                       <div className="p-4 flex flex-col flex-grow">
                         <Link to={`/product/${product.slug || product.id}`}>
                           <h3 className="font-bold text-stone-900 text-sm line-clamp-2 leading-relaxed hover:text-emerald-700 transition-colors mb-2 min-h-[2.5rem]">
-                            {product.name}
+                            {getLocalizedProductName(product, i18n.language)}
                           </h3>
                         </Link>
 
@@ -362,7 +367,7 @@ const CategoryPage: React.FC = () => {
                               .replace("text-", "border-")
                               .replace("bg-", "bg-opacity-10 ")}`}
                           >
-                            {getStockText(product)}
+                            {getStockText(product, t)}
                           </span>
                         </div>
 
@@ -436,7 +441,7 @@ const CategoryPage: React.FC = () => {
           {/* Other Categories */}
           {otherCategories.length > 0 && (
             <div className="mt-12 pt-10 border-t border-stone-100">
-              <p className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-4">იხილეთ ასევე</p>
+              <p className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-4">{t('product.discoverAlso')}</p>
               <div className="flex flex-wrap gap-3">
                 {otherCategories.map((cat) => (
                   <Link
@@ -447,7 +452,7 @@ const CategoryPage: React.FC = () => {
                     {cat.image && (
                       <img src={cat.image} alt={cat.name} className="w-5 h-5 rounded-full object-cover" />
                     )}
-                    {cat.name}
+                    {getLocalizedCategoryName(cat, i18n.language)}
                   </Link>
                 ))}
               </div>
