@@ -6,6 +6,9 @@ Allow: /products
 Allow: /about
 Allow: /product/*
 
+# Disallow system/CDN paths
+Disallow: /cdn
+
 # Disallow admin and private areas
 Disallow: /admin
 Disallow: /checkout
