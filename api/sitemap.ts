@@ -4,14 +4,17 @@ import { adminDb } from "./lib/firebase-admin";
 const SITE_URL = "https://lifestore.ge";
 
 const STATIC_PAGES = [
-  { loc: "/",              priority: "1.0", changefreq: "daily"   },
-  { loc: "/products",      priority: "0.9", changefreq: "daily"   },
-  { loc: "/blog",          priority: "0.8", changefreq: "weekly"  },
-  { loc: "/blog",          priority: "0.8", changefreq: "weekly"  },
-  { loc: "/about",         priority: "0.7", changefreq: "monthly" },
-  { loc: "/privacy-policy",priority: "0.4", changefreq: "monthly" },
-  { loc: "/terms",         priority: "0.4", changefreq: "monthly" },
-  { loc: "/refund-policy", priority: "0.4", changefreq: "monthly" },
+  { loc: "/",               priority: "1.0", changefreq: "daily"   },
+  { loc: "/products",       priority: "0.9", changefreq: "daily"   },
+  { loc: "/blog",           priority: "0.8", changefreq: "weekly"  },
+  { loc: "/en/blog",        priority: "0.7", changefreq: "weekly"  },
+  { loc: "/ru/blog",        priority: "0.7", changefreq: "weekly"  },
+  { loc: "/about",          priority: "0.7", changefreq: "monthly" },
+  { loc: "/en/about",       priority: "0.6", changefreq: "monthly" },
+  { loc: "/ru/about",       priority: "0.6", changefreq: "monthly" },
+  { loc: "/privacy-policy", priority: "0.4", changefreq: "monthly" },
+  { loc: "/terms",          priority: "0.4", changefreq: "monthly" },
+  { loc: "/refund-policy",  priority: "0.4", changefreq: "monthly" },
 ];
 
 function toDate(val: unknown): string {
@@ -80,12 +83,10 @@ export default async function handler(
       if (d.isActive === false) continue;
       const slug: string | undefined = d.slug;
       if (!slug) continue;
-      entries.push(urlEntry(
-        `/category/${slug}`,
-        toDate(d.updatedAt),
-        "weekly",
-        "0.8"
-      ));
+      const lastmod = toDate(d.updatedAt);
+      entries.push(urlEntry(`/category/${slug}`,    lastmod, "weekly", "0.8"));
+      entries.push(urlEntry(`/en/category/${slug}`, lastmod, "weekly", "0.7"));
+      entries.push(urlEntry(`/ru/category/${slug}`, lastmod, "weekly", "0.7"));
     }
 
     // Blog posts — only published, must have a slug
@@ -93,12 +94,10 @@ export default async function handler(
       const d = doc.data();
       const slug: string | undefined = d.slug;
       if (!slug) continue;
-      entries.push(urlEntry(
-        `/blog/${slug}`,
-        toDate(d.publishedAt),
-        "monthly",
-        "0.7"
-      ));
+      const lastmod = toDate(d.publishedAt);
+      entries.push(urlEntry(`/blog/${slug}`,    lastmod, "monthly", "0.7"));
+      entries.push(urlEntry(`/en/blog/${slug}`, lastmod, "monthly", "0.6"));
+      entries.push(urlEntry(`/ru/blog/${slug}`, lastmod, "monthly", "0.6"));
     }
 
     // Product pages — only active, use slug if available else Firestore ID
@@ -106,12 +105,10 @@ export default async function handler(
       const d = doc.data();
       if (d.isActive === false) continue;
       const slug: string = d.slug || doc.id;
-      entries.push(urlEntry(
-        `/product/${slug}`,
-        toDate(d.updatedAt),
-        "weekly",
-        "0.7"
-      ));
+      const lastmod = toDate(d.updatedAt);
+      entries.push(urlEntry(`/product/${slug}`,    lastmod, "weekly", "0.7"));
+      entries.push(urlEntry(`/en/product/${slug}`, lastmod, "weekly", "0.6"));
+      entries.push(urlEntry(`/ru/product/${slug}`, lastmod, "weekly", "0.6"));
     }
 
     const xml = [
