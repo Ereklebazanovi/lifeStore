@@ -25,7 +25,7 @@ const CategoryPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const { products, fetchProducts, isLoading } = useProductStore();
-  const { categories, fetchCategories } = useCategoryStore();
+  const { categories, fetchCategories, isLoading: isCategoriesLoading } = useCategoryStore();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
@@ -111,16 +111,24 @@ const CategoryPage: React.FC = () => {
     }
   };
 
+  if (isCategoriesLoading || (categories.length === 0)) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (!category) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-stone-900 mb-4">კატეგორია ვერ მოიძებნა</h1>
+          <h1 className="text-2xl font-bold text-stone-900 mb-4">{t('home.categoryNotFound')}</h1>
           <Link
             to="/"
             className="text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-2 justify-center"
           >
-            დაბრუნდი მთავარ გვერდზე <ArrowRight className="w-4 h-4" />
+            {t('home.backToHome')} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>

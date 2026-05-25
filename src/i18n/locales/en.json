@@ -261,6 +261,8 @@
     "collectionEmpty": "Collection is empty",
     "tryOtherSearch": "Try a different keyword or change the filter",
     "noCategoryProducts": "No products in this category yet",
+    "categoryNotFound": "Category not found",
+    "backToHome": "Back to Home",
     "productCount": "{{count}} products",
     "brandEcoTitle": "Eco & Safe",
     "brandEcoText": "Non-toxic for your health, ecologically clean materials.",

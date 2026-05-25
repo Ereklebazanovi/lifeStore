@@ -261,6 +261,8 @@
     "collectionEmpty": "Коллекция пуста",
     "tryOtherSearch": "Попробуйте другое слово или измените фильтр",
     "noCategoryProducts": "В этой категории пока нет товаров",
+    "categoryNotFound": "Категория не найдена",
+    "backToHome": "Вернуться на главную",
     "productCount": "{{count}} товаров",
     "brandEcoTitle": "Эко & Безопасно",
     "brandEcoText": "Нетоксичные для здоровья, экологически чистые материалы.",

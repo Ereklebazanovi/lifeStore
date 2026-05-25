@@ -248,6 +248,8 @@
     "collectionEmpty": "კოლექცია ცარიელია",
     "tryOtherSearch": "სცადეთ სხვა სიტყვა ან შეცვალეთ ფილტრი",
     "noCategoryProducts": "ამ კატეგორიაში პროდუქტები ჯერ არ არის",
+    "categoryNotFound": "კატეგორია ვერ მოიძებნა",
+    "backToHome": "დაბრუნდი მთავარ გვერდზე",
     "productCount": "{{count}} პროდუქტი",
     "brandEcoTitle": "ეკო & უსაფრთხო",
     "brandEcoText": "ჯანმრთელობისთვის უვნებელი, ეკოლოგიურად სუფთა მასალები.",
