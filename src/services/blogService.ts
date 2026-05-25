@@ -83,7 +83,7 @@ export const BlogService = {
   },
 
   async getPostBySlug(slug: string): Promise<BlogPost | null> {
-    const q = query(collection(db, COLLECTION), where("slug", "==", slug), limit(1));
+    const q = query(collection(db, COLLECTION), where("slug", "==", slug), where("isPublished", "==", true), limit(1));
     const snap = await getDocs(q);
     if (snap.empty) return null;
     const d = snap.docs[0];
