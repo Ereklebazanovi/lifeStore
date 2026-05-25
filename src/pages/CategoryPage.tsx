@@ -167,7 +167,7 @@ const CategoryPage: React.FC = () => {
                 )}
                 <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium">
                   <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                  {filteredProducts.length} პროდუქტი
+                  {t("home.productCount", { count: filteredProducts.length })}
                 </span>
               </div>
 
