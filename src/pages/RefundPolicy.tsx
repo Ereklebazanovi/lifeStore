@@ -8,21 +8,23 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ADMIN_CONFIG, SITE_CONFIG } from "../config/constants";
 
 const RefundPolicy = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-stone-50 py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header Section */}
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-stone-900 mb-4">
-            თანხის დაბრუნების პოლიტიკა
+            {t("refundPolicy.pageTitle")}
           </h1>
           <p className="text-stone-500 flex items-center justify-center gap-2">
             <Clock className="w-4 h-4" />
-            {/* ✅ სტატიკური თარიღი */}
-            ბოლოს განახლდა: 2025 წლის 15 დეკემბერი
+            {t("refundPolicy.lastUpdated")}
           </p>
         </div>
 
@@ -35,13 +37,10 @@ const RefundPolicy = () => {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-stone-900 mb-2">
-                  გადახდის დაბრუნების პირობები და პროცედურები
+                  {t("refundPolicy.bannerTitle")}
                 </h2>
                 <p className="text-stone-600 leading-relaxed">
-                  ეს დოკუმენტი არეგულირებს {SITE_CONFIG.SITE_NAME}-ის ინტერნეტ
-                  მაღაზიაში შეძენილი პროდუქციის უკან დაბრუნებისა და თანხის
-                  ანაზღაურების პირობებს. გთხოვთ, ყურადღებით გაეცნოთ ქვემოთ
-                  მოცემულ პუნქტებს შეკვეთის გაფორმებამდე.
+                  {t("refundPolicy.bannerText", { siteName: SITE_CONFIG.SITE_NAME })}
                 </p>
               </div>
             </div>
@@ -52,83 +51,71 @@ const RefundPolicy = () => {
             <section>
               <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                 <RefreshCw className="w-5 h-5 text-emerald-600" />
-                დაბრუნების ზოგადი პირობები
+                {t("refundPolicy.s1Title")}
               </h3>
               <div className="prose prose-stone text-stone-600 leading-relaxed">
                 <p>
-                  ჩვენი მიზანია მომხმარებლის მაქსიმალური კმაყოფილება.
-                  საქართველოს კანონმდებლობის შესაბამისად, თქვენ გაქვთ უფლება
-                  მოითხოვოთ შეძენილი ნივთის დაბრუნება ან გადაცვლა მისი მიღებიდან{" "}
-                  <strong>14 კალენდარული დღის</strong> განმავლობაში.
+                  {t("refundPolicy.s1Intro1")}{" "}
+                  <strong>{t("refundPolicy.s1Intro2")}</strong>{" "}
+                  {t("refundPolicy.s1Intro3")}
                 </p>
                 <ul className="mt-4 space-y-2 list-none pl-0">
                   <li className="flex gap-3 items-start">
                     <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                    <span>
-                      ნივთი უნდა იყოს უხმარი და პირვანდელ მდგომარეობაში.
-                    </span>
+                    <span>{t("refundPolicy.condition1")}</span>
                   </li>
                   <li className="flex gap-3 items-start">
                     <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                    <span>
-                      შენარჩუნებული უნდა იყოს სასაქონლო იერსახე, ეტიკეტი და
-                      შეფუთვა.
-                    </span>
+                    <span>{t("refundPolicy.condition2")}</span>
                   </li>
                   <li className="flex gap-3 items-start">
                     <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                    <span>
-                      წარმოდგენილი უნდა იყოს გადახდის დამადასტურებელი ქვითარი
-                      (ინვოისი).
-                    </span>
+                    <span>{t("refundPolicy.condition3")}</span>
                   </li>
                 </ul>
               </div>
             </section>
 
-            {/* Section 2: Exceptions (Updated with Domino logic) */}
+            {/* Section 2: Exceptions */}
             <section className="bg-stone-50 rounded-2xl p-6 border border-stone-100">
               <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                 <AlertCircle className="w-5 h-5 text-amber-500" />
-                გამონაკლისები და შეზღუდვები
+                {t("refundPolicy.exceptionsTitle")}
               </h3>
               <p className="text-stone-600 mb-4">
-                თანხის დაბრუნება ან ნივთის გადაცვლა{" "}
-                <span className="font-bold text-stone-800">არ ხორციელდება</span>{" "}
-                შემდეგ შემთხვევებში:
+                {t("refundPolicy.exceptionsIntroA")}{" "}
+                <span className="font-bold text-stone-800">
+                  {t("refundPolicy.exceptionsIntroB")}
+                </span>{" "}
+                {t("refundPolicy.exceptionsIntroC")}
               </p>
               <ul className="space-y-3 text-stone-600">
                 <li className="flex gap-2">
                   <span className="text-red-500 font-bold">•</span>
-                  ნივთი დაზიანებულია მომხმარებლის მიერ არასწორი ექსპლუატაციის
-                  შედეგად.
+                  {t("refundPolicy.ex1")}
                 </li>
                 <li className="flex gap-2">
                   <span className="text-red-500 font-bold">•</span>
-                  გასულია კანონით დადგენილი 14 დღიანი ვადა.
+                  {t("refundPolicy.ex2")}
                 </li>
                 <li className="flex gap-2">
                   <span className="text-red-500 font-bold">•</span>
-                  ნივთი განეკუთვნება ჰიგიენურ ან მალფუჭებად კატეგორიას (გარდა
-                  ქარხნული წუნისა).
+                  {t("refundPolicy.ex3")}
                 </li>
-                {/* 👇 ახალი პუნქტები Domino-ს მსგავსად */}
                 <li className="flex gap-2">
                   <span className="text-red-500 font-bold">•</span>
                   <span className="leading-tight">
-                    <strong>საკვებთან შეხებაში მყოფი ნივთები</strong>{" "}
-                    (ლანჩბოქსი, თერმოსი, ჭურჭელი, სამარილე), თუ მათ ეტყობათ
-                    გამოყენების კვალი (სუნი, ნადები, გარეცხვის კვალი).
+                    <strong>{t("refundPolicy.ex4Bold")}</strong>{" "}
+                    {t("refundPolicy.ex4Rest")}
                   </span>
                 </li>
                 <li className="flex gap-2">
                   <span className="text-red-500 font-bold">•</span>
-                  დეკორატიული და საახალწლო ნივთები (თუ გამოყენების კვალი
-                  ემჩნევა).
+                  {t("refundPolicy.ex5")}
                 </li>
                 <li className="flex gap-2">
                   <span className="text-red-500 font-bold">•</span>
-                  ინდივიდუალური შეკვეთით დამზადებული ან გადაჭრილი პროდუქცია.
+                  {t("refundPolicy.ex6")}
                 </li>
               </ul>
             </section>
@@ -136,31 +123,29 @@ const RefundPolicy = () => {
             {/* Section 3: Refund Process */}
             <section>
               <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
-                💳 თანხის ანაზღაურების პროცედურა
+                {t("refundPolicy.procedureTitle")}
               </h3>
               <p className="text-stone-600 leading-relaxed mb-4">
-                ნივთის დაბრუნების დადასტურების შემთხვევაში, თანხა დაგიბრუნდებათ
-                იმავე საბანკო ანგარიშზე, საიდანაც მოხდა გადახდა.
+                {t("refundPolicy.procedureIntro")}
               </p>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-white border border-stone-200 p-4 rounded-xl">
                   <span className="block text-sm text-stone-400 font-bold uppercase mb-1">
-                    დაბრუნების ვადა
+                    {t("refundPolicy.periodLabel")}
                   </span>
                   <span className="text-stone-900 font-medium">
-                    ნივთის მიღებიდან 2-5 სამუშაო დღე
+                    {t("refundPolicy.periodValue")}
                   </span>
                 </div>
                 <div className="bg-white border border-stone-200 p-4 rounded-xl">
                   <span className="block text-sm text-stone-400 font-bold uppercase mb-1">
-                    ტრანსპორტირების ხარჯი
+                    {t("refundPolicy.shippingLabel")}
                   </span>
                   <span className="text-stone-900 font-medium">
-                    ანაზღაურდება მომხმარებლის მიერ*
+                    {t("refundPolicy.shippingValue")}
                   </span>
                   <p className="text-xs text-stone-400 mt-2 italic">
-                    * პროდუქციის დაბრუნების შემთხვევაში პირვანდელი
-                    ტრანსპორტირების თანხა უკან არ ბრუნდება.
+                    {t("refundPolicy.shippingNote")}
                   </p>
                 </div>
               </div>
@@ -171,7 +156,7 @@ const RefundPolicy = () => {
             {/* Footer: Contact Info */}
             <section>
               <h3 className="text-lg font-bold text-stone-900 mb-6">
-                დაგვიკავშირდით
+                {t("refundPolicy.contactTitle")}
               </h3>
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="flex items-center gap-4 p-4 bg-stone-50 rounded-2xl">
@@ -180,7 +165,7 @@ const RefundPolicy = () => {
                   </div>
                   <div>
                     <p className="text-xs text-stone-500 font-bold uppercase">
-                      ელ. ფოსტა
+                      {t("refundPolicy.emailLabel")}
                     </p>
                     <a
                       href={`mailto:${ADMIN_CONFIG.BUSINESS_EMAIL}`}
@@ -197,7 +182,7 @@ const RefundPolicy = () => {
                   </div>
                   <div>
                     <p className="text-xs text-stone-500 font-bold uppercase">
-                      ტელეფონი
+                      {t("refundPolicy.phoneLabel")}
                     </p>
                     <a
                       href={`tel:${ADMIN_CONFIG.BUSINESS_PHONE}`}

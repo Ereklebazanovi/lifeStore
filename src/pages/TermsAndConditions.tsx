@@ -1,6 +1,5 @@
 //TermsAndConditions.tsx
 import {
-  FileText,
   Truck,
   ShieldAlert,
   CreditCard,
@@ -18,9 +17,12 @@ import {
   Database,
   CheckCircle2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { SITE_CONFIG, ADMIN_CONFIG } from "../config/constants";
 
 const TermsAndConditions = () => {
+  const { t } = useTranslation();
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -34,11 +36,11 @@ const TermsAndConditions = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-stone-900 mb-4">
-            სამართლებრივი დოკუმენტაცია
+            {t("terms.pageTitle")}
           </h1>
           <p className="text-stone-500 flex items-center justify-center gap-2">
             <ShieldCheck className="w-4 h-4" />
-            ბოლოს განახლდა: 2025 წლის 15 დეკემბერი
+            {t("terms.lastUpdated")}
           </p>
         </div>
 
@@ -48,19 +50,19 @@ const TermsAndConditions = () => {
             onClick={() => scrollToSection("terms")}
             className="px-4 py-2 bg-white border border-stone-200 rounded-xl text-stone-600 font-medium hover:border-emerald-500 hover:text-emerald-600 transition-all shadow-sm active:scale-95"
           >
-            📜 წესები და პირობები
+            {t("terms.navTerms")}
           </button>
           <button
             onClick={() => scrollToSection("refund")}
             className="px-4 py-2 bg-white border border-stone-200 rounded-xl text-stone-600 font-medium hover:border-emerald-500 hover:text-emerald-600 transition-all shadow-sm active:scale-95"
           >
-            💸 თანხის დაბრუნება
+            {t("terms.navRefund")}
           </button>
           <button
             onClick={() => scrollToSection("privacy")}
             className="px-4 py-2 bg-white border border-stone-200 rounded-xl text-stone-600 font-medium hover:border-emerald-500 hover:text-emerald-600 transition-all shadow-sm active:scale-95"
           >
-            🔒 კონფიდენციალურობა
+            {t("terms.navPrivacy")}
           </button>
         </div>
 
@@ -68,12 +70,9 @@ const TermsAndConditions = () => {
           {/* 1. TERMS & CONDITIONS */}
           <div id="terms" className="scroll-mt-24">
             <div className="bg-stone-900 text-white p-6 md:p-8">
-              <h2 className="text-xl font-bold mb-2">მომსახურების პირობები</h2>
+              <h2 className="text-xl font-bold mb-2">{t("terms.termsTitle")}</h2>
               <p className="text-stone-300 leading-relaxed text-sm md:text-base">
-                კეთილი იყოს თქვენი მობრძანება {SITE_CONFIG.SITE_NAME}-ზე. ეს
-                დოკუმენტი წარმოადგენს იურიდიულ შეთანხმებას თქვენსა და{" "}
-                {SITE_CONFIG.SITE_NAME}-ს შორის. ვებგვერდის გამოყენებით,
-                პროდუქციის დათვალიერებით ან შეძენით, თქვენ ეთანხმებით ამ წესებს.
+                {t("terms.termsIntro", { siteName: SITE_CONFIG.SITE_NAME })}
               </p>
             </div>
 
@@ -81,28 +80,22 @@ const TermsAndConditions = () => {
               <section>
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                   <ShieldAlert className="w-5 h-5 text-emerald-600" />
-                  1. მომხმარებლის ვალდებულებები და ქცევა
+                  {t("terms.s1Title")}
                 </h3>
                 <div className="prose prose-stone text-stone-600 leading-relaxed text-sm md:text-base">
-                  <p>
-                    მომხმარებელი ვალდებულია დაიცვას კეთილსინდისიერების
-                    პრინციპები ვებგვერდით სარგებლობისას. კატეგორიულად
-                    აკრძალულია:
-                  </p>
+                  <p>{t("terms.s1Intro")}</p>
                   <ul className="list-disc pl-5 space-y-2 mt-2">
                     <li>
-                      <strong>ყალბი ინფორმაციის მიწოდება:</strong> შეკვეთის
-                      გაფორმებისას სხვისი პერსონალური მონაცემების, მისამართის ან
-                      საკონტაქტო ინფორმაციის გამოყენება.
+                      <strong>{t("terms.s1FalseInfoTitle")}</strong>{" "}
+                      {t("terms.s1FalseInfo")}
                     </li>
                     <li>
-                      <strong>სისტემური მანიპულაცია:</strong> ვებგვერდის
-                      უსაფრთხოების სისტემების გვერდის ავლის მცდელობა.
+                      <strong>{t("terms.s1SystemTitle")}</strong>{" "}
+                      {t("terms.s1System")}
                     </li>
                     <li>
-                      <strong>არაკეთილსინდისიერი შეკვეთა:</strong> პროდუქციის
-                      შეკვეთა შეძენის განზრახვის გარეშე (ე.წ. "ყალბი
-                      შეკვეთები"), რაც აფერხებს კომპანიის საქმიანობას.
+                      <strong>{t("terms.s1FakeOrderTitle")}</strong>{" "}
+                      {t("terms.s1FakeOrder")}
                     </li>
                   </ul>
                 </div>
@@ -111,30 +104,28 @@ const TermsAndConditions = () => {
               <section>
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                   <Lock className="w-5 h-5 text-emerald-600" />
-                  2. ინტელექტუალური საკუთრება
+                  {t("terms.s2Title")}
                 </h3>
                 <p className="text-stone-600 leading-relaxed">
-                  ვებგვერდზე განთავსებული ვიზუალური მასალა, პროდუქციის
-                  აღწერილობები და ლოგო წარმოადგენს {SITE_CONFIG.SITE_NAME}-ის
-                  ინტელექტუალურ საკუთრებას.
+                  {t("terms.s2Text", { siteName: SITE_CONFIG.SITE_NAME })}
                 </p>
               </section>
 
               <section>
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                   <CreditCard className="w-5 h-5 text-emerald-600" />
-                  3. გადახდა და ანგარიშსწორება
+                  {t("terms.s3Title")}
                 </h3>
                 <div className="text-stone-600 space-y-3">
-                  <p>ჩვენთან მოქმედებს ანგარიშსწორების მოქნილი სისტემა:</p>
+                  <p>{t("terms.s3Intro")}</p>
                   <ul className="list-disc pl-5 space-y-2">
                     <li>
-                      <strong>ადგილზე გადახდა:</strong> თანხის გადახდა კურიერთან
-                      (ნაღდი/ბარათი).
+                      <strong>{t("terms.s3OnDelivery")}</strong>{" "}
+                      {t("terms.s3OnDeliveryText")}
                     </li>
                     <li>
-                      <strong>ონლაინ გადახდა:</strong> Visa / Mastercard
-                      ბარათებით.
+                      <strong>{t("terms.s3Online")}</strong>{" "}
+                      {t("terms.s3OnlineText")}
                     </li>
                   </ul>
                 </div>
@@ -143,25 +134,22 @@ const TermsAndConditions = () => {
               <section>
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                   <Truck className="w-5 h-5 text-emerald-600" />
-                  4. მიწოდების სერვისი
+                  {t("terms.s4Title")}
                 </h3>
                 <div className="text-stone-600 space-y-3">
-                  <p>
-                    კომპანია უზრუნველყოფს პროდუქციის მიწოდებას საქართველოს
-                    მასშტაბით.
-                  </p>
+                  <p>{t("terms.s4Text")}</p>
                   <ul className="list-disc pl-5 space-y-2">
                     <li>
-                      <strong>ვადები:</strong> სტანდარტული მიწოდების ვადა
-                      შეადგენს 2-5 სამუშაო დღეს.
+                      <strong>{t("terms.s4Timeframe")}</strong>{" "}
+                      {t("terms.s4TimeframeText")}
                     </li>
                     <li>
-                      <strong>მისამართი:</strong> მომხმარებელი პასუხისმგებელია
-                      მისამართის სისწორეზე.
+                      <strong>{t("terms.s4Address")}</strong>{" "}
+                      {t("terms.s4AddressText")}
                     </li>
                     <li>
-                      <strong>მიღება:</strong> ნივთის ჩაბარებისას მომხმარებელი
-                      ვალდებულია ვიზუალურად დაათვალიეროს შეფუთვა.
+                      <strong>{t("terms.s4Receipt")}</strong>{" "}
+                      {t("terms.s4ReceiptText")}
                     </li>
                   </ul>
                 </div>
@@ -170,40 +158,35 @@ const TermsAndConditions = () => {
               <section>
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                   <Info className="w-5 h-5 text-emerald-600" />
-                  5. დაბრუნების და გაცვლის პირობები
+                  {t("terms.s5Title")}
                 </h3>
                 <p className="text-stone-600 leading-relaxed">
-                  საქართველოს კანონმდებლობის შესაბამისად, მომხმარებელს უფლება
-                  აქვს დააბრუნოს შეძენილი ნივთი 14 დღის განმავლობაში. დეტალური
-                  პირობები იხილეთ ქვემოთ.
+                  {t("terms.s5Text")}
                 </p>
               </section>
 
               <section>
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                   <Scale className="w-5 h-5 text-emerald-600" />
-                  6. პასუხისმგებლობის შეზღუდვა
+                  {t("terms.s6Title")}
                 </h3>
                 <p className="text-stone-600 leading-relaxed">
-                  {SITE_CONFIG.SITE_NAME} არ აგებს პასუხს ზარალზე, რომელიც
-                  გამოწვეულია პროდუქციის არადანიშნულებისამებრ გამოყენებით.
+                  {t("terms.s6Text", { siteName: SITE_CONFIG.SITE_NAME })}
                 </p>
               </section>
 
               <section>
                 <h3 className="text-lg font-bold text-stone-900 mb-4">
-                  7. დავების გადაწყვეტა
+                  {t("terms.s7Title")}
                 </h3>
                 <p className="text-stone-600 leading-relaxed">
-                  წინამდებარე პირობები რეგულირდება საქართველოს მოქმედი
-                  კანონმდებლობით. დავა წყდება ურთიერთმოლაპარაკების გზით, ან
-                  საქართველოს სასამართლოში.
+                  {t("terms.s7Text")}
                 </p>
               </section>
             </div>
           </div>
 
-          {/* 2. REFUND POLICY (Domino-ს დამატებებით) */}
+          {/* 2. REFUND POLICY */}
           <div id="refund" className="scroll-mt-24">
             <div className="bg-emerald-50 p-6 md:p-8 border-t border-b border-emerald-100">
               <div className="flex gap-4 items-start">
@@ -212,11 +195,10 @@ const TermsAndConditions = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-stone-900 mb-2">
-                    გადახდის დაბრუნების პირობები
+                    {t("terms.refundTitle")}
                   </h2>
                   <p className="text-stone-600 leading-relaxed">
-                    ეს დოკუმენტი არეგულირებს {SITE_CONFIG.SITE_NAME}-ის ინტერნეტ
-                    მაღაზიაში შეძენილი პროდუქციის უკან დაბრუნების პირობებს.
+                    {t("terms.refundIntro", { siteName: SITE_CONFIG.SITE_NAME })}
                   </p>
                 </div>
               </div>
@@ -226,104 +208,93 @@ const TermsAndConditions = () => {
               <section>
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                   <RefreshCw className="w-5 h-5 text-emerald-600" />
-                  დაბრუნების ზოგადი პირობები
+                  {t("terms.refundGeneralTitle")}
                 </h3>
                 <div className="prose prose-stone text-stone-600 leading-relaxed">
                   <p>
-                    საქართველოს კანონმდებლობის შესაბამისად, თქვენ გაქვთ უფლება
-                    მოითხოვოთ შეძენილი ნივთის დაბრუნება მისი მიღებიდან{" "}
-                    <strong>14 კალენდარული დღის</strong> განმავლობაში.
+                    {t("terms.refundGeneralIntro1")}{" "}
+                    <strong>{t("terms.refundGeneralIntro2")}</strong>{" "}
+                    {t("terms.refundGeneralIntro3")}
                   </p>
                   <ul className="mt-4 space-y-2 list-none pl-0">
                     <li className="flex gap-3 items-start">
                       <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                      <span>
-                        ნივთი უნდა იყოს უხმარი და პირვანდელ მდგომარეობაში.
-                      </span>
+                      <span>{t("terms.refundCondition1")}</span>
                     </li>
                     <li className="flex gap-3 items-start">
                       <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                      <span>
-                        შენარჩუნებული უნდა იყოს სასაქონლო იერსახე, ეტიკეტი და
-                        შეფუთვა.
-                      </span>
+                      <span>{t("terms.refundCondition2")}</span>
                     </li>
                     <li className="flex gap-3 items-start">
                       <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                      <span>
-                        წარმოდგენილი უნდა იყოს გადახდის დამადასტურებელი ქვითარი.
-                      </span>
+                      <span>{t("terms.refundCondition3")}</span>
                     </li>
                   </ul>
                 </div>
               </section>
 
-              {/* ✅ აქ დავამატეთ Domino-ს პუნქტები */}
               <section className="bg-stone-50 rounded-2xl p-6 border border-stone-100">
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                   <AlertCircle className="w-5 h-5 text-amber-500" />
-                  გამონაკლისები (რა არ ბრუნდება)
+                  {t("terms.refundExceptionsTitle")}
                 </h3>
                 <p className="text-stone-600 mb-4">
-                  თანხის დაბრუნება ან ნივთის გადაცვლა{" "}
+                  {t("terms.refundExceptionsIntroA")}{" "}
                   <span className="font-bold text-stone-800">
-                    არ ხორციელდება
+                    {t("terms.refundExceptionsIntroB")}
                   </span>{" "}
-                  შემდეგ შემთხვევებში:
+                  {t("terms.refundExceptionsIntroC")}
                 </p>
                 <ul className="space-y-3 text-stone-600 text-sm md:text-base">
                   <li className="flex gap-2">
                     <span className="text-red-500 font-bold">•</span>
-                    ნივთი დაზიანებულია მომხმარებლის მიერ.
+                    {t("terms.refundEx1")}
                   </li>
                   <li className="flex gap-2">
                     <span className="text-red-500 font-bold">•</span>
-                    გასულია კანონით დადგენილი 14 დღიანი ვადა.
+                    {t("terms.refundEx2")}
                   </li>
                   <li className="flex gap-2">
                     <span className="text-red-500 font-bold">•</span>
-                    ნივთი განეკუთვნება ჰიგიენურ კატეგორიას (გახსნილი შეფუთვით).
-                  </li>
-                  {/* 👇 Domino Inspired Points */}
-                  <li className="flex gap-2">
-                    <span className="text-red-500 font-bold">•</span>
-                    დეკორატიული და საახალწლო ნივთები (თუ გამოყენების კვალი
-                    ემჩნევა).
+                    {t("terms.refundEx3")}
                   </li>
                   <li className="flex gap-2">
                     <span className="text-red-500 font-bold">•</span>
-                    ჭურჭელი და სამზარეულოს ატრიბუტიკა (გამოყენებული).
+                    {t("terms.refundEx4")}
                   </li>
                   <li className="flex gap-2">
                     <span className="text-red-500 font-bold">•</span>
-                    ინდივიდუალური შეკვეთით დამზადებული პროდუქცია.
+                    {t("terms.refundEx5")}
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-red-500 font-bold">•</span>
+                    {t("terms.refundEx6")}
                   </li>
                 </ul>
               </section>
 
               <section>
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
-                  💳 თანხის ანაზღაურების პროცედურა
+                  {t("terms.refundProcedureTitle")}
                 </h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="bg-white border border-stone-200 p-4 rounded-xl">
                     <span className="block text-sm text-stone-400 font-bold uppercase mb-1">
-                      დაბრუნების ვადა
+                      {t("terms.refundPeriodLabel")}
                     </span>
                     <span className="text-stone-900 font-medium">
-                      ნივთის მიღებიდან 2-5 სამუშაო დღე
+                      {t("terms.refundPeriodValue")}
                     </span>
                   </div>
                   <div className="bg-white border border-stone-200 p-4 rounded-xl">
                     <span className="block text-sm text-stone-400 font-bold uppercase mb-1">
-                      ტრანსპორტირება
+                      {t("terms.refundShippingLabel")}
                     </span>
                     <span className="text-stone-900 font-medium">
-                      ანაზღაურდება მომხმარებლის მიერ*
+                      {t("terms.refundShippingValue")}
                     </span>
                     <p className="text-xs text-stone-400 mt-2">
-                      * პროდუქციის დაბრუნების შემთხვევაში პირვანდელი
-                      ტრანსპორტირების თანხა უკან არ ბრუნდება.
+                      {t("terms.refundShippingNote")}
                     </p>
                   </div>
                 </div>
@@ -340,12 +311,10 @@ const TermsAndConditions = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold mb-2">
-                    თქვენი მონაცემები დაცულია
+                    {t("terms.privacyTitle")}
                   </h2>
                   <p className="text-stone-300 leading-relaxed text-sm md:text-base">
-                    კეთილი იყოს თქვენი მობრძანება {SITE_CONFIG.SITE_NAME}-ზე. ეს
-                    დოკუმენტი განმარტავს, თუ როგორ ვამუშავებთ თქვენს პირად
-                    ინფორმაციას.
+                    {t("terms.privacyIntro", { siteName: SITE_CONFIG.SITE_NAME })}
                   </p>
                 </div>
               </div>
@@ -355,21 +324,22 @@ const TermsAndConditions = () => {
               <section>
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                   <Eye className="w-5 h-5 text-emerald-600" />
-                  1. რა ინფორმაციას ვაგროვებთ?
+                  {t("terms.p1Title")}
                 </h3>
                 <div className="prose prose-stone text-stone-600 leading-relaxed text-sm md:text-base">
-                  <p>მომსახურების გასაწევად ჩვენ გვჭირდება მხოლოდ:</p>
+                  <p>{t("terms.p1Intro")}</p>
                   <ul className="list-disc pl-5 space-y-2 mt-2">
                     <li>
-                      <strong>საკონტაქტო:</strong> სახელი, გვარი, ტელეფონის
-                      ნომერი (კურიერისთვის).
+                      <strong>{t("terms.p1Contact")}</strong>{" "}
+                      {t("terms.p1ContactText")}
                     </li>
                     <li>
-                      <strong>მიწოდება:</strong> ფაქტობრივი მისამართი.
+                      <strong>{t("terms.p1Delivery")}</strong>{" "}
+                      {t("terms.p1DeliveryText")}
                     </li>
                     <li>
-                      <strong>ისტორია:</strong> ინფორმაცია შეძენილი ნივთების
-                      შესახებ.
+                      <strong>{t("terms.p1History")}</strong>{" "}
+                      {t("terms.p1HistoryText")}
                     </li>
                   </ul>
                 </div>
@@ -378,34 +348,30 @@ const TermsAndConditions = () => {
               <section>
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                   <Server className="w-5 h-5 text-emerald-600" />
-                  2. მონაცემების გამოყენების მიზანი
+                  {t("terms.p2Title")}
                 </h3>
-                <p className="text-stone-600 mb-3">
-                  თქვენი მონაცემები გამოიყენება მხოლოდ:
-                </p>
+                <p className="text-stone-600 mb-3">{t("terms.p2Intro")}</p>
                 <ul className="list-disc pl-5 space-y-2 text-stone-600 text-sm md:text-base">
-                  <li>შეკვეთის დასამუშავებლად და ინვოისის მოსამზადებლად.</li>
-                  <li>კურიერისთვის მისამართის გადასაცემად.</li>
-                  <li>თქვენთან დასაკავშირებლად.</li>
+                  <li>{t("terms.p2Li1")}</li>
+                  <li>{t("terms.p2Li2")}</li>
+                  <li>{t("terms.p2Li3")}</li>
                 </ul>
               </section>
 
               <section>
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                   <Share2 className="w-5 h-5 text-emerald-600" />
-                  3. ვის გადაეცემა მონაცემები?
+                  {t("terms.p3Title")}
                 </h3>
-                <p className="text-stone-600 mb-3">
-                  ინფორმაცია გადაეცემა მხოლოდ:
-                </p>
+                <p className="text-stone-600 mb-3">{t("terms.p3Intro")}</p>
                 <ul className="list-disc pl-5 space-y-2 text-stone-600">
                   <li>
-                    <strong>საკურიერო კომპანიას:</strong> მხოლოდ სახელი,
-                    მისამართი და ტელეფონი.
+                    <strong>{t("terms.p3Courier")}</strong>{" "}
+                    {t("terms.p3CourierText")}
                   </li>
                   <li>
-                    <strong>სახელმწიფო უწყებებს:</strong> მხოლოდ კანონით
-                    გათვალისწინებულ გამონაკლის შემთხვევებში.
+                    <strong>{t("terms.p3Gov")}</strong>{" "}
+                    {t("terms.p3GovText")}
                   </li>
                 </ul>
               </section>
@@ -413,26 +379,22 @@ const TermsAndConditions = () => {
               <section>
                 <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                   <Database className="w-5 h-5 text-emerald-600" />
-                  4. ტექნიკური უსაფრთხოება
+                  {t("terms.p4Title")}
                 </h3>
                 <p className="text-stone-600 leading-relaxed">
-                  ვებგვერდის გამართული მუშაობისთვის, ჩვენ ვიყენებთ ბრაუზერის
-                  მეხსიერებას (Cookies/Local Storage). ეს აუცილებელია იმისთვის,
-                  რომ საიტმა შეძლოს თქვენი მომსახურება.
+                  {t("terms.p4Text")}
                 </p>
               </section>
 
               <section>
                 <h3 className="text-lg font-bold text-stone-900 mb-4">
-                  5. თქვენი უფლებები და მონაცემთა წაშლა
+                  {t("terms.p5Title")}
                 </h3>
                 <p className="text-stone-600 leading-relaxed mb-4">
-                  თქვენ უფლება გაქვთ მოითხოვოთ თქვენი პირადი მონაცემების წაშლა
-                  ნებისმიერ დროს.
+                  {t("terms.p5Text")}
                 </p>
                 <p className="text-stone-600 text-sm italic">
-                  შენიშვნა: ინფორმაცია განხორციელებული შეკვეთების (ინვოისების)
-                  შესახებ ინახება შიდა საბუღალტრო მიზნებისთვის.
+                  {t("terms.p5Note")}
                 </p>
               </section>
             </div>
@@ -440,7 +402,9 @@ const TermsAndConditions = () => {
 
           {/* Contact Footer */}
           <div className="bg-stone-900 text-stone-400 p-8 text-sm">
-            <p className="font-bold text-white mb-4 text-lg">დაგვიკავშირდით:</p>
+            <p className="font-bold text-white mb-4 text-lg">
+              {t("terms.contactTitle")}
+            </p>
             <div className="flex flex-col sm:flex-row gap-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-stone-800 rounded-lg">

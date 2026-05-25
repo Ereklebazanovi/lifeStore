@@ -9,20 +9,22 @@ import {
   Phone,
   Database,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { SITE_CONFIG, ADMIN_CONFIG } from "../config/constants";
 
 const PrivacyPolicy = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-stone-50 py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-stone-900 mb-4">
-            კონფიდენციალურობის პოლიტიკა
+            {t("privacyPolicy.pageTitle")}
           </h1>
           <p className="text-stone-500 flex items-center justify-center gap-2">
             <Lock className="w-4 h-4" />
-            {/* ✅ სტატიკური თარიღი */}
-            ბოლოს განახლდა: 2025 წლის 15 დეკემბერი
+            {t("privacyPolicy.lastUpdated")}
           </p>
         </div>
 
@@ -34,116 +36,95 @@ const PrivacyPolicy = () => {
               </div>
               <div>
                 <h2 className="text-xl font-bold mb-2">
-                  თქვენი მონაცემები დაცულია
+                  {t("privacyPolicy.bannerTitle")}
                 </h2>
                 <p className="text-stone-300 leading-relaxed text-sm md:text-base">
-                  კეთილი იყოს თქვენი მობრძანება {SITE_CONFIG.SITE_NAME}-ზე. ეს
-                  დოკუმენტი განმარტავს, თუ როგორ ვამუშავებთ მხოლოდ იმ
-                  ინფორმაციას, რომელიც აუცილებელია თქვენი შეკვეთის
-                  შესასრულებლად.
+                  {t("privacyPolicy.bannerText", { siteName: SITE_CONFIG.SITE_NAME })}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="p-6 md:p-10 space-y-10">
-            {/* 1. ინფორმაციის შეგროვება */}
+            {/* 1. Data Collection */}
             <section>
               <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                 <Eye className="w-5 h-5 text-emerald-600" />
-                1. რა ინფორმაციას ვაგროვებთ?
+                {t("privacyPolicy.s1Title")}
               </h3>
               <div className="prose prose-stone text-stone-600 leading-relaxed text-sm md:text-base">
-                <p>
-                  მომსახურების გასაწევად ჩვენ გვჭირდება მხოლოდ ის მონაცემები,
-                  რაც აუცილებელია ნივთის მოსატანად:
-                </p>
+                <p>{t("privacyPolicy.s1Intro")}</p>
                 <ul className="list-disc pl-5 space-y-2 mt-2">
                   <li>
-                    <strong>საკონტაქტო:</strong> სახელი, გვარი, ტელეფონის ნომერი
-                    (კურიერისთვის).
+                    <strong>{t("privacyPolicy.s1Contact")}</strong>{" "}
+                    {t("privacyPolicy.s1ContactText")}
                   </li>
                   <li>
-                    <strong>მიწოდება:</strong> ფაქტობრივი მისამართი, სადაც გსურთ
-                    ამანათის მიღება.
+                    <strong>{t("privacyPolicy.s1Delivery")}</strong>{" "}
+                    {t("privacyPolicy.s1DeliveryText")}
                   </li>
                   <li>
-                    <strong>შეკვეთის ისტორია:</strong> ინფორმაცია თქვენს მიერ
-                    შეძენილი ნივთების შესახებ.
+                    <strong>{t("privacyPolicy.s1History")}</strong>{" "}
+                    {t("privacyPolicy.s1HistoryText")}
                   </li>
                 </ul>
               </div>
             </section>
 
-            {/* 2. გამოყენება */}
+            {/* 2. Data Usage */}
             <section>
               <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                 <Server className="w-5 h-5 text-emerald-600" />
-                2. მონაცემების გამოყენების მიზანი
+                {t("privacyPolicy.s2Title")}
               </h3>
-              <p className="text-stone-600 mb-3">
-                თქვენი მონაცემები გამოიყენება მხოლოდ:
-              </p>
+              <p className="text-stone-600 mb-3">{t("privacyPolicy.s2Intro")}</p>
               <ul className="list-disc pl-5 space-y-2 text-stone-600 text-sm md:text-base">
-                <li>შეკვეთის დასამუშავებლად და ინვოისის მოსამზადებლად.</li>
-                <li>კურიერისთვის მისამართის გადასაცემად.</li>
-                <li>
-                  თქვენთან დასაკავშირებლად, თუ შეკვეთასთან დაკავშირებით კითხვა
-                  გაჩნდა.
-                </li>
+                <li>{t("privacyPolicy.s2Li1")}</li>
+                <li>{t("privacyPolicy.s2Li2")}</li>
+                <li>{t("privacyPolicy.s2Li3")}</li>
               </ul>
             </section>
 
-            {/* 3. გაზიარება */}
+            {/* 3. Data Sharing */}
             <section className="bg-stone-50 p-5 rounded-2xl border border-stone-100">
               <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                 <Share2 className="w-5 h-5 text-emerald-600" />
-                3. ვის გადაეცემა მონაცემები?
+                {t("privacyPolicy.s3Title")}
               </h3>
-              <p className="text-stone-600 mb-3">
-                ჩვენ არ ვყიდით და არ ვასაჯაროებთ თქვენს მონაცემებს. ინფორმაცია
-                გადაეცემა მხოლოდ:
-              </p>
+              <p className="text-stone-600 mb-3">{t("privacyPolicy.s3Intro")}</p>
               <ul className="list-disc pl-5 space-y-2 text-stone-600">
                 <li>
-                  <strong>საკურიერო კომპანიას:</strong> მხოლოდ სახელი, მისამართი
-                  და ტელეფონი (ამანათის ჩასაბარებლად).
+                  <strong>{t("privacyPolicy.s3Courier")}</strong>{" "}
+                  {t("privacyPolicy.s3CourierText")}
                 </li>
                 <li>
-                  <strong>სახელმწიფო უწყებებს:</strong> მხოლოდ კანონით
-                  გათვალისწინებულ გამონაკლის შემთხვევებში (მაგალითად, ოფიციალური
-                  შემოწმებისას).
+                  <strong>{t("privacyPolicy.s3Gov")}</strong>{" "}
+                  {t("privacyPolicy.s3GovText")}
                 </li>
               </ul>
             </section>
 
-            {/* 4. ტექნიკური დეტალები */}
+            {/* 4. Technical Security */}
             <section>
               <h3 className="flex items-center gap-2 text-lg font-bold text-stone-900 mb-4">
                 <Database className="w-5 h-5 text-emerald-600" />
-                4. ტექნიკური უსაფრთხოება
+                {t("privacyPolicy.s4Title")}
               </h3>
               <p className="text-stone-600 leading-relaxed">
-                ვებგვერდის გამართული მუშაობისთვის (მაგალითად: კალათაში ნივთების
-                დამახსოვრება ან ავტორიზაცია), ჩვენ ვიყენებთ ბრაუზერის
-                მეხსიერებას (Cookies/Local Storage). ეს ტექნოლოგია აუცილებელია
-                იმისთვის, რომ საიტმა შეძლოს თქვენი მომსახურება.
+                {t("privacyPolicy.s4Text")}
               </p>
             </section>
 
-            {/* 5. მონაცემთა წაშლა */}
+            {/* 5. User Rights */}
             <section>
               <h3 className="text-lg font-bold text-stone-900 mb-4">
-                5. თქვენი უფლებები და მონაცემთა წაშლა
+                {t("privacyPolicy.s5Title")}
               </h3>
               <p className="text-stone-600 leading-relaxed mb-4">
-                თქვენ უფლება გაქვთ მოითხოვოთ თქვენი პირადი მონაცემების წაშლა ან
-                შესწორება ნებისმიერ დროს.
+                {t("privacyPolicy.s5Text")}
               </p>
               <p className="text-stone-600 text-sm italic">
-                შენიშვნა: ანგარიშის გაუქმების შემთხვევაში, ინფორმაცია
-                განხორციელებული შეკვეთების (ინვოისების) შესახებ შესაძლოა
-                შენარჩუნდეს შიდა საბუღალტრო მიზნებისთვის.
+                {t("privacyPolicy.s5Note")}
               </p>
             </section>
 
@@ -151,7 +132,7 @@ const PrivacyPolicy = () => {
 
             <div className="text-sm text-stone-500 pt-4">
               <p className="font-bold text-stone-900 mb-2">
-                საკონტაქტო ინფორმაცია:
+                {t("privacyPolicy.contactTitle")}
               </p>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
