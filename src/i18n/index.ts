@@ -21,6 +21,12 @@ i18n
       order: ["localStorage", "navigator"],
       lookupLocalStorage: "i18nextLng",
       caches: ["localStorage"],
+      // Normalize ka-GE → ka, en-US → en, ru-RU → ru at detection time
+      convertDetectedLanguage: (lng: string) => {
+        const base = lng.split("-")[0].toLowerCase();
+        if (["ka", "en", "ru"].includes(base)) return base;
+        return "ka";
+      },
     },
     interpolation: {
       escapeValue: false,

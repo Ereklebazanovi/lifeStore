@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import { Badge } from "antd"
 import { ShoppingCart, Menu, X, ShieldCheck, User, LogOut, LogIn, History, Search, ChevronDown, LayoutGrid, Globe } from "lucide-react"
 import { useCartStore } from "../store/cartStore"
@@ -20,7 +20,6 @@ const LANGUAGES = [
 
 const Navbar: React.FC = () => {
   const location = useLocation()
-  const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -40,16 +39,10 @@ const Navbar: React.FC = () => {
   const isActivePath = (path: string) => cleanPath === path
   const isProductsActive = cleanPath === "/products" || cleanPath.startsWith("/category/")
 
-  // Build language-aware path prefix
   const lang = i18n.language
-  const langPrefix = lang === "ka" ? "" : `/${lang}`
-  const localePath = (path: string) => `${langPrefix}${path}`
 
   const switchLanguage = (newLang: string) => {
-    const stripped = location.pathname.replace(/^\/(en|ru)(\/|$)/, "/")
-    const newPath = newLang === "ka" ? stripped : `/${newLang}${stripped}`
     i18n.changeLanguage(newLang)
-    navigate(newPath, { replace: true })
     setIsLangOpen(false)
     setIsMenuOpen(false)
   }
@@ -117,7 +110,7 @@ const Navbar: React.FC = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-[72px]">
-            <Link to={localePath("/")} className="flex items-center space-x-2.5 group z-50 relative">
+            <Link to="/" className="flex items-center space-x-2.5 group z-50 relative">
               <div className="relative overflow-hidden rounded-xl shadow-sm group-hover:shadow-lg transition-all duration-300 transform group-hover:scale-105">
                 <img src="/Screenshot 2025-12-10 151703.png" alt="LifeStore" className="h-11 w-auto object-cover" />
               </div>
@@ -127,7 +120,7 @@ const Navbar: React.FC = () => {
             </Link>
 
             <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2 space-x-1">
-              <NavLink to={localePath("/")} isActive={isActivePath("/")}>
+              <NavLink to="/" isActive={isActivePath("/")}>
                 {t("nav.home")}
               </NavLink>
 
@@ -168,7 +161,7 @@ const Navbar: React.FC = () => {
                 >
                   <div className="bg-white rounded-2xl shadow-xl border border-neutral-100 overflow-hidden p-2">
                     <Link
-                      to={localePath("/products")}
+                      to="/products"
                       className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                         cleanPath === "/products"
                           ? "bg-emerald-50 text-emerald-700"
@@ -185,7 +178,7 @@ const Navbar: React.FC = () => {
                         {activeCategories.map((cat) => (
                           <Link
                             key={cat.id}
-                            to={localePath(`/category/${cat.slug}`)}
+                            to={`/category/${cat.slug}`}
                             className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                               cleanPath === `/category/${cat.slug}`
                                 ? "bg-emerald-50 text-emerald-700 font-semibold"
@@ -206,11 +199,11 @@ const Navbar: React.FC = () => {
                 </div>
               </div>
 
-              <NavLink to={localePath("/blog")} isActive={isActivePath("/blog") || cleanPath.startsWith("/blog/")}>
+              <NavLink to="/blog" isActive={isActivePath("/blog") || cleanPath.startsWith("/blog/")}>
                 {t("nav.blog")}
               </NavLink>
 
-              <NavLink to={localePath("/about")} isActive={isActivePath("/about")}>
+              <NavLink to="/about" isActive={isActivePath("/about")}>
                 {t("nav.about")}
               </NavLink>
 
@@ -400,7 +393,7 @@ const Navbar: React.FC = () => {
 
           {/* Nav Links */}
           <div className="p-2">
-            <MobileNavLink to={localePath("/")} isActive={isActivePath("/")} onClick={() => setIsMenuOpen(false)}>
+            <MobileNavLink to="/" isActive={isActivePath("/")} onClick={() => setIsMenuOpen(false)}>
               {t("nav.home")}
             </MobileNavLink>
 
@@ -427,7 +420,7 @@ const Navbar: React.FC = () => {
               >
                 <div className="mx-2 my-1 pl-3 border-l-2 border-emerald-100 space-y-0.5">
                   <Link
-                    to={localePath("/products")}
+                    to="/products"
                     onClick={() => setIsMenuOpen(false)}
                     className={`flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 ${
                       cleanPath === "/products"
@@ -441,7 +434,7 @@ const Navbar: React.FC = () => {
                   {activeCategories.map((cat) => (
                     <Link
                       key={cat.id}
-                      to={localePath(`/category/${cat.slug}`)}
+                      to={`/category/${cat.slug}`}
                       onClick={() => setIsMenuOpen(false)}
                       className={`flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 ${
                         cleanPath === `/category/${cat.slug}`
@@ -462,14 +455,14 @@ const Navbar: React.FC = () => {
             </div>
 
             <MobileNavLink
-              to={localePath("/blog")}
+              to="/blog"
               isActive={isActivePath("/blog") || cleanPath.startsWith("/blog/")}
               onClick={() => setIsMenuOpen(false)}
             >
               {t("nav.blog")}
             </MobileNavLink>
 
-            <MobileNavLink to={localePath("/about")} isActive={isActivePath("/about")} onClick={() => setIsMenuOpen(false)}>
+            <MobileNavLink to="/about" isActive={isActivePath("/about")} onClick={() => setIsMenuOpen(false)}>
               {t("nav.about")}
             </MobileNavLink>
 

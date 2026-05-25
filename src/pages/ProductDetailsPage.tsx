@@ -902,7 +902,7 @@ ${product.description}
                   ) : (
                     <>
                       <ShoppingCart className="w-5 h-5" />
-                      <span>{t("product.addToCart")} — ₾{totalPrice.toFixed(2)}</span>
+                      <span>{t("product.addToCart")} - ₾{totalPrice.toFixed(2)}</span>
                     </>
                   )}
                 </button>
