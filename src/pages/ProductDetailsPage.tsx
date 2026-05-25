@@ -1357,7 +1357,7 @@ ${product.description}
                 <div className="min-w-0">
                   <p className="text-xs text-stone-400">{t("product.reviewLabel")}</p>
                   <p className="font-semibold text-stone-900 text-sm leading-tight truncate">
-                    {product.name}
+                    {getLocalizedProductName(product, i18n.language)}
                   </p>
                 </div>
               </div>
