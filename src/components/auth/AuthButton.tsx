@@ -8,9 +8,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
+import { useTranslation } from "react-i18next";
 
 const AuthButton: React.FC = () => {
   const { user, isLoading, signInWithGoogle, signOut } = useAuthStore();
+  const { t } = useTranslation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -93,14 +95,14 @@ const AuthButton: React.FC = () => {
             {user.role === "admin" && (
               <div className="mt-3 flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg text-xs font-semibold w-fit">
                 <Shield className="w-3 h-3" />
-                ადმინისტრატორი
+                {t("auth.admin")}
               </div>
             )}
 
             {user.role === "manager" && (
               <div className="mt-3 flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-semibold w-fit">
                 <Shield className="w-3 h-3" />
-                მენეჯერი (POS)
+                {t("auth.manager")}
               </div>
             )}
           </div>
@@ -116,7 +118,7 @@ const AuthButton: React.FC = () => {
               ) : (
                 <LogOut className="w-4 h-4" />
               )}
-              გასვლა
+              {t("auth.signOut")}
             </button>
           </div>
         </div>
@@ -134,12 +136,12 @@ const AuthButton: React.FC = () => {
       {isLoading ? (
         <>
           <Loader2 className="w-4 h-4 animate-spin" />
-          <span>იტვირთება...</span>
+          <span>{t("common.loading")}</span>
         </>
       ) : (
         <>
           <LogIn className="w-4 h-4" />
-          <span>შესვლა</span>
+          <span>{t("nav.signIn")}</span>
         </>
       )}
     </button>

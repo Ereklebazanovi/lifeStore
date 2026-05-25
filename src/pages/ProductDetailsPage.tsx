@@ -765,7 +765,7 @@ ${product.description}
                       </div>
                       {getCurrentWeight() && (
                           <div className="flex items-center gap-1.5 text-sm font-medium text-stone-600">
-                              <span>⚖️ {getCurrentWeight()}გრ</span>
+                              <span>⚖️ {getCurrentWeight()}{t("product.grams")}</span>
                           </div>
                       )}
                   </div>

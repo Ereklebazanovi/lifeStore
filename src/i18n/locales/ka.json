@@ -40,6 +40,7 @@
     "outOfStock": "ამოწურულია",
     "inStock": "მარაგშია",
     "pieces": "ც",
+    "grams": "გრ",
     "price": "ფასი",
     "description": "აღწერა",
     "notify": "შეგატყობინოთ, როცა გამოჩნდება?",
@@ -179,7 +180,9 @@
   "auth": {
     "signInWithGoogle": "Google-ით შესვლა",
     "signOut": "გასვლა",
-    "myAccount": "ჩემი ანგარიში"
+    "myAccount": "ჩემი ანგარიში",
+    "admin": "ადმინისტრატორი",
+    "manager": "მენეჯერი (POS)"
   },
   "common": {
     "loading": "იტვირთება...",

@@ -40,6 +40,7 @@
     "outOfStock": "Out of Stock",
     "inStock": "In Stock",
     "pieces": "pcs",
+    "grams": "g",
     "price": "Price",
     "description": "Description",
     "notify": "Notify me when available?",
@@ -192,7 +193,9 @@
   "auth": {
     "signInWithGoogle": "Sign in with Google",
     "signOut": "Sign Out",
-    "myAccount": "My Account"
+    "myAccount": "My Account",
+    "admin": "Administrator",
+    "manager": "Manager (POS)"
   },
   "common": {
     "loading": "Loading...",

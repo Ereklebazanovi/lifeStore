@@ -40,6 +40,7 @@
     "outOfStock": "Нет в наличии",
     "inStock": "В наличии",
     "pieces": "шт",
+    "grams": "г",
     "price": "Цена",
     "description": "Описание",
     "notify": "Уведомить, когда появится?",
@@ -192,7 +193,9 @@
   "auth": {
     "signInWithGoogle": "Войти через Google",
     "signOut": "Выйти",
-    "myAccount": "Мой аккаунт"
+    "myAccount": "Мой аккаунт",
+    "admin": "Администратор",
+    "manager": "Менеджер (POS)"
   },
   "common": {
     "loading": "Загрузка...",
