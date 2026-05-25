@@ -1,4 +1,4 @@
-import type { Product, Category } from "../types";
+import type { Product, Category, CartItem } from "../types";
 import type { BlogPost } from "../services/blogService";
 
 export function getLocalizedProductName(product: Product, lang: string): string {
@@ -41,6 +41,15 @@ export function getLocalizedBlogContent(post: BlogPost, lang: string): string {
   if (lang === "en" && post.contentEn) return post.contentEn;
   if (lang === "ru" && post.contentRu) return post.contentRu;
   return post.content;
+}
+
+export function getLocalizedCartItemDisplayName(item: CartItem, lang: string): string {
+  const baseName = getLocalizedProductName(item.product, lang);
+  if (item.variantId && item.product.variants) {
+    const variant = item.product.variants.find((v) => v.id === item.variantId);
+    if (variant?.name) return `${baseName} (${variant.name})`;
+  }
+  return baseName;
 }
 
 export function getLocalizedBlogTag(tag: string, t: (key: string) => string): string {

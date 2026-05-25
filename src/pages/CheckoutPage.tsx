@@ -4,7 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
 import { useAuthStore } from "../store/authStore";
 import { showToast } from "../components/ui/Toast";
-import { getCartItemDisplayName } from "../utils/displayHelpers";
+import { getLocalizedCartItemDisplayName } from "../utils/i18nHelpers";
 import { OrderService } from "../services/orderService";
 import { PaymentService } from "../services/paymentService";
 import PhoneInput from "../components/ui/PhoneInput";
@@ -40,7 +40,7 @@ interface CheckoutFormData {
 }
 
 const CheckoutPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { items, getCartTotal, clearCart, validateAndCleanCart, getItemPrice } =
     useCartStore();
@@ -267,7 +267,7 @@ const CheckoutPage: React.FC = () => {
                   <CreditCard className={`w-8 h-8 mb-3 ${formData.paymentMethod === "flitt" ? "text-emerald-600" : "text-stone-400"}`} />
                   <span className="font-bold text-sm text-stone-900">{t('checkout.onlinePayment')}</span>
                   <span className="text-[11px] text-stone-500 mt-1 text-center leading-tight">
-                    Visa / Mastercard / Amex <br/> ნებისმიერი ბანკით
+                    Visa / Mastercard / Amex <br/> {t('checkout.anyBank')}
                   </span>
                 </label>
 
@@ -295,7 +295,7 @@ const CheckoutPage: React.FC = () => {
                   <Banknote className={`w-8 h-8 mb-3 ${formData.paymentMethod === "cash" ? "text-emerald-600" : "text-stone-400"}`} />
                   <span className="font-bold text-sm text-stone-900">{t('checkout.cashOnDelivery')}</span>
                   <span className="text-[11px] text-stone-500 mt-1 text-center leading-tight">
-                    ქეშით ან ბარათით<br/>კურიერთან
+                    {t('checkout.cashFromCourier')}
                   </span>
                 </label>
               </div>
@@ -366,12 +366,12 @@ const CheckoutPage: React.FC = () => {
                  {/* Secondary Phone (Optional, full width for clean look) */}
                  <div>
                     <label className={labelStyle}>
-                      დამატებითი ნომერი <span className="text-stone-300 normal-case font-normal">(არასავალდებულო)</span>
+                      {t('checkout.secondaryPhone')} <span className="text-stone-300 normal-case font-normal">{t('checkout.optionalNote')}</span>
                     </label>
                     <PhoneInput
                       value={formData.secondaryPhone}
                       onChange={(val) => setFormData((prev) => ({ ...prev, secondaryPhone: val }))}
-                      placeholder="მაგ: ოჯახის წევრის"
+                      placeholder={t('checkout.secondaryPhonePlaceholder')}
                     />
                   </div>
               </div>
@@ -395,11 +395,11 @@ const CheckoutPage: React.FC = () => {
                         onChange={handleChange}
                         className={`${inputBaseStyle} appearance-none cursor-pointer`}
                       >
-                        <option value="თბილისი">თბილისი (მიწოდება: 5₾)</option>
-                        <option value="რუსთავი">რუსთავი (მიწოდება: 5₾)</option>
-                        <option value="ბათუმი">ბათუმი (მიწოდება: 10₾)</option>
-                        <option value="ქუთაისი">ქუთაისი (მიწოდება: 10₾)</option>
-                        <option value="სხვა">სხვა (მიწოდება: 10₾)</option>
+                        <option value="თბილისი">{t('checkout.cityTbilisi')}</option>
+                        <option value="რუსთავი">{t('checkout.cityRustavi')}</option>
+                        <option value="ბათუმი">{t('checkout.cityBatumi')}</option>
+                        <option value="ქუთაისი">{t('checkout.cityKutaisi')}</option>
+                        <option value="სხვა">{t('checkout.cityOther')}</option>
                       </select>
                    </div>
                    <div className="sm:col-span-2">
@@ -410,7 +410,7 @@ const CheckoutPage: React.FC = () => {
                         required
                         value={formData.address}
                         onChange={handleChange}
-                        placeholder="ქუჩა, კორპუსი, ბინა"
+                        placeholder={t('checkout.addressPlaceholder')}
                         className={inputBaseStyle}
                       />
                    </div>
@@ -425,7 +425,7 @@ const CheckoutPage: React.FC = () => {
                       value={formData.comment}
                       onChange={handleChange}
                       className={inputBaseStyle}
-                      placeholder="მაგ: სადარბაზოს კოდი, ეზოში შესასვლელი..."
+                      placeholder={t('checkout.commentPlaceholder')}
                     />
                  </div>
               </div>
@@ -441,7 +441,7 @@ const CheckoutPage: React.FC = () => {
                   <Package className="w-5 h-5 text-stone-400" />
                   {t('checkout.orderSummary')}
                   <span className="ml-auto bg-stone-200 text-stone-600 text-xs py-1 px-2 rounded-full">
-                    {items.length} ნივთი
+                    {t('checkout.itemCount', { count: items.length })}
                   </span>
                 </h2>
               </div>
@@ -459,7 +459,7 @@ const CheckoutPage: React.FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-stone-900 truncate">
-                        {getCartItemDisplayName(item)}
+                        {getLocalizedCartItemDisplayName(item, i18n.language)}
                       </p>
                       <div className="flex justify-between items-center mt-1">
                         <p className="text-xs text-stone-500">
@@ -512,7 +512,10 @@ const CheckoutPage: React.FC = () => {
                     className="mt-1 w-4 h-4 text-emerald-600 rounded border-stone-300 focus:ring-emerald-500 cursor-pointer"
                   />
                   <label htmlFor="terms-checkbox" className="text-xs text-stone-500 leading-snug cursor-pointer select-none">
-                    ვეთანხმები <Link to="/terms" target="_blank" className="text-stone-800 font-bold underline decoration-stone-300 underline-offset-2 hover:text-emerald-600">წესებსა და პირობებს</Link>
+                    {t('checkout.agreeToTerms')}{" "}
+                    <Link to="/terms" target="_blank" className="text-stone-800 font-bold underline decoration-stone-300 underline-offset-2 hover:text-emerald-600">
+                      {t('checkout.termsLinkText')}
+                    </Link>
                   </label>
                 </div>
 
@@ -543,7 +546,7 @@ const CheckoutPage: React.FC = () => {
                 {/* აქ შეგიძლია ჩასვა ბანკების ლოგოები სურვილისამებრ */}
                 <div className="flex items-center gap-1 text-xs text-stone-400">
                     <ShieldCheck className="w-4 h-4" />
-                    <span>დაცული გადახდა</span>
+                    <span>{t('checkout.securePayment')}</span>
                 </div>
             </div>
           </div>
@@ -559,11 +562,11 @@ const CheckoutPage: React.FC = () => {
             </div>
 
             <h3 className="text-lg font-bold text-center text-stone-900">
-              ნომრის გადამოწმება
+              {t('checkout.confirmPhoneTitle')}
             </h3>
-            
+
             <p className="text-center text-stone-500 text-sm mt-2 mb-6">
-              დარწმუნდით რომ ნომერი სწორია, კურიერი დაგიკავშირდებათ:
+              {t('checkout.confirmPhoneText')}
             </p>
 
             <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 mb-6 text-center">
@@ -577,13 +580,13 @@ const CheckoutPage: React.FC = () => {
                 onClick={() => setShowConfirmModal(false)}
                 className="py-3 text-sm font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors"
               >
-                შესწორება
+                {t('checkout.editPhone')}
               </button>
               <button
                 onClick={handleConfirmOrder}
                 className="py-3 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg shadow-emerald-200 transition-colors"
               >
-                დადასტურება
+                {t('checkout.confirm')}
               </button>
             </div>
           </div>
