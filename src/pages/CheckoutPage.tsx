@@ -152,11 +152,6 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    if (formData.paymentMethod === "flitt" && !formData.email) {
-      showToast("ონლაინ გადახდისთვის გთხოვთ ჩაწეროთ ელ-ფოსტა", "error");
-      return;
-    }
-
     setShowConfirmModal(true);
   };
 
