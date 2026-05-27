@@ -427,7 +427,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         <div class="${cssClass}" style="font-size: ${productFontSize};">
           <div class="header">
             <div class="logo-section">
-              <img src="./Screenshot 2025-12-10 151703.png" alt="LifeStore" class="logo">
+              <img src="./logo.webp" alt="LifeStore" class="logo">
               <div class="store-name">LifeStore</div>
             </div>
             <div class="order-info">

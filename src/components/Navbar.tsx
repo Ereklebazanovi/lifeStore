@@ -112,7 +112,7 @@ const Navbar: React.FC = () => {
           <div className="flex justify-between items-center h-[72px]">
             <Link to="/" className="flex items-center space-x-2.5 group z-50 relative">
               <div className="relative overflow-hidden rounded-xl shadow-sm group-hover:shadow-lg transition-all duration-300 transform group-hover:scale-105">
-                <img src="/Screenshot 2025-12-10 151703.png" alt="LifeStore" className="h-11 w-auto object-cover" />
+                <img src="/logo.webp" alt="LifeStore" className="h-11 w-auto object-cover" />
               </div>
               <span className="text-[22px] font-extrabold bg-gradient-to-r from-neutral-900 via-emerald-800 to-emerald-600 bg-clip-text text-transparent tracking-tight group-hover:tracking-normal transition-all duration-300">
                 LifeStore
@@ -360,7 +360,7 @@ const Navbar: React.FC = () => {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-neutral-100 bg-gradient-to-r from-stone-50 to-white">
             <div className="flex items-center gap-2">
-              <img src="/Screenshot 2025-12-10 151703.png" alt="LifeStore" className="h-7 w-auto" />
+              <img src="/logo.webp" alt="LifeStore" className="h-7 w-auto" />
               <span className="font-extrabold text-base bg-gradient-to-r from-neutral-900 to-emerald-600 bg-clip-text text-transparent">
                 LifeStore
               </span>

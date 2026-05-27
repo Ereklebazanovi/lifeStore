@@ -30,7 +30,7 @@ import { getLocalizedProductName, getLocalizedCategoryName } from "../utils/i18n
 // import heroImg from "../assets/hero.jpg";
 // url: heroImg
 const HERO_IMAGE_CONFIG = {
-  url: "/hero.png",
+  url: "/hero.webp",
   title: "LifeStore - ჰარმონია დეტალებში",
   subtitle: "შექმენი ჯანსაღი და ესთეტიური გარემო შენს სამზარეულოში",
 };
@@ -128,7 +128,7 @@ const HomePage: React.FC = () => {
     "@type": "Organization",
     name: "Life Store",
     url: "https://lifestore.ge",
-    logo: "https://lifestore.ge/Screenshot 2025-12-10 151703.png",
+    logo: "https://lifestore.ge/logo.webp",
     description:
       "Life Store - თანამედროვე დიზაინისა და ჯანმრთელობისთვის უვნებელი ეკომეგობრული სახლისა და სამზარეულოს ნივთები",
     address: {
@@ -168,6 +168,7 @@ const HomePage: React.FC = () => {
                 src={HERO_IMAGE_CONFIG.url}
                 alt={HERO_IMAGE_CONFIG.title}
                 loading="eager"
+                fetchPriority="high"
                 className="absolute inset-0 w-full h-full object-cover"
               />
             </div>
