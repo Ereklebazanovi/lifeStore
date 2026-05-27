@@ -452,7 +452,7 @@ const CheckoutPage: React.FC = () => {
                   <div key={item.productId} className="flex gap-3">
                     <div className="w-12 h-12 bg-stone-100 rounded-lg overflow-hidden border border-stone-200 flex-shrink-0">
                       {item.product.images?.[0] ? (
-                        <img src={item.product.images[0]} alt="" className="w-full h-full object-cover" />
+                        <img src={item.product.images[0]} alt={getLocalizedCartItemDisplayName(item, i18n.language)} className="w-full h-full object-cover" />
                       ) : (
                         <Package className="w-full h-full p-3 text-stone-300" />
                       )}

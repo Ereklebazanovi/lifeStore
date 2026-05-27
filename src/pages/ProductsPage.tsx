@@ -265,7 +265,7 @@ const ProductsPage: React.FC = () => {
                         {product.images && product.images.length > 0 ? (
                           <img
                             src={product.images[0]}
-                            alt={product.name}
+                            alt={getLocalizedProductName(product, i18n.language)}
                             className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${
                               isOutOfStock ? "grayscale opacity-75" : ""
                             }`}

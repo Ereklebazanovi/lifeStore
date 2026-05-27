@@ -690,7 +690,7 @@ ${product.description}
                 {product.images && product.images.length > 0 ? (
                   <img
                     src={selectedImage}
-                    alt={product.name}
+                    alt={getLocalizedProductName(product, i18n.language)}
                     className="w-full h-full object-contain p-6 lg:p-12 transition-transform duration-300 group-hover:scale-105 cursor-zoom-in"
                     onClick={() => setIsImageModalOpen(true)}
                   />
@@ -727,7 +727,7 @@ ${product.description}
                         >
                           <img
                             src={img}
-                            alt={`${product.name} - სურათი ${index + 1}`}
+                            alt={`${getLocalizedProductName(product, i18n.language)} - ${t("product.imageOf", { current: index + 1, total: product.images.length })}`}
                             className="w-full h-full object-cover"
                             loading="lazy"
                           />
@@ -962,7 +962,7 @@ ${product.description}
                       {p.images?.[0] ? (
                         <img
                           src={p.images[0]}
-                          alt={p.name}
+                          alt={getLocalizedProductName(p, i18n.language)}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           loading="lazy"
                         />
@@ -1220,7 +1220,7 @@ ${product.description}
                     >
                       <img
                         src={img}
-                        alt=""
+                        alt={`${getLocalizedProductName(product, i18n.language)} ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
                       <span className="absolute bottom-1 right-1 bg-black/60 text-white text-xs px-1 py-0.5 rounded">
@@ -1350,7 +1350,7 @@ ${product.description}
                 {product.images?.[0] && (
                   <img
                     src={product.images[0]}
-                    alt={product.name}
+                    alt={getLocalizedProductName(product, i18n.language)}
                     className="w-9 h-9 rounded-lg object-cover shrink-0"
                   />
                 )}
