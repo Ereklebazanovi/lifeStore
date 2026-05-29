@@ -12,9 +12,6 @@ const STATIC_PAGES = [
   { loc: "/about",          priority: "0.7", changefreq: "monthly" },
   { loc: "/en/about",       priority: "0.6", changefreq: "monthly" },
   { loc: "/ru/about",       priority: "0.6", changefreq: "monthly" },
-  { loc: "/privacy-policy", priority: "0.4", changefreq: "monthly" },
-  { loc: "/terms",          priority: "0.4", changefreq: "monthly" },
-  { loc: "/refund-policy",  priority: "0.4", changefreq: "monthly" },
 ];
 
 function toDate(val: unknown): string {
