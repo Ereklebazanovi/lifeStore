@@ -3,6 +3,23 @@ import { adminDb } from "./lib/firebase-admin";
 
 const SITE_URL = "https://lifestore.ge";
 
+// Real policy data — mirrors RefundPolicy page (14-day window, customer pays
+// return shipping) and checkout shipping rates (Tbilisi/Rustavi base 5 GEL).
+const RETURN_POLICY = {
+  "@type": "MerchantReturnPolicy",
+  applicableCountry: "GE",
+  returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+  merchantReturnDays: 14,
+  returnMethod: "https://schema.org/ReturnByMail",
+  returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+};
+
+const SHIPPING_DETAILS = {
+  "@type": "OfferShippingDetails",
+  shippingRate: { "@type": "MonetaryAmount", value: 5, currency: "GEL" },
+  shippingDestination: { "@type": "DefinedRegion", addressCountry: "GE" },
+};
+
 const BOT_PATTERN =
   /Googlebot|Google-InspectionTool|Storebot-Google|AdsBot-Google|Mediapartners-Google|bingbot|Slurp|DuckDuckBot|YandexBot|Baiduspider|facebookexternalhit|LinkedInBot|Twitterbot|WhatsApp|TelegramBot|Discordbot|Slackbot/i;
 
@@ -119,6 +136,9 @@ export default async function handler(
 
     const title = `${categoryName} | Life Store`;
     const description = `${categoryDesc.slice(0, 100)} ${UI.ecoSuffix} ${products.length} ${UI.productsCount}.`;
+    const priceExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
 
     // ── Schema.org: ItemList ─────────────────────────────────────────────────
     const itemListSchema = {
@@ -137,13 +157,17 @@ export default async function handler(
           name: p.name,
           url: p.url,
           ...(p.image ? { image: p.image } : {}),
+          brand: { "@type": "Brand", name: "Life Store" },
           offers: {
             "@type": "Offer",
             price: p.price,
             priceCurrency: "GEL",
+            priceValidUntil: priceExpiry,
             availability: p.inStock
               ? "https://schema.org/InStock"
               : "https://schema.org/OutOfStock",
+            hasMerchantReturnPolicy: RETURN_POLICY,
+            shippingDetails: SHIPPING_DETAILS,
           },
         },
       })),

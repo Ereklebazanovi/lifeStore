@@ -7,6 +7,23 @@ import { Timestamp, DocumentData } from "firebase-admin/firestore";
 
 const SITE_URL = "https://lifestore.ge";
 
+// Real policy data — mirrors RefundPolicy page (14-day window, customer pays
+// return shipping) and checkout shipping rates (Tbilisi/Rustavi base 5 GEL).
+const RETURN_POLICY = {
+  "@type": "MerchantReturnPolicy",
+  applicableCountry: "GE",
+  returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+  merchantReturnDays: 14,
+  returnMethod: "https://schema.org/ReturnByMail",
+  returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+};
+
+const SHIPPING_DETAILS = {
+  "@type": "OfferShippingDetails",
+  shippingRate: { "@type": "MonetaryAmount", value: 5, currency: "GEL" },
+  shippingDestination: { "@type": "DefinedRegion", addressCountry: "GE" },
+};
+
 const BOT_PATTERN =
   /Googlebot|Google-InspectionTool|Storebot-Google|AdsBot-Google|Mediapartners-Google|bingbot|Slurp|DuckDuckBot|YandexBot|Baiduspider|facebookexternalhit|LinkedInBot|Twitterbot|WhatsApp|TelegramBot|Discordbot|Slackbot/i;
 
@@ -213,6 +230,8 @@ export default async function handler(
           ? "https://schema.org/InStock"
           : "https://schema.org/OutOfStock",
         seller: { "@type": "Organization", name: "Life Store", url: SITE_URL },
+        hasMerchantReturnPolicy: RETURN_POLICY,
+        shippingDetails: SHIPPING_DETAILS,
       },
     };
 
