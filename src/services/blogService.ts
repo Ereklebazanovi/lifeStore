@@ -31,6 +31,9 @@ export interface BlogPost {
   tags: string[];
   readTime: number;
   isPublished: boolean;
+  // Internal-linking for topical authority: blog → commerce pages
+  relatedProductIds?: string[];
+  relatedCategorySlugs?: string[];
   publishedAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -62,6 +65,8 @@ function fromDoc(id: string, data: Record<string, unknown>): BlogPost {
     contentRu: (data.contentRu as string) || undefined,
     image: data.image as string | undefined,
     tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
+    relatedProductIds: Array.isArray(data.relatedProductIds) ? (data.relatedProductIds as string[]) : [],
+    relatedCategorySlugs: Array.isArray(data.relatedCategorySlugs) ? (data.relatedCategorySlugs as string[]) : [],
     readTime: (data.readTime as number) || 1,
     isPublished: Boolean(data.isPublished),
     publishedAt: toDate(data.publishedAt),

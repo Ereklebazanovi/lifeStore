@@ -52,6 +52,11 @@ export default async function handler(
     allProducts: lang === "en" ? "All Products" : lang === "ru" ? "Все товары" : "ყველა პროდუქტი",
     seeAlso: lang === "en" ? "See Also" : lang === "ru" ? "Смотрите также" : "იხილეთ ასევე",
     minRead: lang === "en" ? "min read" : lang === "ru" ? "мин" : "წუთი კითხვა",
+    shopTitle: lang === "en"
+      ? "Shop related products"
+      : lang === "ru"
+      ? "Товары из статьи"
+      : "სტატიასთან დაკავშირებული პროდუქტები",
     inLanguage: lang,
   };
 
@@ -116,6 +121,44 @@ export default async function handler(
           title: loc(data.title, data.titleEn, data.titleRu, lang),
         };
       });
+
+    // Related commerce links — internal linking from blog → category/product
+    // pages (topical authority). Firestore "in" / getAll capped at 10.
+    const relProductIds: string[] = Array.isArray(p.relatedProductIds)
+      ? (p.relatedProductIds as string[]).slice(0, 10)
+      : [];
+    const relCategorySlugs: string[] = Array.isArray(p.relatedCategorySlugs)
+      ? (p.relatedCategorySlugs as string[]).slice(0, 10)
+      : [];
+
+    const [relProductDocs, relCategorySnap] = await Promise.all([
+      relProductIds.length > 0
+        ? adminDb.getAll(...relProductIds.map((pid) => adminDb.collection("products").doc(pid)))
+        : Promise.resolve([] as any[]),
+      relCategorySlugs.length > 0
+        ? adminDb.collection("categories").where("slug", "in", relCategorySlugs).get()
+        : Promise.resolve({ docs: [] as any[] }),
+    ]);
+
+    const relatedProducts = relProductDocs
+      .filter((d: any) => d.exists)
+      .map((d: any) => {
+        const data = d.data();
+        const sBase = (data.slug || d.id) as string;
+        return {
+          url: lang === "ka" ? `${SITE_URL}/product/${sBase}` : `${SITE_URL}/${lang}/product/${sBase}`,
+          name: loc(data.name, data.nameEn, data.nameRu, lang),
+        };
+      });
+
+    const relatedCategories = (relCategorySnap.docs as any[]).map((d: any) => {
+      const data = d.data();
+      const cSlug = data.slug as string;
+      return {
+        url: lang === "ka" ? `${SITE_URL}/category/${cSlug}` : `${SITE_URL}/${lang}/category/${cSlug}`,
+        name: loc(data.name, data.nameEn, data.nameRu, lang),
+      };
+    });
 
     // ── Schema.org: BlogPosting ────────────────────────────────────────────────
     const blogPostingSchema = {
@@ -199,6 +242,14 @@ export default async function handler(
     <p><time datetime="${publishedDate}">${publishedDate.split("T")[0]}</time> · ${readTime} ${UI.minRead}</p>
     ${p.image ? `<img src="${esc(p.image as string)}" alt="${esc(postTitle)}" loading="lazy">` : ""}
     ${rawContent}
+    ${relatedCategories.length > 0 || relatedProducts.length > 0 ? `
+    <section>
+      <h2>${UI.shopTitle}</h2>
+      <ul>
+        ${relatedCategories.map((c) => `<li><a href="${c.url}">${esc(c.name)}</a></li>`).join("\n        ")}
+        ${relatedProducts.map((r) => `<li><a href="${r.url}">${esc(r.name)}</a></li>`).join("\n        ")}
+      </ul>
+    </section>` : ""}
     ${relatedPosts.length > 0 ? `
     <section>
       <h2>${UI.seeAlso}</h2>

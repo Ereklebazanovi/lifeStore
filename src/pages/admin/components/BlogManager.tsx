@@ -14,6 +14,8 @@ import {
   Copy,
 } from "lucide-react";
 import { BlogService, BlogPost } from "../../../services/blogService";
+import { ProductService } from "../../../services/productService";
+import type { Product, Category } from "../../../types";
 
 type BlogPostInput = Omit<BlogPost, "id" | "createdAt" | "updatedAt">;
 import { generateProductSlug } from "../../../utils/slug";
@@ -35,6 +37,8 @@ const EMPTY_FORM = {
   tags: "",
   readTime: 3,
   isPublished: false,
+  relatedProductIds: [] as string[],
+  relatedCategorySlugs: [] as string[],
 };
 
 type FormState = typeof EMPTY_FORM;
@@ -58,6 +62,10 @@ const BlogManager: React.FC = () => {
   const [slugLocked, setSlugLocked] = useState(false);
   const [activeLangTab, setActiveLangTab] = useState<LangTab>("ka");
 
+  // Lists for internal-linking pickers
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -69,6 +77,23 @@ const BlogManager: React.FC = () => {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Load products + categories once for the link pickers (non-blocking)
+  useEffect(() => {
+    ProductService.getProducts()
+      .then((list) => setProducts(list.filter((p) => p.isActive !== false)))
+      .catch(() => {});
+    ProductService.getCategories()
+      .then((list) => setCategories(list.filter((c) => c.isActive !== false)))
+      .catch(() => {});
+  }, []);
+
+  const toggleId = (key: "relatedProductIds" | "relatedCategorySlugs", value: string) => {
+    setForm((f) => {
+      const cur = f[key];
+      return { ...f, [key]: cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value] };
+    });
+  };
 
   const openNew = () => {
     setEditingId(null);
@@ -95,6 +120,8 @@ const BlogManager: React.FC = () => {
       tags: post.tags.join(", "),
       readTime: post.readTime,
       isPublished: post.isPublished,
+      relatedProductIds: post.relatedProductIds || [],
+      relatedCategorySlugs: post.relatedCategorySlugs || [],
     });
     setSlugLocked(true);
     setActiveLangTab("ka");
@@ -142,6 +169,8 @@ const BlogManager: React.FC = () => {
         tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
         readTime: Math.max(1, Number(form.readTime) || 1),
         isPublished: form.isPublished,
+        relatedProductIds: form.relatedProductIds,
+        relatedCategorySlugs: form.relatedCategorySlugs,
         publishedAt: new Date(),
       };
       if (form.titleEn.trim()) base.titleEn = form.titleEn.trim();
@@ -541,6 +570,70 @@ const BlogManager: React.FC = () => {
                     onChange={(e) => setForm((f) => ({ ...f, readTime: Number(e.target.value) }))}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+              </div>
+
+              {/* Internal linking — blog → commerce pages (SEO topical authority) */}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    დაკავშირებული კატეგორიები{" "}
+                    <span className="text-gray-400 font-normal">(SEO ლინკები სტატიიდან)</span>
+                  </label>
+                  {categories.length === 0 ? (
+                    <p className="text-xs text-gray-400">იტვირთება...</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {categories.map((c) => {
+                        const active = form.relatedCategorySlugs.includes(c.slug);
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => toggleId("relatedCategorySlugs", c.slug)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                              active
+                                ? "bg-emerald-500 text-white border-emerald-500"
+                                : "bg-white text-gray-600 border-gray-300 hover:border-emerald-400"
+                            }`}
+                          >
+                            {c.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    დაკავშირებული პროდუქტები{" "}
+                    <span className="text-gray-400 font-normal">
+                      ({form.relatedProductIds.length} არჩეული)
+                    </span>
+                  </label>
+                  {products.length === 0 ? (
+                    <p className="text-xs text-gray-400">იტვირთება...</p>
+                  ) : (
+                    <div className="max-h-44 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
+                      {products.map((p) => {
+                        const active = form.relatedProductIds.includes(p.id);
+                        return (
+                          <label
+                            key={p.id}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 cursor-pointer text-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={active}
+                              onChange={() => toggleId("relatedProductIds", p.id)}
+                              className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-400"
+                            />
+                            <span className="truncate text-gray-700">{p.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
