@@ -100,6 +100,12 @@ export default async function handler(
           ? d.salePrice
           : d.price || 0;
 
+      // Real stock — mirror seo-product.ts logic (variants sum, else flat stock)
+      const stock: number =
+        d.hasVariants && Array.isArray(d.variants)
+          ? d.variants.reduce((s: number, v: any) => s + (v.stock || 0), 0)
+          : d.stock || 0;
+
       const slugBase = (d.slug || doc.id) as string;
       return {
         slug: slugBase,
@@ -107,6 +113,7 @@ export default async function handler(
         name: loc(d.name, d.nameEn, d.nameRu, lang),
         price,
         image: d.images?.[0] as string | undefined,
+        inStock: stock > 0,
       };
     });
 
@@ -134,7 +141,9 @@ export default async function handler(
             "@type": "Offer",
             price: p.price,
             priceCurrency: "GEL",
-            availability: "https://schema.org/InStock",
+            availability: p.inStock
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
           },
         },
       })),
