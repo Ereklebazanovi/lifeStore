@@ -16,6 +16,21 @@
       "missing": [{ "type": "query", "key": "_spa" }]
     },
     {
+      "source": "/products",
+      "destination": "/api/seo-products",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
+      "source": "/en/products",
+      "destination": "/api/seo-products?lang=en",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
+      "source": "/ru/products",
+      "destination": "/api/seo-products?lang=ru",
+      "missing": [{ "type": "query", "key": "_spa" }]
+    },
+    {
       "source": "/category/:slug",
       "destination": "/api/seo-category?slug=:slug",
       "missing": [{ "type": "query", "key": "_spa" }]
