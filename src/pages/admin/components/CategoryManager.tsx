@@ -5,6 +5,7 @@ import { showToast } from "../../../components/ui/Toast";
 import { useCloudinaryUpload } from "../../../hooks/useCloudinaryUpload";
 import type { Category } from "../../../types";
 import { generateProductSlug } from "../../../utils/slug";
+import RichTextEditor from "../../../components/ui/RichTextEditor";
 
 const CategoryManager: React.FC = () => {
   const { categories, fetchCategories, addCategory, updateCategory, deleteCategory, isLoading } = useCategoryStore();
@@ -20,6 +21,9 @@ const CategoryManager: React.FC = () => {
     nameRu: "",
     descriptionEn: "",
     descriptionRu: "",
+    seoContent: "",
+    seoContentEn: "",
+    seoContentRu: "",
     image: "",
     isActive: true,
     priority: 0,
@@ -100,6 +104,9 @@ const CategoryManager: React.FC = () => {
       nameRu: category.nameRu || "",
       descriptionEn: category.descriptionEn || "",
       descriptionRu: category.descriptionRu || "",
+      seoContent: category.seoContent || "",
+      seoContentEn: category.seoContentEn || "",
+      seoContentRu: category.seoContentRu || "",
       image: category.image,
       isActive: category.isActive,
       priority: category.priority,
@@ -137,6 +144,9 @@ const CategoryManager: React.FC = () => {
       nameRu: "",
       descriptionEn: "",
       descriptionRu: "",
+      seoContent: "",
+      seoContentEn: "",
+      seoContentRu: "",
       image: "",
       isActive: true,
       priority: 0,
@@ -395,6 +405,40 @@ const CategoryManager: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     rows={2}
                     placeholder="Описание категории на русском"
+                  />
+                </div>
+              </div>
+
+              {/* Long-form SEO content (HTML) — rendered below the product grid */}
+              <div className="border border-emerald-200 rounded-lg p-4 bg-emerald-50/40 space-y-3">
+                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide">
+                  📝 SEO ტექსტი (გრძელი, არასავალდებულო)
+                </p>
+                <p className="text-xs text-gray-500">
+                  H2/სიის მქონე ვრცელი ტექსტი — ჩანს პროდუქტების ქვემოთ. Google-ისთვის უნიკალური კონტენტი.
+                </p>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">ქართული 🇬🇪</label>
+                  <RichTextEditor
+                    value={formData.seoContent || ""}
+                    onChange={(html) => setFormData((prev) => ({ ...prev, seoContent: html }))}
+                    placeholder="რატომ ავირჩიოთ ეს კატეგორია, როგორ შევარჩიოთ, მასალა, მოვლა..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">English 🇬🇧</label>
+                  <RichTextEditor
+                    value={formData.seoContentEn || ""}
+                    onChange={(html) => setFormData((prev) => ({ ...prev, seoContentEn: html }))}
+                    placeholder="Optional — full SEO content in English"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Русский 🇷🇺</label>
+                  <RichTextEditor
+                    value={formData.seoContentRu || ""}
+                    onChange={(html) => setFormData((prev) => ({ ...prev, seoContentRu: html }))}
+                    placeholder="Опционально — полный SEO-текст на русском"
                   />
                 </div>
               </div>

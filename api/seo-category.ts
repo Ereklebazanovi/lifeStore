@@ -92,6 +92,10 @@ export default async function handler(
     const categoryDesc = loc(cat.description, cat.descriptionEn, cat.descriptionRu, lang) || categoryName;
     const categoryImage = cat.image as string | undefined;
 
+    // Long-form SEO content (HTML) — strip <script> for safety before rendering
+    const seoContentHtml = loc(cat.seoContent, cat.seoContentEn, cat.seoContentRu, lang)
+      .replace(/<script[\s\S]*?<\/script>/gi, "");
+
     const kaUrl = `${SITE_URL}/category/${slug}`;
     const enUrl = `${SITE_URL}/en/category/${slug}`;
     const ruUrl = `${SITE_URL}/ru/category/${slug}`;
@@ -247,6 +251,7 @@ export default async function handler(
         .map((p) => `<li><a href="${p.url}">${esc(p.name)} — ₾${p.price.toFixed(2)}</a></li>`)
         .join("\n      ")}
     </ul>
+    ${seoContentHtml ? `<section>${seoContentHtml}</section>` : ""}
     <a href="${SITE_URL}/products">${UI.allProducts}</a>
   </main>
 </body>

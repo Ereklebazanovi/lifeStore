@@ -19,7 +19,7 @@ import {
 } from "../utils/productHelpers";
 import SEOHead from "../components/SEOHead";
 import { useTranslation } from "react-i18next";
-import { getLocalizedProductName, getLocalizedCategoryName, getLocalizedCategoryDescription } from "../utils/i18nHelpers";
+import { getLocalizedProductName, getLocalizedCategoryName, getLocalizedCategoryDescription, getLocalizedCategorySeoContent } from "../utils/i18nHelpers";
 
 const CategoryPage: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -444,6 +444,14 @@ const CategoryPage: React.FC = () => {
                 </div>
               )}
             </>
+          )}
+
+          {/* Long-form SEO content (below the product grid) */}
+          {getLocalizedCategorySeoContent(category, i18n.language) && (
+            <div
+              className="blog-content max-w-3xl mt-12 pt-10 border-t border-stone-100"
+              dangerouslySetInnerHTML={{ __html: getLocalizedCategorySeoContent(category, i18n.language) }}
+            />
           )}
 
           {/* Other Categories */}

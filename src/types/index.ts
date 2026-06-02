@@ -78,6 +78,10 @@ export interface Category {
   description?: string;
   descriptionEn?: string;
   descriptionRu?: string;
+  // Long-form SEO content block (HTML) rendered below the product grid
+  seoContent?: string;
+  seoContentEn?: string;
+  seoContentRu?: string;
   image?: string;
   isActive?: boolean;
   priority?: number;

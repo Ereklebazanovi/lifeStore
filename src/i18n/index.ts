@@ -18,7 +18,10 @@ i18n
     fallbackLng: "ka",
     defaultNS: "translation",
     detection: {
-      order: ["localStorage", "navigator"],
+      // navigator (browser language) intentionally removed: a foreign-language
+      // browser must never override the Georgian default. Fresh visitors with
+      // no stored choice fall back to fallbackLng "ka".
+      order: ["localStorage"],
       lookupLocalStorage: "i18nextLng",
       caches: ["localStorage"],
       // Normalize ka-GE → ka, en-US → en, ru-RU → ru at detection time

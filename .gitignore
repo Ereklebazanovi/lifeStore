@@ -36,3 +36,6 @@ dist-ssr
 serviceAccount.json
 products-translations.json
 blog-translations/
+
+# Firebase admin key (never commit)
+serviceAccountKey.json

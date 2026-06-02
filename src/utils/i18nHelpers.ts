@@ -25,6 +25,12 @@ export function getLocalizedCategoryDescription(category: Category, lang: string
   return category.description || "";
 }
 
+export function getLocalizedCategorySeoContent(category: Category, lang: string): string {
+  if (lang === "en" && category.seoContentEn) return category.seoContentEn;
+  if (lang === "ru" && category.seoContentRu) return category.seoContentRu;
+  return category.seoContent || "";
+}
+
 export function getLocalizedBlogTitle(post: BlogPost, lang: string): string {
   if (lang === "en" && post.titleEn) return post.titleEn;
   if (lang === "ru" && post.titleRu) return post.titleRu;
