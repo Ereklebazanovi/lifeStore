@@ -157,19 +157,33 @@ const Footer: React.FC = () => {
           viewport={{ once: true }}
         >
           <div className="flex flex-col lg:flex-row justify-between items-center gap-4 lg:gap-0">
-            
+
             {/* Copyright და იურიდიული ინფორმაცია */}
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-stone-500 font-medium text-sm text-center md:text-left">
               <p>&copy; {currentYear} LifeStore. {t("footer.rights")}.</p>
-              
+
               {/* გამყოფი ხაზი/წერტილი მხოლოდ დიდ ეკრანებზე */}
               <span className="hidden md:block w-1 h-1 bg-stone-400 rounded-full"></span>
-              
+
               <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-4">
                 <span>შპს ლაიფ სთორი</span>
                 <span className="hidden sm:inline text-stone-300">|</span>
                 <span>ს/ნ 438125574</span>
               </div>
+
+              <span className="hidden md:block w-1 h-1 bg-stone-400 rounded-full"></span>
+
+              <span className="text-stone-400 text-xs font-normal">
+                Designed by{" "}
+                <a
+                  href="https://vifadigital.ge"
+                  target="_blank"
+                  rel="noopener"
+                  className="hover:text-stone-600 transition-colors"
+                >
+                  VIFA Digital
+                </a>
+              </span>
             </div>
 
             {/* სოციალური ქსელები */}
