@@ -18,9 +18,11 @@ const SHIPPING_DETAILS = {
   "@type": "OfferShippingDetails",
   shippingRate: { "@type": "MonetaryAmount", value: 5, currency: "GEL" },
   shippingDestination: { "@type": "DefinedRegion", addressCountry: "GE" },
+  // Matches published policy: standard delivery 2–5 business days
+  // (handling 1–2 + transit 1–3 = total 2–5).
   deliveryTime: {
     "@type": "ShippingDeliveryTime",
-    handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
+    handlingTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 2, unitCode: "DAY" },
     transitTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 3, unitCode: "DAY" },
   },
 };
