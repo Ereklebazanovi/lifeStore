@@ -22,6 +22,11 @@ const SHIPPING_DETAILS = {
   "@type": "OfferShippingDetails",
   shippingRate: { "@type": "MonetaryAmount", value: 5, currency: "GEL" },
   shippingDestination: { "@type": "DefinedRegion", addressCountry: "GE" },
+  deliveryTime: {
+    "@type": "ShippingDeliveryTime",
+    handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
+    transitTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 3, unitCode: "DAY" },
+  },
 };
 
 const BOT_PATTERN =
