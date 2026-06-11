@@ -11,6 +11,7 @@ import {
   DollarSign,
   Globe,
   Pencil,
+  Calendar,
 } from "lucide-react";
 import { OrderService } from "../../../services/orderService";
 import { showToast } from "../../../components/ui/Toast";
@@ -27,6 +28,25 @@ import PhoneInput from "../../../components/ui/PhoneInput";
 import ProductSelector from "../../../components/admin/ProductSelector";
 import { ProductSelection } from "../../../components/admin/ProductSelectModal";
 import { useProductStore } from "../../../store/productStore";
+
+// ✅ დღევანდელი თარიღი ლოკალურ ზონაში "YYYY-MM-DD" ფორმატით (input type=date-სთვის).
+// არ ვიყენებთ toISOString()-ს, რადგან ის UTC-შია და დღე შეიძლება აირიოს.
+const getTodayString = (): string => {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+// ✅ "YYYY-MM-DD" სტრინგს გადააქცევს Date-ად.
+// თუ არჩეული თარიღი დღევანდელია — ვაბრუნებთ რეალურ ახლანდელ დროს (ბუნებრივი დახარისხებისთვის).
+// თუ უკან გადასული თარიღია — ვაყენებთ შუადღეს (12:00), რომ UTC-ში დღე არ აირიოს.
+const buildOrderDate = (dateStr: string): Date => {
+  if (dateStr === getTodayString()) {
+    return new Date();
+  }
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day, 12, 0, 0, 0);
+};
 
 interface CreateManualOrderModalProps {
   isOpen: boolean;
@@ -70,6 +90,8 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   >("cash");
   const [shippingCost, setShippingCost] = useState(0);
   const [isShippingCostManuallySet, setIsShippingCostManuallySet] = useState(false);
+  // ✅ გაყიდვის თარიღი (YYYY-MM-DD). default = დღეს. გამოიყენება მხოლოდ ახალი შეკვეთის შექმნისას.
+  const [orderDate, setOrderDate] = useState<string>(getTodayString());
 
   const calculateShippingCost = (city: string): number => {
     if (city === "თბილისი" || city === "რუსთავი") return 5;
@@ -121,6 +143,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
         setPaymentMethod("cash");
         setShippingCost(5);
         setIsShippingCostManuallySet(false);
+        setOrderDate(getTodayString());
       }
     } else {
       setIsCreatingOrder(false);
@@ -266,6 +289,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
           shippingCost,
           status,
           paymentMethod: paymentMethod as Order["paymentMethod"],
+          orderDate: buildOrderDate(orderDate),
         };
         await OrderService.createManualOrder(orderData);
         clearTimeout(timeoutId);
@@ -358,6 +382,26 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                     <option value="shipped">📦 გაგზავნილი</option>
                     <option value="delivered">🎉 მიტანილი</option>
                   </select>
+                </div>
+              )}
+              {!isEditMode && (
+                <div>
+                  <label className="block text-xs font-bold text-stone-500 uppercase mb-2">
+                    შეკვეთის თარიღი
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+                    <input
+                      type="date"
+                      value={orderDate}
+                      max={getTodayString()}
+                      onChange={(e) => setOrderDate(e.target.value)}
+                      className="w-full pl-10 pr-3 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
+                    />
+                  </div>
+                  <p className="mt-1 text-[11px] text-stone-400">
+                     შეკვეთის რეალური თარიღი
+                  </p>
                 </div>
               )}
               <div>

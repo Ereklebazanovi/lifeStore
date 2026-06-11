@@ -171,6 +171,7 @@ export class OrderService {
       ...data,
       createdAt: this.toDateSafe(data.createdAt) || data.createdAt,
       updatedAt: this.toDateSafe(data.updatedAt) || data.updatedAt,
+      enteredAt: this.toDateSafe(data.enteredAt) || data.enteredAt,
       paidAt: this.toDateSafe(data.paidAt) || data.paidAt,
       deliveredAt: this.toDateSafe(data.deliveredAt) || data.deliveredAt,
       cancelledAt: this.toDateSafe(data.cancelledAt) || data.cancelledAt,
@@ -200,6 +201,7 @@ export class OrderService {
       paymentStatus: convertedData.paymentStatus,
       createdAt: convertedData.createdAt,
       updatedAt: convertedData.updatedAt,
+      ...(convertedData.enteredAt && { enteredAt: convertedData.enteredAt }),
       paidAt: convertedData.paidAt,
       deliveredAt: convertedData.deliveredAt,
       cancelledAt: convertedData.cancelledAt,
@@ -1081,8 +1083,10 @@ export class OrderService {
             ? "paid"
             : "pending",
         orderStatus: data.status,
-        createdAt: new Date(),
+        // ✅ createdAt = გაყიდვის თარიღი (default = ახლა). enteredAt = რეალური შეყვანის დრო (აუდიტი).
+        createdAt: data.orderDate ?? new Date(),
         updatedAt: new Date(),
+        enteredAt: new Date(),
         adminNotes: "Manually added via Admin Panel",
       };
 

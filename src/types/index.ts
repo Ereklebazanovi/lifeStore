@@ -133,6 +133,7 @@ export interface Order {
   orderStatus: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   createdAt: Date;
   updatedAt: Date;
+  enteredAt?: Date | { seconds: number; nanoseconds: number }; // ✅ ხელით შეკვეთის რეალური შეყვანის დრო (აუდიტი). createdAt = გაყიდვის თარიღი
   paidAt?: Date | { seconds: number; nanoseconds: number }; // ✅ Added for payment completion timestamp
   deliveredAt?: Date | { seconds: number; nanoseconds: number };
   adminNotes?: string;
@@ -220,6 +221,9 @@ export interface CreateManualOrderRequest {
   shippingCost: number;
   status: "pending" | "confirmed" | "shipped" | "delivered";
   paymentMethod: Order["paymentMethod"];
+  // ✅ გაყიდვის თარიღი — როცა მენეჯერი უკან გადასულ თარიღს უთითებს (default = დღეს).
+  // ჯდება createdAt-ში, საიდანაც სწორ თარიღს იღებს ანალიტიკა/Excel/ლეიბლები.
+  orderDate?: Date;
 }
 
 export interface UpdateManualOrderRequest {
