@@ -5,6 +5,8 @@ const SITE_URL = "https://lifestore.ge";
 
 const STATIC_PAGES = [
   { loc: "/",               priority: "1.0", changefreq: "daily"   },
+  { loc: "/en",             priority: "0.8", changefreq: "daily"   },
+  { loc: "/ru",             priority: "0.8", changefreq: "daily"   },
   { loc: "/products",       priority: "0.9", changefreq: "daily"   },
   { loc: "/blog",           priority: "0.8", changefreq: "weekly"  },
   { loc: "/en/blog",        priority: "0.7", changefreq: "weekly"  },

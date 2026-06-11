@@ -33,6 +33,40 @@
     <meta name="theme-color" content="#68d391" />
     <link rel="canonical" href="https://lifestore.ge/" />
 
+    <!-- Homepage language alternates (the SPA serves index.html for / , /en , /ru) -->
+    <link rel="alternate" hreflang="ka" href="https://lifestore.ge/" />
+    <link rel="alternate" hreflang="en" href="https://lifestore.ge/en" />
+    <link rel="alternate" hreflang="ru" href="https://lifestore.ge/ru" />
+    <link rel="alternate" hreflang="x-default" href="https://lifestore.ge/" />
+
+    <!-- Static brand/site structured data: read by Google straight from the initial
+         HTML (no JS render required). Organization + WebSite identity signals. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Life Store",
+      "url": "https://lifestore.ge/",
+      "logo": "https://lifestore.ge/logo.png",
+      "description": "ეკომეგობრული სახლისა და სამზარეულოს ნივთები",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer service",
+        "availableLanguage": ["Georgian", "English", "Russian"]
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Life Store",
+      "url": "https://lifestore.ge/",
+      "inLanguage": "ka",
+      "publisher": { "@type": "Organization", "name": "Life Store", "url": "https://lifestore.ge/" }
+    }
+    </script>
+
     <!-- Preload LCP hero image so the browser fetches it before the JS bundle parses -->
     <link rel="preload" as="image" href="/hero.webp" fetchpriority="high" />
 
