@@ -33,10 +33,29 @@
     <meta name="theme-color" content="#68d391" />
     <link rel="canonical" href="https://lifestore.ge/" />
 
-    <!-- Fonts -->
+    <!-- Preload LCP hero image so the browser fetches it before the JS bundle parses -->
+    <link rel="preload" as="image" href="/hero.webp" fetchpriority="high" />
+
+    <!-- Fonts: loaded non-render-blocking (preload+swap) to avoid blocking first paint -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+
+    <!-- Instant paint skeleton: rendered straight from HTML so the screen is never
+         blank while the JS bundle downloads. React replaces #root on mount, so this
+         disappears automatically. Mirrors <LoadingScreen /> to keep the swap seamless. -->
+    <style>
+      #app-splash{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:50;font-family:system-ui,-apple-system,sans-serif}
+      #app-splash .wrap{display:flex;flex-direction:column;align-items:center;gap:28px}
+      #app-splash .logo{display:flex;align-items:center;gap:12px}
+      #app-splash .mark{width:40px;height:40px;background:#059669;border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,.05);animation:splashPulse 2.4s ease-in-out infinite}
+      #app-splash .name{font-size:24px;font-weight:700;color:#1c1917;letter-spacing:-.02em}
+      #app-splash .bar{width:176px;height:1px;background:#f5f5f4;border-radius:9999px;overflow:hidden}
+      #app-splash .bar i{display:block;height:100%;background:#10b981;border-radius:9999px;animation:splashBar 1.4s cubic-bezier(.4,0,.2,1) forwards}
+      @keyframes splashPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+      @keyframes splashBar{from{width:0}to{width:100%}}
+    </style>
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-SKS4V3GRNX"></script>
@@ -48,7 +67,19 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="app-splash">
+        <div class="wrap">
+          <div class="logo">
+            <div class="mark">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+            </div>
+            <span class="name">Life Store</span>
+          </div>
+          <div class="bar"><i></i></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
