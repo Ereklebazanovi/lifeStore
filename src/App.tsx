@@ -1,6 +1,6 @@
 // src/App.tsx
 
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useEffect, lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -282,23 +282,16 @@ const AnimatedRoutes: React.FC = () => {
 };
 
 function App() {
-  // ვიზუალური "სპლეშ სქრინის" სტეიტი
-  const [isSplashLoading, setIsSplashLoading] = useState(true);
-
   // Auth სტორის მონაცემები (isLoading-ს გადავარქვით სახელი კონფლიქტის თავიდან ასაცილებლად)
   const { initializeAuth, user, isLoading: isAuthLoading } = useAuthStore();
   const { loadUserCart } = useCartStore();
 
-  // 1. აპლიკაციის ინიციალიზაცია (Auth & Splash Timer)
+  // 1. აპლიკაციის ინიციალიზაცია (Auth)
+  // ვიზუალურ "splash"-ს აღარ ვაჩერებთ JS-ით: index.html-ის სტატიკური skeleton
+  // უკვე ფარავს საწყის ჩატვირთვას და React mount-ზე ავტომატურად ინაცვლება.
+  // ამით LCP-დან ~1.5 წამი იჭრება. Auth ფონურად ინიციალდება.
   useEffect(() => {
     initializeAuth();
-
-    // ვიზუალური splash — მინიმუმ 1.5 წამი, შემდეგ auth-ს ვუცდით
-    const timer = setTimeout(() => {
-      setIsSplashLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
   }, [initializeAuth]);
 
   // 2. კალათის ჩატვირთვა (მხოლოდ მას შემდეგ, რაც Auth გაირკვევა)
@@ -313,11 +306,6 @@ function App() {
     };
     loadCart();
   }, [user?.id, isAuthLoading, loadUserCart]);
-
-  // სანამ ტაიმერი არ გასულა, ვაჩვენებთ LoadingScreen-ს
-  if (isSplashLoading) {
-    return <LoadingScreen />;
-  }
 
   return (
     <Router>
