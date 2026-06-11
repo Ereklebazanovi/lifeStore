@@ -4,9 +4,9 @@ import { Leaf, ShieldCheck, Sparkles, ArrowRight, Quote } from "lucide-react";
 import { useTranslation, Trans } from "react-i18next";
 
 const CAROUSEL_IMAGES = [
-  "/about-1.webp",
-  "/about-2.webp",
-  "/about-3.webp",
+  "/about-1.jpg",
+  "/about-2.jpg",
+  "/about-3.jpg",
 ];
 
 const AboutPage: React.FC = () => {
