@@ -1,6 +1,6 @@
 // src/App.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -17,7 +17,9 @@ import HomePage from "./pages/HomePage";
 import ProductsPage from "./pages/ProductsPage";
 import AboutPage from "./pages/AboutPage";
 import CartPage from "./pages/CartPage";
-import AdminPage from "./pages/admin/AdminPage";
+// Admin panel is lazy-loaded: it pulls in heavy admin-only libraries (recharts,
+// xlsx) that must NOT ship in the main customer bundle. Loaded only on /admin.
+const AdminPage = lazy(() => import("./pages/admin/AdminPage"));
 import ProductDetailsPage from "./pages/ProductDetailsPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
@@ -253,7 +255,9 @@ const AnimatedRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["admin", "manager"]}>
               <PageTransition>
-                <AdminPage />
+                <Suspense fallback={<LoadingScreen />}>
+                  <AdminPage />
+                </Suspense>
               </PageTransition>
             </ProtectedRoute>
           }
