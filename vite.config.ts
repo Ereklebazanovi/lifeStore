@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             vendor: ['react', 'react-dom'],
-            firebase: ['firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/storage'],
+            firebase: ['firebase/app', 'firebase/firestore', 'firebase/auth'],
             ui: ['lucide-react', 'framer-motion'],
             utils: ['zustand', 'react-router-dom'],
           },
