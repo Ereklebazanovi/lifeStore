@@ -56,6 +56,10 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [orderTypeFilter, setOrderTypeFilter] = useState<"all" | "website" | "manual">("all");
+  // რამდენი შეკვეთა იხატება ეკრანზე (rendering pagination — delay-ის წინააღმდეგ).
+  // მონაცემი მთლიანად მეხსიერებაშია; search/ფილტრები სრულ სიაში მუშაობს, იცვლება მხოლოდ რენდერი.
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
@@ -1183,6 +1187,15 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     return timeB - timeA;
   });
 
+  // ფილტრის/ძებნის ცვლილებაზე — თავიდან ვიწყებთ ჩვენებას (ზევიდან)
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchTerm, statusFilter, activeTab, dateFrom, dateTo, orderTypeFilter]);
+
+  // ეკრანზე მხოლოდ პირველი visibleCount იხატება — delay-ის თავიდან ასაცილებლად
+  const visibleOrders = filteredOrders.slice(0, visibleCount);
+  const hasMoreOrders = visibleCount < filteredOrders.length;
+
   const handleCreateOrderSuccess = () => {
     setShowCreateModal(false);
     onRefresh();
@@ -1269,7 +1282,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   return (
     <div className="space-y-4 md:space-y-6 px-2 md:px-0 pb-4 md:pb-0">
       {/* Mobile-First Header */}
-      <div className="bg-white border border-gray-200 rounded-lg p-3 md:p-6 shadow-sm">
+      <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-6 shadow-sm">
         <div className="flex flex-col space-y-4">
           {/* Title Section */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between">
@@ -1284,7 +1297,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
             {/* Stats Badge with Live Indicator */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-              <div className="bg-gray-100 rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm w-fit">
+              <div className="bg-gray-50 border border-gray-200 rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm w-fit">
                 <span className="text-gray-600">სულ: </span>
                 <span className="font-semibold text-gray-900">
                   {filteredOrders.length} / {orders.length} შეკვეთა
@@ -1331,7 +1344,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center justify-center space-x-2 bg-emerald-600 text-white px-3 md:px-4 py-2.5 md:py-3 rounded-lg hover:bg-emerald-700 transition-colors duration-200 text-xs md:text-sm font-medium min-h-[44px] active:scale-95"
+                className="flex items-center justify-center space-x-2 bg-emerald-600 text-white px-4 md:px-5 py-2.5 md:py-3 rounded-xl hover:bg-emerald-700 transition-colors duration-200 text-xs md:text-sm font-medium min-h-[44px] active:scale-95 shadow-sm shadow-emerald-200"
               >
                 <Plus className="w-4 h-4 flex-shrink-0" />
                 <span>ხელით შეკვეთა</span>
@@ -1399,7 +1412,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               placeholder="ძებნა ნომრით, სახელით ან ტელეფონით..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-3 md:py-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base touch-manipulation"
+              className="pl-10 pr-4 py-3 md:py-3 w-full border border-gray-200 bg-gray-50/70 rounded-xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 focus:bg-white transition-colors text-sm md:text-base touch-manipulation"
             />
           </div>
 
@@ -1417,7 +1430,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     type="date"
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
-                    className="px-2 sm:px-3 py-2.5 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm md:text-base w-full min-w-0 touch-manipulation"
+                    className="px-2 sm:px-3 py-2.5 md:py-2 border border-gray-200 bg-gray-50/70 rounded-xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 focus:bg-white transition-colors text-xs sm:text-sm md:text-base w-full min-w-0 touch-manipulation"
                     placeholder="დაწყება"
                   />
                 </div>
@@ -1426,7 +1439,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
-                    className="px-2 sm:px-3 py-2.5 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm md:text-base w-full min-w-0 touch-manipulation"
+                    className="px-2 sm:px-3 py-2.5 md:py-2 border border-gray-200 bg-gray-50/70 rounded-xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 focus:bg-white transition-colors text-xs sm:text-sm md:text-base w-full min-w-0 touch-manipulation"
                     placeholder="დასასრული"
                   />
                 </div>
@@ -1442,7 +1455,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="px-3 py-2.5 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base flex-1 touch-manipulation"
+                  className="px-3 py-2.5 md:py-2 border border-gray-200 bg-gray-50/70 rounded-xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 focus:bg-white transition-colors text-sm md:text-base flex-1 touch-manipulation"
                 >
                   <option value="all">ყველა სტატუსი</option>
                   <option value="pending">📋 მოლოდინში</option>
@@ -1459,7 +1472,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                       setStatusFilter("all");
                       setOrderTypeFilter("all");
                     }}
-                    className="px-3 py-2.5 md:py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm md:text-base min-h-[44px] md:min-h-[40px] active:scale-95"
+                    className="px-3 py-2.5 md:py-2 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors text-sm md:text-base min-h-[44px] md:min-h-[40px] active:scale-95"
                     title="ფილტრების გასუფთავება"
                   >
                     ✕
@@ -1479,7 +1492,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           <select
             value={orderTypeFilter}
             onChange={(e) => setOrderTypeFilter(e.target.value as "all" | "website" | "manual")}
-            className="px-3 py-2.5 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base w-full touch-manipulation"
+            className="px-3 py-2.5 md:py-2 border border-gray-200 bg-gray-50/70 rounded-xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 focus:bg-white transition-colors text-sm md:text-base w-full touch-manipulation"
           >
             <option value="all">ყველა ტიპი</option>
             <option value="website">🌐 ვებსაიტი</option>
@@ -1553,7 +1566,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredOrders.map((order) => (
+                  {visibleOrders.map((order) => (
                     <tr key={order.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
@@ -1766,7 +1779,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               </div>
             )}
 
-            {filteredOrders.map((order) => (
+            {visibleOrders.map((order) => (
               <div
                 key={order.id}
                 className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
@@ -1960,6 +1973,33 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
               </div>
             ))}
           </div>
+
+          {/* Load more / less — რენდერი ფართოვდება/ვიწროვდება, მონაცემი ისედაც ჩატვირთულია */}
+          {(hasMoreOrders || visibleCount > PAGE_SIZE) && (
+            <div className="flex flex-col items-center gap-2 mt-4">
+              <div className="flex items-center gap-2">
+                {hasMoreOrders && (
+                  <button
+                    onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                    className="px-5 py-2.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                  >
+                    მეტის ჩვენება (+{Math.min(PAGE_SIZE, filteredOrders.length - visibleCount)})
+                  </button>
+                )}
+                {visibleCount > PAGE_SIZE && (
+                  <button
+                    onClick={() => setVisibleCount(PAGE_SIZE)}
+                    className="px-5 py-2.5 text-sm font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  >
+                    ნაკლების ჩვენება
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-gray-400">
+                ნაჩვენებია {visibleOrders.length} / {filteredOrders.length}
+              </p>
+            </div>
+          )}
         </>
       )}
 
@@ -2230,7 +2270,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           e.target.value as Order["orderStatus"]
                         )
                       }
-                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="px-4 py-2 border border-gray-200 bg-gray-50/70 rounded-xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 focus:bg-white transition-colors"
                     >
                       <option value="pending">📋 მოლოდინში</option>
                       <option value="confirmed">💳 გადახდილი</option>
