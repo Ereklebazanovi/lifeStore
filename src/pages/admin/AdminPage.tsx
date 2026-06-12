@@ -6,7 +6,6 @@ import { OrderService } from "../../services/orderService";
 import AdminLayout from "./components/AdminLayout";
 import ProductManager from "./components/ProductManager";
 import OrdersManager from "./components/OrdersManager";
-import AdminStats from "./components/AdminStats";
 import LoadingSpinner from "./components/LoadingSpinner";
 import AddProductDrawer from "./components/AddProductDrawer";
 import CreateManualOrderModal from "./components/CreateManualOrderModal";
@@ -23,7 +22,6 @@ import {
   AlertTriangle,
   Package,
   ShoppingBag,
-  TrendingDown,
   Clock,
 } from "lucide-react";
 import type { Order } from "../../types";
@@ -33,9 +31,11 @@ const AdminPage: React.FC = () => {
   const { products, subscribeToProducts } = useProductStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<string>(
-    () => (user?.role === "manager" ? "orders" : "dashboard")
-  );
+  const [activeSection, setActiveSection] = useState<string>(() => {
+    if (user?.role === "manager") return "orders";
+    if (user?.role === "admin") return "analytics"; // admin პირდაპირ ანალიტიკაზე ეშვება
+    return "dashboard";
+  });
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
@@ -80,39 +80,8 @@ const AdminPage: React.FC = () => {
       case "dashboard":
         return (
           <div className="space-y-6">
-            {/* Role-based Quick Actions */}
-            {user?.role === "admin" ? (
-              // Admin Dashboard
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="flex items-center space-x-3 p-3 sm:p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm"
-                  >
-                    <Plus className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                    <span className="text-sm font-medium text-gray-700 truncate">
-                      ახალი პროდუქტი
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("orders")}
-                    className="flex items-center space-x-3 p-3 sm:p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm"
-                  >
-                    <ShoppingBag className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                    <span className="text-sm font-medium text-gray-700 truncate">შეკვეთები</span>
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("analytics")}
-                    className="flex items-center space-x-3 p-3 sm:p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm sm:col-span-2 lg:col-span-1"
-                  >
-                    <TrendingDown className="w-5 h-5 text-indigo-600 flex-shrink-0" />
-                    <span className="text-sm font-medium text-gray-700 truncate">ანალიტიკა</span>
-                  </button>
-                </div>
-                <AdminStats products={products} />
-              </>
-            ) : (
-              // Manager Dashboard (POS-focused)
+            {/* Manager / warehouse dashboard (POS-focused) — admin აქ აღარ ხვდება */}
+            {(
               <>
                 <div className="bg-gradient-to-r from-blue-500 to-emerald-500 text-white p-4 sm:p-6 rounded-lg shadow-lg">
                   <h2 className="text-xl sm:text-2xl font-bold mb-2">

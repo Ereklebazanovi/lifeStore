@@ -1133,18 +1133,23 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     // If specific status is selected, override tab filtering
     let baseOrders = statusFilter !== "all" ? orders : getTabFilteredOrders(activeTab);
 
+    // ყველა საძებნი ველი ერთ ტექსტში — და მოთხოვნას სიტყვებად ვშლით.
+    // ასე "დოდო წ" (სახელი+გვარის დასაწყისი) და "წიკლაური დოდო" (ნებისმიერი რიგით) ორივე მუშაობს.
+    const searchTokens = searchTerm.toLowerCase().trim().split(/\s+/).filter(Boolean);
+
     return baseOrders.filter((order) => {
-      const matchesSearch =
-        order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customerInfo.firstName
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        order.customerInfo.lastName
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        order.customerInfo.phone
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
+      const haystack = [
+        order.orderNumber,
+        order.customerInfo.firstName,
+        order.customerInfo.lastName,
+        order.customerInfo.phone,
+        order.customerInfo.email,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      const matchesSearch = searchTokens.every((t) => haystack.includes(t));
 
       const orderDate = order.createdAt && !isNaN(order.createdAt.getTime())
         ? order.createdAt.toISOString().split("T")[0]

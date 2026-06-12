@@ -1,6 +1,7 @@
 // src/pages/admin/components/AnalyticsDashboard.tsx
 import React, { useState, useMemo } from "react";
 import { DatePicker } from "antd";
+import { Banknote, Hash } from "lucide-react";
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
 import type { Order } from "../../../types";
@@ -8,11 +9,16 @@ import KpiCards from "./KpiCards";
 import SourcePieChart from "./SourcePieChart";
 import TopProductsChart from "./TopProductsChart";
 import RevenueChart from "./RevenueChart";
-import InsightsPanel from "./InsightsPanel";
+import TopCustomersChart from "./TopCustomersChart";
+import CityChart from "./CityChart";
+import CategoryChart from "./CategoryChart";
 
 const { RangePicker } = DatePicker;
 
 type PresetKey = "today" | "week" | "month" | "all";
+
+/** ranked ჩარტების საერთო დახარისხება — თანხა (₾) თუ რაოდენობა */
+export type SortBy = "revenue" | "quantity";
 
 interface AnalyticsDashboardProps {
   orders: Order[];
@@ -27,6 +33,17 @@ const toDate = (val: unknown): Date => {
   return new Date(val as string | number);
 };
 
+const GEO_MONTHS_SHORT = ["იან","თებ","მარ","აპრ","მაი","ივნ","ივლ","აგვ","სექ","ოქტ","ნოე","დეკ"];
+
+/** წინა პერიოდის ადამიანურად წასაკითხი ჩაწერა tooltip-ისთვის. pe — ექსკლუზიური ბოლო. */
+const formatRange = (ps: Date, pe: Date): string => {
+  // ბოლო ჩვენებადი დღე = ექსკლუზიური ბოლოს დღე (ან წინა, თუ ზუსტად შუაღამეა)
+  const endDay = new Date(pe.getTime() - 1);
+  const s = `${ps.getDate()} ${GEO_MONTHS_SHORT[ps.getMonth()]}`;
+  const e = `${endDay.getDate()} ${GEO_MONTHS_SHORT[endDay.getMonth()]}`;
+  return s === e ? s : `${s} – ${e}`;
+};
+
 const PRESETS: { key: PresetKey; label: string }[] = [
   { key: "today", label: "დღეს" },
   { key: "week", label: "ამ კვირაში" },
@@ -37,6 +54,8 @@ const PRESETS: { key: PresetKey; label: string }[] = [
 const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ orders }) => {
   const [preset, setPreset] = useState<PresetKey>("month");
   const [customRange, setCustomRange] = useState<[Dayjs, Dayjs] | null>(null);
+  // ranked ჩარტების საერთო დახარისხება (პროდუქტები / კატეგორიები / ქალაქები)
+  const [sortBy, setSortBy] = useState<SortBy>("revenue");
 
   const dateRange = useMemo((): [Date, Date] | null => {
     if (preset !== "all" && customRange === null) {
@@ -57,6 +76,50 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ orders }) => {
       return d >= start && d <= end;
     });
   }, [orders, dateRange]);
+
+  // წინა პერიოდი — Growth %-ის შესადარებლად.
+  //  • პრესეტებზე (დღეს/კვირა/თვე) → გადახტება ზუსტად ერთი ციკლი უკან,
+  //    ანუ "ამ თვეში 1–12" ედარება "გასულ თვის 1–12"-ს (კალენდარულად).
+  //  • custom range-ზე → იმავე სიგრძის უშუალოდ წინა ფანჯარა.
+  //  • "სულ"-ზე (dateRange === null) → შედარება არ კეთდება.
+  const comparison = useMemo(() => {
+    if (!dateRange) return null;
+    const [start, end] = dateRange;
+    const now = dayjs();
+    const startD = dayjs(start);
+    const endD = dayjs(end);
+    // მიმდინარე ფანჯარა მხოლოდ ახლანდელ მომენტამდე ითვლება (პარტიალური თვე და ა.შ.)
+    const effEnd = endD.isAfter(now) ? now : endD;
+    if (!effEnd.isAfter(startD)) return null;
+
+    let prevStart: Dayjs;
+    let prevEnd: Dayjs;
+
+    // კონტექსტური წარწერა — ფილტრის მიხედვით ბუნებრივი სიტყვა
+    let prefix = "წინა პერიოდი";
+
+    if (!customRange && (preset === "today" || preset === "week" || preset === "month")) {
+      const unit = preset === "today" ? "day" : preset; // "week" | "month"
+      prevStart = startD.subtract(1, unit);
+      // ბოლო დღეს სრულად ვითვლით — ემთხვევა ხელით თარიღით გაფილტვრას (სრული დღეები)
+      prevEnd = effEnd.subtract(1, unit).endOf("day");
+      prefix = preset === "today" ? "გუშინ" : preset === "week" ? "გასულ კვირას" : "გასულ თვეს";
+    } else {
+      // custom range — უშუალოდ წინა თანაბარი ფანჯარა
+      const durationMs = effEnd.valueOf() - startD.valueOf();
+      prevStart = dayjs(startD.valueOf() - durationMs);
+      prevEnd = startD;
+    }
+
+    const ps = prevStart.toDate();
+    const pe = prevEnd.toDate();
+    const previousOrders = orders.filter((o) => {
+      const d = toDate(o.createdAt);
+      return d >= ps && d < pe;
+    });
+
+    return { previousOrders, label: formatRange(ps, pe), prefix };
+  }, [orders, dateRange, preset, customRange]);
 
   const handlePreset = (key: PresetKey) => {
     setPreset(key);
@@ -119,16 +182,56 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ orders }) => {
       </div>
 
       {/* KPI Cards */}
-      <KpiCards orders={filteredOrders} />
+      <KpiCards
+        orders={filteredOrders}
+        previousOrders={comparison?.previousOrders}
+        comparisonLabel={comparison?.label}
+        comparisonPrefix={comparison?.prefix}
+      />
 
       {/* Revenue Bar Chart — full width */}
       <RevenueChart orders={filteredOrders} dateRange={dateRange} />
 
-      {/* Source + Products + Insights */}
+      {/* Shared sort toggle — controls Products / Categories / Cities */}
+      <div className="flex items-center justify-end gap-2.5 mb-2">
+        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+          დახარისხება
+        </span>
+        <div className="inline-flex items-center gap-1 bg-gray-100 border border-gray-200 rounded-lg p-1">
+          {([
+            { key: "revenue", label: "თანხა", Icon: Banknote },
+            { key: "quantity", label: "რაოდენობა", Icon: Hash },
+          ] as const).map(({ key, label, Icon }) => {
+            const active = sortBy === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setSortBy(key)}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs rounded-md transition-all ${
+                  active
+                    ? "bg-white text-indigo-600 font-semibold shadow-sm ring-1 ring-black/5"
+                    : "text-gray-500 font-medium hover:text-gray-800 hover:bg-gray-200/50"
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${active ? "text-indigo-500" : "text-gray-400"}`} />
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Source + City + Category */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <SourcePieChart orders={filteredOrders} />
-        <TopProductsChart orders={filteredOrders} />
-        <InsightsPanel orders={filteredOrders} />
+        <CityChart orders={filteredOrders} sortBy={sortBy} />
+        <CategoryChart orders={filteredOrders} sortBy={sortBy} />
+      </div>
+
+      {/* Products + Customers */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <TopProductsChart orders={filteredOrders} sortBy={sortBy} />
+        <TopCustomersChart orders={filteredOrders} />
       </div>
     </div>
   );

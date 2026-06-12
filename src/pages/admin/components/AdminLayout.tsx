@@ -70,6 +70,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   // 1. ყველა შესაძლო მენიუს ელემენტი
   const allNavItems: NavItem[] = [
     { id: "dashboard", icon: LayoutDashboard, label: "მთავარი" },
+    { id: "analytics", icon: BarChart3, label: "ანალიტიკა" },
     { id: "products", icon: Package, label: "პროდუქტები" },
     { id: "orders", icon: ShoppingBag, label: "შეკვეთები" },
     { id: "inventory", icon: Warehouse, label: "საწყობი" },
@@ -77,7 +78,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     { id: "parameters", icon: Settings, label: "პარამეტრები" },
     { id: "reviews", icon: Star, label: "შეფასებები" },
     { id: "blog", icon: BookOpen, label: "ბლოგი" },
-    // { id: "analytics", icon: BarChart3, label: "ანალიტიკა" },
   ];
 
   // Enhanced Role-based navigation
@@ -86,7 +86,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
 
     switch (userRole) {
       case "admin":
-        return true; // Admin sees everything
+        // Admin sees everything გარდა "მთავარისა" — ეშვება პირდაპირ ანალიტიკაზე
+        return item.id !== "dashboard";
 
       case "manager":
         // Managers can access: dashboard, orders, inventory (view only)
