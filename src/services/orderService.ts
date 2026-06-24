@@ -1372,6 +1372,8 @@ export class OrderService {
         paymentMethod: data.paymentMethod,
         updatedAt: Timestamp.now(),
         adminNotes: "Manually added via Admin Panel",
+        // ✅ თარიღი ვცვლით მხოლოდ თუ მენეჯერმა მიუთითა (createdAt = გაყიდვის რეალური თარიღი)
+        ...(data.orderDate ? { createdAt: Timestamp.fromDate(data.orderDate) } : {}),
       });
 
       await updateDoc(doc(db, this.COLLECTION_NAME, orderId), updatePayload);

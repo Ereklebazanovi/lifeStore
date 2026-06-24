@@ -242,6 +242,8 @@ export interface UpdateManualOrderRequest {
   };
   shippingCost: number;
   paymentMethod: Order["paymentMethod"];
+  // ✅ შეკვეთის თარიღი — როცა მენეჯერი რედაქტირებისას თარიღს ცვლის. ჯდება createdAt-ში.
+  orderDate?: Date;
 }
 
 export type OrderStatus = "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";

@@ -31,11 +31,12 @@ import { useProductStore } from "../../../store/productStore";
 
 // ✅ დღევანდელი თარიღი ლოკალურ ზონაში "YYYY-MM-DD" ფორმატით (input type=date-სთვის).
 // არ ვიყენებთ toISOString()-ს, რადგან ის UTC-შია და დღე შეიძლება აირიოს.
-const getTodayString = (): string => {
-  const d = new Date();
+const dateToInputString = (date: Date): string => {
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
+
+const getTodayString = (): string => dateToInputString(new Date());
 
 // ✅ "YYYY-MM-DD" სტრინგს გადააქცევს Date-ად.
 // თუ არჩეული თარიღი დღევანდელია — ვაბრუნებთ რეალურ ახლანდელ დროს (ბუნებრივი დახარისხებისთვის).
@@ -133,6 +134,12 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
         setPaymentMethod((order.paymentMethod as "cash" | "other" | "bank_transfer") || "cash");
         setShippingCost(order.shippingCost);
         setIsShippingCostManuallySet(true);
+        // ✅ თარიღს ვავსებთ არსებული შეკვეთის createdAt-დან
+        const created =
+          order.createdAt instanceof Date && !isNaN(order.createdAt.getTime())
+            ? order.createdAt
+            : new Date();
+        setOrderDate(dateToInputString(created));
       } else {
         // Create mode — ვასუფთავებთ ფორმს
         setCustomerInfo({ firstName: "", lastName: "", phone: "", email: "" });
@@ -277,6 +284,14 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
           shippingCost,
           paymentMethod: paymentMethod as Order["paymentMethod"],
         };
+        // ✅ თარიღს ვცვლით მხოლოდ თუ მენეჯერმა შეცვალა (თორემ createdAt ტყუილად არ აირევა)
+        const originalDateStr =
+          order.createdAt instanceof Date && !isNaN(order.createdAt.getTime())
+            ? dateToInputString(order.createdAt)
+            : "";
+        if (orderDate && orderDate !== originalDateStr) {
+          updateData.orderDate = buildOrderDate(orderDate);
+        }
         await OrderService.updateManualOrder(order.id, updateData, order);
         clearTimeout(timeoutId);
         showToast("შეკვეთა წარმატებით განახლდა!", "success");
@@ -384,26 +399,25 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                   </select>
                 </div>
               )}
-              {!isEditMode && (
-                <div>
-                  <label className="block text-xs font-bold text-stone-500 uppercase mb-2">
-                    შეკვეთის თარიღი
-                  </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
-                    <input
-                      type="date"
-                      value={orderDate}
-                      max={getTodayString()}
-                      onChange={(e) => setOrderDate(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
-                    />
-                  </div>
-                  <p className="mt-1 text-[11px] text-stone-400">
-                     შეკვეთის რეალური თარიღი
-                  </p>
+              {/* შეკვეთის თარიღი — ჩანს ორივე რეჟიმში (შექმნა და რედაქტირება) */}
+              <div>
+                <label className="block text-xs font-bold text-stone-500 uppercase mb-2">
+                  შეკვეთის თარიღი
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={orderDate}
+                    max={getTodayString()}
+                    onChange={(e) => setOrderDate(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
+                  />
                 </div>
-              )}
+                <p className="mt-1 text-[11px] text-stone-400">
+                  {isEditMode ? "შეკვეთის რეალური თარიღი (რედაქტირებადი)" : "შეკვეთის რეალური თარიღი"}
+                </p>
+              </div>
               <div>
                 <label className="block text-xs font-bold text-stone-500 uppercase mb-2">
                   გადახდა
