@@ -3,7 +3,7 @@
 
 export const ADMIN_CONFIG = {
   // ადმინის მეილი - შეცვალე როცა საჭიროა
-  // 🚧 დროებითი ტესტირება — ბაგის აღმოჩენის შემდეგ დააბრუნე: "lifestoreorders@gmail.com"
+  // 🚧 დროებითი ტესტირება — ფიქსის დადასტურების შემდეგ დააბრუნე: "lifestoreorders@gmail.com"
   EMAIL: "ebazanovi@gmail.com",
   // ბიზნეს ინფორმაცია
   BUSINESS_NAME: "LifeStore",

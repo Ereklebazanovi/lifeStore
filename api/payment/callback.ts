@@ -180,13 +180,13 @@ async function updateOrderStatus(
  * Send email notification using Firebase mail collection
  */
 async function sendEmailNotification(order: any): Promise<void> {
-  // Skip if no email provided
-  if (!order.customerInfo.email || order.customerInfo.email.trim() === "") {
-    return;
-  }
+  // ✅ Customer email only if provided; admin notification is ALWAYS sent.
+  const hasCustomerEmail =
+    !!order.customerInfo.email && order.customerInfo.email.trim() !== "";
 
   try {
-    // Add customer email to Firebase mail collection
+    // Add customer email to Firebase mail collection (only if provided)
+    if (hasCustomerEmail) {
     await adminDb.collection("mail").add({
       to: [order.customerInfo.email],
       message: {
@@ -273,6 +273,7 @@ async function sendEmailNotification(order: any): Promise<void> {
         `,
       },
     });
+    }
 
     // Add admin notification email
     console.log(`📧 Sending admin notification to: ${ADMIN_CONFIG.EMAIL}`);
@@ -321,7 +322,9 @@ async function sendEmailNotification(order: any): Promise<void> {
     });
 
     console.log("✅ Email notifications added to Firebase mail collection");
-    console.log(`📧 Customer email sent to: ${order.customerInfo.email}`);
+    if (hasCustomerEmail) {
+      console.log(`📧 Customer email sent to: ${order.customerInfo.email}`);
+    }
     console.log(`👨‍💼 Admin notification sent to: ${ADMIN_CONFIG.EMAIL}`);
   } catch (error) {
     console.error("❌ Error adding email to mail collection:", error);

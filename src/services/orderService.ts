@@ -682,13 +682,14 @@ export class OrderService {
    * Made public to be called from payment callback
    */
   public static async sendEmailNotification(order: Order): Promise<void> {
-    // თუ მეილი არ არის მითითებული (მაგ: manual order-ის დროს), არ ვაგზავნით
-    if (!order.customerInfo.email || order.customerInfo.email.trim() === "") {
-      return;
-    }
+    // ✅ კლიენტს მეილი ეგზავნება მხოლოდ თუ მისამართი მითითებულია,
+    // ადმინს კი შეტყობინება ყოველთვის მიდის (კლიენტის მეილზე დამოუკიდებლად).
+    const hasCustomerEmail =
+      !!order.customerInfo.email && order.customerInfo.email.trim() !== "";
 
     try {
-      // 1. მეილი კლიენტს
+      // 1. მეილი კლიენტს (მხოლოდ თუ მისამართი მითითებულია)
+      if (hasCustomerEmail) {
       await addDoc(collection(db, "mail"), {
         to: [order.customerInfo.email],
         message: {
@@ -723,8 +724,9 @@ export class OrderService {
           `,
         },
       });
+      }
 
-      // 2. მეილი ადმინს (მხოლოდ თუ საიტიდანაა, manual-ზე შეიძლება არ იყოს საჭირო, მაგრამ იყოს)
+      // 2. მეილი ადმინს — ყოველთვის იგზავნება (კლიენტის მეილზე დამოუკიდებლად)
       const adminEmail = ADMIN_CONFIG.EMAIL;
       await addDoc(collection(db, "mail"), {
         to: [adminEmail],
