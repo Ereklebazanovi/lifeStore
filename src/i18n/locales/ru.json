@@ -7,7 +7,7 @@
     "about": "О нас",
     "myOrders": "Мои заказы",
     "adminPanel": "Панель администратора",
-    "posSystem": "POS система",
+    "posSystem": "Продажи",
     "menu": "Меню",
     "signIn": "Войти",
     "signOut": "Выйти",
@@ -195,7 +195,7 @@
     "signOut": "Выйти",
     "myAccount": "Мой аккаунт",
     "admin": "Администратор",
-    "manager": "Менеджер (POS)"
+    "manager": "Продажи"
   },
   "common": {
     "loading": "Загрузка...",

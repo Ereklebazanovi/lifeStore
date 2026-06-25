@@ -7,7 +7,7 @@
     "about": "ჩვენ შესახებ",
     "myOrders": "ჩემი შეკვეთები",
     "adminPanel": "ადმინ პანელი",
-    "posSystem": "POS სისტემა",
+    "posSystem": "გაყიდვები",
     "menu": "მენიუ",
     "signIn": "შესვლა",
     "signOut": "გასვლა",
@@ -182,7 +182,7 @@
     "signOut": "გასვლა",
     "myAccount": "ჩემი ანგარიში",
     "admin": "ადმინისტრატორი",
-    "manager": "მენეჯერი (POS)"
+    "manager": "გაყიდვები"
   },
   "common": {
     "loading": "იტვირთება...",

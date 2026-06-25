@@ -7,7 +7,7 @@
     "about": "About Us",
     "myOrders": "My Orders",
     "adminPanel": "Admin Panel",
-    "posSystem": "POS System",
+    "posSystem": "Sales",
     "menu": "Menu",
     "signIn": "Sign In",
     "signOut": "Sign Out",
@@ -195,7 +195,7 @@
     "signOut": "Sign Out",
     "myAccount": "My Account",
     "admin": "Administrator",
-    "manager": "Manager (POS)"
+    "manager": "Sales"
   },
   "common": {
     "loading": "Loading...",
