@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "../../../services/firebase";
 import { OrderService } from "../../../services/orderService";
+import { useAuthStore } from "../../../store/authStore";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
 import { getOrderItemDisplayName } from "../../../utils/displayHelpers";
@@ -41,6 +42,9 @@ interface OrdersManagerProps {
 }
 
 const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
+  // ✅ შეკვეთის სამუდამო წაშლა მხოლოდ ადმინს შეუძლია (manager/გაყიდვები ვერ შლის)
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "admin";
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -2062,16 +2066,18 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         <span>გაუქმება</span>
                       </button>
                     )}
-                    <button
-                      onClick={() => {
-                        handleDeleteSingle(selectedOrder.id);
-                        setSelectedOrder(null);
-                      }}
-                      className="flex items-center justify-center space-x-2 bg-red-600 text-white px-3 py-2.5 sm:py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm font-medium min-h-[44px] sm:min-h-[40px] w-full sm:w-auto"
-                      title="სრული წაშლა (შეუქცევადი)"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => {
+                          handleDeleteSingle(selectedOrder.id);
+                          setSelectedOrder(null);
+                        }}
+                        className="flex items-center justify-center space-x-2 bg-red-600 text-white px-3 py-2.5 sm:py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm font-medium min-h-[44px] sm:min-h-[40px] w-full sm:w-auto"
+                        title="სრული წაშლა (შეუქცევადი)"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => setSelectedOrder(null)}
                       className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100"

@@ -90,8 +90,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         return item.id !== "dashboard";
 
       case "manager":
-        // Managers can access: dashboard, orders, inventory (view only)
-        return ["dashboard", "orders", "inventory"].includes(item.id);
+        // მენეჯერი (გაყიდვები) — მხოლოდ შეკვეთების გვერდი
+        return item.id === "orders";
 
       case "warehouse":
         // Warehouse staff can access: dashboard, inventory (full control), products (view only)
