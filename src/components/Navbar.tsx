@@ -41,6 +41,10 @@ const Navbar: React.FC = () => {
 
   const lang = i18n.language
 
+  // staff (admin/manager) — public Navbar-ზე პირად „ჩემი შეკვეთებს" არ ვაჩვენებთ:
+  // ათავისუფლებს ადგილს და თავიდან აგვაცილებს ენის გადამრთველთან გადაფარვას.
+  const isStaff = user?.role === "admin" || user?.role === "manager"
+
   const switchLanguage = (newLang: string) => {
     i18n.changeLanguage(newLang)
     setIsLangOpen(false)
@@ -207,7 +211,7 @@ const Navbar: React.FC = () => {
                 {t("nav.about")}
               </NavLink>
 
-              {user && (
+              {user && !isStaff && (
                 <Link
                   to="/order-history"
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${
@@ -466,7 +470,7 @@ const Navbar: React.FC = () => {
               {t("nav.about")}
             </MobileNavLink>
 
-            {user && (
+            {user && !isStaff && (
               <MobileNavLink to="/order-history" isActive={isActivePath("/order-history")} onClick={() => setIsMenuOpen(false)}>
                 <span className="flex items-center gap-2"><History className="w-4 h-4" /> {t("nav.myOrders")}</span>
               </MobileNavLink>
