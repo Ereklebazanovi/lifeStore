@@ -161,7 +161,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                 {user?.role === "admin"
                   ? "ადმინისტრატორი"
                   : user?.role === "manager"
-                  ? "მენეჯერი"
+                  ? "გაყიდვები"
                   : user?.role === "warehouse"
                   ? "საწყობი"
                   : "სისტემა"}
@@ -209,7 +209,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                   {user?.role === "admin"
                     ? "ადმინ პანელი"
                     : user?.role === "manager"
-                    ? "მენეჯერი (POS)"
+                    ? "გაყიდვები"
                     : user?.role === "warehouse"
                     ? "საწყობი"
                     : "სისტემა"}
@@ -251,7 +251,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                       {user?.role === "admin"
                         ? "ადმინი"
                         : user?.role === "manager"
-                        ? "მენეჯერი"
+                        ? "გაყიდვები"
                         : user?.role === "warehouse"
                         ? "საწყობი"
                         : "მომხმარებელი"}
