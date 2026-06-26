@@ -336,6 +336,7 @@ const SimpleStockModal: React.FC<SimpleStockModalProps> = ({
 // ProductRow Component
 interface ProductRowProps {
   product: Product;
+  canEdit: boolean;
   isExpanded: boolean;
   isSelected: boolean;
   onToggleExpand: () => void;
@@ -356,6 +357,7 @@ interface ProductRowProps {
 
 const ProductRow: React.FC<ProductRowProps> = ({
   product,
+  canEdit,
   isExpanded,
   isSelected,
   onToggleExpand,
@@ -457,6 +459,7 @@ const ProductRow: React.FC<ProductRowProps> = ({
         </td>
 
         <td className="px-4 py-3 text-center">
+          {canEdit ? (
           <div className="flex items-center justify-center gap-1">
             <button
               onClick={() =>
@@ -491,6 +494,9 @@ const ProductRow: React.FC<ProductRowProps> = ({
               <Plus className="w-4 h-4" />
             </button>
           </div>
+          ) : (
+            <span className="text-gray-300 text-sm">—</span>
+          )}
         </td>
       </tr>
 
@@ -501,6 +507,7 @@ const ProductRow: React.FC<ProductRowProps> = ({
 // ProductCard Component (Mobile-friendly)
 interface ProductCardProps {
   product: Product;
+  canEdit: boolean;
   isExpanded: boolean;
   isSelected: boolean;
   onToggleExpand: () => void;
@@ -521,6 +528,7 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
+  canEdit,
   isExpanded,
   isSelected,
   onToggleExpand,
@@ -627,7 +635,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         </div>
 
-        {/* Stock Control - Compact */}
+        {/* Stock Control - Compact — read-only როლს არ უჩანს */}
+        {canEdit && (
         <div className="pt-2 border-t border-gray-100">
           <div className="flex items-center justify-center gap-2">
             <button
@@ -668,6 +677,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </button>
           </div>
         </div>
+        )}
       </div>
 
     </div>
@@ -675,7 +685,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 };
 
 // Main Component
-const InventoryManagerVariants: React.FC = () => {
+const InventoryManagerVariants: React.FC<{ canEdit?: boolean }> = ({ canEdit = true }) => {
   const { products, isLoading, fetchProducts } = useProductStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -1021,6 +1031,7 @@ const InventoryManagerVariants: React.FC = () => {
                   {filteredProducts.map((product) => (
                     <ProductRow
                       key={product.id}
+                      canEdit={canEdit}
                       product={product}
                       isExpanded={expandedProducts.has(product.id)}
                       isSelected={selectedProducts.has(product.id)}
@@ -1039,6 +1050,7 @@ const InventoryManagerVariants: React.FC = () => {
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
+                  canEdit={canEdit}
                   product={product}
                   isExpanded={expandedProducts.has(product.id)}
                   isSelected={selectedProducts.has(product.id)}

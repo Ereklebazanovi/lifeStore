@@ -179,8 +179,8 @@ const AdminPage: React.FC = () => {
         );
 
       case "inventory":
-        // New warehouse management - accessible by both admin and manager
-        return <InventoryManagerVariants />;
+        // საწყობი — admin სრულად, manager მხოლოდ ნახვა (read-only)
+        return <InventoryManagerVariants canEdit={user?.role === "admin"} />;
 
       case "categories":
         // Category management - admin only
