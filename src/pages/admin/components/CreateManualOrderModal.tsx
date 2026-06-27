@@ -629,6 +629,51 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                                 }
                                 return null;
                               })()}
+
+                              {/* 💰 კატალოგის რეალური ფასი — შეხსენება ფასის შეცვლისას (მხოლოდ ჩვენება) */}
+                              {item.productId && !item.productId.startsWith("manual_") && (() => {
+                                const currentProduct = products.find(
+                                  (p) => p.id === item.productId
+                                );
+                                if (!currentProduct) return null;
+
+                                let catalogPrice: number | undefined;
+                                if (item.variantId && currentProduct.hasVariants) {
+                                  const variant = currentProduct.variants?.find(
+                                    (v) => v.id === item.variantId
+                                  );
+                                  if (variant) {
+                                    catalogPrice =
+                                      variant.salePrice && variant.salePrice < variant.price
+                                        ? variant.salePrice
+                                        : variant.price;
+                                  }
+                                } else {
+                                  catalogPrice =
+                                    currentProduct.salePrice &&
+                                    currentProduct.salePrice < (currentProduct.price || 0)
+                                      ? currentProduct.salePrice
+                                      : currentProduct.price;
+                                }
+                                if (catalogPrice == null) return null;
+
+                                const discounted =
+                                  item.price > 0 && item.price < catalogPrice;
+                                return (
+                                  <p
+                                    className={`mt-1 text-[11px] leading-tight ${
+                                      discounted
+                                        ? "text-emerald-600 font-medium"
+                                        : "text-stone-400"
+                                    }`}
+                                  >
+                                    💰 რეალური ფასი: ₾{catalogPrice.toFixed(2)}
+                                    {discounted
+                                      ? ` · ფასდაკლება −₾${(catalogPrice - item.price).toFixed(2)}`
+                                      : ""}
+                                  </p>
+                                );
+                              })()}
                             </div>
                           </td>
                           <td className="p-2 sm:p-3">
