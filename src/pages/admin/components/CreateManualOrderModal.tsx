@@ -637,7 +637,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                               min="0"
                               step="0.01"
                               required
-                              value={item.price}
+                              value={item.price || ""}
                               onChange={(e) =>
                                 handleItemChange(index, "price", e.target.value)
                               }
@@ -704,7 +704,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                     <input
                       type="number"
                       min="0"
-                      value={shippingCost}
+                      value={shippingCost || ""}
                       onChange={(e) => {
                         setShippingCost(Number(e.target.value));
                         setIsShippingCostManuallySet(true);
