@@ -641,6 +641,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                               onChange={(e) =>
                                 handleItemChange(index, "price", e.target.value)
                               }
+                              onFocus={(e) => e.target.select()}
                               className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base border border-stone-200 rounded focus:ring-2 focus:ring-emerald-500 outline-none"
                             />
                           </td>
@@ -657,6 +658,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                                   e.target.value
                                 )
                               }
+                              onFocus={(e) => e.target.select()}
                               className="w-full px-3 py-2 text-base border border-stone-200 rounded focus:ring-2 focus:ring-emerald-500 outline-none text-center"
                             />
                           </td>
@@ -707,6 +709,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                         setShippingCost(Number(e.target.value));
                         setIsShippingCostManuallySet(true);
                       }}
+                      onFocus={(e) => e.target.select()}
                       className="w-24 px-3 py-1 text-right text-base border border-stone-200 rounded bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                   </div>
