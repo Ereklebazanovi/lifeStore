@@ -599,6 +599,12 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                                 selectedItems={items}
                                 currentItemIndex={index}
                               />
+                              {/* სრული დასახელება — გრძელი სახელი input-ში იჭრება, აქ სრულად ჩანს */}
+                              {item.name && (
+                                <p className="mt-1 text-xs font-medium text-stone-700 break-words leading-snug">
+                                  {item.name}
+                                </p>
+                              )}
                               {/* Weight Information */}
                               {item.productId && (() => {
                                 const currentProduct = products.find(

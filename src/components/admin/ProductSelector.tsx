@@ -43,6 +43,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         <input
           type="text"
           value={value}
+          title={value}
           onChange={(e) => onChange(e.target.value)}
           onClick={() => setIsModalOpen(true)}
           placeholder=""
