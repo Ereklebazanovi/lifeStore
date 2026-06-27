@@ -30,7 +30,7 @@ import { getLocalizedProductName, getLocalizedCategoryName } from "../utils/i18n
 // import heroImg from "../assets/hero.jpg";
 // url: heroImg
 const HERO_IMAGE_CONFIG = {
-  url: "/hero.webp",
+  url: "/hero1.jpg",
   title: "LifeStore - ჰარმონია დეტალებში",
   subtitle: "შექმენი ჯანსაღი და ესთეტიური გარემო შენს სამზარეულოში",
 };
