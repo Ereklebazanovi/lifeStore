@@ -18,6 +18,7 @@ import {
   limit,
   onSnapshot,
 } from "firebase/firestore";
+import type { Transaction } from "firebase/firestore";
 import { db } from "./firebase";
 import { ADMIN_CONFIG, SITE_CONFIG } from "../config/constants";
 import type {
@@ -630,47 +631,155 @@ export class OrderService {
   }
 
   /**
+   * შეკვეთის მარაგი უკვე დაბრუნებულია საწყობში?
+   * – stockRestored: ხელით „მარაგის დაბრუნება“ (ან cron, ახალ შეკვეთებზე)
+   * – paymentStatus "cancelled": cron-მა გააუქმა ვადაგასული ბარათით გადახდა და მარაგი თვითონ დააბრუნა
+   *   (ძველ შეკვეთებზე cron stockRestored-ს არ წერდა)
+   * სხვა ყველა შეკვეთის პროდუქტები საწყობიდან ჩამოჭრილია.
+   */
+  static isStockReturned(order: { stockRestored?: boolean; paymentStatus?: string }): boolean {
+    return order.stockRestored === true || order.paymentStatus === "cancelled";
+  }
+
+  /**
+   * ✅ შეკვეთის პროდუქტების მარაგის დაბრუნება ტრანზაქციის შიგნით.
+   * ჯერ ყველა პროდუქტს კითხულობს, მერე წერს (Firestore-ის წესი) — გამომძახებელმა ამის შემდეგ
+   * მხოლოდ ჩაწერა უნდა გააკეთოს. წაშლილ პროდუქტს/ვარიანტს ტოვებს — დასაბრუნებელი არსად არის.
+   */
+  private static async restoreInventoryInTransaction(
+    transaction: Transaction,
+    items: { productId?: string; quantity: number; variantId?: string }[],
+    reason: string
+  ): Promise<void> {
+    const realItems = (items || [])
+      .filter((item) => item.productId && !item.productId.startsWith("manual_"))
+      .map((item) => ({
+        productId: item.productId as string,
+        quantity: item.quantity,
+        variantId: item.variantId,
+      }));
+
+    if (realItems.length === 0) return;
+
+    const groupedByProduct = new Map<string, typeof realItems>();
+    realItems.forEach((item) => {
+      if (!groupedByProduct.has(item.productId)) {
+        groupedByProduct.set(item.productId, []);
+      }
+      groupedByProduct.get(item.productId)!.push(item);
+    });
+
+    const productIds = Array.from(groupedByProduct.keys());
+    const productRefs = productIds.map((id) => doc(db, "products", id));
+    const productDocs = await Promise.all(
+      productRefs.map((ref) => transaction.get(ref))
+    );
+
+    productDocs.forEach((productDoc, i) => {
+      if (!productDoc.exists()) {
+        console.warn(`⚠️ პროდუქტი წაშლილია, მარაგი ვერ დაბრუნდება: ${productIds[i]}`);
+        return;
+      }
+
+      const productData = productDoc.data();
+      const itemsForProduct = groupedByProduct.get(productIds[i])!;
+      const updateData: Record<string, unknown> = { updatedAt: Timestamp.now() };
+
+      const variantItems = itemsForProduct.filter((item) => item.variantId);
+      const simpleItems = itemsForProduct.filter((item) => !item.variantId);
+
+      if (variantItems.length > 0) {
+        const variants = [...(productData.variants || [])];
+
+        variantItems.forEach((item) => {
+          const variantIndex = variants.findIndex((v) => v.id === item.variantId);
+          if (variantIndex === -1) {
+            console.warn(`⚠️ ვარიანტი წაშლილია, მარაგი ვერ დაბრუნდება: ${item.variantId}`);
+            return;
+          }
+
+          const newStock = (variants[variantIndex].stock || 0) + item.quantity;
+          const historyEntry: StockHistory = {
+            timestamp: new Date(),
+            quantity: newStock,
+            reason,
+            notes: `Stock restored by ${item.quantity}`,
+          };
+
+          variants[variantIndex] = {
+            ...variants[variantIndex],
+            stock: newStock,
+            updatedAt: Timestamp.now(),
+            stockHistory: [...(variants[variantIndex].stockHistory || []), historyEntry],
+          };
+        });
+
+        updateData.variants = variants;
+        const totalStock = variants.reduce(
+          (sum: number, v: { stock?: number }) => sum + (v.stock || 0),
+          0
+        );
+        updateData.stock = totalStock;
+        updateData.totalStock = totalStock;
+      }
+
+      if (simpleItems.length > 0) {
+        const quantityToRestore = simpleItems.reduce((sum, item) => sum + item.quantity, 0);
+        const newStock = (productData.stock || 0) + quantityToRestore;
+        const historyEntry: StockHistory = {
+          timestamp: new Date(),
+          quantity: newStock,
+          reason,
+          notes: `Stock restored by ${quantityToRestore}`,
+        };
+
+        updateData.stock = newStock;
+        updateData.totalStock = newStock;
+        updateData.stockHistory = [...(productData.stockHistory || []), historyEntry];
+      }
+
+      transaction.update(productRefs[i], updateData);
+    });
+  }
+
+  /**
    * ✅ RESTORE ORDER STOCK (Manual - Admin/Manager action)
-   * მენეჯერი ხელით აბრუნებს გაუქმებული შეკვეთის პროდუქტების მარაგს
+   * მენეჯერი ხელით აბრუნებს გაუქმებული შეკვეთის პროდუქტების მარაგს.
+   * ტრანზაქცია — მარაგი და შეკვეთის ნიშნული ერთად იცვლება (ან ორივე, ან არცერთი).
    */
   static async restoreOrderStock(orderId: string): Promise<void> {
+    const orderRef = doc(db, this.COLLECTION_NAME, orderId);
     try {
-      const orderDoc = await getDoc(doc(db, this.COLLECTION_NAME, orderId));
-      if (!orderDoc.exists()) {
-        throw new Error("შეკვეთა ვერ მოიძებნა");
-      }
+      await runTransaction(db, async (transaction) => {
+        const orderSnap = await transaction.get(orderRef);
+        if (!orderSnap.exists()) {
+          throw new Error("შეკვეთა ვერ მოიძებნა");
+        }
 
-      const orderData = orderDoc.data();
+        const orderData = orderSnap.data();
 
-      if (orderData.orderStatus !== "cancelled") {
-        throw new Error("მარაგის დაბრუნება მხოლოდ გაუქმებულ შეკვეთებზეა შესაძლებელი");
-      }
+        if (orderData.orderStatus !== "cancelled") {
+          throw new Error("მარაგის დაბრუნება მხოლოდ გაუქმებულ შეკვეთებზეა შესაძლებელი");
+        }
 
-      if (orderData.stockRestored === true) {
-        throw new Error("ამ შეკვეთის მარაგი უკვე დაბრუნებულია");
-      }
+        if (this.isStockReturned(orderData)) {
+          throw new Error("ამ შეკვეთის მარაგი უკვე დაბრუნებულია");
+        }
 
-      // inventory rollback
-      const inventoryItems = (orderData.items || [])
-        .filter((item: { productId?: string }) => item.productId && !item.productId.startsWith("manual_") && item.productId !== "manual_entry")
-        .map((item: { productId: string; quantity: number; variantId?: string }) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          ...(item.variantId ? { variantId: item.variantId } : {}),
-        }));
+        await this.restoreInventoryInTransaction(
+          transaction,
+          orderData.items,
+          `Order cancelled #${orderData.orderNumber}`
+        );
 
-      if (inventoryItems.length > 0) {
-        await this.rollbackProductInventory(inventoryItems);
-      }
-
-      // შეკვეთაზე ვნიშნავთ რომ მარაგი დაბრუნდა
-      await updateDoc(doc(db, this.COLLECTION_NAME, orderId), {
-        stockRestored: true,
-        stockRestoredAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
+        transaction.update(orderRef, {
+          stockRestored: true,
+          stockRestoredAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
       });
 
-      console.log(`✅ Stock restored for cancelled order ${orderData.orderNumber}`);
+      console.log(`✅ Stock restored for cancelled order ${orderId}`);
     } catch (error) {
       console.error("❌ Error restoring order stock:", error);
       throw error;
@@ -1166,12 +1275,22 @@ export class OrderService {
     const makeKey = (productId: string, variantId?: string) =>
       `${productId}|${variantId || ""}`;
 
-    // ვაგებთ map-ებს
-    const oldMap = new Map<string, { productId: string; quantity: number; variantId?: string }>();
-    realOld.forEach((i) => oldMap.set(makeKey(i.productId, i.variantId), i));
+    // ვაგებთ map-ებს — ერთი პროდუქტი/ვარიანტი შეკვეთაში რამდენიმე ხაზზე შეიძლება იყოს
+    // (მაგ. ნაწილი ფასდაკლებით), ამიტომ რაოდენობებს ვაჯამებთ და არ ვაწერთ ზემოდან
+    const sumByKey = (
+      items: { productId: string; quantity: number; variantId?: string }[]
+    ) => {
+      const map = new Map<string, { productId: string; quantity: number; variantId?: string }>();
+      items.forEach((i) => {
+        const key = makeKey(i.productId, i.variantId);
+        const existing = map.get(key);
+        map.set(key, existing ? { ...existing, quantity: existing.quantity + i.quantity } : { ...i });
+      });
+      return map;
+    };
 
-    const newMap = new Map<string, { productId: string; quantity: number; variantId?: string }>();
-    realNew.forEach((i) => newMap.set(makeKey(i.productId, i.variantId), i));
+    const oldMap = sumByKey(realOld);
+    const newMap = sumByKey(realNew);
 
     // ვითვლით diff-ს: positive = მეტი ჩამოვაჭრათ, negative = დავაბრუნოთ
     const diffs = new Map<string, { productId: string; variantId?: string; diff: number }>();
@@ -1555,11 +1674,35 @@ export class OrderService {
     }
   }
 
-  static async deleteOrder(orderId: string): Promise<void> {
+  /**
+   * შეკვეთის წაშლა. restoreStock = true — თუ შეკვეთის პროდუქტები ჯერ კიდევ ჩამოჭრილია საწყობიდან,
+   * მარაგი იმავე ტრანზაქციაში ბრუნდება (ან ორივე ხდება, ან არცერთი — მარაგი არ დაიკარგება).
+   */
+  static async deleteOrder(orderId: string, restoreStock = false): Promise<void> {
+    const orderRef = doc(db, this.COLLECTION_NAME, orderId);
     try {
-      const orderRef = doc(db, this.COLLECTION_NAME, orderId);
-      await deleteDoc(orderRef);
-      console.log("✅ Order deleted successfully:", orderId);
+      if (!restoreStock) {
+        await deleteDoc(orderRef);
+        console.log("✅ Order deleted successfully:", orderId);
+        return;
+      }
+
+      await runTransaction(db, async (transaction) => {
+        const orderSnap = await transaction.get(orderRef);
+        if (!orderSnap.exists()) return;
+
+        const orderData = orderSnap.data();
+        if (!this.isStockReturned(orderData)) {
+          await this.restoreInventoryInTransaction(
+            transaction,
+            orderData.items,
+            `Order deleted #${orderData.orderNumber}`
+          );
+        }
+
+        transaction.delete(orderRef);
+      });
+      console.log("✅ Order deleted with stock restore:", orderId);
     } catch (error) {
       console.error("❌ Error deleting order:", error);
       throw new Error("შეკვეთის წაშლა ვერ მოხერხდა");

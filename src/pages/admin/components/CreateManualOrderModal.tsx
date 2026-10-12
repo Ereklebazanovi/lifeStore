@@ -1,5 +1,5 @@
 // src/components/admin/CreateManualOrderModal.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   X,
   Plus,
@@ -28,6 +28,8 @@ import PhoneInput from "../../../components/ui/PhoneInput";
 import ProductSelector from "../../../components/admin/ProductSelector";
 import { ProductSelection } from "../../../components/admin/ProductSelectModal";
 import { useProductStore } from "../../../store/productStore";
+import { getReservedQuantity } from "../../../utils/stock";
+import type { ReservedStockItem } from "../../../utils/stock";
 
 // ✅ დღევანდელი თარიღი ლოკალურ ზონაში "YYYY-MM-DD" ფორმატით (input type=date-სთვის).
 // არ ვიყენებთ toISOString()-ს, რადგან ის UTC-შია და დღე შეიძლება აირიოს.
@@ -66,6 +68,20 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { products, setIsCreatingOrder } = useProductStore();
+
+  // ✅ რედაქტირებისას ამ შეკვეთის რაოდენობები საწყობიდან უკვე ჩამოჭრილია —
+  // მარაგის შემოწმებისას ხელმისაწვდომს ემატება (სერვერი მხოლოდ სხვაობას ასწორებს).
+  const reservedItems = useMemo<ReservedStockItem[]>(
+    () =>
+      (order?.items || [])
+        .filter((item) => item.productId && !item.productId.startsWith("manual_"))
+        .map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: item.quantity,
+        })),
+    [order]
+  );
 
   // --- Form State ---
   const [customerInfo, setCustomerInfo] = useState({
@@ -240,28 +256,39 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       showToast("დაამატეთ მინიმუმ ერთი პროდუქტი", "error");
       return;
     }
-    // ✅ Simplified Stock Validation - Trust ProductSelector's real-time validation
+    // ✅ მარაგის შემოწმება — ერთი პროდუქტი/ვარიანტი რამდენიმე ხაზზეც რომ იყოს, ჯამურად ვამოწმებთ
+    const requestedByKey = new Map<string, { item: ManualOrderItem; quantity: number }>();
     for (const item of items) {
-      if (item.productId && !item.productId.startsWith("manual_")) {
-        const currentProduct = products.find((p) => p.id === item.productId);
-        if (!currentProduct) {
-          showToast(`პროდუქტი არ მოიძებნა: "${item.name}"`, "error");
-          return;
-        }
+      if (!item.productId || item.productId.startsWith("manual_")) continue;
+      const key = `${item.productId}|${item.variantId || ""}`;
+      const existing = requestedByKey.get(key);
+      requestedByKey.set(key, {
+        item: existing?.item ?? item,
+        quantity: (existing?.quantity ?? 0) + item.quantity,
+      });
+    }
 
-        // Basic stock check - ProductSelector handles detailed validation
-        let availableStock = 0;
-        if (item.variantId && currentProduct.hasVariants) {
-          const variant = currentProduct.variants?.find(v => v.id === item.variantId);
-          availableStock = variant?.stock || 0;
-        } else {
-          availableStock = currentProduct.stock || 0;
-        }
+    for (const { item, quantity } of requestedByKey.values()) {
+      const currentProduct = products.find((p) => p.id === item.productId);
+      if (!currentProduct) {
+        showToast(`პროდუქტი არ მოიძებნა: "${item.name}"`, "error");
+        return;
+      }
 
-        if (availableStock < item.quantity) {
-          showToast(`არასაკმარისი მარაგი: "${item.name}"`, "error");
-          return;
-        }
+      let warehouseStock = 0;
+      if (item.variantId && currentProduct.hasVariants) {
+        const variant = currentProduct.variants?.find(v => v.id === item.variantId);
+        warehouseStock = variant?.stock || 0;
+      } else {
+        warehouseStock = currentProduct.stock || 0;
+      }
+
+      const availableStock =
+        warehouseStock + getReservedQuantity(reservedItems, item.productId!, item.variantId);
+
+      if (availableStock < quantity) {
+        showToast(`არასაკმარისი მარაგი: "${item.name}" (ხელმისაწვდომია: ${availableStock})`, "error");
+        return;
       }
     }
     try {
@@ -598,6 +625,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                                 requestedQuantity={item.quantity}
                                 selectedItems={items}
                                 currentItemIndex={index}
+                                reservedItems={reservedItems}
                               />
                               {/* სრული დასახელება — გრძელი სახელი input-ში იჭრება, აქ სრულად ჩანს */}
                               {item.name && (

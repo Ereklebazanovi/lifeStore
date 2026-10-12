@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Search, ChevronDown } from "lucide-react";
 import ProductSelectModal, { ProductSelection } from "./ProductSelectModal";
 import type { ManualOrderItem } from "../../types";
+import type { ReservedStockItem } from "../../utils/stock";
 
 interface ProductSelectorProps {
   value: string;
@@ -13,6 +14,7 @@ interface ProductSelectorProps {
   requestedQuantity?: number;
   selectedItems?: ManualOrderItem[];
   currentItemIndex?: number;
+  reservedItems?: ReservedStockItem[]; // რედაქტირებისას — შეკვეთის მიერ უკვე ჩამოჭრილი რაოდენობები
 }
 
 const ProductSelector: React.FC<ProductSelectorProps> = ({
@@ -24,6 +26,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
   requestedQuantity = 1,
   selectedItems = [],
   currentItemIndex = -1,
+  reservedItems,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -79,6 +82,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         requestedQuantity={requestedQuantity}
         selectedItems={selectedItems}
         currentItemIndex={currentItemIndex}
+        reservedItems={reservedItems}
       />
     </>
   );

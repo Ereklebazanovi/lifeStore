@@ -99,6 +99,9 @@ export default async function handler(
           cancelReason: "არ დასრულდა გადახდა",
           cancelledAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
+          // მარაგი ქვემოთ, იმავე batch-ში ბრუნდება — ადმინკაში „მარაგის დაბრუნება“ მეორედ აღარ უნდა გამოჩნდეს
+          stockRestored: true,
+          stockRestoredAt: FieldValue.serverTimestamp(),
           adminNotes: `შეკვეთა ავტომატურად გაუქმდა ${new Date().toLocaleString("ka-GE")} - კლიენტმა 10 წუთში არ დაასრულა გადახდის პროცესი.ამ პროდუქტის მარაგი ავტომატურად დაბრუნდა.`,
         });
 

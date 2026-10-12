@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 import { useProductStore } from "../../store/productStore";
 import type { Product, ProductVariant, ManualOrderItem } from "../../types";
-import { getTotalStock } from "../../utils/stock";
+import { getTotalStock, getReservedQuantity } from "../../utils/stock";
+import type { ReservedStockItem } from "../../utils/stock";
 
 export interface ProductSelection {
   type: "existing" | "manual";
@@ -32,6 +33,7 @@ interface ProductSelectModalProps {
   requestedQuantity?: number;
   selectedItems?: ManualOrderItem[];
   currentItemIndex?: number;
+  reservedItems?: ReservedStockItem[];
 }
 
 const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
@@ -41,6 +43,7 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
   requestedQuantity = 1,
   selectedItems = [],
   currentItemIndex = -1,
+  reservedItems = [],
 }) => {
   const { products } = useProductStore();
   const [searchTerm, setSearchTerm] = useState("");
@@ -83,7 +86,15 @@ const ProductSelectModal: React.FC<ProductSelectModalProps> = ({
       return total;
     }, 0);
 
-    return Math.max(0, baseStock - allocatedQuantity);
+    // რედაქტირებისას — ამ შეკვეთის მიერ უკვე ჩამოჭრილი რაოდენობა ხელმისაწვდომს ემატება
+    const reservedQuantity = getReservedQuantity(
+      reservedItems,
+      productId,
+      variantId,
+      !variantId && !!product.hasVariants
+    );
+
+    return Math.max(0, baseStock + reservedQuantity - allocatedQuantity);
   };
 
   // Reset state when modal opens

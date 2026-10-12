@@ -67,6 +67,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  const [restoreStockOnDelete, setRestoreStockOnDelete] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
@@ -97,7 +99,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   };
 
   const handleRestoreStock = (order: Order) => {
-    if (order.stockRestored) return;
+    if (OrderService.isStockReturned(order)) return;
     setOrderToRestore(order);
     setShowRestoreConfirm(true);
   };
@@ -1222,7 +1224,24 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     }
   };
 
+  // --- წაშლა + მარაგის დაბრუნება ---
+  const getOrdersToDelete = (): Order[] =>
+    orderToDelete === "selected"
+      ? orders.filter((order) => selectedOrderIds.includes(order.id))
+      : orders.filter((order) => order.id === orderToDelete);
+
+  // შეკვეთის პროდუქტები ჯერ კიდევ ჩამოჭრილია საწყობიდან (და რეალური პროდუქტებია და არა ხელით ჩაწერილი)
+  const hasStockToRestore = (order: Order) =>
+    !OrderService.isStockReturned(order) &&
+    order.items.some((item) => item.productId && !item.productId.startsWith("manual_"));
+
+  const isAlreadySent = (order: Order) =>
+    order.orderStatus === "shipped" || order.orderStatus === "delivered";
+
   const handleDeleteSingle = (orderId: string) => {
+    const order = orders.find((o) => o.id === orderId);
+    // გაუგზავნელზე — მარაგი ბრუნდება; გაგზავნილ/მიტანილზე — არა (საქონელი რეალურად გავიდა)
+    setRestoreStockOnDelete(!!order && !isAlreadySent(order));
     setOrderToDelete(orderId);
     setShowDeleteConfirm(true);
   };
@@ -1232,6 +1251,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
       showToast("მონიშნეთ შეკვეთები წასაშლელად", "error");
       return;
     }
+    const selected = orders.filter((order) => selectedOrderIds.includes(order.id));
+    setRestoreStockOnDelete(selected.every((order) => !isAlreadySent(order)));
     setOrderToDelete("selected");
     setShowDeleteConfirm(true);
   };
@@ -1263,16 +1284,24 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   };
 
   const confirmDelete = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
     try {
       if (orderToDelete === "selected") {
-        await Promise.all(
-          selectedOrderIds.map((id) => OrderService.deleteOrder(id))
-        );
+        // თანმიმდევრობით — ერთი პროდუქტის მარაგს რამდენიმე ტრანზაქცია ერთდროულად რომ არ ეჯახებოდეს
+        for (const id of selectedOrderIds) {
+          await OrderService.deleteOrder(id, restoreStockOnDelete);
+        }
         showToast(`${selectedOrderIds.length} შეკვეთა წაიშალა`, "success");
         setSelectedOrderIds([]);
       } else if (orderToDelete) {
-        await OrderService.deleteOrder(orderToDelete);
-        showToast("შეკვეთა წაიშალა", "success");
+        const order = orders.find((o) => o.id === orderToDelete);
+        const stockReturned = restoreStockOnDelete && !!order && hasStockToRestore(order);
+        await OrderService.deleteOrder(orderToDelete, restoreStockOnDelete);
+        showToast(
+          stockReturned ? "შეკვეთა წაიშალა, მარაგი დაბრუნდა საწყობში" : "შეკვეთა წაიშალა",
+          "success"
+        );
       }
       setShowDeleteConfirm(false);
       setOrderToDelete(null);
@@ -1280,6 +1309,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     } catch (error) {
       console.error("Error deleting orders:", error);
       showToast("შეკვეთის წაშლა ვერ მოხერხდა", "error");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1600,7 +1631,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                                 მიზეზი: {order.cancelReason}
                               </div>
                             )}
-                          {order.orderStatus === "cancelled" && order.stockRestored && (
+                          {order.orderStatus === "cancelled" && OrderService.isStockReturned(order) && (
                             <div className="inline-flex items-center gap-1 text-xs text-teal-700 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5 mt-1">
                               <RotateCcw className="w-3 h-3" />
                               მარაგი აღდგენილია
@@ -1731,7 +1762,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                               <XCircle className="w-4 h-4" />
                             </button>
                           )}
-                          {order.orderStatus === "cancelled" && !order.stockRestored && (
+                          {order.orderStatus === "cancelled" && !OrderService.isStockReturned(order) && (
                             <button
                               onClick={() => handleRestoreStock(order)}
                               className="text-teal-600 hover:text-teal-700 p-2 rounded hover:bg-teal-50"
@@ -1740,7 +1771,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                               <RotateCcw className="w-4 h-4" />
                             </button>
                           )}
-                          {order.orderStatus === "cancelled" && order.stockRestored && (
+                          {order.orderStatus === "cancelled" && OrderService.isStockReturned(order) && (
                             <span className="text-xs text-teal-600 font-medium px-1">
                               ✓ მარაგი დაბრ.
                             </span>
@@ -1820,7 +1851,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                               მიზეზი: {order.cancelReason || order.cancellationReason}
                             </p>
                           )}
-                        {order.orderStatus === "cancelled" && order.stockRestored && (
+                        {order.orderStatus === "cancelled" && OrderService.isStockReturned(order) && (
                           <div className="inline-flex items-center gap-1 text-xs text-teal-700 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5 mt-1">
                             <RotateCcw className="w-3 h-3" />
                             მარაგი აღდგენილია
@@ -1956,7 +1987,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         <span>გაუქმება</span>
                       </button>
                     )}
-                    {order.orderStatus === "cancelled" && !order.stockRestored && (
+                    {order.orderStatus === "cancelled" && !OrderService.isStockReturned(order) && (
                       <button
                         onClick={() => handleRestoreStock(order)}
                         className="flex items-center justify-center space-x-2 bg-teal-600 text-white px-3 py-3 rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium min-h-[44px] active:scale-95 col-span-2 sm:col-span-1"
@@ -1966,7 +1997,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                         <span>მარაგი დაბრ.</span>
                       </button>
                     )}
-                    {order.orderStatus === "cancelled" && order.stockRestored && (
+                    {order.orderStatus === "cancelled" && OrderService.isStockReturned(order) && (
                       <div className="flex items-center justify-center space-x-2 bg-teal-50 text-teal-700 border border-teal-200 px-3 py-3 rounded-lg text-sm font-medium col-span-2 sm:col-span-1">
                         <RotateCcw className="w-4 h-4 flex-shrink-0" />
                         <span>მარაგი დაბრუნდა</span>
@@ -2381,14 +2412,68 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                     </div>
                   </div>
                 </div>
+
+                {/* მარაგის დაბრუნება წაშლისას */}
+                {(() => {
+                  const ordersToDelete = getOrdersToDelete();
+                  const stockOrders = ordersToDelete.filter(hasStockToRestore);
+
+                  if (stockOrders.length === 0) {
+                    return ordersToDelete.some((o) => o.orderStatus === "cancelled") ? (
+                      <p className="mt-4 text-sm text-teal-700 bg-teal-50 border border-teal-200 rounded-lg px-3 py-2">
+                        მარაგი უკვე დაბრუნებულია საწყობში — წაშლა მარაგს არ შეცვლის.
+                      </p>
+                    ) : null;
+                  }
+
+                  const restoreItems = stockOrders.flatMap((o) =>
+                    o.items.filter((item) => item.productId && !item.productId.startsWith("manual_"))
+                  );
+                  const sentCount = stockOrders.filter(isAlreadySent).length;
+
+                  return (
+                    <div className="mt-4 border border-gray-200 rounded-lg p-3">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={restoreStockOnDelete}
+                          onChange={(e) => setRestoreStockOnDelete(e.target.checked)}
+                          className="mt-0.5 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                        />
+                        <span className="text-sm font-medium text-gray-900">
+                          მარაგის დაბრუნება საწყობში
+                        </span>
+                      </label>
+                      <ul className="mt-2 ml-8 space-y-0.5 text-sm text-gray-600 max-h-40 overflow-y-auto">
+                        {restoreItems.map((item, index) => (
+                          <li key={index}>
+                            {getOrderItemDisplayName(item)} — <strong>+{item.quantity}</strong>
+                          </li>
+                        ))}
+                      </ul>
+                      {restoreStockOnDelete && sentCount > 0 && (
+                        <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                          ⚠️ შეკვეთა უკვე გაგზავნილი/მიტანილია. მარაგი დააბრუნეთ მხოლოდ თუ საქონელი
+                          რეალურად დაბრუნდა საწყობში.
+                        </p>
+                      )}
+                      {!restoreStockOnDelete && (
+                        <p className="mt-2 text-xs text-gray-500">
+                          მარაგი არ დაბრუნდება — საწყობის ნაშთი არ შეიცვლება.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div className="bg-gray-50 px-6 py-3 flex flex-row-reverse space-x-2 space-x-reverse">
                 <button
                   type="button"
                   onClick={confirmDelete}
-                  className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm"
+                  disabled={isDeleting}
+                  className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  წაშლა
+                  {isDeleting ? "იშლება..." : "წაშლა"}
                 </button>
                 <button
                   type="button"

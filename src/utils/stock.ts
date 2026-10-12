@@ -19,6 +19,30 @@ export const getTotalStock = (product: Product): number => {
   return product.stock || 0;
 };
 
+export interface ReservedStockItem {
+  productId: string;
+  variantId?: string;
+  quantity: number;
+}
+
+/**
+ * რედაქტირებადი შეკვეთის მიერ საწყობიდან უკვე ჩამოჭრილი რაოდენობა.
+ * რედაქტირებისას ეს ხელმისაწვდომ მარაგს ემატება — თორემ შეკვეთა, რომელმაც ბოლო ცალები წაიღო,
+ * ვეღარ რედაქტირდება (საწყობში 0 ჩანს, თუმცა ეს ცალები სწორედ ამ შეკვეთისაა).
+ * anyVariant = true — პროდუქტის ყველა ვარიანტის ჯამი (ვარიანტიანი პროდუქტის საერთო მარაგისთვის).
+ */
+export const getReservedQuantity = (
+  reservedItems: ReservedStockItem[],
+  productId: string,
+  variantId?: string,
+  anyVariant = false
+): number =>
+  reservedItems.reduce((sum, item) => {
+    if (item.productId !== productId) return sum;
+    const matches = anyVariant || (item.variantId || "") === (variantId || "");
+    return matches ? sum + item.quantity : sum;
+  }, 0);
+
 /**
  * მარაგის სტატუსის გამოთვლა
  */
