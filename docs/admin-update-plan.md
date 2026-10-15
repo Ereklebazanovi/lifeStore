@@ -1,9 +1,21 @@
 # 🛠️ ადმინ პანელის განახლება (ოქტომბერი 2026): შესრულების გეგმა
 
 > **სტატუსი:** დაგეგმილია · კლიენტთან (ოთარი, LifeStore-ის დამფუძნებელი) შეთანხმებულია PDF-ით
-> **თარიღი:** 2026-10-14 · **ვადა:** 2026-10-20 (რეზერვი 10-25)
+> **თარიღი:** 2026-10-14 (განახლდა 2026-10-16) · **ვადა:** 2026-10-25 (თავდაპირველად 10-20; 10-15 checkout-ის ხარვეზებმა გადაწია)
 > **Stack:** Vite + React 19 + TS SPA · Firebase/Firestore (client SDK) · Vercel `/api/*` serverless
-> **სამუშაო პროცესი:** კოდს წერს Codex → Claude ამოწმებს (review) → ერეკლე ტესტავს ადმინიდან → ერეკლე აკეთებს commit + push (Vercel ავტომატურად აკეთებს deploy-ს)
+> **სამუშაო პროცესი:** კოდს წერს Codex → Codex ამოწმებს ემულატორის ტესტებით (`.verify/`, gitignored) → Claude ამოწმებს (review) → ერეკლე ტესტავს Preview branch-ზე → merge main-ში → push (Vercel ავტომატურად აკეთებს deploy-ს)
+
+## 📌 რა შეიცვალა 10-15-ის შემდეგ (checkout-ის გამაგრება, უკვე production-ზეა)
+- `createOrder` ატომურია: მარაგის ჩამოკლება + შეკვეთის ჩაწერა ერთ `runTransaction`-შია (`deductInventoryInTransaction` + `transaction.set`), rollback აღარ არის. retry-ზე `checkOrderSaved` (`exists | missing | unknown`) იცავს ორმაგი ჩამოკლებისგან.
+- შეკვეთის items[].product-ში `stockHistory` აღარ ინახება (`toOrderProductSnapshot`).
+- `generateOrderNumber`: `LS-YYYY-` + 8 ციფრი დროიდან + 2 შემთხვევითი (ფორმატი მხოლოდ ციფრებია, `api/payment/create.ts` regex-ის გამო).
+- `createManualOrder`: rollback მხოლოდ მაშინ, როცა მარაგი ნამდვილად ჩამოიჭრა (`inventoryDeducted`).
+- cron (`api/cleanup/expired-orders.ts`) ეძებს მხოლოდ `paymentMethod in [flitt, tbc_bank]` შეკვეთებს.
+- `firestore.rules` → users: როლს მხოლოდ admin ცვლის. live rules ახლა repo-ს ემთხვევა (10-15).
+- **ფაზა 2-ისთვის მნიშვნელოვანია:** shipping-ის ცვლილება `createOrder`-ში ამ ატომურ ტრანზაქციას არ უნდა დაარღვიოს. `shippingCost` გამოითვლება ტრანზაქციამდე და payload-ში უცვლელად შედის.
+
+## 🧯 ცნობილი ძველი ხარვეზები (არ ასწორო ამ სამუშაოს ფარგლებში — ცალკე „ნაბიჯი 4“)
+ხელით შეკვეთის რედაქტირება/შექმნა არაატომურია; cron-ის პარალელური გაშვება შეიძლება ორჯერ დააბრუნებს; სტუმარს `isValidStockUpdate`-ით მარაგის პირდაპირ შეცვლა შეუძლია; არააქტიური პროდუქტი/უარყოფითი quantity ტრანზაქციაში არ მოწმდება; checkout-ის idempotency key თავიდან ცდისას. დეტალები: `.verify/REPORT-3.md`.
 
 ---
 
@@ -24,7 +36,7 @@
 |---|---|---|
 | `OrderService.isStockReturned(order)` | `src/services/orderService.ts` | მარაგი უკვე დაბრუნებულია? (`stockRestored` ან cron-ის `paymentStatus: "cancelled"`) |
 | `OrderService.restoreInventoryInTransaction(tx, items, reason)` (private) | იგივე | მარაგის დაბრუნება ტრანზაქციის შიგნით (ჯერ კითხულობს, მერე წერს) |
-| `OrderService.updateProductInventory(items, orderNumber)` (private) | იგივე | მარაგის ჩამოკლება ტრანზაქციით, უარყოფით რიცხვამდე ვერ ჩავა |
+| `OrderService.deductInventoryInTransaction(tx, items, orderNumber)` (private) | იგივე | მარაგის ჩამოკლება **არსებული** ტრანზაქციის შიგნით (უარყოფით რიცხვამდე ვერ ჩავა). `updateProductInventory` მისი wrapper-ია საკუთარი ტრანზაქციით |
 | `adjustInventoryForOrderEdit(old, new, orderNumber)` (private) | იგივე | diff-ზე დაფუძნებული stock ცვლილება რედაქტირებისას (`sumByKey`-ით ჯამავს ერთი პროდუქტის რამდენიმე ხაზს) |
 | `getReservedQuantity(...)`, `ReservedStockItem` | `src/utils/stock.ts` | რედაქტირებისას ჩანაწერის საკუთარი რაოდენობა ხელმისაწვდომ მარაგში ჩაითვლება |
 | `ProductSelector` / `ProductSelectModal` (`reservedItems` prop) | `src/components/admin/` | პროდუქტის/ვარიანტის არჩევა რაოდენობით |
