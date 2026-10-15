@@ -206,7 +206,13 @@ const CheckoutPage: React.FC = () => {
       }
     } catch (error) {
       console.error("Order failed:", error);
-      showToast("შეკვეთის გაფორმება ვერ მოხერხდა", "error");
+      const message = error instanceof Error ? error.message : "";
+      showToast(
+        message.includes("არასაკმარისი რაოდენობა")
+          ? message
+          : "შეკვეთის გაფორმება ვერ მოხერხდა. შეამოწმეთ ინტერნეტ კავშირი და სცადეთ თავიდან.",
+        "error"
+      );
     } finally {
       setIsSubmitting(false);
     }

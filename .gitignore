@@ -39,3 +39,6 @@ blog-translations/
 
 # Firebase admin key (never commit)
 serviceAccountKey.json
+
+# Codex verification harness (local only)
+.verify/

@@ -39,12 +39,16 @@ export class OrderService {
 
   /**
    * Generate unique order number
+   * ⚠️ ადრე მხოლოდ დროის ბოლო 6 ციფრი იყო (ყოველ ~17 წუთში მეორდებოდა → დუბლიკატები;
+   * ბარათით გადახდის callback ნომრით ეძებს შეკვეთას). ახლა: დროის 8 ციფრი + 2 შემთხვევითი.
+   * ფორმატი ისევ მხოლოდ ციფრებია — api/payment/create.ts ამოწმებს /^LS-\d{4}-\d+$/.
    */
   private static generateOrderNumber(): string {
     const now = new Date();
     const year = now.getFullYear();
-    const timestamp = now.getTime().toString().slice(-6);
-    return `LS-${year}-${timestamp}`;
+    const timestamp = now.getTime().toString().slice(-8);
+    const random = Math.floor(Math.random() * 100).toString().padStart(2, "0");
+    return `LS-${year}-${timestamp}${random}`;
   }
 
   /**
@@ -216,6 +220,23 @@ export class OrderService {
   }
 
   /**
+   * შეკვეთაში პროდუქტის snapshot-ს მარაგის ისტორია არ სჭირდება (ზოგ პროდუქტზე ~80KB) —
+   * ვაშორებთ, რომ შეკვეთის ჩანაწერი მსუბუქი იყოს. დანარჩენი ველები (სახელები, ვარიანტები) რჩება.
+   */
+  private static toOrderProductSnapshot(product: Product): Product {
+    const snapshot: Product = { ...product };
+    delete snapshot.stockHistory;
+    if (Array.isArray(snapshot.variants)) {
+      snapshot.variants = snapshot.variants.map((variant) => {
+        const variantCopy: ProductVariant = { ...variant };
+        delete variantCopy.stockHistory;
+        return variantCopy;
+      });
+    }
+    return snapshot;
+  }
+
+  /**
    * Convert CartItem[] to OrderItem[] (For Website Orders)
    */
   private static convertCartItemsToOrderItems(
@@ -226,7 +247,7 @@ export class OrderService {
 
       const orderItem: any = {
         productId: item.productId,
-        product: item.product,
+        product: this.toOrderProductSnapshot(item.product),
         quantity: item.quantity,
         price: actualPrice,
         total: item.quantity * actualPrice,
@@ -355,147 +376,160 @@ export class OrderService {
       return;
     }
 
-    console.log("🚨 updateProductInventory called!", {
-      orderNumber,
-      items: realProducts,
-      timestamp: new Date().toISOString(),
-      stack: new Error().stack?.split('\n').slice(0, 5).join('\n')
-    });
-
     try {
-      await runTransaction(db, async (transaction) => {
-        // 1. დავაჯგუფოთ items productId-ით (ერთ პროდუქტში შესაძლოა მრავალი ვარიანტი იყოს)
-        const groupedByProduct = new Map<string, typeof realProducts>();
-
-        realProducts.forEach((item) => {
-          if (!groupedByProduct.has(item.productId)) {
-            groupedByProduct.set(item.productId, []);
-          }
-          groupedByProduct.get(item.productId)!.push(item);
-        });
-
-        // 2. წავიკითხოთ თითოეული unique product-ის მონაცემები
-        const uniqueProductIds = Array.from(groupedByProduct.keys());
-        const productRefs = uniqueProductIds.map((productId) =>
-          doc(db, "products", productId)
-        );
-
-        const productDocs = await Promise.all(
-          productRefs.map((ref) => transaction.get(ref))
-        );
-
-        // 3. თითოეული პროდუქტისთვის ავამუშაოთ ყველა ვარიანტი ერთდროულად
-        for (let i = 0; i < productDocs.length; i++) {
-          const productDoc = productDocs[i];
-          const productId = uniqueProductIds[i];
-          const itemsForThisProduct = groupedByProduct.get(productId)!;
-
-          if (!productDoc.exists()) {
-            throw new Error(`პროდუქტი ვერ მოიძებნა: ${productId}`);
-          }
-
-          const productData = productDoc.data();
-
-          // ავამუშაოთ ვარიანტები და სიმპლური პროდუქტები ცალ-ცალკე
-          const variantItems = itemsForThisProduct.filter(
-            (item) => item.variantId
-          );
-          const simpleItems = itemsForThisProduct.filter(
-            (item) => !item.variantId
-          );
-
-          let updateData: any = { updatedAt: Timestamp.now() };
-
-          // ვარიანტების დამუშავება
-          if (variantItems.length > 0) {
-            const variants = [...(productData.variants || [])];
-
-            variantItems.forEach((item) => {
-              const variantIndex = variants.findIndex(
-                (v) => v.id === item.variantId
-              );
-
-              if (variantIndex === -1) {
-                throw new Error(`ვარიანტი ვერ მოიძებნა: ${item.variantId}`);
-              }
-
-              const currentVariantStock = variants[variantIndex].stock || 0;
-              const newVariantStock = currentVariantStock - item.quantity;
-
-              if (newVariantStock < 0) {
-                throw new Error(
-                  `არასაკმარისი რაოდენობა: "${productData.name}" (${variants[variantIndex].name}) (მოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${currentVariantStock})`
-                );
-              }
-
-              // Add stock history entry for this variant
-              const existingVariantHistory = variants[variantIndex].stockHistory || [];
-              const newHistoryEntry: StockHistory = {
-                timestamp: new Date(),
-                quantity: newVariantStock,
-                reason: orderNumber ? `Order #${orderNumber}` : "Stock reduction",
-                notes: `Stock reduced by ${item.quantity} (order completion)`
-              };
-
-              // განვაახლოთ ვარიანტის stock
-              variants[variantIndex] = {
-                ...variants[variantIndex],
-                stock: newVariantStock,
-                updatedAt: Timestamp.now(),
-                stockHistory: [...existingVariantHistory, newHistoryEntry]
-              };
-            });
-
-            updateData.variants = variants;
-
-            // Calculate and update parent stock fields for consistency
-            const totalStock = variants.reduce(
-              (sum, variant) => sum + (variant.stock || 0),
-              0
-            );
-            updateData.stock = totalStock;
-            updateData.totalStock = totalStock;
-          }
-
-          // სიმპლური პროდუქტების დამუშავება
-          if (simpleItems.length > 0) {
-            const totalQuantityToDeduct = simpleItems.reduce(
-              (sum, item) => sum + item.quantity,
-              0
-            );
-            const currentStock = productData.stock || 0;
-            const newStock = currentStock - totalQuantityToDeduct;
-
-            if (newStock < 0) {
-              throw new Error(
-                `არასაკმარისი რაოდენობა: "${productData.name}" (მოთხოვნილია: ${totalQuantityToDeduct}, ხელმისაწვდომია: ${currentStock})`
-              );
-            }
-
-            // Add stock history for simple product
-            const existingProductHistory = productData.stockHistory || [];
-            const newProductHistoryEntry: StockHistory = {
-              timestamp: new Date(),
-              quantity: newStock,
-              reason: orderNumber ? `Order #${orderNumber}` : "Stock reduction",
-              notes: `Stock reduced by ${totalQuantityToDeduct} (order completion)`
-            };
-
-            updateData.stock = newStock;
-            updateData.totalStock = newStock; // Keep consistency for simple products
-            updateData.stockHistory = [...existingProductHistory, newProductHistoryEntry];
-          }
-
-          // ერთიანი update ამ პროდუქტისთვის
-          transaction.update(productRefs[i], updateData);
-        }
-
-        console.log("📦 Product inventory updated successfully in transaction");
-      });
+      await runTransaction(db, (transaction) =>
+        this.deductInventoryInTransaction(transaction, realProducts, orderNumber)
+      );
     } catch (error) {
       console.error("❌ Error updating product inventory:", error);
       throw error; // re-throw to prevent order creation
     }
+  }
+
+  /**
+   * ✅ მარაგის ჩამოკლება ტრანზაქციის შიგნით (ჯერ კითხულობს, მერე წერს).
+   * გამომძახებელმა ამის შემდეგ მხოლოდ ჩაწერა უნდა გააკეთოს (მაგ. შეკვეთის transaction.set).
+   */
+  private static async deductInventoryInTransaction(
+    transaction: Transaction,
+    items: { productId: string; quantity: number; variantId?: string }[],
+    orderNumber?: string
+  ): Promise<void> {
+    const realProducts = items.filter(
+      (item) =>
+        item.productId &&
+        !item.productId.startsWith("manual_") &&
+        item.productId !== "manual_entry"
+    );
+    if (realProducts.length === 0) return;
+
+    // 1. დავაჯგუფოთ items productId-ით (ერთ პროდუქტში შესაძლოა მრავალი ვარიანტი იყოს)
+    const groupedByProduct = new Map<string, typeof realProducts>();
+
+    realProducts.forEach((item) => {
+      if (!groupedByProduct.has(item.productId)) {
+        groupedByProduct.set(item.productId, []);
+      }
+      groupedByProduct.get(item.productId)!.push(item);
+    });
+
+    // 2. წავიკითხოთ თითოეული unique product-ის მონაცემები
+    const uniqueProductIds = Array.from(groupedByProduct.keys());
+    const productRefs = uniqueProductIds.map((productId) =>
+      doc(db, "products", productId)
+    );
+
+    const productDocs = await Promise.all(
+      productRefs.map((ref) => transaction.get(ref))
+    );
+
+    // 3. თითოეული პროდუქტისთვის ავამუშაოთ ყველა ვარიანტი ერთდროულად
+    for (let i = 0; i < productDocs.length; i++) {
+      const productDoc = productDocs[i];
+      const productId = uniqueProductIds[i];
+      const itemsForThisProduct = groupedByProduct.get(productId)!;
+
+      if (!productDoc.exists()) {
+        throw new Error(`პროდუქტი ვერ მოიძებნა: ${productId}`);
+      }
+
+      const productData = productDoc.data();
+
+      // ავამუშაოთ ვარიანტები და სიმპლური პროდუქტები ცალ-ცალკე
+      const variantItems = itemsForThisProduct.filter(
+        (item) => item.variantId
+      );
+      const simpleItems = itemsForThisProduct.filter(
+        (item) => !item.variantId
+      );
+
+      let updateData: any = { updatedAt: Timestamp.now() };
+
+      // ვარიანტების დამუშავება
+      if (variantItems.length > 0) {
+        const variants = [...(productData.variants || [])];
+
+        variantItems.forEach((item) => {
+          const variantIndex = variants.findIndex(
+            (v) => v.id === item.variantId
+          );
+
+          if (variantIndex === -1) {
+            throw new Error(`ვარიანტი ვერ მოიძებნა: ${item.variantId}`);
+          }
+
+          const currentVariantStock = variants[variantIndex].stock || 0;
+          const newVariantStock = currentVariantStock - item.quantity;
+
+          if (newVariantStock < 0) {
+            throw new Error(
+              `არასაკმარისი რაოდენობა: "${productData.name}" (${variants[variantIndex].name}) (მოთხოვნილია: ${item.quantity}, ხელმისაწვდომია: ${currentVariantStock})`
+            );
+          }
+
+          // Add stock history entry for this variant
+          const existingVariantHistory = variants[variantIndex].stockHistory || [];
+          const newHistoryEntry: StockHistory = {
+            timestamp: new Date(),
+            quantity: newVariantStock,
+            reason: orderNumber ? `Order #${orderNumber}` : "Stock reduction",
+            notes: `Stock reduced by ${item.quantity} (order completion)`
+          };
+
+          // განვაახლოთ ვარიანტის stock
+          variants[variantIndex] = {
+            ...variants[variantIndex],
+            stock: newVariantStock,
+            updatedAt: Timestamp.now(),
+            stockHistory: [...existingVariantHistory, newHistoryEntry]
+          };
+        });
+
+        updateData.variants = variants;
+
+        // Calculate and update parent stock fields for consistency
+        const totalStock = variants.reduce(
+          (sum, variant) => sum + (variant.stock || 0),
+          0
+        );
+        updateData.stock = totalStock;
+        updateData.totalStock = totalStock;
+      }
+
+      // სიმპლური პროდუქტების დამუშავება
+      if (simpleItems.length > 0) {
+        const totalQuantityToDeduct = simpleItems.reduce(
+          (sum, item) => sum + item.quantity,
+          0
+        );
+        const currentStock = productData.stock || 0;
+        const newStock = currentStock - totalQuantityToDeduct;
+
+        if (newStock < 0) {
+          throw new Error(
+            `არასაკმარისი რაოდენობა: "${productData.name}" (მოთხოვნილია: ${totalQuantityToDeduct}, ხელმისაწვდომია: ${currentStock})`
+          );
+        }
+
+        // Add stock history for simple product
+        const existingProductHistory = productData.stockHistory || [];
+        const newProductHistoryEntry: StockHistory = {
+          timestamp: new Date(),
+          quantity: newStock,
+          reason: orderNumber ? `Order #${orderNumber}` : "Stock reduction",
+          notes: `Stock reduced by ${totalQuantityToDeduct} (order completion)`
+        };
+
+        updateData.stock = newStock;
+        updateData.totalStock = newStock; // Keep consistency for simple products
+        updateData.stockHistory = [...existingProductHistory, newProductHistoryEntry];
+      }
+
+      // ერთიანი update ამ პროდუქტისთვის
+      transaction.update(productRefs[i], updateData);
+    }
+
+    console.log("📦 Product inventory updated successfully in transaction");
   }
 
   /**
@@ -1036,90 +1070,112 @@ export class OrderService {
       return inventoryItem;
     });
 
+    const orderNumber = this.generateOrderNumber();
+    const accessToken = this.generateAccessToken(); // ✅ უნიქალური token
+
+    const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
+    const shippingCost = this.calculateShippingCost(
+      orderData.deliveryInfo.city
+    );
+    const totalAmount = subtotal + shippingCost;
+
+    const orderRef = doc(collection(db, this.COLLECTION_NAME));
+
+    const order: Order = {
+      id: orderRef.id,
+      userId: orderData.userId || null,
+      orderNumber,
+      accessToken, // ✅ უნიქალური token
+      source: "website",
+      items: orderItems,
+      subtotal,
+      shippingCost,
+      totalAmount,
+      customerInfo: {
+        ...orderData.customerInfo,
+        isGuest: orderData.userId === null || orderData.userId === undefined,
+      },
+      deliveryInfo: {
+        ...orderData.deliveryInfo,
+        shippingCost
+      },
+      paymentMethod: orderData.paymentMethod,
+      paymentStatus: "pending",
+      orderStatus: "pending",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const firestorePayload = this.cleanObject({
+      ...order,
+      createdAt: Timestamp.fromDate(order.createdAt),
+      updatedAt: Timestamp.fromDate(order.updatedAt),
+    });
+
     try {
-      const orderNumber = this.generateOrderNumber();
-      const accessToken = this.generateAccessToken(); // ✅ უნიქალური token
-
-      // ✅ 1. TRANSACTION: Update inventory first
-      await this.updateProductInventory(inventoryItems, orderNumber);
-
-      // ✅ 2. Create order
-      const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
-      const shippingCost = this.calculateShippingCost(
-        orderData.deliveryInfo.city
-      );
-      const totalAmount = subtotal + shippingCost;
-
-      const orderRef = doc(collection(db, this.COLLECTION_NAME));
-
-      const order: Order = {
-        id: orderRef.id,
-        userId: orderData.userId || null,
-        orderNumber,
-        accessToken, // ✅ უნიქალური token
-        source: "website",
-        items: orderItems,
-        subtotal,
-        shippingCost,
-        totalAmount,
-        customerInfo: {
-          ...orderData.customerInfo,
-          isGuest: orderData.userId === null || orderData.userId === undefined,
-        },
-        deliveryInfo: {
-          ...orderData.deliveryInfo,
-          shippingCost
-        },
-        paymentMethod: orderData.paymentMethod,
-        paymentStatus: "pending",
-        orderStatus: "pending",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      const firestorePayload = {
-        ...order,
-        createdAt: Timestamp.fromDate(order.createdAt),
-        updatedAt: Timestamp.fromDate(order.updatedAt),
-      };
-
-      await setDoc(orderRef, firestorePayload);
+      // ✅ მარაგის ჩამოკლება და შეკვეთის შენახვა ერთ ტრანზაქციაში — ან ორივე ხდება, ან არცერთი.
+      // ადრე ეს ორი ცალკე მოთხოვნა იყო: კავშირის წყვეტისას მარაგი ჩამოიჭრებოდა, შეკვეთა კი არ ინახებოდა.
+      let attempt = 0;
+      await runTransaction(db, async (transaction) => {
+        attempt++;
+        // SDK ტრანზაქციას თავად იმეორებს — წინა ცდა შეიძლება უკვე შეინახა (პასუხი დაიკარგა).
+        // მეორედ ჩამოკლება რომ არ მოხდეს (admin/manager-ს order-ის update-ის უფლებაც აქვს), ვამოწმებთ.
+        // ⚠️ თუ შემოწმება თვითონ ჩავარდა („unknown“), მარაგს აღარ ვეხებით — ორმაგ ჩამოკლებას ვერიდებით.
+        if (attempt > 1 && (await this.checkOrderSaved(orderRef)) !== "missing") {
+          throw new Error("Order may already be saved by a previous attempt");
+        }
+        await this.deductInventoryInTransaction(transaction, inventoryItems, orderNumber);
+        transaction.set(orderRef, firestorePayload);
+      });
 
       console.log("✅ Order created successfully:", orderNumber);
-
-      // ✅ ნაღდი ფულით გადახდისთვის მაშინვე ვაგზავნოთ email notifications
-      if (orderData.paymentMethod === "cash") {
-        console.log("💰 Cash payment detected - sending email notifications immediately");
-        try {
-          await this.sendEmailNotification(order);
-        } catch (emailError) {
-          console.error("❌ Failed to send email notification:", emailError);
-          // არ ვაფაილებთ შეკვეთას email ერორის გამო
-        }
-      }
-      // ✅ კარტით გადახდისთვის email გაიგზავნება payment callback-ში
-
-      return order;
     } catch (error) {
       console.error("❌ Error creating order:", error);
 
-      // 🛑 ROLLBACK: თუ შეკვეთის შექმნა ჩავარდა, მაგრამ მარაგი უკვე მოკლებულია
-      // ვამოწმებთ, რომ შეცდომა "არასაკმარისი რაოდენობა" არ არის (მაგ დროს მარაგი ისედაც არ მოკლებულა)
-      const isInventoryError =
-        error instanceof Error &&
-        error.message.includes("არასაკმარისი რაოდენობა");
+      // ტრანზაქცია ატომურია — ჩავარდნისას მარაგი არ ჩამოჭრილა, rollback აღარ სჭირდება.
+      // გამონაკლისი: შეკვეთა სერვერზე შეინახა, მაგრამ პასუხი კავშირის წყვეტის გამო ვერ მოვიდა —
+      // ვამოწმებთ და თუ შეკვეთა არსებობს, წარმატებად ვთვლით (კლიენტს ხელახლა არ ვაყიდინებთ).
+      if ((await this.checkOrderSaved(orderRef)) !== "exists") {
+        const isInventoryError =
+          error instanceof Error &&
+          error.message.includes("არასაკმარისი რაოდენობა");
 
-      if (!isInventoryError) {
-        console.log(
-          "🔄 Performing inventory rollback due to order creation failure..."
-        );
-        await this.rollbackProductInventory(inventoryItems);
+        if (isInventoryError) {
+          throw error; // ვაბრუნებთ სტოკის ერორს კლიენტთან
+        }
+        throw new Error("შეკვეთის შექმნა ვერ მოხერხდა");
       }
+      console.log("✅ Order exists despite error (response lost):", orderNumber);
+    }
 
-      if (isInventoryError) {
-        throw error; // ვაბრუნებთ სტოკის ერორს კლიენტთან
+    // ✅ ნაღდი ფულით გადახდისთვის მაშინვე ვაგზავნოთ email notifications
+    if (orderData.paymentMethod === "cash") {
+      console.log("💰 Cash payment detected - sending email notifications immediately");
+      try {
+        await this.sendEmailNotification(order);
+      } catch (emailError) {
+        console.error("❌ Failed to send email notification:", emailError);
+        // არ ვაფაილებთ შეკვეთას email ერორის გამო
       }
-      throw new Error("შეკვეთის შექმნა ვერ მოხერხდა");
+    }
+    // ✅ კარტით გადახდისთვის email გაიგზავნება payment callback-ში
+
+    return order;
+  }
+
+  /**
+   * შეკვეთა შეინახა? (კავშირის წყვეტის შემდეგ შესამოწმებლად)
+   * – "missing": არ არსებობს. არარსებულ შეკვეთაზე სტუმარს წაკითხვის უფლება არ აქვს,
+   *   ამიტომ permission-denied აქ „არ არსებობს“-ს ნიშნავს.
+   * – "unknown": შემოწმება ვერ მოხერხდა (მაგ. ინტერნეტი) — უსაფრთხოდ ვთვლით, რომ შეიძლება არსებობს.
+   */
+  private static async checkOrderSaved(
+    orderRef: ReturnType<typeof doc>
+  ): Promise<"exists" | "missing" | "unknown"> {
+    try {
+      return (await getDoc(orderRef)).exists() ? "exists" : "missing";
+    } catch (error) {
+      return (error as { code?: string })?.code === "permission-denied" ? "missing" : "unknown";
     }
   }
 
@@ -1151,6 +1207,10 @@ export class OrderService {
         return inventoryItem;
       });
 
+    // მარაგი ნამდვილად ჩამოიჭრა? rollback მხოლოდ მაშინ — თორემ ჩავარდნილ ტრანზაქციაზე
+    // „დაბრუნება“ მარაგს ტყუილად ზრდიდა
+    let inventoryDeducted = false;
+
     try {
       const orderNumber = this.generateOrderNumber();
       const accessToken = this.generateAccessToken(); // ✅ უნიქალური token
@@ -1158,6 +1218,7 @@ export class OrderService {
       // ✅ 2. TRANSACTION: Update inventory
       if (inventoryItems.length > 0) {
         await this.updateProductInventory(inventoryItems, orderNumber);
+        inventoryDeducted = true;
       }
 
       // 3. Create Order Object
@@ -1239,7 +1300,7 @@ export class OrderService {
         error instanceof Error &&
         error.message.includes("არასაკმარისი რაოდენობა");
 
-      if (!isInventoryError && inventoryItems.length > 0) {
+      if (inventoryDeducted) {
         console.log("🔄 Performing manual order rollback...");
         await this.rollbackProductInventory(inventoryItems);
       }
