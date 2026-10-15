@@ -39,9 +39,13 @@ export default async function handler(
     const cutoffTime = new Date();
     cutoffTime.setMinutes(cutoffTime.getMinutes() - 10);
 
+    // ⚠️ მხოლოდ ბარათით გადახდის შეკვეთებს ვეძებთ. ხელით გატარებული (გადარიცხვა/ნაღდი) შეკვეთები
+    // paymentStatus "pending"-ში სამუდამოდ რჩება — ისინი limit(100)-ს ავსებდნენ და cron
+    // ნამდვილ მიტოვებულ ონლაინ გადახდამდე ვერ აღწევდა (მარაგი არ ბრუნდებოდა).
     const pendingOrdersQuery = adminDb
       .collection("orders")
       .where("paymentStatus", "==", "pending")
+      .where("paymentMethod", "in", ["flitt", "tbc_bank"])
       .limit(100);
 
     const pendingOrdersSnapshot = await pendingOrdersQuery.get();
