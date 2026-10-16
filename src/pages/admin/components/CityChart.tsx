@@ -3,6 +3,7 @@ import React, { useState, useMemo } from "react";
 import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import type { Order } from "../../../types";
 import type { SortBy } from "./AnalyticsDashboard";
+import { normalizeCity } from "../../../utils/city";
 
 interface CityChartProps {
   orders: Order[];
@@ -10,16 +11,6 @@ interface CityChartProps {
 }
 
 const TOP_N = 8;
-
-/** ქალაქის სახელის ნორმალიზაცია — სხვადასხვა აკრეფა ერთ ჯგუფში მოვა */
-const normalizeCity = (raw?: string): string => {
-  const c = (raw ?? "").trim().replace(/\s+/g, " ");
-  if (!c) return "უცნობი";
-  const lower = c.toLowerCase();
-  // ხშირი ვარიანტები — თბილისი
-  if (["tbilisi", "tbilis", "თბილისი", "тбилиси"].includes(lower)) return "თბილისი";
-  return c;
-};
 
 const CityChart: React.FC<CityChartProps> = ({ orders, sortBy }) => {
   const [showAll, setShowAll] = useState(false);

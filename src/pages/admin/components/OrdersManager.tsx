@@ -6,7 +6,9 @@ import { OrderService } from "../../../services/orderService";
 import { useAuthStore } from "../../../store/authStore";
 import { showToast } from "../../../components/ui/Toast";
 import type { Order } from "../../../types";
-import { getOrderItemDisplayName } from "../../../utils/displayHelpers";
+import { getOrderItemDisplayName, getOrderCreatorLabel, isManualOrder } from "../../../utils/displayHelpers";
+import { DELIVERY_CITIES } from "../../../config/constants";
+import { matchesCityFilter } from "../../../utils/city";
 import { exportSingleOrderToExcel, exportMultipleOrdersToExcel } from "../../../utils/excelExporter";
 import CreateManualOrderModal from "./CreateManualOrderModal";
 import { ClipboardList, Activity, Archive } from "lucide-react";
@@ -34,6 +36,7 @@ import {
   FileSpreadsheet,
   Pencil,
   RotateCcw,
+  ChevronDown,
 } from "lucide-react";
 
 interface OrdersManagerProps {
@@ -60,6 +63,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [orderTypeFilter, setOrderTypeFilter] = useState<"all" | "website" | "manual">("all");
+  const [cityFilter, setCityFilter] = useState<string[]>([]);
+  const [showCityFilter, setShowCityFilter] = useState(false);
   // რამდენი შეკვეთა იხატება ეკრანზე (rendering pagination — delay-ის წინააღმდეგ).
   // მონაცემი მთლიანად მეხსიერებაშია; search/ფილტრები სრულ სიაში მუშაობს, იცვლება მხოლოდ რენდერი.
   const PAGE_SIZE = 30;
@@ -80,6 +85,28 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
 
   const topScrollRef = useRef<HTMLDivElement>(null);
   const tableScrollRef = useRef<HTMLDivElement>(null);
+  const cityFilterRef = useRef<HTMLDivElement>(null);
+  const cityFilterButtonRef = useRef<HTMLButtonElement>(null);
+
+  // ქალაქების სია გარეთ დაჭერით ან Escape-ით იხურება.
+  useEffect(() => {
+    if (!showCityFilter) return;
+    const handleOutsideClick = (event: PointerEvent) => {
+      if (!cityFilterRef.current?.contains(event.target as Node)) setShowCityFilter(false);
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowCityFilter(false);
+        cityFilterButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("pointerdown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [showCityFilter]);
 
   const syncScroll = (source: "top" | "table") => {
     const top = topScrollRef.current;
@@ -88,10 +115,6 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
     if (source === "top") table.scrollLeft = top.scrollLeft;
     else top.scrollLeft = table.scrollLeft;
   };
-
-  const isManualOrder = (order: Order) =>
-    typeof order.adminNotes === "string" &&
-    order.adminNotes.includes("Manually added via Admin Panel");
 
   const handleEditOrder = (order: Order) => {
     setOrderToEdit(order);
@@ -1175,7 +1198,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
         (orderTypeFilter === "website" && !isManualOrder(order)) ||
         (orderTypeFilter === "manual" && isManualOrder(order));
 
-      return matchesSearch && matchesDateFrom && matchesDateTo && matchesStatus && matchesType;
+      return matchesSearch && matchesDateFrom && matchesDateTo && matchesStatus && matchesType &&
+        matchesCityFilter(order.deliveryInfo?.city, cityFilter);
     });
   };
 
@@ -1196,7 +1220,7 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   // ფილტრის/ძებნის ცვლილებაზე — თავიდან ვიწყებთ ჩვენებას (ზევიდან)
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [searchTerm, statusFilter, activeTab, dateFrom, dateTo, orderTypeFilter]);
+  }, [searchTerm, statusFilter, activeTab, dateFrom, dateTo, orderTypeFilter, cityFilter]);
 
   // ეკრანზე მხოლოდ პირველი visibleCount იხატება — delay-ის თავიდან ასაცილებლად
   const visibleOrders = filteredOrders.slice(0, visibleCount);
@@ -1499,13 +1523,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                   <option value="delivered">🎉 მიტანილი</option>
                   <option value="cancelled">❌ გაუქმებული</option>
                 </select>
-                {(dateFrom || dateTo || statusFilter !== "all" || orderTypeFilter !== "all") && (
+                {(dateFrom || dateTo || statusFilter !== "all" || orderTypeFilter !== "all" || cityFilter.length > 0) && (
                   <button
                     onClick={() => {
                       setDateFrom("");
                       setDateTo("");
                       setStatusFilter("all");
                       setOrderTypeFilter("all");
+                      setCityFilter([]);
                     }}
                     className="px-3 py-2.5 md:py-2 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors text-sm md:text-base min-h-[44px] md:min-h-[40px] active:scale-95"
                     title="ფილტრების გასუფთავება"
@@ -1518,7 +1543,8 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
           </div>
         </div>
 
-        {/* Order Type Filter */}
+        {/* შეკვეთის ტიპისა და ქალაქის ფილტრები */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-2">
           <label className="text-xs font-medium text-gray-700 flex items-center gap-1">
             <Tags className="w-3 h-3" />
@@ -1533,6 +1559,42 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
             <option value="website">🌐 ვებსაიტი</option>
             <option value="manual">✍️ ხელით</option>
           </select>
+        </div>
+        <div className="relative space-y-2" ref={cityFilterRef}>
+          <label htmlFor="city-filter-button" className="text-xs font-medium text-gray-700 flex items-center gap-1">
+            <MapPin className="w-3 h-3" />
+            ქალაქი
+          </label>
+          <button
+            id="city-filter-button"
+            ref={cityFilterButtonRef}
+            type="button"
+            aria-expanded={showCityFilter}
+            aria-controls="city-filter-options"
+            onClick={() => setShowCityFilter((open) => !open)}
+            className="px-3 py-2.5 md:py-2 min-h-[44px] border border-gray-200 bg-gray-50/70 rounded-xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 focus:bg-white transition-colors text-sm md:text-base w-full touch-manipulation flex items-center justify-between gap-2"
+          >
+            <span>{cityFilter.length === 0 ? "ყველა ქალაქი" : cityFilter.length === 1 ? cityFilter[0] : `${cityFilter.length} ქალაქი`}</span>
+            <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
+          </button>
+          {showCityFilter && (
+            <div id="city-filter-options" role="group" aria-label="ქალაქის ფილტრი" className="absolute left-0 right-0 z-20 mt-1 p-1 bg-white border border-gray-200 rounded-xl shadow-lg">
+              {DELIVERY_CITIES.map((city) => (
+                <label key={city} className="flex items-center gap-3 min-h-[44px] px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 cursor-pointer touch-manipulation">
+                  <input
+                    type="checkbox"
+                    checked={cityFilter.includes(city)}
+                    onChange={(event) => setCityFilter((selected) => event.target.checked
+                      ? [...selected, city]
+                      : selected.filter((value) => value !== city))}
+                    className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  {city}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
         </div>
       </div>
 
@@ -1623,6 +1685,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             </span>
                           )}
                         </div>
+                        {getOrderCreatorLabel(order) && (
+                          <div className="text-xs text-gray-500 mt-1">გაატარა: {getOrderCreatorLabel(order)}</div>
+                        )}
                         <div className="text-sm text-gray-500">
                           {order.items.reduce((sum, i) => sum + i.quantity, 0)} ცალი
                           {order.orderStatus === "cancelled" &&
@@ -1842,6 +1907,9 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             </span>
                           )}
                         </div>
+                        {getOrderCreatorLabel(order) && (
+                          <p className="text-xs text-gray-500 mt-1 break-all">გაატარა: {getOrderCreatorLabel(order)}</p>
+                        )}
                         <p className="text-xs md:text-sm text-gray-500">
                           {order.items.reduce((sum, i) => sum + i.quantity, 0)} ცალი
                         </p>
@@ -2202,6 +2270,12 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             {getSourceIcon(selectedOrder.source)}
                             <span className="capitalize">{selectedOrder.source}</span>
                           </div>
+                        )}
+                        {getOrderCreatorLabel(selectedOrder) && (
+                          <p className="text-sm text-gray-600 break-all">
+                            <span className="font-medium">გაატარა:</span>{" "}
+                            {getOrderCreatorLabel(selectedOrder)}
+                          </p>
                         )}
                       </div>
                     </div>

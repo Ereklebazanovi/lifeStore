@@ -97,12 +97,20 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface OrderActor {
+  uid: string;
+  email: string;
+  name?: string;
+}
+
 export interface Order {
   id: string;
   userId: string | null;
   orderNumber: string;
   accessToken?: string; // ✅ უნიქალური token permanent access-ისთვის
   source?: OrderSource;
+  createdBy?: OrderActor;
+  updatedBy?: OrderActor;
   items: OrderItem[];
   subtotal: number;
   shippingCost: number;
@@ -205,6 +213,7 @@ export interface PaymentGatewayStatus {
 }
 
 export interface CreateManualOrderRequest {
+  createdBy?: OrderActor;
   items: ManualOrderItem[];
   source: OrderSource;
   customerInfo: {
@@ -227,6 +236,7 @@ export interface CreateManualOrderRequest {
 }
 
 export interface UpdateManualOrderRequest {
+  updatedBy?: OrderActor;
   items: ManualOrderItem[];
   source: OrderSource;
   customerInfo: {

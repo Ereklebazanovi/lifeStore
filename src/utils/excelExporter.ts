@@ -1,7 +1,7 @@
 //excelExporter.ts
 import * as XLSX from "xlsx-js-style";
 import type { Order, Product, ProductVariant, StockHistory } from "../types";
-import { getOrderItemDisplayName } from "./displayHelpers";
+import { getOrderItemDisplayName, getOrderCreatorLabel } from "./displayHelpers";
 
 const getStockAtDate = (stockHistory: StockHistory[] | undefined, targetDate: Date): number => {
   if (!stockHistory || stockHistory.length === 0) {
@@ -215,6 +215,7 @@ const createOrderItemRowData = (
     "ტელეფონის ნომერი": order.customerInfo.phone,
     "მისამართი": address,
     "კომენტარი": order.deliveryInfo.comment || "",
+    "გაატარა": getOrderCreatorLabel(order),
   };
 
   // Only add cancellation reason column if order is cancelled and has a reason
@@ -242,6 +243,7 @@ const getColumnWidths = (hasCancelledOrders: boolean) => {
     { wch: 16 }, // ტელეფონის ნომერი
     { wch: 28 }, // მისამართი
     { wch: 28 }, // კომენტარი
+    { wch: 26 }, // გაატარა
   ];
 
   return hasCancelledOrders

@@ -195,6 +195,8 @@ export class OrderService {
       orderNumber: convertedData.orderNumber,
       accessToken: convertedData.accessToken,
       source: convertedData.source,
+      ...(convertedData.createdBy && { createdBy: convertedData.createdBy }),
+      ...(convertedData.updatedBy && { updatedBy: convertedData.updatedBy }),
       items: convertedData.items,
       subtotal: convertedData.subtotal,
       shippingCost: convertedData.shippingCost,
@@ -1232,6 +1234,7 @@ export class OrderService {
         orderNumber,
         accessToken, // ✅ უნიქალური token
         source: data.source,
+        ...(data.createdBy && { createdBy: data.createdBy }),
         items: orderItems,
         subtotal,
         shippingCost: data.shippingCost,
@@ -1534,6 +1537,7 @@ export class OrderService {
       // 6. განვაახლოთ Firestore document
       const updatePayload = this.cleanObject({
         source: data.source,
+        updatedBy: data.updatedBy,
         items: newOrderItems,
         subtotal,
         shippingCost: data.shippingCost,

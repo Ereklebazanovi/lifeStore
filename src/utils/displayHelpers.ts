@@ -1,5 +1,18 @@
 //displayHelpers.ts
-import type { CartItem, Product, OrderItem } from "../types";
+import type { CartItem, Product, OrderItem, Order } from "../types";
+
+// ხელით შეკვეთას არსებული ადმინისტრაციული ჩანაწერით ვცნობთ.
+export function isManualOrder(order: Order): boolean {
+  return typeof order.adminNotes === "string" &&
+    order.adminNotes.includes("Manually added via Admin Panel");
+}
+
+// ძველ ხელით შეკვეთებს ავტორი არ აქვთ — მათთვის წარწერა ცარიელია.
+export function getOrderCreatorLabel(order: Order): string {
+  if (order.createdBy?.email) return order.createdBy.email;
+  if (!order.createdBy && !isManualOrder(order)) return "ვებსაიტი";
+  return "";
+}
 
 /**
  * Get the display name for a cart item, including variant information if present

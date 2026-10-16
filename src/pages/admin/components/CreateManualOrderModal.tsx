@@ -14,6 +14,8 @@ import {
   Calendar,
 } from "lucide-react";
 import { OrderService } from "../../../services/orderService";
+import { auth } from "../../../services/firebase";
+import { useAuthStore } from "../../../store/authStore";
 import { showToast } from "../../../components/ui/Toast";
 import type {
   Order,
@@ -68,6 +70,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { products, setIsCreatingOrder } = useProductStore();
+  const { user } = useAuthStore();
 
   // ✅ რედაქტირებისას ამ შეკვეთის რაოდენობები საწყობიდან უკვე ჩამოჭრილია —
   // მარაგის შემოწმებისას ხელმისაწვდომს ემატება (სერვერი მხოლოდ სხვაობას ასწორებს).
@@ -302,8 +305,17 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
         setIsSubmitting(false);
       }, 15000);
 
+      // uid/email მხოლოდ Auth-იდან მოდის; users-ის ძველ დოკუმენტში შეიძლება არ იყოს.
+      const currentUser = auth.currentUser;
+      const actor = currentUser ? {
+        uid: currentUser.uid,
+        email: currentUser.email || "",
+        name: user?.displayName || undefined,
+      } : undefined;
+
       if (isEditMode && order) {
         const updateData: UpdateManualOrderRequest = {
+          ...(actor && { updatedBy: actor }),
           source,
           items,
           customerInfo,
@@ -324,6 +336,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
         showToast("შეკვეთა წარმატებით განახლდა!", "success");
       } else {
         const orderData: CreateManualOrderRequest = {
+          ...(actor && { createdBy: actor }),
           source,
           items,
           customerInfo,
