@@ -149,5 +149,22 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // 10. მიწოდების ტარიფები — checkout-ს სტუმარიც კითხულობს, ცვლის მხოლოდ ადმინი.
+    // მხოლოდ კონკრეტული დოკუმენტი: wildcard-ით settings-ში მომავალში დამატებული ყველაფერი საჯარო გახდებოდა.
+    match /settings/shipping {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 11. მაღაზიები (ცინცაძის 2) — მხოლოდ ადმინი
+    match /stores/{storeId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 12. მაღაზიაში გატანა/დაბრუნება — მხოლოდ ადმინი
+    match /storeTransfers/{transferId} {
+      allow read, write: if isAdmin();
+    }
+
   }
 }
