@@ -42,3 +42,6 @@ serviceAccountKey.json
 
 # Codex verification harness (local only)
 .verify/
+
+# Claude Code-ის ლოკალური პარამეტრები (პირადი, არ ატვირთო)
+.claude/settings.local.json
