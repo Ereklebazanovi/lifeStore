@@ -10,6 +10,8 @@ import { PaymentService } from "../services/paymentService";
 import PhoneInput from "../components/ui/PhoneInput";
 import { useInventoryRefresh } from "../hooks/useInventoryRefresh";
 import { useTranslation } from "react-i18next";
+import { getShippingRates } from "../services/settingsService";
+import { DEFAULT_SHIPPING_RATES, getShippingCost } from "../utils/shipping";
 
 import {
   MapPin,
@@ -66,7 +68,20 @@ const CheckoutPage: React.FC = () => {
   const [isAgreed, setIsAgreed] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const shippingCost = (formData.city === "თბილისი" || formData.city === "რუსთავი") ? 5 : 10;
+  const [shippingRates, setShippingRates] = useState(DEFAULT_SHIPPING_RATES);
+  const [shippingRatesReady, setShippingRatesReady] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getShippingRates().then((rates) => {
+      if (!active) return;
+      setShippingRates(rates);
+      setShippingRatesReady(true);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const shippingCost = getShippingCost(formData.city, shippingRates);
   const grandTotal = subtotal + shippingCost;
 
   // მომხმარებლის ინფორმაციის ავტომატური შევსება
@@ -121,6 +136,7 @@ const CheckoutPage: React.FC = () => {
 
   const handlePreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!shippingRatesReady) return;
 
     if (!isAgreed) {
       showToast("გთხოვთ, დაეთანხმოთ წესებსა და პირობებს", "error");
@@ -163,6 +179,7 @@ const CheckoutPage: React.FC = () => {
       const orderRequest: CreateOrderRequest = {
         userId: user?.id || null,
         items,
+        shippingCost,
         customerInfo: {
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -401,11 +418,11 @@ const CheckoutPage: React.FC = () => {
                         onChange={handleChange}
                         className={`${inputBaseStyle} appearance-none cursor-pointer`}
                       >
-                        <option value="თბილისი">{t('checkout.cityTbilisi')}</option>
-                        <option value="რუსთავი">{t('checkout.cityRustavi')}</option>
-                        <option value="ბათუმი">{t('checkout.cityBatumi')}</option>
-                        <option value="ქუთაისი">{t('checkout.cityKutaisi')}</option>
-                        <option value="სხვა">{t('checkout.cityOther')}</option>
+                        <option value="თბილისი">{t('checkout.cityTbilisi', { price: shippingRates["თბილისი"] })}</option>
+                        <option value="რუსთავი">{t('checkout.cityRustavi', { price: shippingRates["რუსთავი"] })}</option>
+                        <option value="ბათუმი">{t('checkout.cityBatumi', { price: shippingRates["ბათუმი"] })}</option>
+                        <option value="ქუთაისი">{t('checkout.cityKutaisi', { price: shippingRates["ქუთაისი"] })}</option>
+                        <option value="სხვა">{t('checkout.cityOther', { price: shippingRates["სხვა"] })}</option>
                       </select>
                    </div>
                    <div className="sm:col-span-2">
@@ -528,9 +545,9 @@ const CheckoutPage: React.FC = () => {
                 <button
                   type="submit"
                   form="checkout-form"
-                  disabled={isSubmitting || !isAgreed}
+                  disabled={isSubmitting || !isAgreed || !shippingRatesReady}
                   className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98]
-                    ${isSubmitting || !isAgreed
+                    ${isSubmitting || !isAgreed || !shippingRatesReady
                       ? "bg-stone-200 text-stone-400 cursor-not-allowed shadow-none"
                       : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200"
                     }`}
@@ -579,6 +596,15 @@ const CheckoutPage: React.FC = () => {
                <span className="text-2xl font-bold text-stone-900 tracking-wider">
                 {formData.phone.replace(/(\d{3})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4")}
               </span>
+            </div>
+
+            <div className="mb-6 space-y-2 text-sm">
+              <div className="flex justify-between gap-3">
+                <span>{t('checkout.delivery')}</span><span>₾{shippingCost.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between gap-3 font-bold">
+                <span>{t('checkout.totalToPay')}</span><span>₾{grandTotal.toFixed(2)}</span>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

@@ -1,5 +1,5 @@
 // src/components/admin/CreateManualOrderModal.tsx
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   X,
   Plus,
@@ -32,6 +32,9 @@ import { ProductSelection } from "../../../components/admin/ProductSelectModal";
 import { useProductStore } from "../../../store/productStore";
 import { getReservedQuantity } from "../../../utils/stock";
 import type { ReservedStockItem } from "../../../utils/stock";
+import { DELIVERY_CITIES } from "../../../config/constants";
+import { getShippingRates } from "../../../services/settingsService";
+import { DEFAULT_SHIPPING_RATES, getShippingCost } from "../../../utils/shipping";
 
 // ✅ დღევანდელი თარიღი ლოკალურ ზონაში "YYYY-MM-DD" ფორმატით (input type=date-სთვის).
 // არ ვიყენებთ toISOString()-ს, რადგან ის UTC-შია და დღე შეიძლება აირიოს.
@@ -110,12 +113,14 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   >("cash");
   const [shippingCost, setShippingCost] = useState(0);
   const [isShippingCostManuallySet, setIsShippingCostManuallySet] = useState(false);
+  const [shippingRates, setShippingRates] = useState(DEFAULT_SHIPPING_RATES);
+  const shippingRatesRef = useRef(DEFAULT_SHIPPING_RATES);
+  const shippingSelectionRef = useRef({ city: "თბილისი", manuallySet: false });
   // ✅ გაყიდვის თარიღი (YYYY-MM-DD). default = დღეს. გამოიყენება მხოლოდ ახალი შეკვეთის შექმნისას.
   const [orderDate, setOrderDate] = useState<string>(getTodayString());
 
   const calculateShippingCost = (city: string): number => {
-    if (city === "თბილისი" || city === "რუსთავი") return 5;
-    return 10;
+    return getShippingCost(city, shippingRates);
   };
 
   // --- Calculations ---
@@ -153,6 +158,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
         setPaymentMethod((order.paymentMethod as "cash" | "other" | "bank_transfer") || "cash");
         setShippingCost(order.shippingCost);
         setIsShippingCostManuallySet(true);
+        shippingSelectionRef.current = { city: order.deliveryInfo.city, manuallySet: true };
         // ✅ თარიღს ვავსებთ არსებული შეკვეთის createdAt-დან
         const created =
           order.createdAt instanceof Date && !isNaN(order.createdAt.getTime())
@@ -167,8 +173,9 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
         setSource("instagram");
         setStatus("pending");
         setPaymentMethod("cash");
-        setShippingCost(5);
+        setShippingCost(getShippingCost("თბილისი", shippingRatesRef.current));
         setIsShippingCostManuallySet(false);
+        shippingSelectionRef.current = { city: "თბილისი", manuallySet: false };
         setOrderDate(getTodayString());
       }
     } else {
@@ -179,6 +186,19 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
       setIsCreatingOrder(false);
     };
   }, [isOpen, order, setIsCreatingOrder]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    getShippingRates().then((rates) => {
+      if (!active) return;
+      setShippingRates(rates);
+      shippingRatesRef.current = rates;
+      const selection = shippingSelectionRef.current;
+      if (!order && !selection.manuallySet) setShippingCost(getShippingCost(selection.city, rates));
+    });
+    return () => { active = false; };
+  }, [isOpen, order]);
 
   // --- Handlers ---
   const handleItemChange = (
@@ -554,6 +574,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                     value={deliveryInfo.city}
                     onChange={(e) => {
                       const newCity = e.target.value;
+                      shippingSelectionRef.current.city = newCity;
                       setDeliveryInfo({ ...deliveryInfo, city: newCity });
                       if (!isShippingCostManuallySet) {
                         setShippingCost(calculateShippingCost(newCity));
@@ -561,11 +582,9 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                     }}
                     className="w-full px-4 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
                   >
-                    <option value="თბილისი">თბილისი (5 ₾)</option>
-                    <option value="რუსთავი">რუსთავი (5 ₾)</option>
-                    <option value="ბათუმი">ბათუმი (10 ₾)</option>
-                    <option value="ქუთაისი">ქუთაისი (10 ₾)</option>
-                    <option value="სხვა">სხვა რეგიონი (10 ₾)</option>
+                    {DELIVERY_CITIES.map((city) => (
+                      <option key={city} value={city}>{city === "სხვა" ? "სხვა რეგიონი" : city} ({shippingRates[city]} ₾)</option>
+                    ))}
                   </select>
                   <textarea
                     placeholder="მისამართი *"
@@ -799,6 +818,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                       value={shippingCost || ""}
                       onChange={(e) => {
                         setShippingCost(Number(e.target.value));
+                        shippingSelectionRef.current.manuallySet = true;
                         setIsShippingCostManuallySet(true);
                       }}
                       onFocus={(e) => e.target.select()}

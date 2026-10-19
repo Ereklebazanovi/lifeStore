@@ -1076,9 +1076,7 @@ export class OrderService {
     const accessToken = this.generateAccessToken(); // ✅ უნიქალური token
 
     const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
-    const shippingCost = this.calculateShippingCost(
-      orderData.deliveryInfo.city
-    );
+    const shippingCost = typeof orderData.shippingCost === "number" && Number.isFinite(orderData.shippingCost) && orderData.shippingCost >= 0 ? orderData.shippingCost : this.calculateShippingCost(orderData.deliveryInfo.city);
     const totalAmount = subtotal + shippingCost;
 
     const orderRef = doc(collection(db, this.COLLECTION_NAME));
@@ -1179,6 +1177,36 @@ export class OrderService {
     } catch (error) {
       return (error as { code?: string })?.code === "permission-denied" ? "missing" : "unknown";
     }
+  }
+
+  /** მიტანის თანხის კორექტირება შეკვეთის დანარჩენი მონაცემების შეცვლის გარეშე. */
+  static async updateShippingCost(
+    orderId: string,
+    cost: number,
+    actor?: Order["updatedBy"]
+  ): Promise<{ shippingCost: number; totalAmount: number }> {
+    if (typeof cost !== "number" || !Number.isFinite(cost) || cost < 0) {
+      throw new Error("მიტანის თანხა უნდა იყოს არაუარყოფითი სასრული რიცხვი");
+    }
+    return runTransaction(db, async (transaction) => {
+      const orderRef = doc(db, this.COLLECTION_NAME, orderId);
+      const snapshot = await transaction.get(orderRef);
+      if (!snapshot.exists()) throw new Error("შეკვეთა ვერ მოიძებნა");
+      const order = snapshot.data();
+      const subtotal = typeof order.subtotal === "number" && Number.isFinite(order.subtotal)
+        ? order.subtotal
+        : (order.items as OrderItem[]).reduce((sum, item) => sum + item.total, 0);
+      const shippingCost = Math.round((cost + Number.EPSILON) * 100) / 100;
+      const totalAmount = Math.round((subtotal + cost + Number.EPSILON) * 100) / 100;
+      transaction.update(orderRef, this.cleanObject({
+        shippingCost,
+        "deliveryInfo.shippingCost": shippingCost,
+        totalAmount,
+        updatedAt: new Date(),
+        updatedBy: actor,
+      }));
+      return { shippingCost, totalAmount };
+    });
   }
 
   /**

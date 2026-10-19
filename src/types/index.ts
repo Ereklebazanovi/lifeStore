@@ -175,6 +175,7 @@ export interface ManualOrderItem {
 
 export interface CreateOrderRequest {
   userId: string | null;
+  shippingCost?: number;
   items: CartItem[];
   customerInfo: {
     firstName: string;

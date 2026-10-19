@@ -1,7 +1,12 @@
 // src/pages/admin/components/ParametersPage.tsx
 import React, { useState, useEffect } from "react";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
-import { db } from "../../../services/firebase";
+import { db, auth } from "../../../services/firebase";
+import { getShippingSettings, saveShippingRates } from "../../../services/settingsService";
+import { DELIVERY_CITIES } from "../../../config/constants";
+import type { DeliveryCity } from "../../../config/constants";
+import { DEFAULT_SHIPPING_RATES } from "../../../utils/shipping";
+import type { ShippingRates } from "../../../utils/shipping";
 import { useAuthStore } from "../../../store/authStore";
 import { showToast } from "../../../components/ui/Toast";
 import {
@@ -14,6 +19,72 @@ import {
   ChevronDown,
 } from "lucide-react";
 import type { User } from "../../../types";
+
+const toFields = (rates: ShippingRates) => Object.fromEntries(DELIVERY_CITIES.map((city) => [city, String(rates[city])])) as Record<DeliveryCity, string>;
+
+const ShippingRatesSettings: React.FC = () => {
+  const [fields, setFields] = useState(() => toFields(DEFAULT_SHIPPING_RATES));
+  const [exists, setExists] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    getShippingSettings().then((settings) => {
+      if (!active) return;
+      setFields(toFields(settings.rates));
+      setExists(settings.exists);
+      setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const rates = { ...DEFAULT_SHIPPING_RATES };
+    for (const city of DELIVERY_CITIES) {
+      const value = fields[city].trim();
+      if (!/^\d+(?:\.\d{1,2})?$/.test(value) || !Number.isFinite(Number(value))) {
+        setError("ტარიფი უნდა იყოს არაუარყოფითი რიცხვი, მაქსიმუმ 2 ათწილადით");
+        return;
+      }
+      rates[city] = Number(value);
+    }
+    const actor = auth.currentUser;
+    if (!actor) { setError("შენახვისთვის საჭიროა ადმინისტრატორის ანგარიშით შესვლა"); return; }
+    setError("");
+    setSaving(true);
+    try {
+      await saveShippingRates(rates, { uid: actor.uid, email: actor.email || "" });
+      setExists(true);
+      showToast("მიტანის ტარიფები შენახულია", "success");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "ტარიფების შენახვა ვერ მოხერხდა");
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <form aria-label="მიტანის ტარიფები" onSubmit={save} noValidate className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 shadow-sm space-y-4">
+      <h2 className="text-lg font-semibold text-gray-900">მიტანის ტარიფები</h2>
+      {loading ? <p className="text-sm text-gray-500">ტარიფების ჩატვირთვა...</p> : exists === false ? (
+        <p className="text-sm text-amber-700">ნაგულისხმევი ტარიფები — ჯერ არ შენახულა</p>
+      ) : exists === null ? <p className="text-sm text-amber-700">ნაჩვენებია ნაგულისხმევი ტარიფები</p> : null}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {DELIVERY_CITIES.map((city, index) => (
+          <div key={city} className="min-w-0">
+            <label htmlFor={`shipping-rate-${index}`} className="block text-sm font-medium text-gray-700 mb-1">{city} (₾)</label>
+            <input id={`shipping-rate-${index}`} type="number" min="0" step="0.01" inputMode="decimal" value={fields[city]}
+              onChange={(event) => setFields((previous) => ({ ...previous, [city]: event.target.value }))}
+              disabled={loading || saving} className="w-full min-w-0 min-h-11 rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+          </div>
+        ))}
+      </div>
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      <button type="submit" disabled={loading || saving} className="min-h-11 px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50">{saving ? "ინახება..." : "შენახვა"}</button>
+    </form>
+  );
+};
 
 const ParametersPage: React.FC = () => {
   const { user: currentUser } = useAuthStore();
@@ -218,6 +289,8 @@ const ParametersPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <ShippingRatesSettings />
 
       {/* Filters and Search */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">

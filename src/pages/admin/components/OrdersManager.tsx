@@ -1,7 +1,7 @@
 // src/pages/admin/components/OrdersManager.tsx
 import React, { useState, useEffect, useRef } from "react";
 import { addDoc, collection } from "firebase/firestore";
-import { db } from "../../../services/firebase";
+import { db, auth } from "../../../services/firebase";
 import { OrderService } from "../../../services/orderService";
 import { useAuthStore } from "../../../store/authStore";
 import { showToast } from "../../../components/ui/Toast";
@@ -43,6 +43,53 @@ interface OrdersManagerProps {
   orders: Order[];
   onRefresh: () => void;
 }
+
+const ShippingCostEditor: React.FC<{
+  order: Order;
+  onSaved: (result: { shippingCost: number; totalAmount: number }) => void;
+}> = ({ order, onSaved }) => {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(String(order.shippingCost));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const cost = Number(value);
+    if (!value.trim() || !Number.isFinite(cost) || cost < 0) {
+      setError("მიტანის თანხა უნდა იყოს არაუარყოფითი სასრული რიცხვი");
+      return;
+    }
+    const actor = auth.currentUser;
+    if (!actor) { setError("შენახვისთვის საჭიროა ანგარიშით შესვლა"); return; }
+    setSaving(true);
+    setError("");
+    try {
+      const result = await OrderService.updateShippingCost(order.id, cost, { uid: actor.uid, email: actor.email || "" });
+      onSaved(result);
+      setEditing(false);
+      showToast("მიტანის თანხა განახლებულია", "success");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "მიტანის თანხის შენახვა ვერ მოხერხდა");
+    } finally { setSaving(false); }
+  };
+  if (!editing) return (
+    <button type="button" onClick={() => { setValue(String(order.shippingCost)); setError(""); setEditing(true); }} className="min-h-11 text-sm text-blue-700 underline text-left">მიტანის თანხის შეცვლა</button>
+  );
+  return (
+    <form aria-label="მიტანის თანხის შეცვლა" onSubmit={save} noValidate className="space-y-3 border border-blue-200 rounded-lg p-3">
+      {(order.paymentMethod === "flitt" || order.paymentMethod === "tbc_bank") && (
+        <p className="text-sm text-amber-800 bg-amber-50 p-3 rounded-lg">თანხა მხოლოდ ჩანაწერში შეიცვლება; კლიენტს ფული ავტომატურად არ დაუბრუნდება / არ ჩამოეჭრება. გადაუხდელ შეკვეთაზე კლიენტი ძველ თანხას გადაიხდის.</p>
+      )}
+      <label htmlFor="order-shipping-cost" className="block text-sm font-medium">მიტანის თანხა (₾)</label>
+      <input id="order-shipping-cost" type="number" min="0" step="0.01" inputMode="decimal" value={value} disabled={saving} onChange={(event) => setValue(event.target.value)} className="w-full min-w-0 min-h-11 border border-gray-300 rounded-lg px-3 py-2" />
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" disabled={saving} className="min-h-11 px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">{saving ? "ინახება..." : "შენახვა"}</button>
+        <button type="button" disabled={saving} onClick={() => setEditing(false)} className="min-h-11 px-4 py-2 bg-gray-200 rounded-lg">გაუქმება</button>
+      </div>
+    </form>
+  );
+};
 
 const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
   // ✅ შეკვეთის სამუდამო წაშლა მხოლოდ ადმინს შეუძლია (manager/გაყიდვები ვერ შლის)
@@ -2249,6 +2296,13 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                             : `₾${selectedOrder.shippingCost.toFixed(2)}`}
                         </span>
                       </div>
+                      {(isAdmin || user?.role === "manager") && (
+                        <ShippingCostEditor key={selectedOrder.id} order={selectedOrder} onSaved={(result) => {
+                          setSelectedOrder((current) => current?.id === selectedOrder.id ? {
+                            ...current, ...result, deliveryInfo: { ...current.deliveryInfo, shippingCost: result.shippingCost },
+                          } : current);
+                        }} />
+                      )}
                       <div className="border-t border-gray-200 pt-2 mt-3">
                         <div className="flex justify-between text-lg font-semibold">
                           <span className="text-gray-900">სულ:</span>

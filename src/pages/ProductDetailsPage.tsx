@@ -30,6 +30,8 @@ import { getProductDisplayPrice } from "../utils/productHelpers";
 import { getLocalizedProductName, getLocalizedProductDescription, getLocalizedCategoryName } from "../utils/i18nHelpers";
 import { useCategoryStore } from "../store/categoryStore";
 import { useTranslation } from "react-i18next";
+import { getShippingRates } from "../services/settingsService";
+import { DEFAULT_SHIPPING_RATES, formatShippingSummary } from "../utils/shipping";
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,6 +45,15 @@ const ProductDetailsPage: React.FC = () => {
   const { addItem } = useCartStore();
   const { user } = useAuthStore();
   const { categories } = useCategoryStore();
+  const [shippingRates, setShippingRates] = useState(DEFAULT_SHIPPING_RATES);
+  const shippingSummary = formatShippingSummary(shippingRates, i18n.resolvedLanguage || i18n.language);
+  const shippingSummaryKa = formatShippingSummary(shippingRates, "ka");
+
+  useEffect(() => {
+    let active = true;
+    getShippingRates().then((rates) => { if (active) setShippingRates(rates); });
+    return () => { active = false; };
+  }, []);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -357,7 +368,7 @@ const ProductDetailsPage: React.FC = () => {
 ${product.description}
 
 🌿 Life Store - ეკომეგობრული სახლის ნივთები
-🚚 მიწოდება: თბილისი/რუსთავი 5₾, სხვა 10₾
+🚚 ${shippingSummaryKa}
 🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${productSlug}`;
 
     const facebookParams = new URLSearchParams({
@@ -544,7 +555,7 @@ ${product.description}
     <>
       <SEOHead
         title={`${product.name} - ₾${getCurrentPrice().toFixed(2)} | Life Store`}
-        description={`${product.description.slice(0, 120)} ✅ მარაგშია ${currentStock} ცალი 🚚 მიწოდება: თბილისი/რუსთავი 5₾, სხვა 10₾`}
+        description={`${product.description.slice(0, 120)} ✅ მარაგშია ${currentStock} ცალი 🚚 ${shippingSummaryKa}`}
         keywords={`${product.name}, ეკო პროდუქტები, ${product.category}`}
         ogImage={product.images?.[0] || "https://lifestore.ge/logo.png"}
         ogType="product"
@@ -847,7 +858,7 @@ ${product.description}
                       <Leaf className="w-4 h-4 text-emerald-600" /> {t("product.eco")}
                   </li>
                    <li className="flex items-center gap-2">
-                      <Truck className="w-4 h-4 text-emerald-600" /> {t("product.delivery")}
+                      <Truck className="w-4 h-4 text-emerald-600" /> {t("product.delivery", { summary: shippingSummary })}
                   </li>
                    <li className="flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-600" /> {t("product.qualityGuarantee")}
@@ -1268,7 +1279,7 @@ ${product.description}
 ${product.description}
 
 🌿 Life Store - ეკომეგობრული სახლის ნივთები
-🚚 მიწოდება: თბილისი/რუსთავი 5₾, სხვა 10₾
+🚚 ${shippingSummaryKa}
 🛒 შეუკვეთეთ ახლავე: https://lifestore.ge/product/${productSlug}`;
 
                   const facebookParams = new URLSearchParams({
