@@ -172,15 +172,24 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
             <p className="text-xs text-gray-500 mb-1">მაღაზია · ცინცაძის 2</p>
             <h2 className="font-bold text-xl text-gray-900">
               {transfer
-                ? "გატარების რედაქტირება"
+                ? type === "out"
+                  ? "გადატანის რედაქტირება"
+                  : "დაბრუნების რედაქტირება"
                 : type === "out"
-                  ? "ახალი გატარება"
-                  : "დაბრუნების გაფორმება"}
+                  ? "მაღაზიაში გადატანის დამატება"
+                  : "საწყობში დაბრუნების დამატება"}
             </h2>
             <p className="flex items-center gap-2 text-sm text-gray-500 mt-2">
-              {type === "out" ? "საწყობი" : "ცინცაძის 2"}
+              {type === "out" ? "საწყობი" : "მაღაზია"}
               <ArrowRight size={14} />
-              {type === "out" ? "ცინცაძის 2" : "საწყობი"}
+              {type === "out" ? "მაღაზია" : "საწყობი"}
+            </p>
+            <p className="text-xs text-gray-500 mt-2 leading-relaxed max-w-lg">
+              {transfer
+                ? "მიუთითე სრული რაოდენობები. საწყობის ნაშთი მხოლოდ ძველ და ახალ რაოდენობებს შორის სხვაობით გასწორდება."
+                : type === "out"
+                  ? "აირჩიე პროდუქტები და ჩაწერე გადატანილი რაოდენობები. საწყობს ისინი შენახვისას გამოაკლდება."
+                  : "აირჩიე პროდუქტები და ჩაწერე დაბრუნებული რაოდენობები. საწყობს ისინი შენახვისას დაემატება."}
             </p>
           </div>
           <button
@@ -195,8 +204,8 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
         </header>
         {STORE_TRANSFERS_TEST_ONLY && (
           <p className="px-4 sm:px-6 py-3 text-xs text-amber-900 bg-amber-50 border-b border-amber-100">
-            <strong>მხოლოდ სატესტო პროდუქტები.</strong> რეალური პროდუქტების
-            გატარება გამორთულია.
+            <strong>სატესტო რეჟიმი.</strong> აქ მხოლოდ TEST-STORE პროდუქტების
+            ნაშთები შეიცვლება.
           </p>
         )}
         <div className="min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
@@ -278,7 +287,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
           <section aria-label="გატარების პროდუქტები" className="space-y-3">
             <div className="flex justify-between items-center gap-3">
               <h3 className="font-semibold text-sm text-gray-900">
-                გატარების პროდუქტები
+                არჩეული პროდუქტები
               </h3>
               <span className="text-xs text-gray-500">
                 {items.length} პროდუქტი
@@ -288,11 +297,11 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
               <div className="rounded-xl border border-dashed border-gray-300 py-8 px-4 text-center">
                 <Package size={28} className="mx-auto text-gray-300 mb-3" />
                 <p className="text-sm font-medium text-gray-700">
-                  ამ გატარებაში პროდუქტი ჯერ არ არის
+                  ჯერ დაამატე პროდუქტი
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
-                  ზემოთ მოძებნე პროდუქტი და დაამატე. ერთ გატარებაში შეგიძლია
-                  რამდენიმე ნივთი შეიტანო.
+                  მოძებნე სახელით ან კოდით. ერთ ჩანაწერში შეგიძლია
+                  რამდენიმე პროდუქტი დაამატო.
                 </p>
               </div>
             ) : (
@@ -361,7 +370,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                         <div className="text-xs text-gray-500 space-y-1">
                           <p>საწყობში ახლა: {product?.stock || 0} ცალი</p>
                           <p aria-label={`შენახვის შემდეგ: ${name}`}>
-                            შენახვის შემდეგ:{" "}
+                            შენახვის შემდეგ საწყობში:{" "}
                             <strong
                               className={
                                 valid ? "text-gray-700" : "text-red-700"
@@ -374,7 +383,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                           </p>
                         </div>
                         <label className="flex items-center gap-2 text-xs text-gray-600">
-                          რაოდენობა
+                          {transfer ? "სრული რაოდენობა" : "რაოდენობა"}
                           <input
                             aria-label={`რაოდენობა: ${name}`}
                             type="number"
@@ -445,8 +454,8 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
               value={note}
               disabled={saving}
               onChange={(event) => setNote(event.target.value)}
-              placeholder="მაგალითად: კვირის განმავლობაში მაღაზიაში წაღებული საქონელი"
-              className="block mt-2 w-full border border-gray-300 rounded-xl p-3 text-sm font-normal"
+              placeholder="მაგალითად: ამ კვირაში მაღაზიაში გადატანილი საქონელი"
+              className="block mt-2 w-full border border-gray-300 rounded-xl p-3 text-sm font-normal outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
             />
           </label>
           {error && (
@@ -465,8 +474,10 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
             </p>
             <p className="text-xs text-gray-500 mt-1">
               {transfer
-                ? "განახლდება ეს გატარება და შესაბამისი ნაშთები."
-                : "შეინახება ერთი გატარება ყველა არჩეული პროდუქტით."}
+                ? "შენახვისას განახლდება ეს ჩანაწერი და გასწორდება ნაშთები."
+                : type === "out"
+                  ? `შენახვისას საწყობს გამოაკლდება ${quantity} ცალი.`
+                  : `შენახვისას საწყობს დაემატება ${quantity} ცალი.`}
             </p>
           </div>
           <div className="flex gap-2">
@@ -488,7 +499,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                 : transfer
                   ? "ცვლილებების შენახვა"
                   : type === "out"
-                    ? "გატარების შენახვა"
+                    ? "გადატანის შენახვა"
                     : "დაბრუნების შენახვა"}
             </button>
           </div>

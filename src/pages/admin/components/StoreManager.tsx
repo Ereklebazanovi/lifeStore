@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import {
-  ArrowDownLeft,
-  ArrowUpRight,
+  ArrowRight,
+  ChevronRight,
+  Filter,
   Pencil,
   Plus,
   Trash2,
@@ -27,6 +28,7 @@ const StoreManager: React.FC = () => {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [kind, setKind] = useState("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [form, setForm] = useState<{
     type: StoreTransferType;
     transfer?: StoreTransfer;
@@ -48,6 +50,7 @@ const StoreManager: React.FC = () => {
     );
   }, [retry]);
   const selected = transfers.find((item) => item.id === selectedId);
+  const activeFilters = [kind !== "all", !!from, !!to].filter(Boolean).length;
   const filtered = transfers.filter(
     (item) =>
       (kind === "all" || item.type === kind) &&
@@ -83,96 +86,125 @@ const StoreManager: React.FC = () => {
     });
   return (
     <div className="space-y-5">
-      <header className="bg-white border rounded-xl p-4 sm:p-6 space-y-4">
+      <header className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 space-y-5">
         <div>
           <h1 className="text-xl font-bold">მაღაზია — {DEFAULT_STORE.name}</h1>
           <p className="text-sm text-gray-500 mt-1">
-            აქ აღრიცხავ საწყობიდან მაღაზიაში წაღებულ და უკან დაბრუნებულ
-            საქონელს.
+            ჩაწერე, რომელი პროდუქტები გადაიტანე მაღაზიაში. შენახვისას ეს
+            რაოდენობა საწყობს გამოაკლდება.
           </p>
         </div>
         {STORE_TRANSFERS_TEST_ONLY && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            <p className="font-semibold">
-              ახლა ვამოწმებთ მხოლოდ სატესტო პროდუქტებს
-            </p>
-            <p className="mt-1">
-              ხელმისაწვდომია 30 TEST-STORE პროდუქტი. რეალური პროდუქტების არჩევა
-              და გატარება გამორთულია. შენახვა შეცვლის მხოლოდ არჩეული სატესტო
-              პროდუქტების ნაშთებს.
+          <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="font-semibold">სატესტო რეჟიმი · TEST-STORE პროდუქტები</p>
+            <p className="mt-1 text-xs leading-relaxed">
+              შემოწმებისთვის ხელმისაწვდომია 30 სატესტო პროდუქტი. რეალური
+              პროდუქტების გადატანა გამორთულია.
             </p>
           </div>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
-            aria-label="ახალი გატარება"
+            aria-label="მაღაზიაში გადატანის დამატება"
             onClick={() => setForm({ type: "out" })}
-            className="min-h-20 p-4 rounded-xl bg-emerald-600 text-white flex items-center gap-3 text-left hover:bg-emerald-700 transition-colors"
+            className="min-h-20 p-4 rounded-xl bg-emerald-600 text-white flex items-center gap-3 text-left hover:bg-emerald-700 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
           >
-            <Plus size={22} />
-            <span>
-              <strong className="block text-sm">ახალი გატარება</strong>
+            <Plus size={22} className="shrink-0" />
+            <span className="min-w-0">
+              <strong className="block text-sm">მაღაზიაში გადატანის დამატება</strong>
               <span className="block text-xs text-emerald-100 mt-1">
-                დაამატე პროდუქტები და გააფორმე მაღაზიაში გატანა
+                საწყობი → მაღაზია · საწყობს გამოაკლდება
               </span>
             </span>
           </button>
           <button
             aria-label="დაბრუნება საწყობში"
             onClick={() => setForm({ type: "return" })}
-            className="min-h-20 p-4 rounded-xl border border-gray-200 text-gray-800 flex items-center gap-3 text-left hover:bg-blue-50 transition-colors"
+            className="min-h-20 p-4 rounded-xl border border-gray-200 text-gray-800 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
           >
-            <ArrowDownLeft size={18} />
+            <ArrowRight size={20} className="shrink-0 text-gray-400" />
             <span>
               <strong className="block text-sm">დაბრუნება საწყობში</strong>
               <span className="block text-xs text-gray-500 mt-1">
-                ცინცაძის 2 → საწყობი · საწყობის ნაშთი გაიზრდება
+                მაღაზია → საწყობი · საწყობს დაემატება
               </span>
             </span>
           </button>
         </div>
       </header>
       {transfers.length > 0 && (
-        <div className="bg-white border rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-          <label className="text-sm">
-            ძებნა
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="პროდუქტი ან ჩანაწერის ნომერი"
-              className="block w-full border rounded-lg px-3 py-2 mt-1 min-h-11"
-            />
-          </label>
-          <label className="text-sm">
-            ტიპი
-            <select
-              value={kind}
-              onChange={(event) => setKind(event.target.value)}
-              className="block w-full border rounded-lg px-3 py-2 mt-1 min-h-11"
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-4">
+          <div className="flex items-end gap-3">
+            <label className="text-sm flex-1 min-w-0">
+              ძებნა
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="პროდუქტი ან ჩანაწერის ნომერი"
+                className="block w-full border border-gray-200 rounded-lg px-3 py-2 mt-1 min-h-11"
+              />
+            </label>
+            <button
+              aria-expanded={filtersOpen}
+              aria-controls="store-history-filters"
+              onClick={() => setFiltersOpen((open) => !open)}
+              className={`min-h-11 px-3 rounded-lg border flex items-center gap-2 text-sm shrink-0 ${activeFilters ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
             >
-              <option value="all">ყველა მოძრაობა</option>
-              <option value="out">გატანა</option>
-              <option value="return">დაბრუნება</option>
-            </select>
-          </label>
-          <label className="text-sm">
-            თარიღიდან
-            <input
-              type="date"
-              value={from}
-              onChange={(event) => setFrom(event.target.value)}
-              className="block w-full min-w-0 border rounded-lg px-3 py-2 mt-1 min-h-11"
-            />
-          </label>
-          <label className="text-sm">
-            თარიღამდე
-            <input
-              type="date"
-              value={to}
-              onChange={(event) => setTo(event.target.value)}
-              className="block w-full min-w-0 border rounded-lg px-3 py-2 mt-1 min-h-11"
-            />
-          </label>
+              <Filter size={16} />
+              ფილტრები{activeFilters > 0 ? ` (${activeFilters})` : ""}
+            </button>
+          </div>
+          {filtersOpen && (
+            <div
+              id="store-history-filters"
+              className="border-t border-gray-100 pt-4 space-y-3"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label className="text-sm">
+                  ჩანაწერის ტიპი
+                  <select
+                    value={kind}
+                    onChange={(event) => setKind(event.target.value)}
+                    className="block w-full border border-gray-200 rounded-lg px-3 py-2 mt-1 min-h-11 bg-white"
+                  >
+                    <option value="all">ყველა ჩანაწერი</option>
+                    <option value="out">მაღაზიაში გადატანა</option>
+                    <option value="return">საწყობში დაბრუნება</option>
+                  </select>
+                </label>
+                <label className="text-sm">
+                  თარიღიდან
+                  <input
+                    type="date"
+                    value={from}
+                    onChange={(event) => setFrom(event.target.value)}
+                    className="block w-full min-w-0 border border-gray-200 rounded-lg px-3 py-2 mt-1 min-h-11"
+                  />
+                </label>
+                <label className="text-sm">
+                  თარიღამდე
+                  <input
+                    type="date"
+                    value={to}
+                    onChange={(event) => setTo(event.target.value)}
+                    className="block w-full min-w-0 border border-gray-200 rounded-lg px-3 py-2 mt-1 min-h-11"
+                  />
+                </label>
+              </div>
+              {activeFilters > 0 && (
+                <button
+                  onClick={() => {
+                    setKind("all");
+                    setFrom("");
+                    setTo("");
+                  }}
+                  className="min-h-11 text-sm text-gray-600 underline underline-offset-4"
+                >
+                  ფილტრების გასუფთავება
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
       {error && (
@@ -191,10 +223,11 @@ const StoreManager: React.FC = () => {
       )}
       <section
         aria-label="მაღაზიის ისტორია"
-        className="bg-white border rounded-xl overflow-hidden"
+        className="bg-white border border-gray-200 rounded-2xl overflow-hidden"
       >
-        <div className="p-4 border-b font-semibold">
-          გატარებები · {filtered.length} ჩანაწერი
+        <div className="p-4 sm:px-5 border-b border-gray-200">
+          <h2 className="font-semibold text-gray-900">გადატანები და დაბრუნებები</h2>
+          <p className="text-xs text-gray-500 mt-1">{filtered.length} ჩანაწერი</p>
         </div>
         {loading ? (
           <p className="p-5 text-gray-500">იტვირთება…</p>
@@ -204,35 +237,24 @@ const StoreManager: React.FC = () => {
             <p className="text-sm text-gray-500">
               {transfers.length
                 ? "შეცვალე ძებნა ან ფილტრები."
-                : "ზემოთ აირჩიე გატანა ან დაბრუნება, ჩაწერე რაოდენობები და შეინახე. გატარება აქ გამოჩნდება."}
+                : "დაამატე მაღაზიაში გადატანა ან საწყობში დაბრუნება. შენახული ჩანაწერები აქ გამოჩნდება."}
             </p>
           </div>
         ) : (
-          <div className="divide-y">
+          <div className="divide-y divide-gray-100">
             {filtered.map((item) => (
-              <button
+              <article
                 key={item.id}
-                onClick={() => setSelectedId(item.id)}
-                className="w-full text-left p-4 grid grid-cols-1 md:grid-cols-4 gap-2 hover:bg-gray-50"
+                className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4"
               >
-                <span className="font-semibold text-blue-700 break-all">
-                  {item.transferNumber}
-                  <span className="block text-xs text-gray-500 font-normal mt-1">
-                    {formatDate(item.date)}
-                  </span>
-                </span>
-                <span
-                  className={`flex items-center gap-2 text-sm ${item.type === "out" ? "text-orange-700" : "text-blue-700"}`}
-                >
-                  {item.type === "out" ? (
-                    <ArrowUpRight size={18} />
-                  ) : (
-                    <ArrowDownLeft size={18} />
-                  )}
-                  {item.type === "out" ? "გატანა" : "დაბრუნება"}
-                </span>
-                <span className="text-sm">
-                  <span className="block font-medium">
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
+                      {item.type === "out" ? "საწყობი → მაღაზია" : "მაღაზია → საწყობი"}
+                    </span>
+                    <span className="text-xs text-gray-500">{formatDate(item.date)}</span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 break-words">
                     {item.items
                       .slice(0, 2)
                       .map((product) => `${product.name} × ${product.quantity}`)
@@ -240,15 +262,21 @@ const StoreManager: React.FC = () => {
                     {item.items.length > 2
                       ? ` · +${item.items.length - 2} პროდუქტი`
                       : ""}
-                  </span>
-                  <span className="block text-xs text-gray-500 mt-1">
-                    {item.items.length} პროდუქტი · სულ {item.totalQuantity} ცალი
-                  </span>
-                </span>
-                <span className="text-xs text-gray-500 break-all">
-                  {item.createdBy.email}
-                </span>
-              </button>
+                  </p>
+                  <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                    <span>{item.items.length} პროდუქტი · სულ {item.totalQuantity} ცალი</span>
+                    <span className="break-all">{item.transferNumber}</span>
+                  </p>
+                </div>
+                <button
+                  aria-label={`დეტალები: ${item.transferNumber}`}
+                  onClick={() => setSelectedId(item.id)}
+                  className="self-start sm:self-center shrink-0 min-h-11 px-3 border border-gray-200 rounded-lg text-sm text-gray-700 flex items-center gap-2 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+                >
+                  დეტალები
+                  <ChevronRight size={16} className="text-gray-400" />
+                </button>
+              </article>
             ))}
           </div>
         )}
@@ -269,15 +297,13 @@ const StoreManager: React.FC = () => {
           >
             <div className="flex justify-between gap-3">
               <div>
-                <h2 className="font-bold break-all">
-                  {selected.transferNumber}
+                <h2 className="font-bold text-lg">
+                  {selected.type === "out" ? "მაღაზიაში გადატანა" : "საწყობში დაბრუნება"}
                 </h2>
                 <p className="text-sm text-gray-500">
-                  {selected.type === "out"
-                    ? "გატანა მაღაზიაში"
-                    : "დაბრუნება საწყობში"}{" "}
-                  · {formatDate(selected.date)}
+                  {formatDate(selected.date)}
                 </p>
+                <p className="text-xs text-gray-400 mt-1 break-all">{selected.transferNumber}</p>
               </div>
               <button
                 aria-label="დეტალების დახურვა"
@@ -287,7 +313,17 @@ const StoreManager: React.FC = () => {
                 <X />
               </button>
             </div>
-            <div className="divide-y border rounded-lg">
+            <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600 space-y-1">
+              <p className="font-medium">
+                {selected.type === "out" ? "საწყობი → მაღაზია · ცინცაძის 2" : "მაღაზია · ცინცაძის 2 → საწყობი"}
+              </p>
+              <p className="text-xs leading-relaxed">
+                {selected.type === "out"
+                  ? "ჩანაწერი შენახულია. ეს რაოდენობები საწყობს უკვე გამოაკლდა."
+                  : "ჩანაწერი შენახულია. ეს რაოდენობები საწყობს უკვე დაემატა."}
+              </p>
+            </div>
+            <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg">
               {selected.items.map((item, index) => (
                 <div
                   key={index}
@@ -305,7 +341,7 @@ const StoreManager: React.FC = () => {
               </p>
             )}
             <p className="text-xs text-gray-500 break-all">
-              გაატარა: {selected.createdBy.email}
+              დაამატა: {selected.createdBy.email}
             </p>
             {selected.updatedBy && (
               <p className="text-xs text-gray-500 break-all">
@@ -317,7 +353,7 @@ const StoreManager: React.FC = () => {
                 onClick={() =>
                   setForm({ type: selected.type, transfer: selected })
                 }
-                className="min-h-11 px-4 border rounded-lg flex items-center gap-2"
+                className="min-h-11 px-4 border border-gray-200 rounded-lg flex items-center gap-2 hover:bg-gray-50"
               >
                 <Pencil size={16} />
                 რედაქტირება
@@ -340,12 +376,12 @@ const StoreManager: React.FC = () => {
             aria-label="მოძრაობის წაშლა"
             className="bg-white rounded-xl p-5 max-w-md w-full space-y-4"
           >
-            <h2 className="font-bold">ჩანაწერის წაშლა</h2>
+            <h2 className="font-bold">ჩანაწერის წაშლა და ნაშთის გასწორება</h2>
             <p className="text-sm break-all">{deleting.transferNumber}</p>
             <p className="text-sm">
               {deleting.type === "out"
-                ? `საწყობში დაბრუნდება ${deleting.totalQuantity} ცალი.`
-                : `საწყობს გამოაკლდება ${deleting.totalQuantity} ცალი. არასაკმარისი მარაგისას წაშლა ვერ შესრულდება.`}
+                ? `ამ გადატანის წაშლისას საწყობს დაემატება ${deleting.totalQuantity} ცალი.`
+                : `ამ დაბრუნების წაშლისას საწყობს გამოაკლდება ${deleting.totalQuantity} ცალი. არასაკმარისი მარაგისას ჩანაწერი არ წაიშლება.`}
             </p>
             {error && (
               <p role="alert" className="text-sm text-red-700">
@@ -356,7 +392,7 @@ const StoreManager: React.FC = () => {
               <button
                 disabled={busy}
                 onClick={() => setDeleting(null)}
-                className="min-h-11 px-4 border rounded-lg"
+                className="min-h-11 px-4 border border-gray-200 rounded-lg"
               >
                 გაუქმება
               </button>

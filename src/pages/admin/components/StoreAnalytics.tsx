@@ -40,7 +40,7 @@ const StoreAnalytics: React.FC<{ dateRange: [Date, Date] | null }> = ({
         <div>
           <h3 className="font-semibold text-gray-900">მაღაზია</h3>
           <p className="text-xs text-gray-500 mt-1">
-            ცინცაძის 2 · საქონლის მოძრაობა არჩეულ პერიოდში
+            ცინცაძის 2 · გადატანა და დაბრუნება არჩეულ პერიოდში
           </p>
         </div>
       </div>
@@ -64,10 +64,10 @@ const StoreAnalytics: React.FC<{ dateRange: [Date, Date] | null }> = ({
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              { label: "გატანების რაოდენობა", value: summary.outCount },
-              { label: "გატანილია · ცალი", value: summary.outQuantity },
+              { label: "გადატანის ჩანაწერები", value: summary.outCount },
+              { label: "გადატანილია · ცალი", value: summary.outQuantity },
               { label: "დაბრუნებულია · ცალი", value: summary.returnQuantity },
-              { label: "წმინდა გატანა · ცალი", value: summary.netQuantity },
+              { label: "გადატანილი − დაბრუნებული · ცალი", value: summary.netQuantity },
             ].map((item) => (
               <div
                 key={item.label}
@@ -84,7 +84,7 @@ const StoreAnalytics: React.FC<{ dateRange: [Date, Date] | null }> = ({
           </div>
           {!summary.products.length ? (
             <p className="text-sm text-gray-500">
-              ამ პერიოდში მაღაზიის მოძრაობა არ არის.
+              ამ პერიოდში გადატანა ან დაბრუნება არ არის.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -92,9 +92,9 @@ const StoreAnalytics: React.FC<{ dateRange: [Date, Date] | null }> = ({
                 <thead>
                   <tr className="text-xs text-gray-500 border-b border-gray-200">
                     <th className="text-left py-3 font-medium">პროდუქტი</th>
-                    <th className="text-right px-3 font-medium">გატანა</th>
+                    <th className="text-right px-3 font-medium">გადატანა</th>
                     <th className="text-right px-3 font-medium">დაბრუნება</th>
-                    <th className="text-right pl-3 font-medium">წმინდა</th>
+                    <th className="text-right pl-3 font-medium">სხვაობა</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -116,8 +116,8 @@ const StoreAnalytics: React.FC<{ dateRange: [Date, Date] | null }> = ({
             </div>
           )}
           <p className="text-xs text-gray-500">
-            წმინდა გატანა = გატანილი − დაბრუნებული. მაღაზიის გატარებები
-            გაყიდვების შემოსავალში არ შედის.
+            სხვაობა = მაღაზიაში გადატანილი − საწყობში დაბრუნებული.
+            ეს ჩანაწერები ონლაინ გაყიდვების რაოდენობასა და შემოსავალს არ ზრდის.
           </p>
         </>
       )}
