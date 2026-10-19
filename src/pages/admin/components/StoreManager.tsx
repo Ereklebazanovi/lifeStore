@@ -105,15 +105,15 @@ const StoreManager: React.FC = () => {
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
-            aria-label="გატანა მაღაზიაში"
+            aria-label="ახალი გატარება"
             onClick={() => setForm({ type: "out" })}
             className="min-h-20 p-4 rounded-xl bg-emerald-600 text-white flex items-center gap-3 text-left hover:bg-emerald-700 transition-colors"
           >
             <Plus size={22} />
             <span>
-              <strong className="block text-sm">გატანა მაღაზიაში</strong>
+              <strong className="block text-sm">ახალი გატარება</strong>
               <span className="block text-xs text-emerald-100 mt-1">
-                საწყობი → ცინცაძის 2 · საწყობის ნაშთი შემცირდება
+                დაამატე პროდუქტები და გააფორმე მაღაზიაში გატანა
               </span>
             </span>
           </button>
@@ -194,7 +194,7 @@ const StoreManager: React.FC = () => {
         className="bg-white border rounded-xl overflow-hidden"
       >
         <div className="p-4 border-b font-semibold">
-          ისტორია · {filtered.length} ჩანაწერი
+          გატარებები · {filtered.length} ჩანაწერი
         </div>
         {loading ? (
           <p className="p-5 text-gray-500">იტვირთება…</p>
@@ -232,7 +232,18 @@ const StoreManager: React.FC = () => {
                   {item.type === "out" ? "გატანა" : "დაბრუნება"}
                 </span>
                 <span className="text-sm">
-                  {item.items.length} პროდუქტი · {item.totalQuantity} ცალი
+                  <span className="block font-medium">
+                    {item.items
+                      .slice(0, 2)
+                      .map((product) => `${product.name} × ${product.quantity}`)
+                      .join(" · ")}
+                    {item.items.length > 2
+                      ? ` · +${item.items.length - 2} პროდუქტი`
+                      : ""}
+                  </span>
+                  <span className="block text-xs text-gray-500 mt-1">
+                    {item.items.length} პროდუქტი · სულ {item.totalQuantity} ცალი
+                  </span>
                 </span>
                 <span className="text-xs text-gray-500 break-all">
                   {item.createdBy.email}

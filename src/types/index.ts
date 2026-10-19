@@ -15,6 +15,7 @@ export interface StockHistory {
   reason: string;
   orderId?: string;
   notes?: string;
+  delta?: number;
 }
 
 export interface ProductVariant {

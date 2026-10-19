@@ -2,6 +2,7 @@
 import * as XLSX from "xlsx-js-style";
 import type { Order, Product, ProductVariant, StockHistory } from "../types";
 import { getOrderItemDisplayName, getOrderCreatorLabel } from "./displayHelpers";
+import { isStoreMovementReason } from "./storeReporting";
 
 const getStockAtDate = (stockHistory: StockHistory[] | undefined, targetDate: Date): number => {
   if (!stockHistory || stockHistory.length === 0) {
@@ -23,7 +24,8 @@ const getStockAtDate = (stockHistory: StockHistory[] | undefined, targetDate: Da
     return 0;
   }
 
-  relevantHistory.sort((a, b) => {
+  // If timestamps tie, the last appended balance is the latest one.
+  relevantHistory.reverse().sort((a, b) => {
     const dateA = a.timestamp instanceof Date ? a.timestamp : typeof a.timestamp === 'object' && a.timestamp !== null && 'toDate' in a.timestamp ? (a.timestamp as any).toDate() : new Date(a.timestamp as any);
     const dateB = b.timestamp instanceof Date ? b.timestamp : typeof b.timestamp === 'object' && b.timestamp !== null && 'toDate' in b.timestamp ? (b.timestamp as any).toDate() : new Date(b.timestamp as any);
     return dateB.getTime() - dateA.getTime();
@@ -37,9 +39,9 @@ const getStockMovements = (
   stockHistory: StockHistory[] | undefined,
   startDate: Date,
   endDate: Date
-): { incoming: number; outgoing: number } => {
+): { incoming: number; outgoing: number; storeTransfer: number } => {
   if (!stockHistory || stockHistory.length === 0) {
-    return { incoming: 0, outgoing: 0 };
+    return { incoming: 0, outgoing: 0, storeTransfer: 0 };
   }
 
   // Filter history within the date range
@@ -54,7 +56,7 @@ const getStockMovements = (
   });
 
   if (relevantHistory.length === 0) {
-    return { incoming: 0, outgoing: 0 };
+    return { incoming: 0, outgoing: 0, storeTransfer: 0 };
   }
 
   // Sort by timestamp to get movement sequence
@@ -66,6 +68,7 @@ const getStockMovements = (
 
   let incoming = 0;
   let outgoing = 0;
+  let storeTransfer = 0;
 
   // Get all stock history sorted by date for proper previous quantity calculation
   const allHistorySorted = [...stockHistory].sort((a, b) => {
@@ -83,11 +86,15 @@ const getStockMovements = (
 
     // For other entries, calculate the change from previous quantity
     const entryIndex = allHistorySorted.findIndex(h => h === entry);
-    if (entryIndex > 0) {
+    if (isStoreMovementReason(entry.reason) && Number.isFinite(entry.delta)) {
+      storeTransfer -= entry.delta!;
+    } else if (entryIndex > 0) {
       const previousEntry = allHistorySorted[entryIndex - 1];
       const change = entry.quantity - previousEntry.quantity;
 
-      if (change > 0) {
+      if (isStoreMovementReason(entry.reason)) {
+        storeTransfer -= change;
+      } else if (change > 0) {
         incoming += change;
       } else if (change < 0) {
         outgoing += Math.abs(change);
@@ -95,7 +102,7 @@ const getStockMovements = (
     }
   });
 
-  return { incoming, outgoing };
+  return { incoming, outgoing, storeTransfer };
 };
 
 // Calculate turnover data for products in a given date range
@@ -107,12 +114,14 @@ export const calculateTurnover = (
 ): TurnoverData[] => {
   const turnoverData: TurnoverData[] = [];
 
-  // Adjust dates properly
+  // Date inputs describe complete local days, including early morning changes.
+  const adjustedStartDate = new Date(startDate);
+  adjustedStartDate.setHours(0, 0, 0, 0);
   const adjustedEndDate = new Date(endDate);
   adjustedEndDate.setHours(23, 59, 59, 999);
 
   // For initial stock, we need the stock BEFORE the start date (not including)
-  const beforeStartDate = new Date(startDate);
+  const beforeStartDate = new Date(adjustedStartDate);
   beforeStartDate.setMilliseconds(beforeStartDate.getMilliseconds() - 1);
 
   // Filter products
@@ -124,11 +133,12 @@ export const calculateTurnover = (
     // Handle all products as simple products (no variants)
     const openingQuantity = getStockAtDate(product.stockHistory, beforeStartDate);
     const closingQuantity = getStockAtDate(product.stockHistory, adjustedEndDate);
-    const movements = getStockMovements(product.stockHistory, startDate, adjustedEndDate);
+    const movements = getStockMovements(product.stockHistory, adjustedStartDate, adjustedEndDate);
 
     const quantityIn = movements.incoming;
     const quantityOut = movements.outgoing;
-    const difference = quantityIn - quantityOut;
+    const quantityStoreTransfer = movements.storeTransfer;
+    const difference = quantityIn - quantityOut - quantityStoreTransfer;
 
     turnoverData.push({
       productCode: product.productCode || "-",
@@ -137,6 +147,7 @@ export const calculateTurnover = (
       openingQuantity,
       quantityIn,
       quantityOut,
+      quantityStoreTransfer,
       difference,
       closingQuantity
     });
@@ -146,6 +157,7 @@ export const calculateTurnover = (
     item.openingQuantity > 0 ||
     item.quantityIn > 0 ||
     item.quantityOut > 0 ||
+    item.quantityStoreTransfer !== 0 ||
     item.closingQuantity > 0
   );
 };
@@ -425,6 +437,7 @@ export interface TurnoverData {
   openingQuantity: number;
   quantityIn: number;
   quantityOut: number;
+  quantityStoreTransfer: number;
   difference: number;
   closingQuantity: number;
 }
@@ -655,6 +668,7 @@ export const exportTurnoverToExcel = (
     let totalOpeningQuantity = 0;
     let totalQuantityIn = 0;
     let totalQuantityOut = 0;
+    let totalQuantityStoreTransfer = 0;
     let totalDifference = 0;
     let totalClosingQuantity = 0;
 
@@ -662,6 +676,7 @@ export const exportTurnoverToExcel = (
       totalOpeningQuantity += item.openingQuantity;
       totalQuantityIn += item.quantityIn;
       totalQuantityOut += item.quantityOut;
+      totalQuantityStoreTransfer += item.quantityStoreTransfer;
       totalDifference += item.difference;
       totalClosingQuantity += item.closingQuantity;
 
@@ -672,6 +687,7 @@ export const exportTurnoverToExcel = (
         "საწყისი\nნაშთი": item.openingQuantity,
         "მიღება": item.quantityIn,
         "გაყიდვა": item.quantityOut,
+        "გადატანა მაღაზიაში": item.quantityStoreTransfer,
         "ბრუნვის სხვაობა": item.difference,
         "მარაგის ნაშთი": item.closingQuantity,
       });
@@ -685,6 +701,7 @@ export const exportTurnoverToExcel = (
       "საწყისი\nნაშთი": totalOpeningQuantity,
       "მიღება": totalQuantityIn,
       "გაყიდვა": totalQuantityOut,
+      "გადატანა მაღაზიაში": totalQuantityStoreTransfer,
       "ბრუნვის სხვაობა": totalDifference,
       "მარაგის ნაშთი": totalClosingQuantity,
     });
@@ -695,9 +712,9 @@ export const exportTurnoverToExcel = (
 
     const workbook = XLSX.utils.book_new();
 
-    // Merge title cell (A1 to H1)
+    // Merge title cell (A1 to I1)
     if (!worksheet["!merges"]) worksheet["!merges"] = [];
-    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } });
+    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } });
 
     // Set column widths
     const colWidths = [
@@ -707,8 +724,9 @@ export const exportTurnoverToExcel = (
       { wch: 18 }, // D: საწყისი რაოდენობრივი ნაშთი
       { wch: 12 }, // E: მიღება
       { wch: 12 }, // F: გაყიდვა
-      { wch: 15 }, // G: ბრუნვის სხვაობა
-      { wch: 15 }, // H: მარაგის ნაშთი
+      { wch: 22 }, // G: გადატანა მაღაზიაში
+      { wch: 15 }, // H: ბრუნვის სხვაობა
+      { wch: 15 }, // I: მარაგის ნაშთი
     ];
     worksheet["!cols"] = colWidths;
 
@@ -774,7 +792,7 @@ export const exportTurnoverToExcel = (
 
     // Apply styles to all cells
     for (let R = 1; R <= lastRowIndex; ++R) {
-      for (let C = 0; C <= 7; ++C) {
+      for (let C = 0; C <= 8; ++C) {
         const address = XLSX.utils.encode_cell({ r: R, c: C });
         if (!worksheet[address]) continue;
 
@@ -784,12 +802,12 @@ export const exportTurnoverToExcel = (
         } else if (R === lastRowIndex) {
           // Summary row
           worksheet[address].s = summaryStyle;
-          if (C >= 3 && C <= 7) worksheet[address].s.numFmt = "#,##0";
+          if (C >= 3 && C <= 8) worksheet[address].s.numFmt = "#,##0";
         } else {
           // Data rows
           const colLetter = XLSX.utils.encode_col(C);
 
-          if (["D", "E", "F", "G", "H"].includes(colLetter)) { // Quantity columns
+          if (["D", "E", "F", "G", "H", "I"].includes(colLetter)) { // Quantity columns
             worksheet[address].s = quantityStyle;
           } else if (colLetter === "A") { // Code column
             worksheet[address].s = centerStyle;
@@ -811,6 +829,7 @@ export const exportTurnoverToExcel = (
       totalOpeningQuantity,
       totalQuantityIn,
       totalQuantityOut,
+      totalQuantityStoreTransfer,
       totalDifference,
       totalClosingQuantity,
       exportedProducts: flattenedData.length - 1 // -1 for summary row

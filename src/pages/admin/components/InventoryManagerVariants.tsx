@@ -819,7 +819,7 @@ const InventoryManagerVariants: React.FC<{ canEdit?: boolean }> = ({ canEdit = t
 
       if (result.success) {
         showToast(
-          `ბრუნვითი უწყისი წარმატებით გენერირდა!\n${result.exportedProducts} პროდუქტი\nსაწყისი ნაშთი: ${result.totalOpeningQuantity} ცალი\nმიღება: +${result.totalQuantityIn} ცალი\nგაყიდვა: -${result.totalQuantityOut} ცალი\nსხვაობა: ${result.totalDifference} ცალი\nმარაგის ნაშთი: ${result.totalClosingQuantity} ცალი`,
+          `ბრუნვითი უწყისი წარმატებით გენერირდა!\n${result.exportedProducts} პროდუქტი\nსაწყისი ნაშთი: ${result.totalOpeningQuantity} ცალი\nმიღება: +${result.totalQuantityIn} ცალი\nგაყიდვა: -${result.totalQuantityOut} ცალი\nგადატანა მაღაზიაში: ${result.totalQuantityStoreTransfer} ცალი\nსხვაობა: ${result.totalDifference} ცალი\nმარაგის ნაშთი: ${result.totalClosingQuantity} ცალი`,
           "success"
         );
 
@@ -1237,6 +1237,7 @@ const InventoryManagerVariants: React.FC<{ canEdit?: boolean }> = ({ canEdit = t
                     <li>• საწყისი რაოდენობრივი ნაშთი</li>
                     <li>• მიღებული რაოდენობა</li>
                     <li>• გაყიდული რაოდენობა</li>
+                    <li>• გადატანა მაღაზიაში (გატანა − დაბრუნება)</li>
                     <li>• ბრუნვის სხვაობა</li>
                     <li>• მარაგის ნაშთი</li>
                   </ul>

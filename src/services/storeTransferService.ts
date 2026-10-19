@@ -102,10 +102,11 @@ async function applyStockDeltasInTransaction(
         item.variantId || "",
         (grouped.get(item.variantId || "") || 0) + item.delta,
       );
-    const history = (quantity: number) => ({
+    const history = (quantity: number, delta: number) => ({
       timestamp: now,
       quantity,
       reason,
+      delta,
     });
     const check = (stock: number, delta: number) => {
       if (
@@ -136,7 +137,10 @@ async function applyStockDeltasInTransaction(
           ...variant,
           stock,
           updatedAt: now,
-          stockHistory: [...(variant.stockHistory || []), history(stock)],
+          stockHistory: [
+            ...(variant.stockHistory || []),
+            history(stock, delta),
+          ],
         };
       }
       if ([...grouped.values()].some(Boolean)) {
@@ -154,7 +158,13 @@ async function applyStockDeltasInTransaction(
             totalStock: stock,
             updatedAt: now,
             lastStockReason: reason,
-            stockHistory: [...(product.stockHistory || []), history(stock)],
+            stockHistory: [
+              ...(product.stockHistory || []),
+              history(
+                stock,
+                [...grouped.values()].reduce((sum, delta) => sum + delta, 0),
+              ),
+            ],
           },
         });
       }
@@ -171,7 +181,10 @@ async function applyStockDeltasInTransaction(
             totalStock: stock,
             updatedAt: now,
             lastStockReason: reason,
-            stockHistory: [...(product.stockHistory || []), history(stock)],
+            stockHistory: [
+              ...(product.stockHistory || []),
+              history(stock, delta),
+            ],
           },
         });
       }

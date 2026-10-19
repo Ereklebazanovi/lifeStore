@@ -12,6 +12,7 @@ import RevenueChart from "./RevenueChart";
 import TopCustomersChart from "./TopCustomersChart";
 import CityChart from "./CityChart";
 import CategoryChart from "./CategoryChart";
+import StoreAnalytics from "./StoreAnalytics";
 
 const { RangePicker } = DatePicker;
 
@@ -190,6 +191,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ orders }) => {
       />
 
       {/* Revenue Bar Chart — full width */}
+      <StoreAnalytics dateRange={dateRange} />
+
       <RevenueChart orders={filteredOrders} dateRange={dateRange} />
 
       {/* Shared sort toggle — controls Products / Categories / Cities */}
