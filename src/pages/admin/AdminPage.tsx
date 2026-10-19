@@ -1,5 +1,6 @@
 // src/pages/admin/AdminPage.tsx
 import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { useProductStore } from "../../store/productStore";
 import { OrderService } from "../../services/orderService";
@@ -15,6 +16,7 @@ import ParametersPage from "./components/ParametersPage";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import ReviewsManager from "./components/ReviewsManager";
 import BlogManager from "./components/BlogManager";
+import StoreManager from "./components/StoreManager";
 import { showToast } from "../../components/ui/Toast";
 
 import {
@@ -26,12 +28,16 @@ import {
 } from "lucide-react";
 import type { Order } from "../../types";
 
-const AdminPage: React.FC = () => {
+const AdminPage: React.FC<{ storePage?: boolean }> = ({ storePage = false }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user, isLoading } = useAuthStore();
   const { products, subscribeToProducts } = useProductStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>(() => {
+    const requested = location.state?.adminSection;
+    if (typeof requested === "string" && ["analytics", "products", "orders", "inventory", "categories", "parameters", "reviews", "blog"].includes(requested)) return requested;
     if (user?.role === "manager") return "orders";
     if (user?.role === "admin") return "analytics"; // admin პირდაპირ ანალიტიკაზე ეშვება
     return "dashboard";
@@ -76,6 +82,7 @@ const AdminPage: React.FC = () => {
   // Content renderer based on active section
 
   const renderContent = () => {
+    if (storePage) return user?.role === "admin" ? <StoreManager /> : null;
     switch (activeSection) {
       case "dashboard":
         return (
@@ -266,8 +273,12 @@ case "analytics": {
 
   return (
     <AdminLayout
-      activeSection={activeSection}
-      onSectionChange={setActiveSection}
+      activeSection={storePage ? "store" : activeSection}
+      onSectionChange={(section) => {
+        if (section === "store") navigate("/admin/store");
+        else if (storePage) navigate("/admin", { state: { adminSection: section } });
+        else setActiveSection(section);
+      }}
     >
       {renderContent()}
 

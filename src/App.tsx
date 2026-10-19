@@ -263,6 +263,19 @@ const AnimatedRoutes: React.FC = () => {
           }
         />
 
+        <Route
+          path="/admin/store"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <PageTransition>
+                <Suspense fallback={<LoadingScreen />}>
+                  <AdminPage storePage />
+                </Suspense>
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+
         {/* Multilingual routes: /en/... and /ru/... */}
         {LANG_PREFIXES.map((lang) => (
           <Route key={lang} path={`/${lang}`} element={<LanguageRoute lang={lang} />}>
