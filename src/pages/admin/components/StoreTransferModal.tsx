@@ -176,8 +176,8 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                   ? "გადატანის რედაქტირება"
                   : "დაბრუნების რედაქტირება"
                 : type === "out"
-                  ? "მაღაზიაში გადატანის დამატება"
-                  : "საწყობში დაბრუნების დამატება"}
+                  ? "მაღაზიაში გადატანა"
+                  : "საწყობში დაბრუნება"}
             </h2>
             <p className="flex items-center gap-2 text-sm text-gray-500 mt-2">
               {type === "out" ? "საწყობი" : "მაღაზია"}
@@ -188,8 +188,8 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
               {transfer
                 ? "მიუთითე სრული რაოდენობები. საწყობის ნაშთი მხოლოდ ძველ და ახალ რაოდენობებს შორის სხვაობით გასწორდება."
                 : type === "out"
-                  ? "აირჩიე პროდუქტები და ჩაწერე გადატანილი რაოდენობები. საწყობს ისინი შენახვისას გამოაკლდება."
-                  : "აირჩიე პროდუქტები და ჩაწერე დაბრუნებული რაოდენობები. საწყობს ისინი შენახვისას დაემატება."}
+                  ? "აირჩიე პროდუქტები და მიუთითე გადატანილი რაოდენობები."
+                  : "აირჩიე პროდუქტები და მიუთითე დაბრუნებული რაოდენობები."}
             </p>
           </div>
           <button
@@ -203,9 +203,8 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
           </button>
         </header>
         {STORE_TRANSFERS_TEST_ONLY && (
-          <p className="px-4 sm:px-6 py-3 text-xs text-amber-900 bg-amber-50 border-b border-amber-100">
-            <strong>სატესტო რეჟიმი.</strong> აქ მხოლოდ TEST-STORE პროდუქტების
-            ნაშთები შეიცვლება.
+          <p className="px-4 sm:px-6 pt-3 text-xs text-amber-800">
+            სატესტო რეჟიმი · მხოლოდ TEST-STORE პროდუქტები
           </p>
         )}
         <div className="min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">

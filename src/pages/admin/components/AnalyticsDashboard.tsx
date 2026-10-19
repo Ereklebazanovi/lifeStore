@@ -1,5 +1,6 @@
 // src/pages/admin/components/AnalyticsDashboard.tsx
 import React, { useState, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { DatePicker } from "antd";
 import { Banknote, Hash } from "lucide-react";
 import type { Dayjs } from "dayjs";
@@ -53,6 +54,10 @@ const PRESETS: { key: PresetKey; label: string }[] = [
 ];
 
 const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ orders }) => {
+  const location = useLocation();
+  const [report, setReport] = useState<"sales" | "store">(
+    () => location.state?.analyticsReport === "store" ? "store" : "sales",
+  );
   const [preset, setPreset] = useState<PresetKey>("month");
   const [customRange, setCustomRange] = useState<[Dayjs, Dayjs] | null>(null);
   // ranked ჩარტების საერთო დახარისხება (პროდუქტები / კატეგორიები / ქალაქები)
@@ -146,7 +151,9 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ orders }) => {
           <div>
             <h2 className="text-lg font-semibold text-gray-900">ანალიტიკა</h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              {filteredOrders.length} შეკვეთა არჩეულ პერიოდში
+              {report === "sales"
+                ? `${filteredOrders.length} შეკვეთა არჩეულ პერიოდში`
+                : "საქონლის მოძრაობა · ცინცაძის 2"}
             </p>
           </div>
 
@@ -182,60 +189,110 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ orders }) => {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <KpiCards
-        orders={filteredOrders}
-        previousOrders={comparison?.previousOrders}
-        comparisonLabel={comparison?.label}
-        comparisonPrefix={comparison?.prefix}
-      />
-
-      {/* Revenue Bar Chart — full width */}
-      <StoreAnalytics dateRange={dateRange} />
-
-      <RevenueChart orders={filteredOrders} dateRange={dateRange} />
-
-      {/* Shared sort toggle — controls Products / Categories / Cities */}
-      <div className="flex items-center justify-end gap-2.5 mb-2">
-        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-          დახარისხება
-        </span>
-        <div className="inline-flex items-center gap-1 bg-gray-100 border border-gray-200 rounded-lg p-1">
-          {([
-            { key: "revenue", label: "თანხა", Icon: Banknote },
-            { key: "quantity", label: "რაოდენობა", Icon: Hash },
-          ] as const).map(({ key, label, Icon }) => {
-            const active = sortBy === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setSortBy(key)}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs rounded-md transition-all ${
-                  active
-                    ? "bg-white text-indigo-600 font-semibold shadow-sm ring-1 ring-black/5"
-                    : "text-gray-500 font-medium hover:text-gray-800 hover:bg-gray-200/50"
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${active ? "text-indigo-500" : "text-gray-400"}`} />
-                {label}
-              </button>
-            );
-          })}
-        </div>
+      <div role="tablist" aria-label="ანგარიშის ტიპი" className="flex gap-1 border-b border-gray-200">
+        {([
+          { key: "sales", label: "გაყიდვები" },
+          { key: "store", label: "მაღაზიაში გადატანა" },
+        ] as const).map((tab, index) => (
+          <button
+            key={tab.key}
+            id={`analytics-${tab.key}-tab`}
+            type="button"
+            role="tab"
+            aria-selected={report === tab.key}
+            aria-controls={`analytics-${tab.key}-panel`}
+            tabIndex={report === tab.key ? 0 : -1}
+            onClick={() => setReport(tab.key)}
+            onKeyDown={(event) => {
+              let next: "sales" | "store";
+              if (event.key === "ArrowLeft" || event.key === "ArrowRight") next = index === 0 ? "store" : "sales";
+              else if (event.key === "Home") next = "sales";
+              else if (event.key === "End") next = "store";
+              else return;
+              event.preventDefault();
+              setReport(next);
+              document.getElementById(`analytics-${next}-tab`)?.focus();
+            }}
+            className={`min-h-11 px-3 sm:px-4 pb-3 text-sm border-b-2 transition-colors ${report === tab.key ? "border-emerald-600 text-emerald-700 font-medium" : "border-transparent text-gray-500 hover:text-gray-800"}`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Source + City + Category */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <SourcePieChart orders={filteredOrders} />
-        <CityChart orders={filteredOrders} sortBy={sortBy} />
-        <CategoryChart orders={filteredOrders} sortBy={sortBy} />
-      </div>
+      <section
+        id="analytics-store-panel"
+        role="tabpanel"
+        aria-labelledby="analytics-store-tab"
+        hidden={report !== "store"}
+      >
+        {report === "store" && <StoreAnalytics dateRange={dateRange} />}
+      </section>
 
-      {/* Products + Customers */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <TopProductsChart orders={filteredOrders} sortBy={sortBy} />
-        <TopCustomersChart orders={filteredOrders} />
-      </div>
+      <section
+        id="analytics-sales-panel"
+        role="tabpanel"
+        aria-labelledby="analytics-sales-tab"
+        hidden={report !== "sales"}
+        className="space-y-6"
+      >
+        {report === "sales" && (
+          <>
+            {/* KPI Cards */}
+            <KpiCards
+              orders={filteredOrders}
+              previousOrders={comparison?.previousOrders}
+              comparisonLabel={comparison?.label}
+              comparisonPrefix={comparison?.prefix}
+            />
+
+            {/* Revenue Bar Chart — full width */}
+            <RevenueChart orders={filteredOrders} dateRange={dateRange} />
+
+            {/* Shared sort toggle — controls Products / Categories / Cities */}
+            <div className="flex items-center justify-end gap-2.5 mb-2">
+              <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                დახარისხება
+              </span>
+              <div className="inline-flex items-center gap-1 bg-gray-100 border border-gray-200 rounded-lg p-1">
+                {([
+                  { key: "revenue", label: "თანხა", Icon: Banknote },
+                  { key: "quantity", label: "რაოდენობა", Icon: Hash },
+                ] as const).map(({ key, label, Icon }) => {
+                  const active = sortBy === key;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setSortBy(key)}
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs rounded-md transition-all ${
+                        active
+                          ? "bg-white text-indigo-600 font-semibold shadow-sm ring-1 ring-black/5"
+                          : "text-gray-500 font-medium hover:text-gray-800 hover:bg-gray-200/50"
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${active ? "text-indigo-500" : "text-gray-400"}`} />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Source + City + Category */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <SourcePieChart orders={filteredOrders} />
+              <CityChart orders={filteredOrders} sortBy={sortBy} />
+              <CategoryChart orders={filteredOrders} sortBy={sortBy} />
+            </div>
+
+            {/* Products + Customers */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <TopProductsChart orders={filteredOrders} sortBy={sortBy} />
+              <TopCustomersChart orders={filteredOrders} />
+            </div>
+          </>
+        )}
+      </section>
     </div>
   );
 };
