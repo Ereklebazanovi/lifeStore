@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Package, Plus, Search, Trash2, X } from "lucide-react";
 import { useProductStore } from "../../../store/productStore";
 import {
@@ -14,6 +14,7 @@ import type {
   StoreTransferInputItem,
   StoreTransferType,
 } from "../../../types/storeTransfer";
+import { STORE_TRANSFER_UI } from "./storeTransferUi";
 
 interface Props {
   type: StoreTransferType;
@@ -42,9 +43,15 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
   const [note, setNote] = useState(transfer?.note || "");
   const [search, setSearch] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const busy = useRef(false);
+  const searchInput = useRef<HTMLInputElement>(null);
+  const quantityInputs = useRef(new Map<string, HTMLInputElement>());
+  const resultButtons = useRef(new Map<string, HTMLButtonElement>());
+  const pendingQuantityFocus = useRef<string | null>(null);
+  const ui = STORE_TRANSFER_UI[type];
   const [requestId] = useState(() => StoreTransferService.newId());
   const catalog = useMemo(
     () =>
@@ -119,11 +126,34 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
         .includes(search.trim().toLocaleLowerCase()),
     )
     .slice(0, 8);
+  const availableMatches = matching.filter(
+    (product) =>
+      !items.some((item) => transferItemKey(item) === transferItemKey(product)) &&
+      !(type === "out" && product.stock + oldQuantity(product) <= 0),
+  );
+  const highlightedProduct = availableMatches[Math.min(highlightIndex, availableMatches.length - 1)];
+  const highlightedKey = highlightedProduct ? transferItemKey(highlightedProduct) : null;
+  useEffect(() => {
+    const key = pendingQuantityFocus.current;
+    if (!key) return;
+    const input = quantityInputs.current.get(key);
+    if (input) {
+      input.focus();
+      input.select();
+      pendingQuantityFocus.current = null;
+    }
+  }, [items]);
+  useEffect(() => {
+    if (pickerOpen && highlightedKey) {
+      resultButtons.current.get(highlightedKey)?.scrollIntoView({ block: "nearest" });
+    }
+  }, [pickerOpen, highlightedKey]);
   const add = (product: CatalogItem) => {
     if (
       items.some((item) => transferItemKey(item) === transferItemKey(product))
     )
       return;
+    pendingQuantityFocus.current = transferItemKey(product);
     setItems((previous) => [
       ...previous,
       {
@@ -134,6 +164,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
     ]);
     setSearch("");
     setPickerOpen(false);
+    setHighlightIndex(0);
     setError("");
   };
   const submit = async (event: React.FormEvent) => {
@@ -164,13 +195,16 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
     <div className="fixed inset-0 z-[9999] bg-slate-900/50 p-2 sm:p-5 flex items-center justify-center">
       <form
         onSubmit={submit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && event.target instanceof HTMLInputElement && !event.nativeEvent.isComposing) event.preventDefault();
+        }}
         aria-label="მაღაზიის მოძრაობა"
-        className="bg-white rounded-2xl w-full max-w-3xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden"
+        className="bg-white rounded-2xl w-full max-w-5xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden"
       >
         <header className="px-4 sm:px-6 py-5 border-b border-gray-200 flex justify-between items-start gap-3">
           <div>
             <p className="text-xs text-gray-500 mb-1">მაღაზია · ცინცაძის 2</p>
-            <h2 className="font-bold text-xl text-gray-900">
+            <h2 className={`font-bold text-xl ${ui.text}`}>
               {transfer
                 ? type === "out"
                   ? "გადატანის რედაქტირება"
@@ -179,7 +213,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                   ? "მაღაზიაში გადატანა"
                   : "საწყობში დაბრუნება"}
             </h2>
-            <p className="flex items-center gap-2 text-sm text-gray-500 mt-2">
+            <p className={`flex items-center gap-2 text-sm mt-2 ${ui.text}`}>
               {type === "out" ? "საწყობი" : "მაღაზია"}
               <ArrowRight size={14} />
               {type === "out" ? "მაღაზია" : "საწყობი"}
@@ -197,7 +231,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
             aria-label="დახურვა"
             disabled={saving}
             onClick={onClose}
-            className="p-2.5 rounded-lg text-gray-500 hover:bg-gray-100"
+            className="min-w-11 min-h-11 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100"
           >
             <X size={20} />
           </button>
@@ -217,22 +251,41 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                   className="absolute left-3 top-3.5 text-gray-400"
                 />
                 <input
+                  ref={searchInput}
+                  autoFocus
                   value={search}
                   disabled={saving}
-                  onFocus={() => setPickerOpen(true)}
+                  onFocus={() => { setPickerOpen(true); setHighlightIndex(0); }}
                   onChange={(event) => {
                     setSearch(event.target.value);
                     setPickerOpen(true);
+                    setHighlightIndex(0);
                   }}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") event.preventDefault();
+                    if (event.nativeEvent.isComposing) return;
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      if (pickerOpen && highlightedProduct) add(highlightedProduct);
+                    }
+                    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                      event.preventDefault();
+                      setPickerOpen(true);
+                      if (availableMatches.length) {
+                        const step = event.key === "ArrowDown" ? 1 : -1;
+                        setHighlightIndex((index) => pickerOpen ? (index + step + availableMatches.length) % availableMatches.length : 0);
+                      }
+                    }
                     if (event.key === "Escape") setPickerOpen(false);
                   }}
+                  aria-describedby="store-product-search-help"
                   placeholder="სახელი ან პროდუქტის კოდი"
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 font-normal"
+                  className={`w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl outline-none focus:ring-2 font-normal placeholder:text-gray-500 ${ui.focus}`}
                 />
               </div>
             </label>
+            <p id="store-product-search-help" className="text-xs text-gray-500">
+              ↑↓ არჩევა · Enter დამატება · რაოდენობიდან Enter ძებნაზე დაბრუნება
+            </p>
             {pickerOpen && (
               <div
                 role="region"
@@ -250,10 +303,12 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                     <button
                       key={transferItemKey(product)}
                       type="button"
+                      ref={(node) => { const key = transferItemKey(product); if (node) resultButtons.current.set(key, node); else resultButtons.current.delete(key); }}
                       aria-label={`დამატება: ${product.name}`}
+                      aria-current={highlightedKey === transferItemKey(product) ? "true" : undefined}
                       disabled={saving || selected || unavailable}
                       onClick={() => add(product)}
-                      className="w-full text-left px-3 py-3 flex items-center gap-3 hover:bg-emerald-50 disabled:opacity-50"
+                      className={`w-full min-h-11 text-left px-3 py-3 flex items-center gap-3 disabled:opacity-50 ${ui.result} ${highlightedKey === transferItemKey(product) ? ui.selectedResult : ""}`}
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium break-words">
@@ -263,7 +318,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                           {product.code} · საწყობში: {product.stock} ცალი
                         </p>
                       </div>
-                      <span className="text-xs text-emerald-700 shrink-0">
+                      <span className={`text-xs shrink-0 ${ui.text}`}>
                         {selected ? (
                           "დამატებულია"
                         ) : unavailable ? (
@@ -305,6 +360,13 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
               </div>
             ) : (
               <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+                <div aria-hidden="true" className="hidden md:grid grid-cols-[minmax(0,1fr)_5rem_6.5rem_6rem_2.75rem] gap-x-2 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                  <span>პროდუქტი / კოდი</span>
+                  <span className="text-center">საწყობში ახლა</span>
+                  <span className="text-center">{transfer ? "სრული რაოდენობა" : "რაოდენობა"}</span>
+                  <span className="text-center">შენახვის შემდეგ</span>
+                  <span className="sr-only">ამოშლა</span>
+                </div>
                 {items.map((item, index) => {
                   const product = findProduct(item),
                     original = transfer?.items.find(
@@ -322,68 +384,25 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                       key={transferItemKey(item)}
                       role="group"
                       aria-label={name}
-                      className="p-3 sm:p-4 space-y-3"
+                      className={`relative grid grid-cols-3 md:grid-cols-[minmax(0,1fr)_5rem_6.5rem_6rem_2.75rem] items-center gap-x-2 gap-y-2 px-3 py-2 border-l-2 ${valid ? "border-l-transparent" : "border-l-red-600 bg-red-50"}`}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="hidden sm:flex w-12 h-12 rounded-lg bg-gray-50 items-center justify-center shrink-0 overflow-hidden">
-                          {product?.image ? (
-                            <img
-                              src={product.image}
-                              alt=""
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <Package className="text-gray-300 w-5 h-5" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-gray-900 break-words">
+                      <div className="col-span-3 md:col-span-1 min-w-0 pr-11 md:pr-0">
+                          <p className="font-medium text-sm text-gray-900 truncate" title={name}>
                             {name}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-gray-500 truncate">
                             {product?.code}
+                            {transfer ? ` · ამ ჩანაწერში იყო: ${oldQuantity(item)} ცალი` : ""}
                           </p>
-                          {transfer && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              ამ ჩანაწერში იყო: {oldQuantity(item)} ცალი
-                            </p>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          aria-label={`ამოშლა: ${name}`}
-                          disabled={saving}
-                          onClick={() =>
-                            setItems((previous) =>
-                              previous.filter(
-                                (_, position) => position !== index,
-                              ),
-                            )
-                          }
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                        >
-                          <Trash2 size={18} />
-                        </button>
                       </div>
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="text-xs text-gray-500 space-y-1">
-                          <p>საწყობში ახლა: {product?.stock || 0} ცალი</p>
-                          <p aria-label={`შენახვის შემდეგ: ${name}`}>
-                            შენახვის შემდეგ საწყობში:{" "}
-                            <strong
-                              className={
-                                valid ? "text-gray-700" : "text-red-700"
-                              }
-                            >
-                              {valid
-                                ? `${afterSave(item)} ცალი`
-                                : "შეამოწმე რაოდენობა"}
-                            </strong>
-                          </p>
-                        </div>
-                        <label className="flex items-center gap-2 text-xs text-gray-600">
-                          {transfer ? "სრული რაოდენობა" : "რაოდენობა"}
+                      <div className="min-w-0 text-center" aria-label={`საწყობში ახლა: ${product?.stock || 0} ცალი`}>
+                        <p className="md:hidden text-xs text-gray-500">ახლა</p>
+                        <p className="text-sm text-gray-700 tabular-nums">{product?.stock || 0}</p>
+                      </div>
+                      <label className="min-w-0 text-center text-xs text-gray-600">
+                          <span className="md:sr-only">{transfer ? "სრული რაოდენობა" : "რაოდენობა"}</span>
                           <input
+                            ref={(node) => { const key = transferItemKey(item); if (node) quantityInputs.current.set(key, node); else quantityInputs.current.delete(key); }}
                             aria-label={`რაოდენობა: ${name}`}
                             type="number"
                             min="1"
@@ -396,6 +415,13 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                             }
                             value={item.quantity || ""}
                             disabled={saving}
+                            aria-invalid={!valid}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                                event.preventDefault();
+                                searchInput.current?.focus();
+                              }
+                            }}
                             onChange={(event) =>
                               setItems((previous) =>
                                 previous.map((value, position) =>
@@ -408,13 +434,24 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                                 ),
                               )
                             }
-                            className={`w-24 min-h-11 border rounded-lg px-3 text-center text-base bg-white ${valid ? "border-gray-300" : "border-red-400"}`}
+                            className={`w-full min-w-0 min-h-11 border rounded-lg px-2 text-center text-base bg-white outline-none focus:ring-2 ${ui.focus} ${valid ? "border-gray-300" : "border-red-400"}`}
                           />
-                          <span>ცალი</span>
-                        </label>
+                      </label>
+                      <div className="min-w-0 text-center" aria-label={`შენახვის შემდეგ: ${name}`}>
+                        <p className="md:hidden text-xs text-gray-500">შემდეგ</p>
+                        <p className={`text-sm font-semibold tabular-nums ${valid ? ui.text : "text-red-700"}`}>{valid ? afterSave(item) : "—"}</p>
                       </div>
+                      <button
+                        type="button"
+                        aria-label={`ამოშლა: ${name}`}
+                        disabled={saving}
+                        onClick={() => setItems((previous) => previous.filter((_, position) => position !== index))}
+                        className="absolute right-3 top-2 md:static min-w-11 min-h-11 flex items-center justify-center text-gray-500 hover:text-red-700 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                       {!valid && (
-                        <p role="alert" className="text-xs text-red-700">
+                        <p role="alert" className="col-span-3 md:col-span-5 text-xs text-red-700">
                           {!product
                             ? "პროდუქტი აღარ არის ხელმისაწვდომი."
                             : afterSave(item) < 0
@@ -444,7 +481,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
           )}
           <label className="block text-sm font-semibold text-gray-800">
             კომენტარი{" "}
-            <span className="font-normal text-xs text-gray-400">
+            <span className="font-normal text-xs text-gray-500">
               · სურვილისამებრ
             </span>
             <textarea
@@ -454,7 +491,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
               disabled={saving}
               onChange={(event) => setNote(event.target.value)}
               placeholder="მაგალითად: ამ კვირაში მაღაზიაში გადატანილი საქონელი"
-              className="block mt-2 w-full border border-gray-300 rounded-xl p-3 text-sm font-normal outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+              className={`block mt-2 w-full border border-gray-300 rounded-xl p-3 text-sm font-normal outline-none focus:ring-2 placeholder:text-gray-500 ${ui.focus}`}
             />
           </label>
           {error && (
@@ -491,7 +528,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
             <button
               type="submit"
               disabled={saving || !items.length || invalid}
-              className="min-h-11 px-5 rounded-lg bg-emerald-600 text-white disabled:opacity-40"
+              className={`min-h-11 px-5 rounded-lg disabled:opacity-40 ${ui.button}`}
             >
               {saving
                 ? "ინახება…"

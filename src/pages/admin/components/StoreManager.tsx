@@ -23,6 +23,7 @@ import type {
 } from "../../../types/storeTransfer";
 import StoreTransferModal from "./StoreTransferModal";
 import { STORE_TRANSFERS_TEST_ONLY } from "../../../utils/storeCatalog";
+import { formatStoreTransferDate, STORE_TRANSFER_UI } from "./storeTransferUi";
 
 const StoreManager: React.FC = () => {
   const [transfers, setTransfers] = useState<StoreTransfer[]>([]);
@@ -56,15 +57,21 @@ const StoreManager: React.FC = () => {
   }, [retry]);
   const selected = transfers.find((item) => item.id === selectedId);
   const activeFilters = [kind !== "all", !!from, !!to].filter(Boolean).length;
-  const filtered = transfers.filter(
+  const matchingTransfers = transfers.filter(
     (item) =>
-      (kind === "all" || item.type === kind) &&
       (!from || item.date >= new Date(`${from}T00:00:00`)) &&
       (!to || item.date <= new Date(`${to}T23:59:59.999`)) &&
       `${item.transferNumber} ${item.items.map((product) => product.name).join(" ")}`
         .toLocaleLowerCase()
         .includes(search.toLocaleLowerCase()),
   );
+  const filtered = matchingTransfers.filter((item) => kind === "all" || item.type === kind);
+  const hasFilters = !!search.trim() || kind !== "all" || !!from || !!to;
+  const typeFilters = [
+    { value: "all", label: "ყველა", count: matchingTransfers.length },
+    { value: "out", label: "გადატანები", count: matchingTransfers.filter((item) => item.type === "out").length },
+    { value: "return", label: "დაბრუნებები", count: matchingTransfers.filter((item) => item.type === "return").length },
+  ];
   const remove = async () => {
     if (!deleting || busy) return;
     setBusy(true);
@@ -80,10 +87,6 @@ const StoreManager: React.FC = () => {
     } finally {
       setBusy(false);
     }
-  };
-  const formatDate = (value: Date) => {
-    const months = ["იან", "თებ", "მარ", "აპრ", "მაი", "ივნ", "ივლ", "აგვ", "სექ", "ოქტ", "ნოე", "დეკ"];
-    return `${value.getDate()} ${months[value.getMonth()]} ${value.getFullYear()} · ${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
   };
   return (
     <div className="space-y-6">
@@ -111,7 +114,7 @@ const StoreManager: React.FC = () => {
           <button
             aria-label="გადატანის ჩაწერა"
             onClick={() => setForm({ type: "out" })}
-            className="min-h-11 px-4 py-2.5 rounded-xl bg-emerald-600 text-white flex items-center gap-2 text-sm font-medium hover:bg-emerald-700 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+            className={`min-h-11 px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${STORE_TRANSFER_UI.out.button}`}
           >
             <Plus size={18} aria-hidden="true" />
             გადატანის ჩაწერა
@@ -119,7 +122,7 @@ const StoreManager: React.FC = () => {
           <button
             aria-label="დაბრუნების ჩაწერა"
             onClick={() => setForm({ type: "return" })}
-            className="min-h-11 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-600 flex items-center gap-2 text-sm hover:bg-gray-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+            className={`min-h-11 px-4 py-2.5 rounded-xl border flex items-center gap-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 ${STORE_TRANSFER_UI.return.secondary}`}
           >
             <Undo2 size={17} aria-hidden="true" />
             დაბრუნების ჩაწერა
@@ -134,7 +137,7 @@ const StoreManager: React.FC = () => {
           {error}
           <button
             onClick={() => setRetry((value) => value + 1)}
-            className="ml-3 underline"
+            className="ml-3 min-h-11 inline-flex items-center underline"
           >
             ხელახლა ცდა
           </button>
@@ -149,7 +152,22 @@ const StoreManager: React.FC = () => {
             <h2 className="font-semibold text-gray-900">ჩანაწერები</h2>
             <span className="text-xs text-gray-500">{filtered.length} ჩანაწერი</span>
           </div>
-          {transfers.length > 0 && (
+          <div role="group" aria-label="ჩანაწერის ტიპი" className="grid grid-cols-3 gap-1 rounded-xl bg-gray-100 p-1 sm:flex sm:w-fit">
+            {typeFilters.map((filter) => (
+              <button
+                key={filter.value}
+                type="button"
+                aria-pressed={kind === filter.value}
+                aria-label={`${filter.label} · ${filter.count}`}
+                onClick={() => setKind(filter.value)}
+                className={`min-h-11 min-w-0 rounded-lg px-1.5 sm:px-3 py-1.5 text-xs flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 ${kind === filter.value ? filter.value === "all" ? "bg-white text-gray-900 shadow-sm" : STORE_TRANSFER_UI[filter.value as StoreTransferType].selectedType : "text-gray-600 hover:bg-white/60"}`}
+              >
+                <span>{filter.label}</span>
+                <span className="tabular-nums">{filter.count}</span>
+              </button>
+            ))}
+          </div>
+          {(transfers.length > 0 || hasFilters) && (
             <>
               <div className="flex items-end gap-3">
                 <label className="relative flex-1 min-w-0">
@@ -177,19 +195,7 @@ const StoreManager: React.FC = () => {
                   id="store-history-filters"
                   className="border-t border-gray-100 pt-4 space-y-3"
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <label className="text-sm">
-                      ჩანაწერის ტიპი
-                      <select
-                        value={kind}
-                        onChange={(event) => setKind(event.target.value)}
-                        className="block w-full border border-gray-200 rounded-lg px-3 py-2 mt-1 min-h-11 bg-white"
-                      >
-                        <option value="all">ყველა ჩანაწერი</option>
-                        <option value="out">მაღაზიაში გადატანა</option>
-                        <option value="return">საწყობში დაბრუნება</option>
-                      </select>
-                    </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="text-sm">
                       თარიღიდან
                       <input
@@ -230,21 +236,33 @@ const StoreManager: React.FC = () => {
           <p className="p-5 text-gray-500">იტვირთება…</p>
         ) : !filtered.length ? (
           <div className="p-6 sm:p-10 text-center space-y-2">
-            <p className="font-medium text-gray-800">ჩანაწერები არ არის</p>
+            <p className="font-medium text-gray-800">{transfers.length === 0 && !hasFilters ? "პირველი ჩანაწერი" : "ჩანაწერი ვერ მოიძებნა"}</p>
             <p className="text-sm text-gray-500">
-              {transfers.length
-                ? "შეცვალე ძებნა ან ფილტრები."
-                : "პირველი ჩანაწერისთვის აირჩიე „გადატანის ჩაწერა“."}
+              {transfers.length === 0 && !hasFilters
+                ? "მაღაზიაში უკვე არსებული საქონელი ერთ გადატანად შეიყვანე — ერთ ჩანაწერში შეიძლება ბევრი პროდუქტი."
+                : "შეცვალე ძებნა ან ფილტრები."}
             </p>
+            {transfers.length === 0 && !hasFilters && (
+              <button
+                type="button"
+                aria-label="პირველი გადატანის ჩაწერა"
+                onClick={() => setForm({ type: "out" })}
+                className={`min-h-11 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm mt-2 ${STORE_TRANSFER_UI.out.button}`}
+              >
+                <Plus size={18} aria-hidden="true" />
+                გადატანის ჩაწერა
+              </button>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
             {filtered.map((item) => (
               <article
                 key={item.id}
+                data-direction={item.type}
                 className="p-4 sm:p-5 flex items-start sm:items-center gap-3 sm:gap-4"
               >
-                <div className={`w-9 h-10 rounded-xl shrink-0 flex items-center justify-center ${item.type === "out" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"}`}>
+                <div className={`w-9 h-10 rounded-xl shrink-0 flex items-center justify-center ${STORE_TRANSFER_UI[item.type].surface}`}>
                   {item.type === "out" ? <ArrowUpRight size={19} aria-hidden="true" /> : <CornerDownLeft size={19} aria-hidden="true" />}
                 </div>
                 <div className="flex-1 min-w-0 space-y-1.5">
@@ -257,16 +275,16 @@ const StoreManager: React.FC = () => {
                       ? ` · +${item.items.length - 2} პროდუქტი`
                       : ""}
                   </p>
-                  <p className="text-xs text-gray-500">
-                    {item.type === "out" ? "მაღაზიაში გადატანა" : "საწყობში დაბრუნება"}
+                  <p className={`text-xs ${STORE_TRANSFER_UI[item.type].text}`}>
+                    {STORE_TRANSFER_UI[item.type].direction}
                   </p>
-                  <p className="text-xs text-gray-400">
-                    {formatDate(item.date)} · {item.items.length} პროდუქტი
+                  <p className="text-xs text-gray-500">
+                    {formatStoreTransferDate(item.date)} · {item.items.length} პროდუქტი
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="text-xl font-semibold text-gray-900 tabular-nums">
-                    {item.totalQuantity} <span className="text-xs font-normal text-gray-500">ცალი</span>
+                  <p className={`text-xl font-semibold tabular-nums ${STORE_TRANSFER_UI[item.type].text}`}>
+                    {STORE_TRANSFER_UI[item.type].sign}{item.totalQuantity} <span className="text-xs font-normal">ცალი</span>
                   </p>
                   <button
                     aria-label={`გახსნა: ${item.transferNumber}`}
@@ -298,23 +316,23 @@ const StoreManager: React.FC = () => {
           >
             <div className="flex justify-between gap-3">
               <div>
-                <h2 className="font-bold text-lg">
+                <h2 className={`font-bold text-lg ${STORE_TRANSFER_UI[selected.type].text}`}>
                   {selected.type === "out" ? "მაღაზიაში გადატანა" : "საწყობში დაბრუნება"}
                 </h2>
                 <p className="text-sm text-gray-500">
-                  {formatDate(selected.date)}
+                  {formatStoreTransferDate(selected.date)}
                 </p>
-                <p className="text-xs text-gray-400 mt-1 break-all">{selected.transferNumber}</p>
+                <p className="text-xs text-gray-500 mt-1 break-all">{selected.transferNumber}</p>
               </div>
               <button
                 aria-label="დეტალების დახურვა"
                 onClick={() => setSelectedId(null)}
-                className="p-2"
+                className="min-w-11 min-h-11 flex items-center justify-center rounded-lg hover:bg-gray-100"
               >
                 <X />
               </button>
             </div>
-            <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600 space-y-1">
+            <div className={`rounded-xl p-3 text-sm space-y-1 ${STORE_TRANSFER_UI[selected.type].surface}`}>
               <p className="font-medium">
                 {selected.type === "out" ? "საწყობი → მაღაზია · ცინცაძის 2" : "მაღაზია · ცინცაძის 2 → საწყობი"}
               </p>
@@ -342,11 +360,11 @@ const StoreManager: React.FC = () => {
               </p>
             )}
             <p className="text-xs text-gray-500 break-all">
-              დაამატა: {selected.createdBy.email}
+              დაამატა: {selected.createdBy.email} · {formatStoreTransferDate(selected.createdAt)}
             </p>
             {selected.updatedBy && (
               <p className="text-xs text-gray-500 break-all">
-                შეცვალა: {selected.updatedBy.email}
+                შეცვალა: {selected.updatedBy.email} · {selected.updatedAt ? formatStoreTransferDate(selected.updatedAt) : "დრო უცნობია"}
               </p>
             )}
             <div className="flex flex-wrap gap-3">
@@ -377,7 +395,10 @@ const StoreManager: React.FC = () => {
             aria-label="მოძრაობის წაშლა"
             className="bg-white rounded-xl p-5 max-w-md w-full space-y-4"
           >
-            <h2 className="font-bold">ჩანაწერის წაშლა და ნაშთის გასწორება</h2>
+            <div className={`rounded-xl p-3 space-y-1 ${STORE_TRANSFER_UI[deleting.type].surface}`}>
+              <p className="text-xs">{STORE_TRANSFER_UI[deleting.type].direction}</p>
+              <h2 className="font-bold">ჩანაწერის წაშლა და ნაშთის გასწორება</h2>
+            </div>
             <p className="text-sm break-all">{deleting.transferNumber}</p>
             <p className="text-sm">
               {deleting.type === "out"
