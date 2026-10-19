@@ -570,22 +570,51 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                   მიწოდება
                 </h3>
                 <div className="space-y-4">
-                  <select
-                    value={deliveryInfo.city}
-                    onChange={(e) => {
-                      const newCity = e.target.value;
-                      shippingSelectionRef.current.city = newCity;
-                      setDeliveryInfo({ ...deliveryInfo, city: newCity });
-                      if (!isShippingCostManuallySet) {
-                        setShippingCost(calculateShippingCost(newCity));
-                      }
-                    }}
-                    className="w-full px-4 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
-                  >
-                    {DELIVERY_CITIES.map((city) => (
-                      <option key={city} value={city}>{city === "სხვა" ? "სხვა რეგიონი" : city} ({shippingRates[city]} ₾)</option>
-                    ))}
-                  </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="manual-order-city" className="block text-sm font-medium text-stone-600 mb-2">ქალაქი</label>
+                      <select
+                        id="manual-order-city"
+                        value={deliveryInfo.city}
+                        onChange={(e) => {
+                          const newCity = e.target.value;
+                          shippingSelectionRef.current.city = newCity;
+                          setDeliveryInfo({ ...deliveryInfo, city: newCity });
+                          if (!isShippingCostManuallySet) {
+                            setShippingCost(calculateShippingCost(newCity));
+                          }
+                        }}
+                        className="w-full px-4 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
+                      >
+                        {DELIVERY_CITIES.map((city) => (
+                          <option key={city} value={city}>{city === "სხვა" ? "სხვა რეგიონი" : city}</option>
+                        ))}
+                      </select>
+                      <p className="mt-2 text-xs text-stone-500">ქალაქის სტანდარტული ტარიფი: {calculateShippingCost(deliveryInfo.city)} ₾</p>
+                    </div>
+                    <div>
+                      <label htmlFor="manual-order-shipping" className="block text-sm font-medium text-stone-600 mb-2">ამ შეკვეთის მიტანა (₾)</label>
+                      <input
+                        id="manual-order-shipping"
+                        type="number"
+                        min="0"
+                        value={shippingCost || ""}
+                        onChange={(e) => {
+                          setShippingCost(Number(e.target.value));
+                          shippingSelectionRef.current.manuallySet = true;
+                          setIsShippingCostManuallySet(true);
+                        }}
+                        onFocus={(e) => e.target.select()}
+                        aria-describedby="manual-order-shipping-hint"
+                        className="w-full px-4 py-2.5 sm:py-2 text-base border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 outline-none bg-white touch-manipulation"
+                      />
+                      <p id="manual-order-shipping-hint" className={`mt-2 text-xs ${isShippingCostManuallySet ? "text-amber-700" : "text-stone-500"}`}>
+                        {isShippingCostManuallySet
+                          ? "შეკვეთაზე მითითებული თანხაა — ქალაქის შეცვლისას შენარჩუნდება."
+                          : "თანხა ქალაქის ტარიფით ივსება. შეგიძლია ამ შეკვეთისთვის შეცვალო."}
+                      </p>
+                    </div>
+                  </div>
                   <textarea
                     placeholder="მისამართი *"
                     required
@@ -808,22 +837,9 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                     <span>ჯამი:</span>
                     <span className="font-medium">₾{subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center text-stone-600 text-base">
-                    <span className="flex items-center gap-2">
-                      მიტანის თანხა ₾
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={shippingCost || ""}
-                      onChange={(e) => {
-                        setShippingCost(Number(e.target.value));
-                        shippingSelectionRef.current.manuallySet = true;
-                        setIsShippingCostManuallySet(true);
-                      }}
-                      onFocus={(e) => e.target.select()}
-                      className="w-24 px-3 py-1 text-right text-base border border-stone-200 rounded bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                    />
+                  <div className="flex justify-between text-stone-600 text-base">
+                    <span>ამ შეკვეთის მიტანა:</span>
+                    <span className="font-medium">₾{shippingCost.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold text-stone-900 border-t border-stone-200 pt-3">
                     <span>სულ:</span>
