@@ -8,6 +8,10 @@ import {
 } from "firebase/firestore";
 import type { Transaction } from "firebase/firestore";
 import { auth, db } from "./firebase";
+import {
+  isStoreTestProduct,
+  STORE_TRANSFERS_TEST_ONLY,
+} from "../utils/storeCatalog";
 import type { OrderActor, Product, ProductVariant } from "../types";
 import type {
   StoreTransfer,
@@ -86,6 +90,11 @@ async function applyStockDeltasInTransaction(
   snapshots.forEach((snapshot, index) => {
     if (!snapshot.exists()) throw Error(`პროდუქტი ვერ მოიძებნა: ${ids[index]}`);
     const product = { ...snapshot.data(), id: ids[index] } as Product;
+    if (STORE_TRANSFERS_TEST_ONLY && !isStoreTestProduct(product)) {
+      throw Error(
+        "ტესტირებისას დასაშვებია მხოლოდ TEST-STORE პროდუქტები. რეალურ საწყობზე მოქმედება დაბლოკილია.",
+      );
+    }
     products.set(product.id, product);
     const grouped = new Map<string, number>();
     for (const item of deltas.filter((item) => item.productId === product.id))

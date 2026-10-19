@@ -16,6 +16,7 @@ import type {
   StoreTransferType,
 } from "../../../types/storeTransfer";
 import StoreTransferModal from "./StoreTransferModal";
+import { STORE_TRANSFERS_TEST_ONLY } from "../../../utils/storeCatalog";
 
 const StoreManager: React.FC = () => {
   const [transfers, setTransfers] = useState<StoreTransfer[]>([]);
@@ -86,67 +87,94 @@ const StoreManager: React.FC = () => {
         <div>
           <h1 className="text-xl font-bold">მაღაზია — {DEFAULT_STORE.name}</h1>
           <p className="text-sm text-gray-500 mt-1">
-            საწყობიდან გატანა და საწყობში დაბრუნება
+            აქ აღრიცხავ საწყობიდან მაღაზიაში წაღებულ და უკან დაბრუნებულ
+            საქონელს.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        {STORE_TRANSFERS_TEST_ONLY && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <p className="font-semibold">
+              ახლა ვამოწმებთ მხოლოდ სატესტო პროდუქტებს
+            </p>
+            <p className="mt-1">
+              ხელმისაწვდომია 30 TEST-STORE პროდუქტი. რეალური პროდუქტების არჩევა
+              და გატარება გამორთულია. შენახვა შეცვლის მხოლოდ არჩეული სატესტო
+              პროდუქტების ნაშთებს.
+            </p>
+          </div>
+        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
+            aria-label="გატანა მაღაზიაში"
             onClick={() => setForm({ type: "out" })}
-            className="min-h-11 px-4 py-2 rounded-lg bg-emerald-600 text-white flex items-center gap-2"
+            className="min-h-20 p-4 rounded-xl bg-emerald-600 text-white flex items-center gap-3 text-left hover:bg-emerald-700 transition-colors"
           >
-            <Plus size={18} />
-            გატანა მაღაზიაში
+            <Plus size={22} />
+            <span>
+              <strong className="block text-sm">გატანა მაღაზიაში</strong>
+              <span className="block text-xs text-emerald-100 mt-1">
+                საწყობი → ცინცაძის 2 · საწყობის ნაშთი შემცირდება
+              </span>
+            </span>
           </button>
           <button
+            aria-label="დაბრუნება საწყობში"
             onClick={() => setForm({ type: "return" })}
-            className="min-h-11 px-4 py-2 rounded-lg border text-blue-700 flex items-center gap-2"
+            className="min-h-20 p-4 rounded-xl border border-gray-200 text-gray-800 flex items-center gap-3 text-left hover:bg-blue-50 transition-colors"
           >
             <ArrowDownLeft size={18} />
-            დაბრუნება საწყობში
+            <span>
+              <strong className="block text-sm">დაბრუნება საწყობში</strong>
+              <span className="block text-xs text-gray-500 mt-1">
+                ცინცაძის 2 → საწყობი · საწყობის ნაშთი გაიზრდება
+              </span>
+            </span>
           </button>
         </div>
       </header>
-      <div className="bg-white border rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-        <label className="text-sm">
-          ძებნა
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="პროდუქტი ან ჩანაწერის ნომერი"
-            className="block w-full border rounded-lg px-3 py-2 mt-1 min-h-11"
-          />
-        </label>
-        <label className="text-sm">
-          ტიპი
-          <select
-            value={kind}
-            onChange={(event) => setKind(event.target.value)}
-            className="block w-full border rounded-lg px-3 py-2 mt-1 min-h-11"
-          >
-            <option value="all">ყველა მოძრაობა</option>
-            <option value="out">გატანა</option>
-            <option value="return">დაბრუნება</option>
-          </select>
-        </label>
-        <label className="text-sm">
-          თარიღიდან
-          <input
-            type="date"
-            value={from}
-            onChange={(event) => setFrom(event.target.value)}
-            className="block w-full min-w-0 border rounded-lg px-3 py-2 mt-1 min-h-11"
-          />
-        </label>
-        <label className="text-sm">
-          თარიღამდე
-          <input
-            type="date"
-            value={to}
-            onChange={(event) => setTo(event.target.value)}
-            className="block w-full min-w-0 border rounded-lg px-3 py-2 mt-1 min-h-11"
-          />
-        </label>
-      </div>
+      {transfers.length > 0 && (
+        <div className="bg-white border rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <label className="text-sm">
+            ძებნა
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="პროდუქტი ან ჩანაწერის ნომერი"
+              className="block w-full border rounded-lg px-3 py-2 mt-1 min-h-11"
+            />
+          </label>
+          <label className="text-sm">
+            ტიპი
+            <select
+              value={kind}
+              onChange={(event) => setKind(event.target.value)}
+              className="block w-full border rounded-lg px-3 py-2 mt-1 min-h-11"
+            >
+              <option value="all">ყველა მოძრაობა</option>
+              <option value="out">გატანა</option>
+              <option value="return">დაბრუნება</option>
+            </select>
+          </label>
+          <label className="text-sm">
+            თარიღიდან
+            <input
+              type="date"
+              value={from}
+              onChange={(event) => setFrom(event.target.value)}
+              className="block w-full min-w-0 border rounded-lg px-3 py-2 mt-1 min-h-11"
+            />
+          </label>
+          <label className="text-sm">
+            თარიღამდე
+            <input
+              type="date"
+              value={to}
+              onChange={(event) => setTo(event.target.value)}
+              className="block w-full min-w-0 border rounded-lg px-3 py-2 mt-1 min-h-11"
+            />
+          </label>
+        </div>
+      )}
       {error && (
         <div
           role="alert"
@@ -171,7 +199,14 @@ const StoreManager: React.FC = () => {
         {loading ? (
           <p className="p-5 text-gray-500">იტვირთება…</p>
         ) : !filtered.length ? (
-          <p className="p-5 text-gray-500">ჩანაწერები არ არის</p>
+          <div className="p-6 sm:p-10 text-center space-y-2">
+            <p className="font-medium text-gray-800">ჩანაწერები არ არის</p>
+            <p className="text-sm text-gray-500">
+              {transfers.length
+                ? "შეცვალე ძებნა ან ფილტრები."
+                : "ზემოთ აირჩიე გატანა ან დაბრუნება, ჩაწერე რაოდენობები და შეინახე. გატარება აქ გამოჩნდება."}
+            </p>
+          </div>
         ) : (
           <div className="divide-y">
             {filtered.map((item) => (
