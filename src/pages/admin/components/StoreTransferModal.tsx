@@ -27,9 +27,6 @@ interface CatalogItem {
   hidden: boolean; // საიტზე არააქტიური (მაგ. მხოლოდ მაღაზიისთვის ნაყიდი)
 }
 
-// ძებნის სიაში ერთდროულად ნაჩვენები შედეგები — დანარჩენზე ძებნის დაზუსტება სჯობს
-const SEARCH_RESULTS_LIMIT = 30;
-
 const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
   const { products } = useProductStore();
   const [items, setItems] = useState<StoreTransferInputItem[]>(
@@ -121,12 +118,12 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
         : 0),
     0,
   );
-  const allMatching = catalog.filter((product) =>
+  // ყველა შესაბამისი პროდუქტი ჩანს — სია scroll-ით გადაიხედება
+  const matching = catalog.filter((product) =>
     `${product.name} ${product.code}`
       .toLocaleLowerCase()
       .includes(search.trim().toLocaleLowerCase()),
   );
-  const matching = allMatching.slice(0, SEARCH_RESULTS_LIMIT);
   const availableMatches = matching.filter(
     (product) =>
       !items.some((item) => transferItemKey(item) === transferItemKey(product)) &&
@@ -334,12 +331,6 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                 {!matching.length && (
                   <p className="p-4 text-sm text-gray-500">
                     პროდუქტი ვერ მოიძებნა
-                  </p>
-                )}
-                {allMatching.length > matching.length && (
-                  <p className="p-3 text-xs text-gray-500 bg-gray-50">
-                    ნაჩვენებია {matching.length} / {allMatching.length} — დააზუსტე
-                    ძებნა სახელით ან კოდით
                   </p>
                 )}
               </div>

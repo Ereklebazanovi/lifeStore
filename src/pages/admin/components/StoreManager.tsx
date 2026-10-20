@@ -233,7 +233,7 @@ const StoreManager: React.FC = () => {
             <p className="font-medium text-gray-800">{transfers.length === 0 && !hasFilters ? "პირველი ჩანაწერი" : "ჩანაწერი ვერ მოიძებნა"}</p>
             <p className="text-sm text-gray-500">
               {transfers.length === 0 && !hasFilters
-                ? "მაღაზიაში უკვე არსებული საქონელი ერთ გადატანად შეიყვანე — ერთ ჩანაწერში შეიძლება ბევრი პროდუქტი."
+                ? "მაღაზიაში უკვე არსებული საქონელი ერთ გადატანად შეიყვანე - ერთ ჩანაწერში შეიძლება ბევრი პროდუქტი."
                 : "შეცვალე ძებნა ან ფილტრები."}
             </p>
             {transfers.length === 0 && !hasFilters && (
