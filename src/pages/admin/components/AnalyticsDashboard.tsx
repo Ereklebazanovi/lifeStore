@@ -192,7 +192,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ orders }) => {
       <div role="tablist" aria-label="ანგარიშის ტიპი" className="flex gap-1 border-b border-gray-200">
         {([
           { key: "sales", label: "გაყიდვები" },
-          { key: "store", label: "მაღაზიაში გადატანა" },
+          { key: "store", label: "მაღაზია" },
         ] as const).map((tab, index) => (
           <button
             key={tab.key}

@@ -8,10 +8,6 @@ import {
 } from "firebase/firestore";
 import type { Transaction } from "firebase/firestore";
 import { auth, db } from "./firebase";
-import {
-  isStoreTestProduct,
-  STORE_TRANSFERS_TEST_ONLY,
-} from "../utils/storeCatalog";
 import type { OrderActor, Product, ProductVariant } from "../types";
 import type {
   StoreTransfer,
@@ -76,9 +72,11 @@ async function adminActor(tx: Transaction): Promise<OrderActor> {
 }
 
 // ყველა პროდუქტი იკითხება პირველ ჩაწერამდე. ერთი SKU-ის ხაზები ერთად მუშავდება.
+// optional = ძველი ჩანაწერის უკუქცევა: თუ პროდუქტი/ვარიანტი კატალოგიდან უკვე წაშლილია,
+// დასაბრუნებელი არსად არის — გამოვტოვებთ, რომ ჩანაწერის შესწორება/წაშლა არ დაიბლოკოს.
 async function applyStockDeltasInTransaction(
   tx: Transaction,
-  deltas: (StoreTransferInputItem & { delta: number })[],
+  deltas: (StoreTransferInputItem & { delta: number; optional?: boolean })[],
   reason: string,
   now: Date,
 ): Promise<Map<string, Product>> {
@@ -88,16 +86,20 @@ async function applyStockDeltasInTransaction(
   const products = new Map<string, Product>();
   const changes: { index: number; values: Record<string, unknown> }[] = [];
   snapshots.forEach((snapshot, index) => {
-    if (!snapshot.exists()) throw Error(`პროდუქტი ვერ მოიძებნა: ${ids[index]}`);
-    const product = { ...snapshot.data(), id: ids[index] } as Product;
-    if (STORE_TRANSFERS_TEST_ONLY && !isStoreTestProduct(product)) {
-      throw Error(
-        "ტესტირებისას დასაშვებია მხოლოდ TEST-STORE პროდუქტები. რეალურ საწყობზე მოქმედება დაბლოკილია.",
+    const productDeltas = deltas.filter((item) => item.productId === ids[index]);
+    const required = (variantId = "") =>
+      productDeltas.some(
+        (item) => (item.variantId || "") === variantId && !item.optional,
       );
+    if (!snapshot.exists()) {
+      if (productDeltas.some((item) => !item.optional))
+        throw Error(`პროდუქტი ვერ მოიძებნა: ${ids[index]}`);
+      return;
     }
+    const product = { ...snapshot.data(), id: ids[index] } as Product;
     products.set(product.id, product);
     const grouped = new Map<string, number>();
-    for (const item of deltas.filter((item) => item.productId === product.id))
+    for (const item of productDeltas)
       grouped.set(
         item.variantId || "",
         (grouped.get(item.variantId || "") || 0) + item.delta,
@@ -129,7 +131,12 @@ async function applyStockDeltasInTransaction(
         const position = variants.findIndex(
           (variant) => variant.id === variantId,
         );
-        if (position < 0) throw Error(`ვარიანტი ვერ მოიძებნა: ${product.name}`);
+        if (position < 0) {
+          if (required(variantId))
+            throw Error(`ვარიანტი ვერ მოიძებნა: ${product.name}`);
+          grouped.set(variantId, 0);
+          continue;
+        }
         if (!delta) continue;
         const variant = variants[position],
           stock = check(variant.stock ?? 0, delta);
@@ -339,10 +346,13 @@ export class StoreTransferService {
       const previous = snapshot.data() as StoreTransfer,
         sign = previous.type === "out" ? -1 : 1,
         now = new Date();
+      const kept = new Set(items.map(transferItemKey));
       const deltas = [
+        // ჩანაწერიდან ამოღებული (მაგ. კატალოგიდან წაშლილი) პროდუქტის უკუქცევა არ არის სავალდებულო
         ...previous.items.map((item) => ({
           ...item,
           delta: -sign * item.quantity,
+          optional: !kept.has(transferItemKey(item)),
         })),
         ...items.map((item) => ({ ...item, delta: sign * item.quantity })),
       ];
@@ -377,6 +387,7 @@ export class StoreTransferService {
         previous.items.map((item) => ({
           ...item,
           delta: sign * item.quantity,
+          optional: true,
         })),
         `${previous.type === "out" ? "Store transfer" : "Store return"} deleted #${previous.transferNumber}`,
         new Date(),

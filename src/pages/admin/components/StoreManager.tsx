@@ -22,7 +22,6 @@ import type {
   StoreTransferType,
 } from "../../../types/storeTransfer";
 import StoreTransferModal from "./StoreTransferModal";
-import { STORE_TRANSFERS_TEST_ONLY } from "../../../utils/storeCatalog";
 import { formatStoreTransferDate, STORE_TRANSFER_UI } from "./storeTransferUi";
 
 const StoreManager: React.FC = () => {
@@ -105,11 +104,6 @@ const StoreManager: React.FC = () => {
         </Link>
       </header>
       <div className="space-y-3">
-        {STORE_TRANSFERS_TEST_ONLY && (
-          <p className="inline-flex rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            სატესტო რეჟიმი · მხოლოდ TEST-STORE პროდუქტები
-          </p>
-        )}
         <div className="flex flex-wrap items-center gap-3">
           <button
             aria-label="გადატანის ჩაწერა"

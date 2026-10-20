@@ -5,10 +5,6 @@ import {
   StoreTransferService,
   transferItemKey,
 } from "../../../services/storeTransferService";
-import {
-  isStoreTestProduct,
-  STORE_TRANSFERS_TEST_ONLY,
-} from "../../../utils/storeCatalog";
 import type {
   StoreTransfer,
   StoreTransferInputItem,
@@ -28,7 +24,11 @@ interface CatalogItem {
   code: string;
   stock: number;
   image?: string;
+  hidden: boolean; // საიტზე არააქტიური (მაგ. მხოლოდ მაღაზიისთვის ნაყიდი)
 }
+
+// ძებნის სიაში ერთდროულად ნაჩვენები შედეგები — დანარჩენზე ძებნის დაზუსტება სჯობს
+const SEARCH_RESULTS_LIMIT = 30;
 
 const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
   const { products } = useProductStore();
@@ -53,13 +53,11 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
   const pendingQuantityFocus = useRef<string | null>(null);
   const ui = STORE_TRANSFER_UI[type];
   const [requestId] = useState(() => StoreTransferService.newId());
+  // მთელი კატალოგი (პროდუქტები/საწყობი) real-time-ში — ახალი პროდუქტი აქ ავტომატურად ჩნდება.
+  // არააქტიურიც ჩანს: საიტზე დამალული საქონელიც შეიძლება გადავიდეს მაღაზიაში.
   const catalog = useMemo(
     () =>
       products
-        .filter(
-          (product) =>
-            !STORE_TRANSFERS_TEST_ONLY || isStoreTestProduct(product),
-        )
         .flatMap<CatalogItem>((product) =>
           product.hasVariants
             ? (product.variants || []).map((variant) => ({
@@ -69,6 +67,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                 code: product.productCode,
                 stock: variant.stock || 0,
                 image: product.images?.[0],
+                hidden: product.isActive === false || variant.isActive === false,
               }))
             : [
                 {
@@ -77,9 +76,11 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                   code: product.productCode,
                   stock: product.stock || 0,
                   image: product.images?.[0],
+                  hidden: product.isActive === false,
                 },
               ],
-        ),
+        )
+        .sort((a, b) => a.name.localeCompare(b.name, "ka")),
     [products],
   );
   const findProduct = (item: StoreTransferInputItem) =>
@@ -108,8 +109,9 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
         item.quantity < 1 ||
         afterSave(item) < 0,
     ) ||
+    // კატალოგიდან წაშლილი პროდუქტის ამოღება ნაშთს არ ცვლის — მხოლოდ არსებულს ვამოწმებთ
     removed.some(
-      (item) => !findProduct(item) || afterSave({ ...item, quantity: 0 }) < 0,
+      (item) => !!findProduct(item) && afterSave({ ...item, quantity: 0 }) < 0,
     );
   const quantity = items.reduce(
     (sum, item) =>
@@ -119,13 +121,12 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
         : 0),
     0,
   );
-  const matching = catalog
-    .filter((product) =>
-      `${product.name} ${product.code}`
-        .toLocaleLowerCase()
-        .includes(search.trim().toLocaleLowerCase()),
-    )
-    .slice(0, 8);
+  const allMatching = catalog.filter((product) =>
+    `${product.name} ${product.code}`
+      .toLocaleLowerCase()
+      .includes(search.trim().toLocaleLowerCase()),
+  );
+  const matching = allMatching.slice(0, SEARCH_RESULTS_LIMIT);
   const availableMatches = matching.filter(
     (product) =>
       !items.some((item) => transferItemKey(item) === transferItemKey(product)) &&
@@ -236,11 +237,6 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
             <X size={20} />
           </button>
         </header>
-        {STORE_TRANSFERS_TEST_ONLY && (
-          <p className="px-4 sm:px-6 pt-3 text-xs text-amber-800">
-            სატესტო რეჟიმი · მხოლოდ TEST-STORE პროდუქტები
-          </p>
-        )}
         <div className="min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
           <section aria-label="პროდუქტის დამატება" className="space-y-2">
             <label className="text-sm font-semibold text-gray-800 block">
@@ -290,7 +286,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
               <div
                 role="region"
                 aria-label="ძებნის შედეგები"
-                className="border border-gray-200 rounded-xl overflow-y-auto max-h-48 divide-y divide-gray-100"
+                className="border border-gray-200 rounded-xl overflow-y-auto max-h-72 divide-y divide-gray-100"
               >
                 {matching.map((product) => {
                   const selected = items.some(
@@ -316,6 +312,11 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
                           {product.code} · საწყობში: {product.stock} ცალი
+                          {product.hidden && (
+                            <span className="ml-2 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-gray-600">
+                              საიტზე დამალულია
+                            </span>
+                          )}
                         </p>
                       </div>
                       <span className={`text-xs shrink-0 ${ui.text}`}>
@@ -333,6 +334,12 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                 {!matching.length && (
                   <p className="p-4 text-sm text-gray-500">
                     პროდუქტი ვერ მოიძებნა
+                  </p>
+                )}
+                {allMatching.length > matching.length && (
+                  <p className="p-3 text-xs text-gray-500 bg-gray-50">
+                    ნაჩვენებია {matching.length} / {allMatching.length} — დააზუსტე
+                    ძებნა სახელით ან კოდით
                   </p>
                 )}
               </div>
@@ -453,7 +460,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                       {!valid && (
                         <p role="alert" className="col-span-3 md:col-span-5 text-xs text-red-700">
                           {!product
-                            ? "პროდუქტი აღარ არის ხელმისაწვდომი."
+                            ? "პროდუქტი კატალოგიდან წაშლილია — ამოშალე ეს ხაზი."
                             : afterSave(item) < 0
                               ? "საწყობში საკმარისი მარაგი არ არის."
                               : "ჩაწერე დადებითი მთელი რაოდენობა."}
@@ -473,8 +480,10 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
                   key={transferItemKey(item)}
                   aria-label={`შენახვის შემდეგ: ${item.name}`}
                 >
-                  {item.name} · შენახვის შემდეგ საწყობში:{" "}
-                  {afterSave({ ...item, quantity: 0 })} ცალი
+                  {item.name} ·{" "}
+                  {findProduct(item)
+                    ? `შენახვის შემდეგ საწყობში: ${afterSave({ ...item, quantity: 0 })} ცალი`
+                    : "პროდუქტი კატალოგიდან წაშლილია — ნაშთი არ შეიცვლება"}
                 </p>
               ))}
             </div>
