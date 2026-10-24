@@ -115,6 +115,9 @@ export interface Order {
   items: OrderItem[];
   subtotal: number;
   shippingCost: number;
+  // პრომო კოდი (მხოლოდ საიტის შეკვეთაზე). totalAmount = subtotal - promoDiscount + shippingCost
+  promoCode?: string;
+  promoDiscount?: number;
   totalAmount: number;
   customerInfo: {
     firstName: string;
@@ -177,6 +180,9 @@ export interface ManualOrderItem {
 export interface CreateOrderRequest {
   userId: string | null;
   shippingCost?: number;
+  // checkout-ზე გამოყენებული კოდი და ეკრანზე ნაჩვენები ფასდაკლება (createOrder თავიდან ამოწმებს)
+  promoCode?: string;
+  promoDiscount?: number;
   items: CartItem[];
   customerInfo: {
     firstName: string;

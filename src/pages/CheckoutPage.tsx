@@ -1,5 +1,5 @@
 // src/pages/CheckoutPage.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
 import { useAuthStore } from "../store/authStore";
@@ -12,6 +12,10 @@ import { useInventoryRefresh } from "../hooks/useInventoryRefresh";
 import { useTranslation } from "react-i18next";
 import { getShippingRates } from "../services/settingsService";
 import { DEFAULT_SHIPPING_RATES, getShippingCost } from "../utils/shipping";
+import { lookupPromoCode } from "../services/promoService";
+import { computePromoDiscount, getPromoState, isPromoExcluded, normalizePromoCode } from "../utils/promo";
+import type { PromoCode } from "../utils/promo";
+import { trackInitiateCheckout } from "../utils/pixel";
 
 import {
   MapPin,
@@ -82,7 +86,58 @@ const CheckoutPage: React.FC = () => {
   }, []);
 
   const shippingCost = getShippingCost(formData.city, shippingRates);
-  const grandTotal = subtotal + shippingCost;
+
+  // პრომო კოდი: ფასდაკლება ითვლება იმავე ფუნქციით, რაც createOrder-ში — ეკრანი = Flitt = totalAmount
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [promoError, setPromoError] = useState("");
+  const [promoChecking, setPromoChecking] = useState(false);
+  const promoLines = items.map((item) => ({
+    unitPrice: getItemPrice(item),
+    quantity: item.quantity,
+    excluded: isPromoExcluded(item.product, item.variantId),
+  }));
+  const promoResult = appliedPromo ? computePromoDiscount(promoLines, appliedPromo.percent) : null;
+  const promoDiscount = promoResult?.discount ?? 0;
+
+  // promoDiscount = 0-ზე ჯამი ზუსტად ისეთივეა, როგორიც ადრე
+  const grandTotal = subtotal - promoDiscount + shippingCost;
+
+  const handleApplyPromo = async () => {
+    const code = normalizePromoCode(promoInput);
+    if (!code || promoChecking) return;
+    setPromoChecking(true);
+    setPromoError("");
+    try {
+      const lookup = await lookupPromoCode(code);
+      if (lookup.status === "error") return setPromoError(t("checkout.promoCheckFailed"));
+      if (lookup.status === "not_found") return setPromoError(t("checkout.promoNotFound"));
+      if (getPromoState(lookup.promo) !== "active") return setPromoError(t("checkout.promoInactive"));
+      if (computePromoDiscount(promoLines, lookup.promo.percent).discount <= 0)
+        return setPromoError(t("checkout.promoOnlySale"));
+      setAppliedPromo(lookup.promo);
+      setPromoInput("");
+    } finally {
+      setPromoChecking(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoError("");
+  };
+
+  // Meta Pixel: შეკვეთის დაწყება — ერთხელ, checkout-ის გახსნისას
+  const initiateCheckoutTracked = useRef(false);
+  useEffect(() => {
+    if (initiateCheckoutTracked.current || items.length === 0) return;
+    initiateCheckoutTracked.current = true;
+    trackInitiateCheckout({
+      ids: items.map((item) => item.product?.productCode || item.productId),
+      numItems: items.reduce((sum, item) => sum + item.quantity, 0),
+      value: subtotal,
+    });
+  }, [items, subtotal]);
 
   // მომხმარებლის ინფორმაციის ავტომატური შევსება
   useEffect(() => {
@@ -180,6 +235,10 @@ const CheckoutPage: React.FC = () => {
         userId: user?.id || null,
         items,
         shippingCost,
+        // კოდი იგზავნება მხოლოდ მაშინ, როცა ფასდაკლება რეალურად მოქმედებს
+        ...(appliedPromo && promoDiscount > 0
+          ? { promoCode: appliedPromo.code, promoDiscount }
+          : {}),
         customerInfo: {
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -225,7 +284,7 @@ const CheckoutPage: React.FC = () => {
       console.error("Order failed:", error);
       const message = error instanceof Error ? error.message : "";
       showToast(
-        message.includes("არასაკმარისი რაოდენობა")
+        message.includes("არასაკმარისი რაოდენობა") || message.includes("პრომო კოდ")
           ? message
           : "შეკვეთის გაფორმება ვერ მოხერხდა. შეამოწმეთ ინტერნეტ კავშირი და სცადეთ თავიდან.",
         "error"
@@ -497,12 +556,67 @@ const CheckoutPage: React.FC = () => {
                 ))}
               </div>
 
+              {/* Promo code */}
+              <div className="px-5 pt-4 pb-1 border-t border-stone-100">
+                {appliedPromo ? (
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                    <span className="text-sm text-emerald-800">
+                      <span className="font-bold">{appliedPromo.code}</span>{" "}
+                      · {t('checkout.promoApplied', { percent: appliedPromo.percent })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleRemovePromo}
+                      className="min-h-[44px] px-2 text-sm text-stone-500 hover:text-red-600 underline"
+                    >
+                      {t('checkout.promoRemove')}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <label htmlFor="promo-code" className={labelStyle}>{t('checkout.promoLabel')}</label>
+                    <div className="flex gap-2">
+                      <input
+                        id="promo-code"
+                        value={promoInput}
+                        onChange={(e) => { setPromoInput(e.target.value); setPromoError(""); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleApplyPromo(); } }}
+                        placeholder={t('checkout.promoPlaceholder')}
+                        autoCapitalize="characters"
+                        autoComplete="off"
+                        className={`${inputBaseStyle} uppercase py-2.5`}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyPromo}
+                        disabled={!normalizePromoCode(promoInput) || promoChecking}
+                        className="shrink-0 min-h-[44px] px-4 rounded-xl bg-stone-800 text-white text-sm font-bold disabled:bg-stone-200 disabled:text-stone-400"
+                      >
+                        {t('checkout.promoApply')}
+                      </button>
+                    </div>
+                  </>
+                )}
+                {promoError && (
+                  <p role="alert" className="mt-2 text-xs text-red-600">{promoError}</p>
+                )}
+              </div>
+
               {/* Totals */}
               <div className="p-5 bg-stone-50/50 border-t border-stone-100 space-y-2">
                 <div className="flex justify-between text-sm text-stone-600">
                   <span>{t('checkout.subtotal')}</span>
                   <span>₾{subtotal.toFixed(2)}</span>
                 </div>
+                {appliedPromo && promoDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-emerald-700 font-medium">
+                    <span>{t('checkout.promoDiscount', { code: appliedPromo.code })}</span>
+                    <span>- ₾{promoDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                {appliedPromo && !!promoResult?.excludedLines && (
+                  <p className="text-xs text-stone-500">{t('checkout.promoExcludedNote')}</p>
+                )}
                 <div className="flex justify-between text-sm text-stone-600">
                   <span className="flex items-center gap-1">
                     <Truck className="w-3 h-3" />
@@ -599,6 +713,11 @@ const CheckoutPage: React.FC = () => {
             </div>
 
             <div className="mb-6 space-y-2 text-sm">
+              {appliedPromo && promoDiscount > 0 && (
+                <div className="flex justify-between gap-3 text-emerald-700">
+                  <span>{t('checkout.promoDiscount', { code: appliedPromo.code })}</span><span>- ₾{promoDiscount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between gap-3">
                 <span>{t('checkout.delivery')}</span><span>₾{shippingCost.toFixed(2)}</span>
               </div>

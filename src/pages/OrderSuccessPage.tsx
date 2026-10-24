@@ -21,6 +21,7 @@ import { useCartStore } from "../store/cartStore";
 import { showToast } from "../components/ui/Toast";
 import { getOrderItemDisplayName } from "../utils/displayHelpers";
 import type { Order } from "../types";
+import { trackPurchase } from "../utils/pixel";
 
 const OrderSuccessPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -28,6 +29,13 @@ const OrderSuccessPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { clearCart } = useCartStore();
   const [order, setOrder] = useState<Order | null>(null);
+
+  // Meta Pixel: შესყიდვა — ნაღდზე შეკვეთის გაფორმებისას, ბარათზე მხოლოდ გადახდის შემდეგ (ერთხელ თითო შეკვეთაზე)
+  useEffect(() => {
+    if (order && (order.paymentMethod === "cash" || order.paymentStatus === "paid")) {
+      trackPurchase(order);
+    }
+  }, [order]);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -381,6 +389,12 @@ const OrderSuccessPage: React.FC = () => {
                     ₾{order.subtotal.toFixed(2)}
                   </span>
                 </div>
+                {order.promoCode && !!order.promoDiscount && (
+                  <div className="flex justify-between text-emerald-700 print:text-sm">
+                    <span>ფასდაკლება ({order.promoCode})</span>
+                    <span className="font-medium">- ₾{order.promoDiscount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-stone-600 mt-10 print:mt-2 print:text-sm">
                   <span>მიწოდება</span>
                   <span

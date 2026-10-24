@@ -166,5 +166,13 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // 13. პრომო კოდები — checkout კონკრეტულ კოდს ამოწმებს (get), სიას კი მხოლოდ ადმინი ხედავს,
+    // რომ კოდები საიტიდან ჩამოსათვლელი არ იყოს. ცვლის მხოლოდ ადმინი.
+    match /promoCodes/{code} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
   }
 }

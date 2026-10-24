@@ -186,7 +186,9 @@ const prepareOrderDataForExcel = (order: Order) => {
 
   const shippingCost = order.deliveryInfo.shippingCost || 0;
   const totalAllItems = order.items.reduce((sum, item) => sum + item.total, 0);
-  const orderGrandTotal = totalAllItems + shippingCost;
+  // პრომო კოდის ფასდაკლება ჯამს აკლდება (totalAmount = subtotal - promoDiscount + shipping)
+  const promoDiscount = order.promoDiscount || 0;
+  const orderGrandTotal = totalAllItems - promoDiscount + shippingCost;
 
   return {
     formattedDate,
@@ -228,6 +230,9 @@ const createOrderItemRowData = (
     "მისამართი": address,
     "კომენტარი": order.deliveryInfo.comment || "",
     "გაატარა": getOrderCreatorLabel(order),
+    // შეკვეთის დონის მნიშვნელობები — როგორც თანხები, მხოლოდ პირველ ხაზზე
+    "პრომო კოდი": index === 0 ? order.promoCode || "" : "",
+    "ფასდაკლება": index === 0 && order.promoDiscount ? order.promoDiscount : "",
   };
 
   // Only add cancellation reason column if order is cancelled and has a reason
@@ -256,6 +261,8 @@ const getColumnWidths = (hasCancelledOrders: boolean) => {
     { wch: 28 }, // მისამართი
     { wch: 28 }, // კომენტარი
     { wch: 26 }, // გაატარა
+    { wch: 14 }, // პრომო კოდი
+    { wch: 12 }, // ფასდაკლება
   ];
 
   return hasCancelledOrders

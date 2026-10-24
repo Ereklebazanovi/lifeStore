@@ -20,6 +20,8 @@ import {
 } from "firebase/firestore";
 import type { Transaction } from "firebase/firestore";
 import { db } from "./firebase";
+import { lookupPromoCode } from "./promoService";
+import { computePromoDiscount, getPromoState, isPromoExcluded, normalizePromoCode } from "../utils/promo";
 import { ADMIN_CONFIG, SITE_CONFIG } from "../config/constants";
 import type {
   Order,
@@ -197,6 +199,8 @@ export class OrderService {
       source: convertedData.source,
       ...(convertedData.createdBy && { createdBy: convertedData.createdBy }),
       ...(convertedData.updatedBy && { updatedBy: convertedData.updatedBy }),
+      ...(convertedData.promoCode && { promoCode: convertedData.promoCode }),
+      ...(typeof convertedData.promoDiscount === "number" && { promoDiscount: convertedData.promoDiscount }),
       items: convertedData.items,
       subtotal: convertedData.subtotal,
       shippingCost: convertedData.shippingCost,
@@ -912,6 +916,7 @@ export class OrderService {
                 <p style="margin: 8px 0;"><strong>💰 გადახდის მეთოდი:</strong> ${
                   order.paymentMethod === "cash" ? "💵 ნაღდი ფული (ადგილზე)" : "💳 ბანკო კარტი"
                 }</p>
+                ${order.promoCode ? `<p style="margin: 8px 0;"><strong>🏷️ პრომო კოდი:</strong> ${order.promoCode} (-₾${(order.promoDiscount ?? 0).toFixed(2)})</p>` : ""}
                 <p style="margin: 8px 0; font-size: 18px; color: #059669;">
                   <strong>💰 ჯამური თანხა:</strong> ₾${order.totalAmount.toFixed(2)}
                 </p>
@@ -1077,7 +1082,42 @@ export class OrderService {
 
     const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
     const shippingCost = typeof orderData.shippingCost === "number" && Number.isFinite(orderData.shippingCost) && orderData.shippingCost >= 0 ? orderData.shippingCost : this.calculateShippingCost(orderData.deliveryInfo.city);
-    const totalAmount = subtotal + shippingCost;
+
+    // ✅ პრომო კოდი: თავიდან ვამოწმებთ (ადმინმა შეიძლება გამორთო) და ფასდაკლებას იმავე ფუნქციით ვითვლით, რაც checkout-ში.
+    // ეკრანზე ნაჩვენები ფასდაკლება თუ არ ემთხვევა, შეკვეთას არ ვქმნით — კლიენტს სხვა თანხა არ ჩამოეჭრება.
+    // ყველაფერი ტრანზაქციამდე ხდება: შეცდომისას მარაგი და შეკვეთა ხელუხლებელია.
+    let promoCode: string | undefined;
+    let promoDiscount = 0;
+    const requestedPromo = normalizePromoCode(orderData.promoCode);
+    if (requestedPromo) {
+      const lookup = await lookupPromoCode(requestedPromo);
+      if (lookup.status === "error") {
+        throw new Error("პრომო კოდი ვერ შემოწმდა. სცადეთ თავიდან.");
+      }
+      if (lookup.status !== "ok" || getPromoState(lookup.promo) !== "active") {
+        throw new Error("პრომო კოდი აღარ მოქმედებს. წაშალეთ კოდი და სცადეთ თავიდან.");
+      }
+      promoDiscount = computePromoDiscount(
+        orderItems.map((item) => ({
+          unitPrice: item.price,
+          quantity: item.quantity,
+          excluded: isPromoExcluded(item.product, item.variantId),
+        })),
+        lookup.promo.percent,
+      ).discount;
+      if (promoDiscount <= 0) {
+        throw new Error("პრომო კოდი ფასდაკლებულ პროდუქტებზე არ მოქმედებს.");
+      }
+      if (
+        typeof orderData.promoDiscount !== "number" ||
+        Math.abs(orderData.promoDiscount - promoDiscount) > 0.009
+      ) {
+        throw new Error("პრომო კოდის ფასდაკლება შეიცვალა. განაახლეთ გვერდი და სცადეთ თავიდან.");
+      }
+      promoCode = lookup.promo.code;
+    }
+    // promoDiscount = 0-ზე ჯამი ზუსტად ისეთივეა, როგორიც ადრე (subtotal + shippingCost)
+    const totalAmount = subtotal - promoDiscount + shippingCost;
 
     const orderRef = doc(collection(db, this.COLLECTION_NAME));
 
@@ -1090,6 +1130,7 @@ export class OrderService {
       items: orderItems,
       subtotal,
       shippingCost,
+      ...(promoCode ? { promoCode, promoDiscount } : {}),
       totalAmount,
       customerInfo: {
         ...orderData.customerInfo,
@@ -1197,7 +1238,11 @@ export class OrderService {
         ? order.subtotal
         : (order.items as OrderItem[]).reduce((sum, item) => sum + item.total, 0);
       const shippingCost = Math.round((cost + Number.EPSILON) * 100) / 100;
-      const totalAmount = Math.round((subtotal + cost + Number.EPSILON) * 100) / 100;
+      // პრომო კოდის ფასდაკლება მიტანის შეცვლისას უცვლელი რჩება
+      const promoDiscount = typeof order.promoDiscount === "number" && Number.isFinite(order.promoDiscount)
+        ? order.promoDiscount
+        : 0;
+      const totalAmount = Math.round((subtotal - promoDiscount + cost + Number.EPSILON) * 100) / 100;
       transaction.update(orderRef, this.cleanObject({
         shippingCost,
         "deliveryInfo.shippingCost": shippingCost,

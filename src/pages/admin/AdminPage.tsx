@@ -221,7 +221,7 @@ const AdminPage: React.FC<{ storePage?: boolean }> = ({ storePage = false }) => 
             </div>
           );
         }
-        return <ParametersPage />;
+        return <ParametersPage orders={orders} />;
 
       case "reviews":
         if (user?.role !== "admin") {

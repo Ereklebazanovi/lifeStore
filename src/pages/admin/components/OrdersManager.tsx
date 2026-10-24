@@ -2288,6 +2288,14 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           ₾{selectedOrder.subtotal.toFixed(2)}
                         </span>
                       </div>
+                      {selectedOrder.promoCode && !!selectedOrder.promoDiscount && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">ფასდაკლება ({selectedOrder.promoCode}):</span>
+                          <span className="font-medium text-emerald-700">
+                            - ₾{selectedOrder.promoDiscount.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">მიწოდება:</span>
                         <span className="font-medium text-gray-900">

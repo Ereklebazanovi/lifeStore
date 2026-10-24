@@ -8,6 +8,7 @@ import {
   type CartValidationResult,
 } from "../services/cartValidationService";
 import { showToast } from "../components/ui/Toast";
+import { trackAddToCart } from "../utils/pixel";
 
 const loadGuestCartOnInit = () => {
   try {
@@ -330,6 +331,8 @@ export const useCartStore = create<CartStoreState & CartActions>()(
           };
 
           set(newState);
+          // Meta Pixel: კალათაში დამატება (ფასი — იგივე, რაც კალათაში)
+          trackAddToCart({ productId: product.id, product, unitPrice: currentPrice, quantity });
 
           if (state.currentUserId) {
             try {
