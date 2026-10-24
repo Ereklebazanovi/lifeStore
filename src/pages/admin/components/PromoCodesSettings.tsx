@@ -1,7 +1,7 @@
 // src/pages/admin/components/PromoCodesSettings.tsx
 // პრომო კოდები (მხოლოდ ადმინი): შექმნა, რომელ პროდუქტებზე მოქმედებს, ჩართვა/გამორთვა, რედაქტირება, წაშლა.
 import React, { useEffect, useMemo, useState } from "react";
-import { Tag, Trash2, Pencil, Search, X, Plus } from "lucide-react";
+import { Tag, Trash2, Pencil, Search, Package } from "lucide-react";
 import { auth } from "../../../services/firebase";
 import {
   createPromoCode,
@@ -12,13 +12,14 @@ import {
 import type { PromoCodeRecord } from "../../../services/promoService";
 import {
   getPromoState,
+  isPromoExcluded,
   normalizePromoCode,
   PROMO_MAX_PERCENT,
   promoExpiryFromInput,
 } from "../../../utils/promo";
 import { useProductStore } from "../../../store/productStore";
 import { showToast } from "../../../components/ui/Toast";
-import type { Order } from "../../../types";
+import type { Order, Product } from "../../../types";
 
 const MONTHS = ["იან", "თებ", "მარ", "აპრ", "მაი", "ივნ", "ივლ", "აგვ", "სექ", "ოქტ", "ნოე", "დეკ"];
 const formatDay = (date: Date) => `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
@@ -37,6 +38,204 @@ const STATE_LABEL = {
 type Scope = "all" | "products";
 const emptyForm = { code: "", percent: "", expires: "", scope: "all" as Scope, productIds: [] as string[] };
 
+// Cloudinary-ის ფოტოს პატარა ვერსია: სიაში 800px-იანი ფოტოს ნაცვლად რამდენიმე KB-იანი ესკიზი იტვირთება
+const thumbUrl = (url?: string) =>
+  url?.includes("res.cloudinary.com")
+    ? url.replace(/\/upload\/(?:[^/]+\/)?(v\d+\/)/, "/upload/f_auto,q_auto,w_96,h_96,c_fill/$1")
+    : url;
+
+const Thumb: React.FC<{ product?: Product; className: string }> = ({ product, className }) =>
+  product?.images?.[0] ? (
+    <img
+      src={thumbUrl(product.images[0])}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      className={`${className} object-cover bg-gray-100 shrink-0`}
+    />
+  ) : (
+    <span className={`${className} bg-gray-100 shrink-0 flex items-center justify-center`}>
+      <Package className="w-4 h-4 text-gray-400" />
+    </span>
+  );
+
+const formatPrice = (value: number) => `${Number.isInteger(value) ? value : value.toFixed(2)}₾`;
+
+// მიმდინარე ფასი და (თუ ფასდაკლებულია) ძველი ფასი, ისე, როგორც საიტზე ჩანს
+const priceOf = (product: Product) => {
+  if (product.hasVariants && product.variants?.length) {
+    const min = Math.min(...product.variants.map((v) => (v.salePrice && v.salePrice < v.price ? v.salePrice : v.price)));
+    return { current: min, old: undefined, fromLabel: true };
+  }
+  if (product.salePrice && product.salePrice < product.price)
+    return { current: product.salePrice, old: product.price, fromLabel: false };
+  if (product.originalPrice && product.originalPrice > product.price)
+    return { current: product.price, old: product.originalPrice, fromLabel: false };
+  return { current: product.price, old: undefined, fromLabel: false };
+};
+
+const ALL = "__all";
+const SELECTED = "__selected";
+
+// პროდუქტების არჩევა: ყველა პროდუქტი ფოტოთი ერთ სიაშია, ძებნა და კატეგორია მხოლოდ ფილტრავს
+const ProductPicker: React.FC<{
+  products: Product[];
+  selected: string[];
+  disabled: boolean;
+  onChange: (ids: string[]) => void;
+}> = ({ products, selected, disabled, onChange }) => {
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState(ALL);
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+
+  // ჯერ საიტზე ხილული, მერე დამალული; თითოეულში ანბანით
+  const sorted = useMemo(
+    () =>
+      [...products].sort(
+        (a, b) =>
+          Number(a.isActive === false) - Number(b.isActive === false) || a.name.localeCompare(b.name, "ka"),
+      ),
+    [products],
+  );
+
+  const selectedCount = useMemo(() => products.filter((p) => selectedSet.has(p.id)).length, [products, selectedSet]);
+
+  const chips = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of products) if (p.category) counts.set(p.category, (counts.get(p.category) ?? 0) + 1);
+    return [
+      { key: ALL, label: "ყველა", count: products.length },
+      { key: SELECTED, label: "მონიშნული", count: selectedCount },
+      ...[...counts.entries()]
+        .sort(([a], [b]) => a.localeCompare(b, "ka"))
+        .map(([category, count]) => ({ key: category, label: category, count })),
+    ];
+  }, [products, selectedCount]);
+
+  const visible = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    return sorted.filter(
+      (p) =>
+        (filter === ALL || (filter === SELECTED ? selectedSet.has(p.id) : p.category === filter)) &&
+        (!query || `${p.name} ${p.productCode ?? ""}`.toLocaleLowerCase().includes(query)),
+    );
+  }, [sorted, search, filter, selectedSet]);
+
+  const allVisibleSelected = visible.length > 0 && visible.every((p) => selectedSet.has(p.id));
+
+  const toggle = (id: string) =>
+    onChange(selectedSet.has(id) ? selected.filter((value) => value !== id) : [...selected, id]);
+
+  const toggleVisible = () => {
+    const ids = new Set(visible.map((p) => p.id));
+    onChange(
+      allVisibleSelected
+        ? selected.filter((id) => !ids.has(id))
+        : [...selected, ...visible.map((p) => p.id).filter((id) => !selectedSet.has(id))],
+    );
+  };
+
+  if (!products.length) return <p className="text-sm text-gray-500">პროდუქტები იტვირთება…</p>;
+
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          value={search}
+          disabled={disabled}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="ძებნა სახელით ან კოდით"
+          aria-label="პროდუქტის ძებნა"
+          autoComplete="off"
+          className="w-full min-h-11 border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-base focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none"
+        />
+      </div>
+
+      <div role="group" aria-label="ფილტრი" className="flex flex-wrap gap-2">
+        {chips.map((chip) => (
+          <button
+            key={chip.key}
+            type="button"
+            aria-pressed={filter === chip.key}
+            onClick={() => setFilter(chip.key)}
+            className={`min-h-10 px-3 rounded-full border text-sm ${filter === chip.key ? "border-emerald-600 bg-emerald-600 text-white" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}
+          >
+            {chip.label} <span className={filter === chip.key ? "text-emerald-100" : "text-gray-400"}>{chip.count}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <div className="flex items-center justify-between gap-3 px-3 py-2 bg-gray-50 border-b border-gray-200">
+          <p className="text-sm text-gray-700" aria-live="polite">
+            მონიშნულია: <span className="font-semibold text-gray-900">{selectedCount}</span>
+          </p>
+          {!!visible.length && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={toggleVisible}
+              className="min-h-9 px-3 rounded-lg text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+            >
+              {allVisibleSelected ? "ყველას მოხსნა" : "ყველას მონიშვნა"} ({visible.length})
+            </button>
+          )}
+        </div>
+
+        {!visible.length ? (
+          <p className="px-3 py-6 text-center text-sm text-gray-500">
+            {filter === SELECTED && !search.trim() ? "ჯერ პროდუქტი არ არის მონიშნული." : "პროდუქტი ვერ მოიძებნა"}
+          </p>
+        ) : (
+          <div role="group" aria-label="პროდუქტები" className="max-h-[28rem] overflow-y-auto divide-y divide-gray-100">
+            {visible.map((product) => {
+              const checked = selectedSet.has(product.id);
+              const price = priceOf(product);
+              const onSale = isPromoExcluded(product);
+              const hidden = product.isActive === false;
+              return (
+                <label
+                  key={product.id}
+                  className={`flex items-center gap-3 px-3 py-2 min-h-14 cursor-pointer ${checked ? "bg-emerald-50/70" : "hover:bg-gray-50"}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={disabled}
+                    onChange={() => toggle(product.id)}
+                    className="w-5 h-5 shrink-0 accent-emerald-600"
+                  />
+                  <Thumb product={product} className="w-11 h-11 rounded-md" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm text-gray-900 line-clamp-2">{product.name}</span>
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5 text-xs text-gray-500">
+                      {product.productCode}
+                      {onSale && (
+                        <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">ფასდაკლების დროს კოდი არ მოქმედებს</span>
+                      )}
+                      {hidden && <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">საიტზე დამალულია</span>}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-right text-sm tabular-nums">
+                    {price.old !== undefined && (
+                      <span className="block text-xs text-gray-400 line-through">{formatPrice(price.old)}</span>
+                    )}
+                    <span className="text-gray-900">
+                      {formatPrice(price.current)}
+                      {price.fromLabel ? "-დან" : ""}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const PromoCodesSettings: React.FC<{ orders: Order[] }> = ({ orders }) => {
   const { products } = useProductStore();
   const [codes, setCodes] = useState<PromoCodeRecord[]>([]);
@@ -44,7 +243,7 @@ const PromoCodesSettings: React.FC<{ orders: Order[] }> = ({ orders }) => {
   const [loadError, setLoadError] = useState("");
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState<string | null>(null); // რედაქტირებადი კოდი
-  const [search, setSearch] = useState("");
+  const [pickerKey, setPickerKey] = useState(0); // ახალი ფორმისას ძებნა/ფილტრი თავიდან
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -57,10 +256,8 @@ const PromoCodesSettings: React.FC<{ orders: Order[] }> = ({ orders }) => {
     [],
   );
 
-  const productName = useMemo(() => {
-    const map = new Map(products.map((p) => [p.id, p.name]));
-    return (id: string) => map.get(id) ?? "წაშლილი პროდუქტი";
-  }, [products]);
+  const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
+  const productName = (id: string) => productById.get(id)?.name ?? "წაშლილი პროდუქტი";
 
   // გამოყენება = ამ კოდით გაფორმებული შეკვეთები (გაუქმებულის გარეშე)
   const usage = useMemo(() => {
@@ -72,22 +269,13 @@ const PromoCodesSettings: React.FC<{ orders: Order[] }> = ({ orders }) => {
     return map;
   }, [orders]);
 
-  const matches = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase();
-    if (!query) return [];
-    return products
-      .filter((p) => !form.productIds.includes(p.id))
-      .filter((p) => `${p.name} ${p.productCode ?? ""}`.toLocaleLowerCase().includes(query))
-      .slice(0, 8);
-  }, [products, search, form.productIds]);
-
   const actor = () => {
     const user = auth.currentUser;
     if (!user) throw new Error("საჭიროა ანგარიშით შესვლა");
     return { uid: user.uid, email: user.email || "" };
   };
 
-  const reset = () => { setForm(emptyForm); setEditing(null); setError(""); setSearch(""); };
+  const reset = () => { setForm(emptyForm); setEditing(null); setError(""); setPickerKey((key) => key + 1); };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -95,9 +283,11 @@ const PromoCodesSettings: React.FC<{ orders: Order[] }> = ({ orders }) => {
     const percent = Number(form.percent);
     const expiresAt = promoExpiryFromInput(form.expires);
     if (form.expires && !expiresAt) return setError("ვადის თარიღი არასწორია");
-    if (form.scope === "products" && !form.productIds.length)
-      return setError("აირჩიე მინიმუმ ერთი პროდუქტი, ან მონიშნე „ყველა პროდუქტზე“");
-    const productIds = form.scope === "products" ? form.productIds : [];
+    // წაშლილი პროდუქტები კოდში აღარ ინახება
+    const productIds =
+      form.scope !== "products" ? [] : products.length ? form.productIds.filter((id) => productById.has(id)) : form.productIds;
+    if (form.scope === "products" && !productIds.length)
+      return setError("მონიშნე მინიმუმ ერთი პროდუქტი, ან აირჩიე „ყველა პროდუქტზე“");
     setBusy(true);
     setError("");
     try {
@@ -145,14 +335,9 @@ const PromoCodesSettings: React.FC<{ orders: Order[] }> = ({ orders }) => {
       scope: ids.length ? "products" : "all",
       productIds: ids,
     });
-    setSearch("");
+    setPickerKey((key) => key + 1);
     setError("");
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const addProduct = (id: string) => {
-    setForm((current) => ({ ...current, productIds: [...current.productIds, id] }));
-    setSearch("");
   };
 
   const scopeText = (promo: PromoCodeRecord) => {
@@ -243,60 +428,13 @@ const PromoCodesSettings: React.FC<{ orders: Order[] }> = ({ orders }) => {
             </div>
 
             {form.scope === "products" && (
-              <div className="space-y-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    value={search}
-                    disabled={busy}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="მოძებნე პროდუქტი სახელით ან კოდით"
-                    aria-label="პროდუქტის ძებნა"
-                    autoComplete="off"
-                    className={`${inputClass} pl-9`}
-                  />
-                </div>
-                {!!matches.length && (
-                  <div role="region" aria-label="ძებნის შედეგები" className="rounded-lg border border-gray-200 bg-white divide-y divide-gray-100 max-h-64 overflow-y-auto">
-                    {matches.map((product) => (
-                      <button
-                        key={product.id}
-                        type="button"
-                        aria-label={`დამატება: ${product.name}`}
-                        onClick={() => addProduct(product.id)}
-                        className="w-full min-h-11 flex items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-emerald-50"
-                      >
-                        <span className="min-w-0 truncate">
-                          {product.name}
-                          <span className="text-xs text-gray-500"> · {product.productCode}</span>
-                        </span>
-                        <Plus className="w-4 h-4 shrink-0 text-emerald-600" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {search.trim() && !matches.length && (
-                  <p className="text-xs text-gray-500">პროდუქტი ვერ მოიძებნა</p>
-                )}
-                <div aria-label="არჩეული პროდუქტები" className="flex flex-wrap gap-2">
-                  {form.productIds.map((id) => (
-                    <span key={id} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 pl-3 pr-1 py-1 text-sm text-emerald-800">
-                      {productName(id)}
-                      <button
-                        type="button"
-                        aria-label={`ამოშლა: ${productName(id)}`}
-                        onClick={() => setForm((current) => ({ ...current, productIds: current.productIds.filter((value) => value !== id) }))}
-                        className="min-w-8 min-h-8 flex items-center justify-center rounded-full hover:bg-emerald-100"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </span>
-                  ))}
-                  {!form.productIds.length && (
-                    <p className="text-xs text-gray-500">ჯერ პროდუქტი არ არის არჩეული.</p>
-                  )}
-                </div>
-              </div>
+              <ProductPicker
+                key={pickerKey}
+                products={products}
+                selected={form.productIds}
+                disabled={busy}
+                onChange={(productIds) => setForm((current) => ({ ...current, productIds }))}
+              />
             )}
           </fieldset>
 
@@ -333,6 +471,13 @@ const PromoCodesSettings: React.FC<{ orders: Order[] }> = ({ orders }) => {
                     <p className="font-semibold text-gray-900">
                       {promo.code} <span className="font-normal text-emerald-700">-{promo.percent}%</span>
                     </p>
+                    {!!promo.productIds?.length && (
+                      <div className="flex -space-x-2 mt-2" aria-hidden="true">
+                        {promo.productIds.slice(0, 6).map((id) => (
+                          <Thumb key={id} product={productById.get(id)} className="w-8 h-8 rounded-full ring-2 ring-white" />
+                        ))}
+                      </div>
+                    )}
                     <p className="text-xs text-gray-600 mt-1">{scopeText(promo)}</p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {promo.expiresAt ? `${formatDay(promo.expiresAt)}-მდე` : "უვადო"} · გამოყენებულია{" "}
