@@ -17,6 +17,7 @@ import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import ReviewsManager from "./components/ReviewsManager";
 import BlogManager from "./components/BlogManager";
 import StoreManager from "./components/StoreManager";
+import PromoCodesSettings from "./components/PromoCodesSettings";
 import { showToast } from "../../components/ui/Toast";
 
 import {
@@ -37,7 +38,7 @@ const AdminPage: React.FC<{ storePage?: boolean }> = ({ storePage = false }) => 
   const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>(() => {
     const requested = location.state?.adminSection;
-    if (typeof requested === "string" && ["analytics", "products", "orders", "inventory", "categories", "parameters", "reviews", "blog"].includes(requested)) return requested;
+    if (typeof requested === "string" && ["analytics", "products", "orders", "inventory", "categories", "parameters", "promo", "reviews", "blog"].includes(requested)) return requested;
     if (user?.role === "manager") return "orders";
     if (user?.role === "admin") return "analytics"; // admin პირდაპირ ანალიტიკაზე ეშვება
     return "dashboard";
@@ -221,7 +222,7 @@ const AdminPage: React.FC<{ storePage?: boolean }> = ({ storePage = false }) => 
             </div>
           );
         }
-        return <ParametersPage orders={orders} />;
+        return <ParametersPage />;
 
       case "reviews":
         if (user?.role !== "admin") {
@@ -234,6 +235,19 @@ const AdminPage: React.FC<{ storePage?: boolean }> = ({ storePage = false }) => 
           );
         }
         return <ReviewsManager />;
+
+      case "promo":
+        // პრომო კოდები — მხოლოდ ადმინი
+        if (user?.role !== "admin") {
+          return (
+            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm text-center">
+              <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">წვდომა შეზღუდულია</h3>
+              <p className="text-gray-600">პრომო კოდების მართვა მხოლოდ ადმინისტრატორისთვისაა.</p>
+            </div>
+          );
+        }
+        return <PromoCodesSettings orders={orders} />;
 
       case "blog":
         if (user?.role !== "admin") {

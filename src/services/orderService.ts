@@ -21,7 +21,7 @@ import {
 import type { Transaction } from "firebase/firestore";
 import { db } from "./firebase";
 import { lookupPromoCode } from "./promoService";
-import { computePromoDiscount, getPromoState, isPromoExcluded, normalizePromoCode } from "../utils/promo";
+import { buildPromoLines, computePromoDiscount, getPromoState, normalizePromoCode } from "../utils/promo";
 import { ADMIN_CONFIG, SITE_CONFIG } from "../config/constants";
 import type {
   Order,
@@ -1097,16 +1097,22 @@ export class OrderService {
       if (lookup.status !== "ok" || getPromoState(lookup.promo) !== "active") {
         throw new Error("პრომო კოდი აღარ მოქმედებს. წაშალეთ კოდი და სცადეთ თავიდან.");
       }
+      // კოდი მოქმედებს მხოლოდ მის პროდუქტებზე (ან ყველაზე) და არა უკვე ფასდაკლებულზე
       promoDiscount = computePromoDiscount(
-        orderItems.map((item) => ({
-          unitPrice: item.price,
-          quantity: item.quantity,
-          excluded: isPromoExcluded(item.product, item.variantId),
-        })),
+        buildPromoLines(
+          lookup.promo,
+          orderItems.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            product: item.product,
+          })),
+        ),
         lookup.promo.percent,
       ).discount;
       if (promoDiscount <= 0) {
-        throw new Error("პრომო კოდი ფასდაკლებულ პროდუქტებზე არ მოქმედებს.");
+        throw new Error("პრომო კოდი კალათის პროდუქტებზე არ მოქმედებს.");
       }
       if (
         typeof orderData.promoDiscount !== "number" ||

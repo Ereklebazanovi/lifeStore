@@ -17,6 +17,7 @@ import {
   Star,
   BookOpen,
   Store,
+  Tag,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -76,6 +77,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     { id: "orders", icon: ShoppingBag, label: "შეკვეთები" },
     { id: "inventory", icon: Warehouse, label: "საწყობი" },
     { id: "store", icon: Store, label: "მაღაზია" },
+    { id: "promo", icon: Tag, label: "პრომო კოდები" },
     { id: "categories", icon: Layers, label: "კატეგორიები" },
     { id: "parameters", icon: Settings, label: "პარამეტრები" },
     { id: "reviews", icon: Star, label: "შეფასებები" },

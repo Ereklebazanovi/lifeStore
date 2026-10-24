@@ -18,8 +18,7 @@ import {
   Search,
   ChevronDown,
 } from "lucide-react";
-import type { Order, User } from "../../../types";
-import PromoCodesSettings from "./PromoCodesSettings";
+import type { User } from "../../../types";
 
 const toFields = (rates: ShippingRates) => Object.fromEntries(DELIVERY_CITIES.map((city) => [city, String(rates[city])])) as Record<DeliveryCity, string>;
 
@@ -87,7 +86,7 @@ const ShippingRatesSettings: React.FC = () => {
   );
 };
 
-const ParametersPage: React.FC<{ orders?: Order[] }> = ({ orders = [] }) => {
+const ParametersPage: React.FC = () => {
   const { user: currentUser } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -292,8 +291,6 @@ const ParametersPage: React.FC<{ orders?: Order[] }> = ({ orders = [] }) => {
       </div>
 
       <ShippingRatesSettings />
-
-      <PromoCodesSettings orders={orders} />
 
       {/* Filters and Search */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">

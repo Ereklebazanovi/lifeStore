@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { getShippingRates } from "../services/settingsService";
 import { DEFAULT_SHIPPING_RATES, getShippingCost } from "../utils/shipping";
 import { lookupPromoCode } from "../services/promoService";
-import { computePromoDiscount, getPromoState, isPromoExcluded, normalizePromoCode } from "../utils/promo";
+import { buildPromoLines, computePromoDiscount, getPromoState, normalizePromoCode } from "../utils/promo";
 import type { PromoCode } from "../utils/promo";
 import { trackInitiateCheckout } from "../utils/pixel";
 
@@ -92,11 +92,19 @@ const CheckoutPage: React.FC = () => {
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [promoError, setPromoError] = useState("");
   const [promoChecking, setPromoChecking] = useState(false);
-  const promoLines = items.map((item) => ({
-    unitPrice: getItemPrice(item),
-    quantity: item.quantity,
-    excluded: isPromoExcluded(item.product, item.variantId),
-  }));
+  // კალათის ხაზები კონკრეტული კოდისთვის: კოდი მოქმედებს მხოლოდ მის პროდუქტებზე და არა ფასდაკლებულზე
+  const promoLinesFor = (promo: PromoCode) =>
+    buildPromoLines(
+      promo,
+      items.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        unitPrice: getItemPrice(item),
+        product: item.product,
+      })),
+    );
+  const promoLines = appliedPromo ? promoLinesFor(appliedPromo) : [];
   const promoResult = appliedPromo ? computePromoDiscount(promoLines, appliedPromo.percent) : null;
   const promoDiscount = promoResult?.discount ?? 0;
 
@@ -113,8 +121,8 @@ const CheckoutPage: React.FC = () => {
       if (lookup.status === "error") return setPromoError(t("checkout.promoCheckFailed"));
       if (lookup.status === "not_found") return setPromoError(t("checkout.promoNotFound"));
       if (getPromoState(lookup.promo) !== "active") return setPromoError(t("checkout.promoInactive"));
-      if (computePromoDiscount(promoLines, lookup.promo.percent).discount <= 0)
-        return setPromoError(t("checkout.promoOnlySale"));
+      if (computePromoDiscount(promoLinesFor(lookup.promo), lookup.promo.percent).discount <= 0)
+        return setPromoError(t("checkout.promoNoEligible"));
       setAppliedPromo(lookup.promo);
       setPromoInput("");
     } finally {
@@ -530,9 +538,9 @@ const CheckoutPage: React.FC = () => {
 
               {/* Items List (Compact) */}
               <div className="max-h-[240px] overflow-y-auto custom-scrollbar p-5 space-y-4">
-                {items.map((item) => (
+                {items.map((item, index) => (
                   <div key={item.productId} className="flex gap-3">
-                    <div className="w-12 h-12 bg-stone-100 rounded-lg overflow-hidden border border-stone-200 flex-shrink-0">
+                    <div className="relative w-12 h-12 bg-stone-100 rounded-lg overflow-hidden border border-stone-200 flex-shrink-0">
                       {item.product.images?.[0] ? (
                         <img src={item.product.images[0]} alt={getLocalizedCartItemDisplayName(item, i18n.language)} className="w-full h-full object-cover" />
                       ) : (
@@ -543,6 +551,12 @@ const CheckoutPage: React.FC = () => {
                       <p className="text-sm font-medium text-stone-900 truncate">
                         {getLocalizedCartItemDisplayName(item, i18n.language)}
                       </p>
+                      {/* რომელ პროდუქტს შეეხო პრომო კოდი */}
+                      {appliedPromo && promoLines[index] && !promoLines[index].excluded && (
+                        <span className="inline-block mt-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-bold text-emerald-700">
+                          {appliedPromo.code} -{appliedPromo.percent}%
+                        </span>
+                      )}
                       <div className="flex justify-between items-center mt-1">
                         <p className="text-xs text-stone-500">
                           {item.quantity} x {getItemPrice(item).toFixed(2)}₾

@@ -7,7 +7,15 @@ export interface PromoCode {
   percent: number; // 1–90, მთელი რიცხვი
   active: boolean;
   expiresAt?: Date | null; // ბოლო დღე ჩათვლით (23:59:59 ადგილობრივი დროით)
+  // რომელ პროდუქტებზე მოქმედებს; ცარიელი ან არ არის = ყველა პროდუქტზე
+  productIds?: string[];
 }
+
+// კოდი ამ პროდუქტზე მოქმედებს? (ვარიანტიან პროდუქტზე — ყველა ვარიანტზე)
+export const promoAppliesToProduct = (
+  promo: Pick<PromoCode, "productIds">,
+  productId: string,
+): boolean => !promo.productIds?.length || promo.productIds.includes(productId);
 
 export const PROMO_MAX_PERCENT = 90; // 100% არ შეიძლება — 0₾-იან შეკვეთას ბაზა არ იღებს
 
@@ -68,8 +76,27 @@ export const isPromoExcluded = (
 export interface PromoLine {
   unitPrice: number;
   quantity: number;
-  excluded: boolean;
+  excluded: boolean; // კოდი ამ ხაზზე არ მოქმედებს (ფასდაკლებულია ან კოდში არ არის)
 }
+
+// კალათის/შეკვეთის ხაზები ფასდაკლების გამოსათვლელად — ერთი წესი checkout-სა და createOrder-ში
+export const buildPromoLines = (
+  promo: Pick<PromoCode, "productIds">,
+  items: {
+    productId: string;
+    variantId?: string;
+    quantity: number;
+    unitPrice: number;
+    product: Parameters<typeof isPromoExcluded>[0];
+  }[],
+): PromoLine[] =>
+  items.map((item) => ({
+    unitPrice: item.unitPrice,
+    quantity: item.quantity,
+    excluded:
+      isPromoExcluded(item.product, item.variantId) ||
+      !promoAppliesToProduct(promo, item.productId),
+  }));
 
 // ფასდაკლება მხოლოდ სრულფასიან პროდუქტებზე; მიტანაზე არ ვრცელდება
 export const computePromoDiscount = (

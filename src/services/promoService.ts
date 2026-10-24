@@ -40,6 +40,9 @@ const parse = (code: string, data: Record<string, unknown>): PromoCodeRecord => 
   percent: Number(data.percent),
   active: data.active === true,
   expiresAt: toDate(data.expiresAt),
+  productIds: Array.isArray(data.productIds)
+    ? data.productIds.filter((id): id is string => typeof id === "string" && !!id)
+    : [],
   createdAt: toDate(data.createdAt) ?? undefined,
   createdBy: data.createdBy as OrderActor | undefined,
   updatedAt: toDate(data.updatedAt) ?? undefined,
@@ -89,8 +92,12 @@ const validate = (code: string, percent: number) => {
     throw new Error(`ფასდაკლება: მთელი რიცხვი 1-დან ${PROMO_MAX_PERCENT}%-მდე`);
 };
 
+// productIds: ცარიელი სია = ყველა პროდუქტზე
+const cleanProductIds = (ids: string[] | undefined): string[] =>
+  [...new Set((ids ?? []).filter((id) => typeof id === "string" && !!id))];
+
 export const createPromoCode = async (
-  input: { code: string; percent: number; expiresAt: Date | null },
+  input: { code: string; percent: number; expiresAt: Date | null; productIds?: string[] },
   actor: OrderActor,
 ): Promise<string> => {
   const code = normalizePromoCode(input.code);
@@ -103,6 +110,7 @@ export const createPromoCode = async (
       percent: input.percent,
       active: true,
       expiresAt: input.expiresAt,
+      productIds: cleanProductIds(input.productIds),
       createdAt: serverTimestamp(),
       createdBy: actor,
     });
@@ -112,12 +120,13 @@ export const createPromoCode = async (
 
 export const updatePromoCode = async (
   code: string,
-  changes: { percent?: number; expiresAt?: Date | null; active?: boolean },
+  changes: { percent?: number; expiresAt?: Date | null; active?: boolean; productIds?: string[] },
   actor: OrderActor,
 ): Promise<void> => {
   if (changes.percent !== undefined) validate(code, changes.percent);
   await updateDoc(doc(db, COLLECTION, code), {
     ...changes,
+    ...(changes.productIds !== undefined ? { productIds: cleanProductIds(changes.productIds) } : {}),
     updatedAt: serverTimestamp(),
     updatedBy: actor,
   });
