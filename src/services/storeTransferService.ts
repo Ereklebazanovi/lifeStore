@@ -8,6 +8,7 @@ import {
 } from "firebase/firestore";
 import type { Transaction } from "firebase/firestore";
 import { auth, db } from "./firebase";
+import { parseStoreTransferDate } from "../utils/storeTransferDate";
 import type { OrderActor, Product, ProductVariant } from "../types";
 import type {
   StoreTransfer,
@@ -276,7 +277,9 @@ export class StoreTransferService {
     const items = normalize(request.items),
       note = (request.note || "").trim();
     if (note.length > 2000) throw Error("კომენტარი ზედმეტად გრძელია");
-    const requestKey = JSON.stringify({ type: request.type, items, note });
+    const movementDate = request.date === undefined ? undefined : parseStoreTransferDate(request.date);
+    // Include the chosen day in retries without changing legacy request keys.
+    const requestKey = JSON.stringify({ type: request.type, items, note, ...(request.date === undefined ? {} : { date: request.date }) });
     const ref = doc(db, "storeTransfers", id),
       storeRef = doc(db, "stores", DEFAULT_STORE.id),
       now = new Date();
@@ -321,7 +324,7 @@ export class StoreTransferService {
         items: savedItems,
         ...totals(savedItems),
         note,
-        date: now,
+        date: movementDate ?? now,
         createdAt: now,
         createdBy: actor,
         requestKey,
@@ -332,12 +335,13 @@ export class StoreTransferService {
 
   static async update(
     id: string,
-    request: Pick<StoreTransferRequest, "items" | "note">,
+    request: Pick<StoreTransferRequest, "items" | "note" | "date">,
   ): Promise<void> {
     if (!validId(id)) throw Error("ჩანაწერი არასწორია");
     const items = normalize(request.items),
       note = (request.note || "").trim();
     if (note.length > 2000) throw Error("კომენტარი ზედმეტად გრძელია");
+    const movementDate = request.date === undefined ? undefined : parseStoreTransferDate(request.date);
     await runTransaction(db, async (tx) => {
       const actor = await adminActor(tx),
         ref = doc(db, "storeTransfers", id),
@@ -367,6 +371,7 @@ export class StoreTransferService {
         items: savedItems,
         ...totals(savedItems),
         note,
+        ...(movementDate ? { date: movementDate } : {}),
         updatedAt: now,
         updatedBy: actor,
       });

@@ -27,7 +27,10 @@ export const STORE_TRANSFER_UI = {
   },
 } as const;
 
-export const formatStoreTransferDate = (value: Date) => {
+export const formatStoreTransferDate = (value: Date, includeTime = true) => {
   const months = ["იან", "თებ", "მარ", "აპრ", "მაი", "ივნ", "ივლ", "აგვ", "სექ", "ოქტ", "ნოე", "დეკ"];
-  return `${value.getDate()} ${months[value.getMonth()]} ${value.getFullYear()}, ${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
+  return `${value.getDate()} ${months[value.getMonth()]} ${value.getFullYear()}${includeTime ? `, ${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}` : ""}`;
 };
+
+export const formatStoreMoney = (value: number): string =>
+  `${value.toLocaleString("ka-GE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₾`;

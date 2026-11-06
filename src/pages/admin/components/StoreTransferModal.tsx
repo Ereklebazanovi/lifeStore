@@ -11,6 +11,7 @@ import type {
   StoreTransferType,
 } from "../../../types/storeTransfer";
 import { STORE_TRANSFER_UI } from "./storeTransferUi";
+import { storeTransferDateInput } from "../../../utils/storeTransferDate";
 
 interface Props {
   type: StoreTransferType;
@@ -38,6 +39,7 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
       })) || [],
   );
   const [note, setNote] = useState(transfer?.note || "");
+  const [movementDate, setMovementDate] = useState(() => storeTransferDateInput(transfer?.date));
   const [search, setSearch] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
@@ -177,8 +179,8 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
     setError("");
     try {
       if (transfer)
-        await StoreTransferService.update(transfer.id, { items, note });
-      else await StoreTransferService.create({ type, items, note }, requestId);
+        await StoreTransferService.update(transfer.id, { items, note, date: movementDate });
+      else await StoreTransferService.create({ type, items, note, date: movementDate }, requestId);
       onClose();
     } catch (failure) {
       setError(
@@ -235,6 +237,25 @@ const StoreTransferModal: React.FC<Props> = ({ type, transfer, onClose }) => {
           </button>
         </header>
         <div className="min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
+          <div>
+            <label className="block text-sm font-semibold text-gray-800">
+              {type === "out" ? "გადატანის თარიღი" : "დაბრუნების თარიღი"}
+              <input
+                type="date"
+                required
+                min="1000-01-01"
+                max={storeTransferDateInput()}
+                value={movementDate}
+                disabled={saving}
+                onChange={(event) => setMovementDate(event.target.value)}
+                aria-describedby="store-movement-date-help"
+                className={`block mt-2 w-full sm:w-64 min-h-11 border border-gray-300 rounded-xl px-3 text-sm font-normal outline-none focus:ring-2 ${ui.focus}`}
+              />
+            </label>
+            <p id="store-movement-date-help" className="text-xs text-gray-500 mt-2">
+              მიუთითე საქონლის რეალურად გადატანის დღე. შეგიძლია აირჩიო წარსული თარიღიც.
+            </p>
+          </div>
           <section aria-label="პროდუქტის დამატება" className="space-y-2">
             <label className="text-sm font-semibold text-gray-800 block">
               პროდუქტის დამატება

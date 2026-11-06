@@ -4,6 +4,9 @@ export const isStoreMovementReason = (reason: unknown): boolean =>
   typeof reason === "string" &&
   /^Store (transfer|return)(?: edit| deleted)? #ST-/.test(reason);
 
+export const filterStoreTransfersByDate = (transfers: StoreTransfer[], range: [Date, Date] | null): StoreTransfer[] =>
+  range ? transfers.filter((transfer) => transfer.date >= range[0] && transfer.date <= range[1]) : transfers;
+
 export function summarizeStoreTransfers(
   transfers: StoreTransfer[],
   range: [Date, Date] | null,
@@ -28,9 +31,7 @@ export function summarizeStoreTransfers(
     returnQuantity = 0,
     outValue = 0,
     returnValue = 0;
-  for (const transfer of transfers) {
-    if (range && (transfer.date < range[0] || transfer.date > range[1]))
-      continue;
+  for (const transfer of filterStoreTransfersByDate(transfers, range)) {
     if (transfer.type === "out") outCount++;
     else returnCount++;
     for (const item of transfer.items) {

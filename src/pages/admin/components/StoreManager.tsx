@@ -22,7 +22,8 @@ import type {
   StoreTransferType,
 } from "../../../types/storeTransfer";
 import StoreTransferModal from "./StoreTransferModal";
-import { formatStoreTransferDate, STORE_TRANSFER_UI } from "./storeTransferUi";
+import { formatStoreMoney, formatStoreTransferDate, STORE_TRANSFER_UI } from "./storeTransferUi";
+import StoreTransferExportButton from "./StoreTransferExportButton";
 
 const StoreManager: React.FC = () => {
   const [transfers, setTransfers] = useState<StoreTransfer[]>([]);
@@ -121,6 +122,7 @@ const StoreManager: React.FC = () => {
             <Undo2 size={17} aria-hidden="true" />
             დაბრუნების ჩაწერა
           </button>
+          <StoreTransferExportButton transfers={filtered} disabled={loading || !!error} />
         </div>
       </div>
       {error && (
@@ -273,13 +275,14 @@ const StoreManager: React.FC = () => {
                     {STORE_TRANSFER_UI[item.type].direction}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {formatStoreTransferDate(item.date)} · {item.items.length} პროდუქტი
+                    {formatStoreTransferDate(item.date, false)} · {item.items.length} პროდუქტი
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
                   <p className={`text-xl font-semibold tabular-nums ${STORE_TRANSFER_UI[item.type].text}`}>
                     {STORE_TRANSFER_UI[item.type].sign}{item.totalQuantity} <span className="text-xs font-normal">ცალი</span>
                   </p>
+                  <p className="text-xs sm:text-sm text-gray-600 tabular-nums mt-1">{formatStoreMoney(item.totalValue)}</p>
                   <button
                     aria-label={`გახსნა: ${item.transferNumber}`}
                     onClick={() => setSelectedId(item.id)}
@@ -314,7 +317,7 @@ const StoreManager: React.FC = () => {
                   {selected.type === "out" ? "მაღაზიაში გადატანა" : "საწყობში დაბრუნება"}
                 </h2>
                 <p className="text-sm text-gray-500">
-                  {formatStoreTransferDate(selected.date)}
+                  {formatStoreTransferDate(selected.date, false)}
                 </p>
                 <p className="text-xs text-gray-500 mt-1 break-all">{selected.transferNumber}</p>
               </div>
@@ -343,11 +346,16 @@ const StoreManager: React.FC = () => {
                   className="flex justify-between gap-3 p-3 text-sm"
                 >
                   <span className="break-words">{item.name}</span>
-                  <strong className="shrink-0">{item.quantity} ცალი</strong>
+                  <div className="shrink-0 text-right tabular-nums">
+                    <strong>{item.quantity} ცალი</strong>
+                    <p className="text-xs text-gray-500 mt-1">{formatStoreMoney(item.price)} / ცალი</p>
+                    <p className="mt-1">{formatStoreMoney(item.price * item.quantity)}</p>
+                  </div>
                 </div>
               ))}
             </div>
-            <p className="font-semibold">სულ: {selected.totalQuantity} ცალი</p>
+            <p className="font-semibold">სულ: {selected.totalQuantity} ცალი · {formatStoreMoney(selected.totalValue)}</p>
+            <p className="text-xs text-gray-500">ღირებულება ჩანაწერში შენახული გასაყიდი ფასებით.</p>
             {selected.note && (
               <p className="text-sm whitespace-pre-wrap break-words bg-gray-50 p-3 rounded-lg">
                 {selected.note}

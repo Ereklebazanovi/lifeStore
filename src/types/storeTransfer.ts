@@ -31,4 +31,6 @@ export interface StoreTransferRequest {
   type: StoreTransferType;
   items: StoreTransferInputItem[];
   note?: string;
+  /** Actual movement day (YYYY-MM-DD); omitted by older callers. */
+  date?: string;
 }
