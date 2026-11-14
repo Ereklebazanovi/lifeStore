@@ -14,6 +14,7 @@ import TopCustomersChart from "./TopCustomersChart";
 import CityChart from "./CityChart";
 import CategoryChart from "./CategoryChart";
 import StoreAnalytics from "./StoreAnalytics";
+import SmsConsentStats from "./SmsConsentStats";
 
 const { RangePicker } = DatePicker;
 
@@ -245,6 +246,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ orders }) => {
               comparisonLabel={comparison?.label}
               comparisonPrefix={comparison?.prefix}
             />
+
+            <SmsConsentStats orders={filteredOrders} dateRange={dateRange} />
 
             {/* Revenue Bar Chart — full width */}
             <RevenueChart orders={filteredOrders} dateRange={dateRange} />

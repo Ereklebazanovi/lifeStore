@@ -174,5 +174,50 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // 14. SMS თანხმობა ნომრით (smsConsents/{5XXXXXXXX}). წერს ოპერატორი (manager) და ადმინი,
+    // სიას (სტატისტიკა) ხედავს მხოლოდ ადმინი. ყოველი ცვლილება იმავე ჩაწერაში ემატება history/{N}-ში
+    // სერვერის დროით და მერე აღარ იცვლება (პერსონალურ მონაცემთა დაცვის კანონი, მუხლი 12).
+    function isValidSmsConsent(phone) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['phone', 'status', 'source', 'name', 'orderNumber', 'askedAt', 'updatedAt', 'updatedBy', 'historyCount']) &&
+        d.keys().hasAll(['phone', 'status', 'source', 'name', 'orderNumber', 'askedAt', 'updatedAt', 'updatedBy', 'historyCount']) &&
+        phone.matches('^5[0-9]{8}$') &&
+        d.phone == phone &&
+        d.status in ['asked', 'yes', 'no'] &&
+        d.source == 'chat' &&
+        d.name is string && d.name.size() <= 100 &&
+        d.orderNumber is string && d.orderNumber.size() <= 40 &&
+        d.updatedAt == request.time &&
+        d.updatedBy.uid == request.auth.uid &&
+        d.historyCount is int &&
+        existsAfter(/databases/$(database)/documents/smsConsents/$(phone)/history/$(string(d.historyCount))) &&
+        !exists(/databases/$(database)/documents/smsConsents/$(phone)/history/$(string(d.historyCount)));
+    }
+
+    match /smsConsents/{phone} {
+      allow get: if isAdminOrManager();
+      allow list: if isAdmin();
+      allow create: if isAdminOrManager() && isValidSmsConsent(phone) &&
+        request.resource.data.historyCount == 1 &&
+        request.resource.data.askedAt == request.time;
+      allow update: if isAdminOrManager() && isValidSmsConsent(phone) &&
+        request.resource.data.historyCount == resource.data.historyCount + 1 &&
+        request.resource.data.askedAt == resource.data.askedAt;
+      allow delete: if isAdmin();
+
+      match /history/{entryId} {
+        allow read: if isAdmin();
+        allow create: if isAdminOrManager() &&
+          request.resource.data.keys().hasOnly(['status', 'source', 'orderNumber', 'at', 'by']) &&
+          request.resource.data.at == request.time &&
+          request.resource.data.by.uid == request.auth.uid &&
+          entryId == string(getAfter(/databases/$(database)/documents/smsConsents/$(phone)).data.historyCount) &&
+          getAfter(/databases/$(database)/documents/smsConsents/$(phone)).data.updatedAt == request.time &&
+          request.resource.data.status == getAfter(/databases/$(database)/documents/smsConsents/$(phone)).data.status;
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+    }
+
   }
 }

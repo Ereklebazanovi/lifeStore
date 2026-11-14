@@ -12,6 +12,7 @@ import {
   Globe,
   Pencil,
   Calendar,
+  Copy,
 } from "lucide-react";
 import { OrderService } from "../../../services/orderService";
 import { auth } from "../../../services/firebase";
@@ -35,6 +36,15 @@ import type { ReservedStockItem } from "../../../utils/stock";
 import { DELIVERY_CITIES } from "../../../config/constants";
 import { getShippingRates } from "../../../services/settingsService";
 import { DEFAULT_SHIPPING_RATES, getShippingCost } from "../../../utils/shipping";
+import {
+  getSmsConsent,
+  isSmsConsentPhone,
+  setSmsConsent,
+  SMS_CONSENT_TEMPLATE,
+  describeSmsConsent,
+} from "../../../services/smsConsentService";
+import type { SmsConsent, SmsConsentStatus } from "../../../services/smsConsentService";
+import { SmsConsentButtons } from "./SmsConsentControls";
 
 // ✅ დღევანდელი თარიღი ლოკალურ ზონაში "YYYY-MM-DD" ფორმატით (input type=date-სთვის).
 // არ ვიყენებთ toISOString()-ს, რადგან ის UTC-შია და დღე შეიძლება აირიოს.
@@ -118,6 +128,12 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
   const shippingSelectionRef = useRef({ city: "თბილისი", manuallySet: false });
   // ✅ გაყიდვის თარიღი (YYYY-MM-DD). default = დღეს. გამოიყენება მხოლოდ ახალი შეკვეთის შექმნისას.
   const [orderDate, setOrderDate] = useState<string>(getTodayString());
+  // SMS თანხმობა: smsStored = ბაზაში ამ ნომერზე რა წერია, smsChoice = ფორმაში მონიშნული (null = ჯერ არ უკითხავს).
+  // "კი" ავტომატურად არასდროს ინიშნება; ბაზიდან მხოლოდ უკვე ჩაწერილი სტატუსი ჩანს.
+  const [smsStored, setSmsStored] = useState<SmsConsent | null>(null);
+  const [smsChoice, setSmsChoice] = useState<SmsConsentStatus | null>(null);
+  const [smsLookup, setSmsLookup] = useState(false);
+  const smsChoiceFromStored = useRef(false);
 
   const calculateShippingCost = (city: string): number => {
     return getShippingCost(city, shippingRates);
@@ -178,6 +194,9 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
         shippingSelectionRef.current = { city: "თბილისი", manuallySet: false };
         setOrderDate(getTodayString());
       }
+      setSmsStored(null);
+      setSmsChoice(null);
+      smsChoiceFromStored.current = false;
     } else {
       setIsCreatingOrder(false);
     }
@@ -199,6 +218,97 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
     });
     return () => { active = false; };
   }, [isOpen, order]);
+
+  // ნომრის აკრეფისას ვამოწმებთ, ამ მყიდველს უკვე ჰკითხეს თუ არა
+  useEffect(() => {
+    if (!isOpen) return;
+    const phone = customerInfo.phone;
+    const forgetStored = () => {
+      setSmsStored(null);
+      if (smsChoiceFromStored.current) {
+        smsChoiceFromStored.current = false;
+        setSmsChoice(null);
+      }
+    };
+    if (!isSmsConsentPhone(phone)) {
+      forgetStored();
+      setSmsLookup(false);
+      return;
+    }
+    let active = true;
+    setSmsLookup(true);
+    getSmsConsent(phone)
+      .then((found) => {
+        if (!active) return;
+        if (!found) return forgetStored();
+        setSmsStored(found);
+        setSmsChoice(found.status);
+        smsChoiceFromStored.current = true;
+      })
+      .catch((error) => console.error("SMS თანხმობის წაკითხვა ვერ მოხერხდა", error))
+      .finally(() => active && setSmsLookup(false));
+    return () => { active = false; };
+  }, [isOpen, customerInfo.phone]);
+
+  const smsName = `${customerInfo.firstName} ${customerInfo.lastName}`.trim();
+
+  const smsHint = smsLookup
+    ? "ნომერს ვამოწმებ…"
+    : smsStored && smsChoice && smsChoice !== smsStored.status && smsChoice !== "asked"
+    ? `${describeSmsConsent(smsStored)}. შეკვეთის შენახვისას შეიცვლება`
+    : smsStored
+    ? `${describeSmsConsent(smsStored)}${smsStored.status === "asked" ? "" : ". თავიდან კითხვა არ სჭირდება"}`
+    : smsChoice === null
+    ? "ჯერ არ უკითხავს. „კი“ მონიშნე მხოლოდ მყიდველის პასუხის მერე"
+    : "შეკვეთის შენახვისას ჩაიწერება";
+
+  const handleSmsSelect = (value: SmsConsentStatus) => {
+    smsChoiceFromStored.current = false;
+    // მონიშნულზე მეორედ დაჭერა აუქმებს არჩევანს (თუ ბაზაში ჯერ არაფერი წერია)
+    setSmsChoice(smsChoice === value && !smsStored ? null : value);
+  };
+
+  // შაბლონის დაკოპირება = ჰკითხა. ნომერი თუ უკვე სწორია, მაშინვე ვწერთ, თორემ შეკვეთის შენახვისას.
+  const handleCopySmsTemplate = async () => {
+    try {
+      await navigator.clipboard.writeText(SMS_CONSENT_TEMPLATE);
+      showToast("შაბლონი დაკოპირდა", "success");
+    } catch {
+      showToast("დაკოპირება ვერ მოხერხდა", "error");
+      return;
+    }
+    if (smsChoice === "yes" || smsChoice === "no") return;
+    smsChoiceFromStored.current = false;
+    setSmsChoice("asked");
+    if (smsStored || !isSmsConsentPhone(customerInfo.phone)) return;
+    try {
+      const saved = await setSmsConsent(customerInfo.phone, "asked", {
+        name: smsName,
+        orderNumber: order?.orderNumber,
+        actorName: user?.displayName || undefined,
+      });
+      setSmsStored(saved);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // შეკვეთის შენახვის მერე. შეცდომა შეკვეთას არ აფერხებს.
+  const saveSmsChoice = async (orderNumber: string) => {
+    const phone = customerInfo.phone;
+    if (!smsChoice || !isSmsConsentPhone(phone)) return;
+    if (smsStored && (smsStored.status === smsChoice || smsChoice === "asked")) return;
+    try {
+      await setSmsConsent(phone, smsChoice, {
+        name: smsName,
+        orderNumber,
+        actorName: user?.displayName || undefined,
+      });
+    } catch (error) {
+      console.error(error);
+      showToast("შეკვეთა შეინახა, SMS თანხმობა ვერ ჩაიწერა. შეცვალე შეკვეთის ბარათიდან", "error");
+    }
+  };
 
   // --- Handlers ---
   const handleItemChange = (
@@ -354,6 +464,7 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
         await OrderService.updateManualOrder(order.id, updateData, order);
         clearTimeout(timeoutId);
         showToast("შეკვეთა წარმატებით განახლდა!", "success");
+        await saveSmsChoice(order.orderNumber);
       } else {
         const orderData: CreateManualOrderRequest = {
           ...(actor && { createdBy: actor }),
@@ -366,9 +477,10 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
           paymentMethod: paymentMethod as Order["paymentMethod"],
           orderDate: buildOrderDate(orderDate),
         };
-        await OrderService.createManualOrder(orderData);
+        const created = await OrderService.createManualOrder(orderData);
         clearTimeout(timeoutId);
         showToast("შეკვეთა წარმატებით შეიქმნა!", "success");
+        await saveSmsChoice(created.orderNumber);
       }
 
       onOrderCreated();
@@ -539,6 +651,31 @@ const CreateManualOrderModal: React.FC<CreateManualOrderModalProps> = ({
                       className="py-2 text-base !border-stone-200 !rounded-md"
                       placeholder="555 12 34 56"
                     />
+                  </div>
+                  {/* SMS თანხმობა (ნომრით ინახება, არა შეკვეთაზე) */}
+                  <div className="p-3 border border-stone-200 rounded-lg bg-stone-50" data-testid="sms-consent">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <span id="sms-consent-label" className="text-sm font-bold text-stone-700">
+                        SMS თანხმობა
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCopySmsTemplate}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-9 text-xs font-medium text-stone-700 bg-white border border-stone-200 rounded-md hover:bg-stone-100 transition-colors"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        შაბლონის დაკოპირება
+                      </button>
+                    </div>
+                    <SmsConsentButtons
+                      labelId="sms-consent-label"
+                      value={smsChoice}
+                      stored={smsStored}
+                      onSelect={handleSmsSelect}
+                    />
+                    <p className="mt-2 text-xs text-stone-500">
+                      {smsHint}
+                    </p>
                   </div>
                   <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
                     <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">

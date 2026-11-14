@@ -11,6 +11,7 @@ import { DELIVERY_CITIES } from "../../../config/constants";
 import { matchesCityFilter } from "../../../utils/city";
 import { exportSingleOrderToExcel, exportMultipleOrdersToExcel } from "../../../utils/excelExporter";
 import CreateManualOrderModal from "./CreateManualOrderModal";
+import SmsConsentCard from "./SmsConsentControls";
 import { ClipboardList, Activity, Archive } from "lucide-react";
 import {
   Package,
@@ -2274,6 +2275,11 @@ const OrdersManager: React.FC<OrdersManagerProps> = ({ orders, onRefresh }) => {
                           </p>
                         </div>
                       )}
+                      <SmsConsentCard
+                        phone={selectedOrder.customerInfo.phone}
+                        name={`${selectedOrder.customerInfo.firstName} ${selectedOrder.customerInfo.lastName || ""}`.trim()}
+                        orderNumber={selectedOrder.orderNumber}
+                      />
                     </div>
                   </div>
 
