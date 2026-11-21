@@ -90,7 +90,7 @@ export const useCloudinaryUpload = (): UseCloudinaryUploadReturn => {
       setUploadProgress(100);
 
       // Return optimized URL with automatic compression and format
-      const optimizedUrl = uploadData.secure_url.replace('/upload/', '/upload/f_auto,q_auto,w_800/');
+      const optimizedUrl = uploadData.secure_url.replace('/upload/', '/upload/f_auto,q_auto,w_1200,c_limit/');
       return optimizedUrl;
     } catch (error) {
       console.error('Cloudinary upload error:', error);

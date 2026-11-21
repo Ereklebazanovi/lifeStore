@@ -545,6 +545,7 @@ const BlogManager: React.FC = () => {
                 images={form.image ? [form.image] : []}
                 onChange={(urls) => setForm((f) => ({ ...f, image: urls[0] || "" }))}
                 maxImages={1}
+                variant="blog"
               />
 
               {/* Tags + Read time */}

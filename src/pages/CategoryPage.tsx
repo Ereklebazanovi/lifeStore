@@ -179,9 +179,9 @@ const CategoryPage: React.FC = () => {
                 </span>
               </div>
 
-              {/* Image */}
+              {/* Image — 1:1 square matching HomePage CategoryGrid */}
               {category.image && (
-                <div className="shrink-0 w-full md:w-[280px] h-[160px] md:h-[140px] rounded-2xl overflow-hidden shadow-sm">
+                <div className="shrink-0 w-28 h-28 md:w-36 md:h-36 aspect-square rounded-2xl overflow-hidden shadow-sm bg-stone-100">
                   <img
                     src={category.image}
                     alt={category.name}
