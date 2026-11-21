@@ -394,11 +394,13 @@ const CategoryManager: React.FC = () => {
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
-                        <div className="absolute inset-x-0 bottom-0 p-3 pointer-events-none">
-                          <span className="text-[10px] text-emerald-300 font-semibold block">საიტზე ჩანს ასე (1:1)</span>
-                          <p className="text-sm font-bold text-white truncate">
-                            {formData.name || "კატეგორიის სახელი"}
-                          </p>
+                        <div className="absolute inset-0 flex flex-col justify-end p-3 pointer-events-none">
+                          <div>
+                            <p className="text-sm font-bold text-white mb-1.5 truncate">
+                              {formData.name || "კატეგორიის სახელი"}
+                            </p>
+                            <div className="h-3.5" />
+                          </div>
                         </div>
                         <button
                           type="button"

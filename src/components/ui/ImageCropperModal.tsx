@@ -103,18 +103,36 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
     }
   }, [isOpen, imageSrc, initialAspect, initialOutW, initialOutH, categoryPreviewTitle]);
 
+  const [viewportSize, setViewportSize] = useState<{ w: number; h: number }>({
+    w: typeof window !== "undefined" ? window.innerWidth : 1024,
+    h: typeof window !== "undefined" ? window.innerHeight : 768,
+  });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleResize = () => {
+      setViewportSize({ w: window.innerWidth, h: window.innerHeight });
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isOpen]);
+
   // Compute crop box size in screen pixels based on activeAspect
+  // Guarantees exact aspect ratio without flexbox squashing
   const getCropBoxSize = useCallback(() => {
-    const maxW = Math.min(window.innerWidth - 64, 420);
-    const maxH = Math.min(window.innerHeight - 360, 380);
+    const maxW = Math.min(viewportSize.w - 64, 340);
+    const maxH = Math.min(Math.max(viewportSize.h - 330, 240), 340);
     let boxW = maxW;
     let boxH = boxW / activeAspect;
     if (boxH > maxH) {
       boxH = maxH;
       boxW = boxH * activeAspect;
     }
-    return { boxW: Math.round(boxW), boxH: Math.round(boxH) };
-  }, [activeAspect]);
+    const finalW = Math.round(boxW);
+    const finalH = Math.round(finalW / activeAspect);
+    return { boxW: finalW, boxH: finalH };
+  }, [activeAspect, viewportSize]);
 
   const { boxW, boxH } = getCropBoxSize();
 
@@ -309,11 +327,11 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[95vh]"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-y-auto flex flex-col max-h-[95vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+        <div className="px-5 py-3 border-b border-gray-200 flex items-center justify-between bg-gray-50 shrink-0">
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-gray-900">{title}</h3>
@@ -367,16 +385,16 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
 
         {/* Interactive Crop Viewport (Facebook Profile/Cover style) */}
         <div
-          className="relative bg-stone-900 flex flex-col items-center justify-center py-6 px-4 select-none overflow-hidden"
+          className="relative bg-stone-900 flex flex-col items-center justify-center py-5 px-4 select-none overflow-hidden shrink-0"
           onWheel={handleWheel}
         >
           {/* Floating instruction badge */}
-          <div className="mb-3 flex items-center gap-2 bg-black/60 text-white/90 text-xs px-3 py-1 rounded-full backdrop-blur-sm pointer-events-none">
+          <div className="mb-2.5 flex items-center gap-2 bg-black/60 text-white/90 text-xs px-3 py-1 rounded-full backdrop-blur-sm pointer-events-none shrink-0">
             <Move className="w-3.5 h-3.5 text-emerald-400" />
             <span>დააჭირეთ და გადაადგილეთ სურათი ჩარჩოში</span>
           </div>
 
-          {/* The Cutout Frame */}
+          {/* The Cutout Frame — shrink-0 ensures 1:1 stays strictly square */}
           <div
             ref={stageRef}
             onPointerDown={handlePointerDown}
@@ -386,10 +404,12 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
             style={{
               width: `${boxW}px`,
               height: `${boxH}px`,
+              minWidth: `${boxW}px`,
+              minHeight: `${boxH}px`,
               backgroundColor: bgColor,
               touchAction: "none",
             }}
-            className={`relative overflow-hidden rounded-xl shadow-[0_0_0_9999px_rgba(0,0,0,0.65)] ring-2 ring-white/90 ${
+            className={`relative shrink-0 overflow-hidden rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.65)] ring-2 ring-white/90 ${
               isDragging ? "cursor-grabbing" : "cursor-grab"
             }`}
           >
@@ -438,19 +458,20 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
               </div>
             </div>
 
-            {/* Optional Category Card Live Overlay (shows where bottom text sits on Home Page) */}
+            {/* Exact CategoryGrid.tsx Live Overlay (matches Home Page 1:1 card layout) */}
             {showCategoryOverlay && (
-              <div className="absolute inset-0 pointer-events-none flex flex-col justify-end">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                <div className="relative p-4">
-                  <span className="inline-block text-[10px] uppercase tracking-wider bg-emerald-500/80 text-white px-2 py-0.5 rounded mb-1 font-semibold">
-                    საიტზე გამოჩენის პრევიუ
-                  </span>
-                  <h4 className="text-lg font-bold text-white drop-shadow">
-                    {categoryPreviewTitle || "კატეგორიის სახელი"}
-                  </h4>
+              <>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 flex flex-col justify-end p-4 pointer-events-none">
+                  <div>
+                    <h3 className="text-lg md:text-xl font-bold text-white mb-2">
+                      {categoryPreviewTitle || "კატეგორიის სახელი"}
+                    </h3>
+                    {/* Exact 20px spacer matching the opacity-0 'გადასვლა ->' row in CategoryGrid.tsx */}
+                    <div className="h-5" />
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
 
