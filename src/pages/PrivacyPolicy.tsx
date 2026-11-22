@@ -1,3 +1,4 @@
+import PolicyLinks from "../components/PolicyLinks";
 //PrivacyPolicy.tsx
 import {
   Lock,
@@ -16,20 +17,21 @@ const PrivacyPolicy = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-stone-50 py-20 px-4 sm:px-6 lg:px-8">
+    <div className="store-shell store-page store-policy">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-stone-900 mb-4">
+        <div className="store-page-heading">
+          <h1 className="store-display mb-4">
             {t("privacyPolicy.pageTitle")}
           </h1>
-          <p className="text-stone-500 flex items-center justify-center gap-2">
+          <p className="text-stone-500 flex items-center gap-2">
             <Lock className="w-4 h-4" />
             {t("privacyPolicy.lastUpdated")}
           </p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-sm border border-stone-200 overflow-hidden">
-          <div className="bg-stone-900 text-white p-6 md:p-8">
+        <PolicyLinks />
+        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+          <div className="bg-emerald-50 border-b border-stone-200 p-5 md:p-7">
             <div className="flex gap-4 items-start">
               <div className="bg-stone-800 p-3 rounded-xl hidden md:block">
                 <ShieldCheck className="w-8 h-8 text-emerald-500" />
@@ -38,7 +40,7 @@ const PrivacyPolicy = () => {
                 <h2 className="text-xl font-bold mb-2">
                   {t("privacyPolicy.bannerTitle")}
                 </h2>
-                <p className="text-stone-300 leading-relaxed text-sm md:text-base">
+                <p className="text-stone-600 leading-relaxed text-sm md:text-base">
                   {t("privacyPolicy.bannerText", { siteName: SITE_CONFIG.SITE_NAME })}
                 </p>
               </div>

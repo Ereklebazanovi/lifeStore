@@ -1,3 +1,4 @@
+import PolicyLinks from "../components/PolicyLinks";
 //TermsAndConditions.tsx
 import {
   Truck,
@@ -23,55 +24,28 @@ import { SITE_CONFIG, ADMIN_CONFIG } from "../config/constants";
 const TermsAndConditions = () => {
   const { t } = useTranslation();
 
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-stone-50 py-20 px-4 sm:px-6 lg:px-8">
+    <div className="store-shell store-page store-policy">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-stone-900 mb-4">
+        <div className="store-page-heading">
+          <h1 className="store-display mb-4">
             {t("terms.pageTitle")}
           </h1>
-          <p className="text-stone-500 flex items-center justify-center gap-2">
+          <p className="text-stone-500 flex items-center gap-2">
             <ShieldCheck className="w-4 h-4" />
             {t("terms.lastUpdated")}
           </p>
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex flex-wrap justify-center gap-3 mb-8 sticky top-4 z-10 bg-stone-50/90 backdrop-blur-sm p-2 rounded-2xl shadow-sm border border-stone-200">
-          <button
-            onClick={() => scrollToSection("terms")}
-            className="px-4 py-2 bg-white border border-stone-200 rounded-xl text-stone-600 font-medium hover:border-emerald-500 hover:text-emerald-600 transition-all shadow-sm active:scale-95"
-          >
-            {t("terms.navTerms")}
-          </button>
-          <button
-            onClick={() => scrollToSection("refund")}
-            className="px-4 py-2 bg-white border border-stone-200 rounded-xl text-stone-600 font-medium hover:border-emerald-500 hover:text-emerald-600 transition-all shadow-sm active:scale-95"
-          >
-            {t("terms.navRefund")}
-          </button>
-          <button
-            onClick={() => scrollToSection("privacy")}
-            className="px-4 py-2 bg-white border border-stone-200 rounded-xl text-stone-600 font-medium hover:border-emerald-500 hover:text-emerald-600 transition-all shadow-sm active:scale-95"
-          >
-            {t("terms.navPrivacy")}
-          </button>
-        </div>
+        <PolicyLinks />
 
-        <div className="bg-white rounded-3xl shadow-sm border border-stone-200 overflow-hidden divide-y divide-stone-100">
+        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden divide-y divide-stone-100">
           {/* 1. TERMS & CONDITIONS */}
           <div id="terms" className="scroll-mt-24">
-            <div className="bg-stone-900 text-white p-6 md:p-8">
+            <div className="bg-emerald-50 border-b border-stone-200 p-5 md:p-7">
               <h2 className="text-xl font-bold mb-2">{t("terms.termsTitle")}</h2>
-              <p className="text-stone-300 leading-relaxed text-sm md:text-base">
+              <p className="text-stone-600 leading-relaxed text-sm md:text-base">
                 {t("terms.termsIntro", { siteName: SITE_CONFIG.SITE_NAME })}
               </p>
             </div>
@@ -187,7 +161,8 @@ const TermsAndConditions = () => {
           </div>
 
           {/* 2. REFUND POLICY */}
-          <div id="refund" className="scroll-mt-24">
+          <details id="refund" className="store-policy-details scroll-mt-24">
+            <summary>{t("footer.refundPolicy")}</summary>
             <div className="bg-emerald-50 p-6 md:p-8 border-t border-b border-emerald-100">
               <div className="flex gap-4 items-start">
                 <div className="bg-white p-3 rounded-xl shadow-sm text-emerald-600 hidden md:block">
@@ -300,11 +275,12 @@ const TermsAndConditions = () => {
                 </div>
               </section>
             </div>
-          </div>
+          </details>
 
           {/* 3. PRIVACY POLICY */}
-          <div id="privacy" className="scroll-mt-24">
-            <div className="bg-stone-900 text-white p-6 md:p-8">
+          <details id="privacy" className="store-policy-details scroll-mt-24">
+            <summary>{t("footer.privacy")}</summary>
+            <div className="bg-emerald-50 border-b border-stone-200 p-5 md:p-7">
               <div className="flex gap-4 items-start">
                 <div className="bg-stone-800 p-3 rounded-xl hidden md:block">
                   <ShieldCheck className="w-8 h-8 text-emerald-500" />
@@ -313,7 +289,7 @@ const TermsAndConditions = () => {
                   <h2 className="text-xl font-bold mb-2">
                     {t("terms.privacyTitle")}
                   </h2>
-                  <p className="text-stone-300 leading-relaxed text-sm md:text-base">
+                  <p className="text-stone-600 leading-relaxed text-sm md:text-base">
                     {t("terms.privacyIntro", { siteName: SITE_CONFIG.SITE_NAME })}
                   </p>
                 </div>
@@ -398,7 +374,7 @@ const TermsAndConditions = () => {
                 </p>
               </section>
             </div>
-          </div>
+          </details>
 
           {/* Contact Footer */}
           <div className="bg-stone-900 text-stone-400 p-8 text-sm">

@@ -1,5 +1,7 @@
+import { useTranslation } from "react-i18next";
+import AuthButton from "../components/auth/AuthButton";
 import React, { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { OrderService } from "../services/orderService";
 import { useAuthStore } from "../store/authStore";
 import { showToast } from "../components/ui/Toast";
@@ -9,10 +11,8 @@ import {
   Package,
   Calendar,
   MapPin,
-  Phone,
   Eye,
   Search,
-  Filter,
   ShoppingBag,
   CheckCircle,
   Clock,
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 const OrderHistoryPage: React.FC = () => {
+  const { t } = useTranslation();
   const { user, isLoading: authLoading } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +52,15 @@ const OrderHistoryPage: React.FC = () => {
 
   // Redirect if not authenticated
   if (!authLoading && !user) {
-    return <Navigate to="/" replace />;
+    return (
+      <div className="store-shell store-page">
+        <div className="store-empty">
+          <h1>{t("nav.myOrders")}</h1>
+          <p>{t("storefront.orderSignIn")}</p>
+          <AuthButton />
+        </div>
+      </div>
+    );
   }
 
   // Filter orders
@@ -103,7 +112,7 @@ const OrderHistoryPage: React.FC = () => {
       case "pending":
         return "📋 მოლოდინში";
       case "confirmed":
-        return "💳 გადახდილი";
+        return "დადასტურებულია";
       case "shipped":
         return "📦 გაგზავნილი";
       case "delivered":
@@ -127,11 +136,11 @@ const OrderHistoryPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 py-20 lg:py-20">
+    <div className="store-page">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-stone-900 mb-2">
+          <h1 className="store-display text-3xl text-stone-900 mb-2">
             შეკვეთების ისტორია
           </h1>
           <p className="text-stone-600">
@@ -205,22 +214,22 @@ const OrderHistoryPage: React.FC = () => {
                 key={order.id}
                 className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex flex-wrap items-start justify-between gap-2 mb-4">
                   {/* Order Header */}
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="hidden sm:flex shrink-0 w-10 h-10 bg-emerald-100 rounded-lg items-center justify-center">
                       <Package className="w-6 h-6 text-emerald-600" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-stone-900 text-lg">
+                      <h3 className="font-bold text-stone-900 text-base whitespace-nowrap tabular-nums">
                         {order.orderNumber}
                       </h3>
-                      <div className="flex items-center gap-4 text-sm text-stone-500 mt-1">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-stone-500 mt-1">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
                           {order.createdAt.toLocaleDateString("ka-GE", {
                             year: "numeric",
-                            month: "long",
+                            month: "short",
                             day: "numeric",
                           })}
                         </div>
@@ -284,7 +293,7 @@ const OrderHistoryPage: React.FC = () => {
                 </div>
 
                 {/* Order Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-stone-100">
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-stone-100">
                   <div className="flex items-center gap-6 text-sm text-stone-600">
                     <div>
                       <span className="font-medium">სულ: </span>

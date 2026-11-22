@@ -2,9 +2,20 @@ import type { Product, Category, CartItem } from "../types";
 import type { BlogPost } from "../services/blogService";
 
 export function getLocalizedProductName(product: Product, lang: string): string {
-  if (lang === "en" && product.nameEn) return product.nameEn;
-  if (lang === "ru" && product.nameRu) return product.nameRu;
-  return product.name;
+  const language = lang.split("-")[0];
+  const localized = (language === "en" ? product.nameEn : language === "ru" ? product.nameRu : product.name) || product.name;
+  const name = localized.replace(/(\S)\(/g, "$1 (");
+  // These listings share a generic catalog title. Use the finish as their visible distinction.
+  const finishes = {
+    "faifuris-nakrebi-sjs-0003": { ka: "გლუვი", en: "Smooth", ru: "Гладкий" },
+    "faifuris-nakrebi-sjs-0002": { ka: "წერტილოვანი რელიეფით", en: "Dotted", ru: "Точечный рельеф" },
+    "faifuris-nakrebi": { ka: "გეომეტრიული რელიეფით", en: "Geometric", ru: "Геометрический рельеф" },
+  };
+  const finish = finishes[product.slug as keyof typeof finishes];
+  if (product.name === "ფაიფურის ნაკრები" && finish) {
+    return `${name} · ${finish[language === "en" || language === "ru" ? language : "ka"]}`;
+  }
+  return name;
 }
 
 export function getLocalizedProductDescription(product: Product, lang: string): string {

@@ -1,3 +1,4 @@
+import { redirectToSpa } from "./lib/spaRedirect";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const SITE_URL = "https://lifestore.ge";
@@ -109,7 +110,7 @@ export default async function handler(
   const ua = (req.headers["user-agent"] as string) || "";
   if (!BOT_PATTERN.test(ua)) {
     res.setHeader("Cache-Control", "no-store, no-cache");
-    res.redirect(302, `/about?_spa=1`);
+    redirectToSpa(req, res, `/about`, langKey);
     return;
   }
 

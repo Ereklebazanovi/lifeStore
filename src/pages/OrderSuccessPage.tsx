@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import React, { useEffect, useState } from "react";
 import {
   useParams,
@@ -23,7 +24,15 @@ import { getOrderItemDisplayName } from "../utils/displayHelpers";
 import type { Order } from "../types";
 import { trackPurchase } from "../utils/pixel";
 
+function getPaymentStatusLabel(status: string) {
+  if (status === "failed") return "გადახდა ვერ მოხერხდა";
+  if (status === "cancelled") return "გადახდა გაუქმებულია";
+  if (status === "refunded") return "თანხა დაბრუნებულია";
+  return status;
+}
+
 const OrderSuccessPage: React.FC = () => {
+  const { t } = useTranslation();
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -151,13 +160,18 @@ const OrderSuccessPage: React.FC = () => {
   }
 
   if (!order) return null;
+  const paymentLabel = t(order.paymentMethod === "cash" ? "purchase.paymentCash" :
+    order.paymentMethod === "flitt" || order.paymentMethod === "tbc_bank" ? "purchase.paymentOnline" : "purchase.paymentTransfer");
+  const paymentStatus = order.paymentStatus === "paid" ? t("purchase.paymentPaid") :
+    order.paymentMethod === "cash" ? t("purchase.paymentCash") :
+    order.paymentStatus === "pending" ? t("purchase.paymentPending") : getPaymentStatusLabel(order.paymentStatus);
 
   const getStatusText = (status: string) => {
     switch (status) {
       case "pending":
         return "📋 მოლოდინში";
       case "confirmed":
-        return "💳 გადახდილი";
+        return "დადასტურებულია";
       case "shipped":
         return "📦 გაგზავნილი";
       case "delivered":
@@ -185,30 +199,18 @@ const OrderSuccessPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 py-20 lg:py-20 print:bg-white print:py-0">
+    <div className="store-page print:bg-white print:py-0">
       {/* ✅ print-content კლასი დამატებულია */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 print-content print:max-w-none print:px-2">
-        {/* --- Success Header (ეკრანზე ჩანს, ბეჭდვისას არა) --- */}
-        <div className="text-center mb-10 print:hidden">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6 animate-bounce-slow shadow-sm">
-            <CheckCircle className="w-10 h-10 text-green-600" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-stone-900 mb-3">
-            მადლობა! შეკვეთა მიღებულია
-          </h1>
-          <p className="text-stone-600 max-w-lg mx-auto mb-8 text-lg">
-            თქვენი შეკვეთა წარმატებით გაფორმდა და გადაეცა დასამუშავებლად.
-            საჭიროების შემთხვევაში, დაგიკავშირდებით მითითებულ ნომერზე.
-          </p>
-
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-3 bg-white border-2 border-emerald-100 text-emerald-700 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm hover:shadow-md group"
-          >
-            <div className="p-2 bg-emerald-100 rounded-lg group-hover:bg-white transition-colors">
-              <Download className="w-6 h-6" />
-            </div>
-            <span>ინვოისის შენახვა (PDF)</span>
+        <div className="store-post-order-heading print:hidden">
+          <CheckCircle className="size-10 text-emerald-600" aria-hidden="true" />
+          <h1 className="store-display">მადლობა! შეკვეთა მიღებულია</h1>
+          <p className="store-order-reference"><span>{t("purchase.orderNumber")}</span><strong>{order.orderNumber}</strong></p>
+          <p className="font-semibold">{paymentStatus}</p>
+          <p>{t("purchase.nextSteps")}</p>
+          <button onClick={handlePrint} className="store-text-link inline-flex items-center gap-2 p-2">
+            <Download className="size-4" aria-hidden="true" />
+            ინვოისის შენახვა (PDF)
           </button>
         </div>
 
@@ -274,9 +276,7 @@ const OrderSuccessPage: React.FC = () => {
                     გადახდის მეთოდი
                   </p>
                   <p className="font-medium text-stone-900 flex items-center gap-2 print:text-base">
-                    {order.paymentMethod === "cash"
-                      ? "ადგილზე გადახდა"
-                      : "საბანკო გადარიცხვა"}
+                    {paymentLabel}
                   </p>
                 </div>
                 <div>

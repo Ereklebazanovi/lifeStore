@@ -1,9 +1,9 @@
+import { storefrontPath } from "../utils/storefrontPaths";
 // src/pages/ProductDetailsPage.tsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import {
   ShoppingCart,
-  ArrowLeft,
   Minus,
   Plus,
   Truck,
@@ -22,6 +22,8 @@ import { useAuthStore } from "../store/authStore";
 import { useInventoryRefresh } from "../hooks/useInventoryRefresh";
 import { showToast } from "../components/ui/Toast";
 import SEOHead from "../components/SEOHead";
+import LoadingScreen from "../components/LoadingScreen";
+import MobilePurchaseAction from "../components/MobilePurchaseAction";
 import { ReviewService } from "../services/reviewService";
 import { stockNotificationService } from "../services/stockNotificationService";
 import type { Product, Review } from "../types";
@@ -32,6 +34,7 @@ import { useCategoryStore } from "../store/categoryStore";
 import { useTranslation } from "react-i18next";
 import { getShippingRates } from "../services/settingsService";
 import { DEFAULT_SHIPPING_RATES, formatShippingSummary } from "../utils/shipping";
+import { getProductCover } from "../utils/storefrontPhotos";
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -65,6 +68,7 @@ const ProductDetailsPage: React.FC = () => {
   const [reviewModalDismissed, setReviewModalDismissed] = useState(false);
   const [manualReviewModal, setManualReviewModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
+  const inlinePurchase = useRef<HTMLDivElement>(null);
   const [quantity, setQuantity] = useState(1);
   const [isFetching, setIsFetching] = useState(true);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
@@ -97,7 +101,7 @@ const ProductDetailsPage: React.FC = () => {
         if (data?.slug) {
           setIsFetching(false);
           const reviewSuffix = location.pathname.endsWith('/review') ? '/review' : '';
-          navigate(`/product/${data.slug}${reviewSuffix}`, { replace: true });
+          navigate({ pathname: storefrontPath(`/product/${data.slug}${reviewSuffix}`, i18n.language), search: location.search }, { replace: true });
           return;
         }
       } else {
@@ -106,9 +110,7 @@ const ProductDetailsPage: React.FC = () => {
 
       if (data) {
         setProduct(data);
-        if (data.images && data.images.length > 0) {
-          setSelectedImage(data.images[0]);
-        }
+        setSelectedImage(getProductCover(data) || "");
 
         // Auto-select first available variant
         if (data.hasVariants && data.variants && data.variants.length > 0) {
@@ -397,11 +399,7 @@ ${product.description}
   };
 
   if (isFetching || isLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-emerald-100 border-t-emerald-600 rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingScreen inline />;
   }
 
   if (!product) {
@@ -412,7 +410,7 @@ ${product.description}
           პროდუქტი ვერ მოიძებნა
         </h2>
         <Link
-          to="/products"
+          to={storefrontPath("/products", i18n.language)}
           className="text-emerald-600 font-medium hover:underline"
         >
           პროდუქტებში დაბრუნება
@@ -425,7 +423,8 @@ ${product.description}
   const totalPrice = getCurrentPrice() * quantity;
   const currentStock = getCurrentStock();
 
-  const images = product?.images || [];
+  const cover = getProductCover(product);
+  const images = cover ? [cover, ...(product.images || []).filter(image => image !== cover)] : [];
   const currentImageIndex = images.indexOf(selectedImage);
 
   const goPrevImage = () => {
@@ -557,7 +556,7 @@ ${product.description}
         title={`${product.name} - ₾${getCurrentPrice().toFixed(2)} | Life Store`}
         description={`${product.description.slice(0, 120)} ✅ მარაგშია ${currentStock} ცალი 🚚 ${shippingSummaryKa}`}
         keywords={`${product.name}, ეკო პროდუქტები, ${product.category}`}
-        ogImage={product.images?.[0] || "https://lifestore.ge/logo.png"}
+        ogImage={cover || "https://lifestore.ge/logo.png"}
         ogType="product"
         canonicalUrl={`https://lifestore.ge/product/${product.slug || product.id}`}
         structuredData={{
@@ -565,7 +564,7 @@ ${product.description}
           "@type": "Product",
           "name": product.name,
           "description": product.description,
-          "image": product.images?.[0] || "https://lifestore.ge/logo.png",
+          "image": cover || "https://lifestore.ge/logo.png",
           "offers": {
             "@type": "Offer",
             "price": getCurrentPrice(),
@@ -600,52 +599,23 @@ ${product.description}
         }}
       />
 
-      <div className="min-h-screen bg-white lg:bg-[#F8FAFC] pb-32 lg:pb-16">
-        {/* --- MOBILE HEADER (Sticky) --- */}
-        <div className="lg:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-stone-100 px-4 h-14 flex items-center justify-between">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 -ml-2 text-stone-700 hover:bg-stone-100 rounded-full transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <span className="font-bold text-stone-900 truncate max-w-[200px] text-sm">
-            {displayName}
-          </span>
-          <button
-            onClick={handleShare}
-            className="p-2 -mr-2 text-stone-700 hover:bg-stone-100 rounded-full transition-colors"
-          >
-            <Share2 className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-0 lg:px-8 lg:pt-8">
-          {/* DESKTOP BREADCRUMB */}
-          <div className="hidden lg:flex items-center gap-2 mb-6 text-sm text-stone-500 font-medium">
-            <Link to="/" className="hover:text-stone-900 transition-colors">
-              მთავარი
+      <div className="store-product-page store-header-offset pb-16">
+        <div className="store-shell pt-5 lg:pt-9">
+          <nav className="flex items-center gap-3 mb-5 text-sm text-stone-600" aria-label={t("nav.products")}>
+            <Link to={storefrontPath("/products", i18n.language)} className="store-text-link">
+              {t("home.allProducts")}
             </Link>
-            <span className="text-stone-300">/</span>
-            <Link
-              to="/products"
-              className="hover:text-stone-900 transition-colors"
-            >
-              პროდუქტები
-            </Link>
-            <span className="text-stone-300">/</span>
-            <span className="text-emerald-600 truncate max-w-[300px]">
-              {displayName}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-12 bg-white lg:rounded-3xl lg:shadow-sm lg:border border-stone-200 overflow-hidden">
+            <button onClick={handleShare} aria-label={t("product.share")} className="ml-auto p-2 rounded-lg bg-white lg:hidden">
+              <Share2 className="w-5 h-5" />
+            </button>
+          </nav>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-5 bg-white rounded-xl border border-stone-200 overflow-hidden">
             
             {/* --- LEFT COLUMN: IMAGES (Compact & Fixed Height) --- */}
             <div className="lg:col-span-7 bg-white relative">
                {/* Main Image Container */}
               <div
-                className="relative w-full h-80 lg:h-96 bg-stone-50 flex items-center justify-center overflow-hidden group rounded-2xl lg:rounded-3xl border border-stone-100"
+                className="store-product-gallery relative flex items-center justify-center overflow-hidden group"
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
               >
@@ -689,7 +659,7 @@ ${product.description}
                 {product.images && product.images.length > 0 && (
                   <button
                     onClick={() => setIsImageModalOpen(true)}
-                    className="absolute top-4 right-4 z-10 bg-white/80 backdrop-blur-sm hover:bg-white text-gray-700 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+                    className="absolute top-4 right-4 z-10 bg-white/80 backdrop-blur-sm hover:bg-white text-gray-700 p-2 rounded-lg transition-all duration-200"
                     title="გადიდება"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -702,7 +672,7 @@ ${product.description}
                   <img
                     src={selectedImage}
                     alt={getLocalizedProductName(product, i18n.language)}
-                    className="w-full h-full object-contain p-6 lg:p-12 transition-transform duration-300 group-hover:scale-105 cursor-zoom-in"
+                    className="w-full h-full object-contain cursor-zoom-in"
                     onClick={() => setIsImageModalOpen(true)}
                   />
                 ) : (
@@ -710,50 +680,15 @@ ${product.description}
                 )}
               </div>
 
-              {/* Image Gallery (Always show if images exist) */}
-              {product.images && product.images.length > 0 && (
-                <div className="border-t border-stone-100 bg-white">
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-semibold text-gray-700">
-                        {t("product.images")} ({product.images.length}/6)
-                      </h4>
-                      {product.images.length > 1 && (
-                        <span className="text-xs text-gray-500">
-                          {t("product.selected")}: {product.images.indexOf(selectedImage) + 1}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 lg:mx-0 lg:px-0">
-                      {product.images.map((img, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setSelectedImage(img)}
-                          className={`relative shrink-0 w-20 h-20 lg:w-24 lg:h-24 rounded-lg border-2 overflow-hidden transition-all duration-200 cursor-pointer ${
-                            selectedImage === img
-                              ? "border-emerald-500 ring-2 ring-emerald-100 opacity-100 transform scale-105"
-                              : "border-stone-200 opacity-70 hover:opacity-100 hover:border-emerald-300 hover:scale-110"
-                          }`}
-                        >
-                          <img
-                            src={img}
-                            alt={`${getLocalizedProductName(product, i18n.language)} - ${t("product.imageOf", { current: index + 1, total: product.images.length })}`}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                          <div className="absolute bottom-1 right-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
-                            {index + 1}
-                          </div>
-                          {selectedImage === img && (
-                            <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
-                              <Check className="w-5 h-5 text-emerald-600" />
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              {images.length > 1 && (
+                <div className="store-product-thumbnails" role="group" aria-label={t("product.images")}>
+                  {images.map((img, index) => (
+                    <button key={img} type="button" className="store-product-thumbnail"
+                      onClick={() => setSelectedImage(img)} aria-pressed={selectedImage === img}
+                      aria-label={t("product.imageOf", { current: index + 1, total: images.length })}>
+                      <img src={img} alt="" loading="lazy" />
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -782,10 +717,15 @@ ${product.description}
                   </div>
               </div>
 
-              <h1 className="text-2xl lg:text-3xl font-bold text-stone-900 leading-tight mb-4 font-bpg-arial">
+              <h1 className="text-2xl lg:text-3xl font-bold text-stone-900 leading-tight mb-3 [overflow-wrap:anywhere]">
                 {displayName}
               </h1>
 
+              {reviews.length > 0 && (
+                <a href="#reviews" className="store-text-link text-sm mb-3">
+                  {avgRating.toFixed(1)} · {t("product.reviewCount", { count: reviews.length })}
+                </a>
+              )}
               {/* Price */}
               <div className="flex items-baseline gap-3 mb-6">
                 <span
@@ -847,8 +787,33 @@ ${product.description}
                   </div>
                 )}
 
+              <div className="product-purchase" ref={inlinePurchase}>
+                {!outOfStock && (
+                  <div className="store-quantity" role="group" aria-label={t("cart.quantity")}>
+                    <button type="button" aria-label={t("purchase.decrease")}
+                      onClick={() => handleQuantityChange(-1)} disabled={quantity <= 1}>
+                      <Minus size={16} aria-hidden="true" />
+                    </button>
+                    <span aria-live="polite">{quantity}</span>
+                    <button type="button" aria-label={t("purchase.increase")}
+                      onClick={() => handleQuantityChange(1)} disabled={quantity >= currentStock}>
+                      <Plus size={16} aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
+                <button type="button" className="store-button" onClick={handleAddToCart} disabled={outOfStock}>
+                  {!outOfStock && <ShoppingCart size={18} className="hidden shrink-0 sm:block" aria-hidden="true" />}
+                  {t(outOfStock ? "product.outOfStock" : "product.addToCart")}
+                </button>
+                {!outOfStock && quantity > 1 && (
+                  <p className="product-purchase-total">
+                    {t("purchase.productsSubtotal")} · <strong>₾{totalPrice.toFixed(2)}</strong>
+                  </p>
+                )}
+              </div>
+
               {/* Description */}
-              <div className="prose prose-stone prose-sm max-w-none text-stone-600 mb-6 leading-relaxed line-clamp-5 hover:line-clamp-none transition-all">
+              <div className="prose prose-stone prose-sm max-w-none text-stone-600 mb-6 leading-relaxed">
                 <p className="whitespace-pre-line">{displayDescription}</p>
               </div>
 
@@ -873,49 +838,6 @@ ${product.description}
                 >
                   <Share2 className="w-4 h-4" />
                   <span>{t("product.share")}</span>
-                </button>
-              </div>
-
-              {/* Desktop Add to Cart */}
-              <div className="hidden lg:flex items-center gap-4 mt-auto">
-                <div className="flex items-center bg-stone-100 rounded-xl h-14 p-1">
-                  <button
-                    onClick={() => handleQuantityChange(-1)}
-                    disabled={quantity <= 1}
-                    className="w-12 h-full flex items-center justify-center bg-white rounded-lg shadow-sm text-stone-600 hover:text-emerald-600 disabled:opacity-50 disabled:shadow-none transition-all"
-                  >
-                    <Minus className="w-5 h-5" />
-                  </button>
-                  <span className="w-12 text-center font-bold text-xl text-stone-900">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => handleQuantityChange(1)}
-                    disabled={quantity >= currentStock}
-                    className="w-12 h-full flex items-center justify-center bg-white rounded-lg shadow-sm text-stone-600 hover:text-emerald-600 disabled:opacity-50 disabled:shadow-none transition-all"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <button
-                  onClick={handleAddToCart}
-                  disabled={outOfStock}
-                  className={`flex-1 h-14 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95
-                            ${
-                              outOfStock
-                                ? "bg-stone-200 text-stone-400 cursor-not-allowed shadow-none"
-                                : "bg-stone-900 hover:bg-emerald-600 text-white shadow-stone-200 hover:shadow-emerald-200"
-                            }`}
-                >
-                  {outOfStock ? (
-                    t("product.outOfStock")
-                  ) : (
-                    <>
-                      <ShoppingCart className="w-5 h-5" />
-                      <span>{t("product.addToCart")} - ₾{totalPrice.toFixed(2)}</span>
-                    </>
-                  )}
                 </button>
               </div>
 
@@ -944,7 +866,7 @@ ${product.description}
                         <button
                           type="submit"
                           disabled={notifySubmitting}
-                          className="w-full sm:w-auto px-5 py-2.5 bg-stone-900 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
+                          className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
                         >
                           {notifySubmitting ? "..." : "გაგზავნა"}
                         </button>
@@ -966,7 +888,7 @@ ${product.description}
                 {relatedProducts.map((p) => (
                   <Link
                     key={p.id}
-                    to={`/product/${p.slug || p.id}`}
+                    to={storefrontPath(`/product/${p.slug || p.id}`, i18n.language)}
                     className="group bg-white rounded-2xl border border-stone-100 hover:border-emerald-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col"
                   >
                     <div className="aspect-square overflow-hidden bg-stone-50">
@@ -1006,7 +928,7 @@ ${product.description}
         )}
 
         {/* --- REVIEWS SECTION --- */}
-        <div id="reviews" className="px-4 lg:px-0 py-10 border-t border-stone-100 mt-6">
+        <div id="reviews" className="scroll-mt-24 px-4 lg:px-0 py-10 border-t border-stone-100 mt-6">
           <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-stone-900">{t("product.reviews")}</h2>
@@ -1099,56 +1021,12 @@ ${product.description}
           </div>{/* end max-w-3xl */}
         </div>
 
-        {/* --- MOBILE STICKY ACTIONS --- */}
-        <div className="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t border-stone-100 p-4 z-40 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
-          <div className="flex gap-3 items-center">
-            <div className="flex items-center bg-stone-100 rounded-lg h-12 px-1">
-              <button
-                onClick={() => handleQuantityChange(-1)}
-                disabled={quantity <= 1}
-                className="w-10 h-full flex items-center justify-center text-stone-500 disabled:opacity-30"
-              >
-                <Minus className="w-5 h-5" />
-              </button>
-              <span className="w-8 text-center font-bold text-lg text-stone-900">
-                {quantity}
-              </span>
-              <button
-                onClick={() => handleQuantityChange(1)}
-                disabled={quantity >= currentStock}
-                className="w-10 h-full flex items-center justify-center text-stone-500 disabled:opacity-30"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
-
-            <button
-              onClick={handleAddToCart}
-              disabled={outOfStock}
-              className={`flex-1 h-12 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95
-                        ${
-                          outOfStock
-                            ? "bg-stone-200 text-stone-400"
-                            : "bg-stone-900 text-white"
-                        }`}
-            >
-              {outOfStock ? (
-                t("product.outOfStock")
-              ) : (
-                <>
-                  <ShoppingCart className="w-5 h-5" />
-                  <div className="flex flex-col items-start leading-tight">
-                    <span>{t("product.addToCart")}</span>
-                    <span className="text-[10px] opacity-80">
-                      ₾{totalPrice.toFixed(2)}
-                    </span>
-                  </div>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
       </div>
+
+      {!outOfStock && !isImageModalOpen && !isShareModalOpen && !showReviewModal && (
+        <MobilePurchaseAction inlineAction={inlinePurchase} label={t("product.addToCart")}
+          price={`₾${totalPrice.toFixed(2)}`} onAdd={handleAddToCart} />
+      )}
 
       {/* Fullscreen Image Modal */}
       {isImageModalOpen && (
@@ -1160,7 +1038,7 @@ ${product.description}
                 <h3 className="text-lg font-semibold">{product?.name}</h3>
                 <p className="text-sm opacity-50">
                   {t("product.tapToZoom")}
-                  {" · "}{t("product.imageOf", { current: (product?.images?.indexOf(selectedImage) || 0) + 1, total: product?.images?.length || 0 })}
+                  {" · "}{t("product.imageOf", { current: currentImageIndex + 1, total: images.length })}
                 </p>
               </div>
               <button
@@ -1216,10 +1094,10 @@ ${product.description}
             </div>
 
             {/* Thumbnails Navigation - Always Visible at Bottom */}
-            {product?.images && product.images.length > 1 && (
+            {images.length > 1 && (
               <div className="p-4 border-t border-white/20 shrink-0">
                 <div className="flex gap-2 justify-center overflow-x-auto">
-                  {product.images.map((img, index) => (
+                  {images.map((img, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImage(img)}
@@ -1352,8 +1230,10 @@ ${product.description}
 
       {/* Review Modal */}
       {showReviewModal && product && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center overflow-hidden">
-          <div className="bg-white w-full max-w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-black/70 z-[85] flex items-end sm:items-center justify-center overflow-hidden">
+          <div role="dialog" aria-modal="true" aria-label={t("product.reviewLabel")}
+            onKeyDown={event => { if (event.key === "Escape") { setReviewModalDismissed(true); setManualReviewModal(false); } }}
+            className="bg-white w-full max-w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[95dvh] overflow-auto">
 
             {/* Header */}
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-stone-100">
@@ -1373,6 +1253,7 @@ ${product.description}
                 </div>
               </div>
               <button
+                autoFocus aria-label={t("common.close")}
                 onClick={() => { setReviewModalDismissed(true); setManualReviewModal(false); }}
                 className="shrink-0 ml-2 p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400"
               >
@@ -1406,7 +1287,9 @@ ${product.description}
                         key={s}
                         type="button"
                         onClick={() => setNewReviewRating(s)}
-                        className="transition-transform hover:scale-110 active:scale-95"
+                        aria-label={`${t("product.rating")} ${s}/5`}
+                        aria-pressed={s === newReviewRating}
+                        className="grid place-items-center min-w-11 min-h-11 rounded-md hover:bg-stone-50"
                       >
                         <svg
                           className={`w-8 h-8 ${s <= newReviewRating ? "text-yellow-400" : "text-stone-200"}`}
@@ -1436,7 +1319,7 @@ ${product.description}
                 <button
                   type="submit"
                   disabled={submittingReview}
-                  className="w-full bg-stone-900 hover:bg-emerald-600 text-white font-semibold py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
                 >
                   {submittingReview ? t("product.reviewSubmitting") : t("product.reviewSubmit")}
                 </button>

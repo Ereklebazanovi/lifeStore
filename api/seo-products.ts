@@ -1,3 +1,4 @@
+import { redirectToSpa } from "./lib/spaRedirect";
 // api/seo-products.ts
 // Pre-rendered HTML + JSON-LD for the full catalog page (/products).
 // Mirrors seo-category.ts but lists ALL active products (no category filter).
@@ -58,7 +59,7 @@ export default async function handler(
   const ua = (req.headers["user-agent"] as string) || "";
   if (!BOT_PATTERN.test(ua)) {
     res.setHeader("Cache-Control", "no-store, no-cache");
-    res.redirect(302, `/products?_spa=1`);
+    redirectToSpa(req, res, `/products`, lang);
     return;
   }
 
@@ -229,6 +230,6 @@ export default async function handler(
     res.status(200).send(html);
   } catch (err) {
     console.error("[SEO] /api/seo-products error:", err);
-    res.redirect(302, `${SITE_URL}/products`);
+    redirectToSpa(req, res, `/products`, lang);
   }
 }

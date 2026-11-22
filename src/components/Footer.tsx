@@ -1,12 +1,13 @@
+import { storefrontPath } from "../utils/storefrontPaths";
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Leaf, Mail, Phone, MapPin, Facebook, Instagram } from "lucide-react";
+import { Mail, Phone, MapPin, Facebook, Instagram } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ADMIN_CONFIG } from "../config/constants";
 
 const Footer: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const currentYear = new Date().getFullYear();
 
   const navigationLinks = [
@@ -35,7 +36,7 @@ const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="bg-white border-t border-stone-200 !mt-auto">
+    <footer className="bg-stone-100 border-t border-stone-200 !mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-12">
           
@@ -49,14 +50,10 @@ const Footer: React.FC = () => {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
-                  <Leaf className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-2xl font-bold text-stone-900 tracking-tight">
-                  LifeStore
-                </span>
-              </div>
+              <Link to={storefrontPath("/", i18n.language)} className="store-wordmark w-fit">
+                <span className="store-brand-mark" aria-hidden="true"><img src="/logo.webp" alt="" width={843} height={637} loading="lazy" /></span>
+                <span>Life Store</span>
+              </Link>
               <p className="text-stone-600 leading-relaxed text-sm">
                 {t("footer.tagline")}
               </p>
@@ -77,7 +74,7 @@ const Footer: React.FC = () => {
                 {navigationLinks.map((link, index) => (
                   <li key={index}>
                     <Link
-                      to={link.to}
+                      to={storefrontPath(link.to, i18n.language)}
                       className="text-stone-600 hover:text-emerald-600 transition-colors font-medium text-sm block"
                     >
                       {link.label}
@@ -102,7 +99,7 @@ const Footer: React.FC = () => {
                 {supportLinks.map((link, index) => (
                   <li key={index}>
                     <Link
-                      to={link.to}
+                      to={storefrontPath(link.to, i18n.language)}
                       className="text-stone-600 hover:text-emerald-600 transition-colors font-medium text-sm block"
                     >
                       {link.label}

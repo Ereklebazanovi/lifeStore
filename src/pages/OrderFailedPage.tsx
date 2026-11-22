@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { PaymentService } from "../services/paymentService";
 //OrderFailedPage.tsx
 import React, { useEffect, useState } from "react";
 import {
@@ -8,8 +10,6 @@ import {
 } from "react-router-dom";
 import {
   XCircle,
-  RefreshCw,
-  ArrowLeft,
   Phone,
   Mail,
   AlertTriangle,
@@ -20,6 +20,7 @@ import { showToast } from "../components/ui/Toast";
 import type { Order } from "../types";
 
 const OrderFailedPage: React.FC = () => {
+  const { t } = useTranslation();
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -86,13 +87,6 @@ const OrderFailedPage: React.FC = () => {
     fetchOrder();
   }, [orderId, searchParams, navigate]);
 
-  const handleRetryPayment = () => {
-    if (order) {
-      // Redirect to checkout page with pre-filled order data
-      navigate(`/checkout?retry=${order.orderNumber}`);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
@@ -102,6 +96,9 @@ const OrderFailedPage: React.FC = () => {
   }
 
   if (!order) return null;
+  const resumePayment = order.paymentMethod === "flitt" &&
+    order.paymentStatus === "pending" && order.orderStatus === "pending" &&
+    !order.stockRestored ? PaymentService.getPendingCheckoutUrl(order.orderNumber) : null;
 
   const getPaymentMethodText = (method: string) => {
     switch (method) {
@@ -119,43 +116,22 @@ const OrderFailedPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-stone-50 py-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Error Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-6 animate-pulse shadow-sm">
-            <XCircle className="w-10 h-10 text-red-600" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-stone-900 mb-3">
-            გადახდა ვერ მოხერხდა
-          </h1>
-          <p className="text-stone-600 max-w-lg mx-auto mb-8 text-lg">
-            თქვენი გადახდა ვერ დასრულდა წარმატებით. შეკვეთა შექმნილია, მაგრამ
-            საჭიროა გადახდის განმეორება.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button
-              onClick={handleRetryPayment}
-              className="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all shadow-lg hover:shadow-xl active:scale-95 group"
-            >
-              <div className="p-2 bg-emerald-500 rounded-lg group-hover:bg-emerald-600 transition-colors">
-                <RefreshCw className="w-6 h-6" />
-              </div>
-              <span>გადახდის განმეორება</span>
-            </button>
-
-            <button
-              onClick={() => navigate("/")}
-              className="inline-flex items-center gap-3 bg-white border-2 border-stone-200 text-stone-700 hover:text-stone-900 hover:border-stone-300 px-8 py-4 rounded-2xl font-bold text-lg transition-all shadow-sm hover:shadow-md"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span>მთავარზე დაბრუნება</span>
-            </button>
-          </div>
+        <div className="store-post-order-heading">
+          <XCircle className="size-10 text-red-600" aria-hidden="true" />
+          <h1 className="store-display">გადახდა ვერ მოხერხდა</h1>
+          <p className="store-order-reference"><span>{t("purchase.orderNumber")}</span><strong>{order.orderNumber}</strong></p>
+          {!resumePayment && <p>{t("purchase.paymentRetryHelp")}</p>}
+          {resumePayment ? (
+            <a className="store-button" href={resumePayment}>{t("purchase.continuePayment")}</a>
+          ) : (
+            <a className="store-button" href="#order-payment-help">{t("purchase.contact")}</a>
+          )}
+          <Link className="store-text-link" to="/products">{t("home.allProducts")}</Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             {/* Error Details */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-red-100">
               <div className="flex items-center gap-3 mb-4">
@@ -232,7 +208,7 @@ const OrderFailedPage: React.FC = () => {
             </div>
 
             {/* Contact Info */}
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-200">
+            <div id="order-payment-help" className="scroll-mt-24 bg-white p-6 rounded-3xl shadow-sm border border-stone-200">
               <h3 className="text-lg font-bold text-stone-900 mb-4">
                 დახმარება საჭიროა?
               </h3>
@@ -278,45 +254,7 @@ const OrderFailedPage: React.FC = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-200">
-              <h3 className="text-lg font-bold text-stone-900 mb-4">
-                შემდეგი ნაბიჯები
-              </h3>
-              <div className="space-y-3">
-                <button
-                  onClick={handleRetryPayment}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
-                >
-                  <RefreshCw className="w-5 h-5" />
-                  გადახდის განმეორება
-                </button>
-                <Link
-                  to="/products"
-                  className="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  მთავარზე დაბრუნება
-                </Link>
-              </div>
-            </div>
 
-            {/* Alternative Payment */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-3xl border border-blue-100">
-              <h4 className="font-bold text-stone-900 mb-3">
-                ალტერნატიული გადახდა
-              </h4>
-              <p className="text-stone-600 text-sm mb-4">
-                შეგიძლიათ აირჩიოთ სხვა გადახდის მეთოდი:
-              </p>
-              <ul className="text-stone-700 text-sm space-y-2">
-                <li>• ადგილზე გადახდა (ნაღდი ანგარიშსწორება)</li>
-                <li>• სხვა ბანკის ბარათი</li>
-                <li>• ონლაინ ბანკინგი</li>
-              </ul>
-            </div>
-          </div>
         </div>
       </div>
     </div>

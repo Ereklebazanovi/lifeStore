@@ -440,5 +440,52 @@
     "s5Text": "You have the right to request the deletion or correction of your personal data at any time.",
     "s5Note": "Note: In the event of account deletion, information about completed orders (invoices) may be retained for internal accounting purposes.",
     "contactTitle": "Contact Information:"
+  },
+  "storefront": {
+    "moreTopics": "More topics",
+    "fewerTopics": "Fewer topics",
+    "homeTitle": "Kitchen and home essentials",
+    "heroCopy": "Glass, bamboo and porcelain pieces for everyday use.",
+    "categories": "Categories",
+    "notFound": "Page not found",
+    "notFoundHint": "The address may have changed. You can browse our products in the catalog.",
+    "menuClose": "Close menu",
+    "orderSignIn": "Sign in to see your orders."
+  },
+  "catalog": {
+    "search": "Search products",
+    "filters": "Filters",
+    "sort": "Sort",
+    "recommended": "Recommended",
+    "newest": "Newest first",
+    "priceAsc": "Price: low to high",
+    "priceDesc": "Price: high to low",
+    "allCategories": "All categories",
+    "inStock": "In stock",
+    "onSale": "On sale",
+    "otherCategories": "Other categories",
+    "remove": "Remove filter · {{filter}}",
+    "tryAgain": "Try a different search or change your filters.",
+    "pages": "Catalog pages",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "purchase": {
+    "increase": "Increase quantity",
+    "decrease": "Decrease quantity",
+    "removeItem": "Remove {{name}}",
+    "continuePayment": "Continue payment",
+    "contact": "Contact us",
+    "orderNumber": "Order number",
+    "paymentPaid": "Paid",
+    "productsSubtotal": "Products subtotal",
+    "deliveryAtCheckout": "Delivery is added once you choose your address.",
+    "paymentOnline": "Online card payment",
+    "paymentCash": "Pay on delivery",
+    "paymentTransfer": "Bank transfer",
+    "paymentPending": "We’re waiting for payment confirmation.",
+    "nextSteps": "Order details and contact information are below.",
+    "paymentRetryHelp": "To continue paying for this order, contact us with your order number.",
+    "paymentMethodLabel": "Payment method"
   }
 }

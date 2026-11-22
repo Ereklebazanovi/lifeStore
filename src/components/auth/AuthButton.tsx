@@ -131,7 +131,7 @@ const AuthButton: React.FC = () => {
     <button
       onClick={handleSignIn}
       disabled={isLoading}
-      className="flex items-center gap-2 px-5 py-2.5 bg-stone-900 text-white text-sm font-bold rounded-xl hover:bg-emerald-600 transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed disabled:bg-stone-700"
+      className="store-sign-in flex items-center gap-2 px-5 py-2.5 bg-stone-900 text-white text-sm font-bold rounded-xl hover:bg-emerald-600 transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed disabled:bg-stone-700"
     >
       {isLoading ? (
         <>

@@ -20,14 +20,11 @@ import { trackInitiateCheckout } from "../utils/pixel";
 import {
   MapPin,
   User,
-  CreditCard,
-  Banknote,
   ArrowRight,
   Package,
   ShieldCheck,
   Smartphone,
   Mail,
-  CheckCircle2,
   Truck,
 } from "lucide-react";
 import type { CreateOrderRequest, CreatePaymentRequest } from "../types";
@@ -69,6 +66,7 @@ const CheckoutPage: React.FC = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingOrder = useRef(false);
   const [isAgreed, setIsAgreed] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -178,7 +176,7 @@ const CheckoutPage: React.FC = () => {
 
   // ცარიელი კალათის შემოწმება
   useEffect(() => {
-    if (items.length === 0 && !isSubmitting) {
+    if (items.length === 0 && !isSubmitting && !submittingOrder.current) {
       const timeoutId = setTimeout(() => {
         navigate("/cart");
       }, 100);
@@ -199,7 +197,7 @@ const CheckoutPage: React.FC = () => {
 
   const handlePreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!shippingRatesReady) return;
+    if (!shippingRatesReady || submittingOrder.current || !items.length) return;
 
     if (!isAgreed) {
       showToast("გთხოვთ, დაეთანხმოთ წესებსა და პირობებს", "error");
@@ -235,8 +233,11 @@ const CheckoutPage: React.FC = () => {
   };
 
   const handleConfirmOrder = async () => {
+    if (submittingOrder.current) return;
+    submittingOrder.current = true;
     setShowConfirmModal(false);
     setIsSubmitting(true);
+    let orderCreated = false;
 
     try {
       const orderRequest: CreateOrderRequest = {
@@ -264,11 +265,12 @@ const CheckoutPage: React.FC = () => {
       };
 
       const createdOrder = await OrderService.createOrder(orderRequest);
+      orderCreated = true;
 
       if (formData.paymentMethod === "flitt") {
         const paymentRequest: CreatePaymentRequest = {
           orderId: createdOrder.orderNumber,
-          amount: grandTotal,
+          amount: createdOrder.totalAmount,
           customerEmail: formData.email,
           description: `LifeStore Order #${createdOrder.orderNumber}`,
         };
@@ -277,14 +279,11 @@ const CheckoutPage: React.FC = () => {
           await PaymentService.processPayment(paymentRequest);
         } catch (paymentError) {
           console.error("Flitt payment error:", paymentError);
-          showToast("ონლაინ გადახდის შეცდომა. სცადეთ თავიდან.", "error");
+          navigate(`/order-failed/${createdOrder.id}`, { replace: true });
           return;
         }
       } else {
-        navigate(`/order-success/${createdOrder.id}`);
-        setTimeout(() => {
-          window.location.href = `/order-success/${createdOrder.id}`;
-        }, 500);
+        navigate(`/order-success/${createdOrder.id}`, { replace: true });
         clearCart();
         showToast(`შეკვეთა წარმატებით გაფორმდა!`, "success");
       }
@@ -298,21 +297,24 @@ const CheckoutPage: React.FC = () => {
         "error"
       );
     } finally {
-      setIsSubmitting(false);
+      if (!orderCreated) {
+        submittingOrder.current = false;
+        setIsSubmitting(false);
+      }
     }
   };
 
   // Helper for input styles
   const inputBaseStyle = "w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all duration-200 text-stone-900 placeholder:text-stone-400";
-  const labelStyle = "block text-xs font-bold text-stone-500 mb-1.5 uppercase tracking-wide";
+  const labelStyle = "block text-xs font-semibold text-stone-600 mb-1.5";
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-20 lg:py-20">
+    <div className="store-page">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
-        <div className="mb-8 text-center lg:text-left">
-           <h1 className="text-2xl lg:text-3xl font-bold text-stone-900 font-bpg-arial">
+        <div className="store-page-heading">
+           <h1 className="store-display">
             {t('checkout.title')}
           </h1>
           <p className="text-stone-500 mt-2 text-sm">
@@ -320,76 +322,30 @@ const CheckoutPage: React.FC = () => {
           </p>
         </div>
 
+        <div className="checkout-mobile-total">
+          <span>{t("checkout.totalToPay")}</span>
+          <strong className="text-emerald-700">₾{grandTotal.toFixed(2)}</strong>
+        </div>
         <form id="checkout-form" onSubmit={handlePreSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
           
           {/* --- LEFT SIDE: INPUTS --- */}
           <div className="lg:col-span-7 space-y-6">
             
-            {/* 1. PAYMENT METHOD (Moved to top for priority) */}
-            <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-stone-100">
-               <h2 className="text-lg font-bold text-stone-800 mb-4 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-emerald-600" />
-                {t('checkout.paymentMethod')}
-              </h2>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Online Payment Option */}
-                <label 
-                  className={`relative flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                    formData.paymentMethod === "flitt" 
-                      ? "border-emerald-500 bg-emerald-50/50 shadow-sm" 
-                      : "border-stone-100 hover:border-emerald-200 bg-stone-50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="flitt"
-                    checked={formData.paymentMethod === "flitt"}
-                    onChange={handleChange}
-                    className="hidden"
-                  />
-                  {formData.paymentMethod === "flitt" && (
-                    <div className="absolute top-3 right-3 text-emerald-600">
-                      <CheckCircle2 className="w-5 h-5 fill-emerald-100" />
-                    </div>
-                  )}
-                  <CreditCard className={`w-8 h-8 mb-3 ${formData.paymentMethod === "flitt" ? "text-emerald-600" : "text-stone-400"}`} />
-                  <span className="font-bold text-sm text-stone-900">{t('checkout.onlinePayment')}</span>
-                  <span className="text-[11px] text-stone-500 mt-1 text-center leading-tight">
-                    Visa / Mastercard / Amex <br/> {t('checkout.anyBank')}
-                  </span>
+            <fieldset className="bg-white p-4 lg:p-5 rounded-xl border border-stone-200 min-w-0">
+              <legend className="px-1 font-semibold text-stone-800">{t("checkout.paymentMethod")}</legend>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="checkout-payment-choice">
+                  <input type="radio" name="paymentMethod" value="flitt" checked={formData.paymentMethod === "flitt"} onChange={handleChange} />
+                  <span className="text-sm font-semibold">{t("checkout.onlinePayment")}</span>
+                  <small>Visa / Mastercard / Amex</small>
                 </label>
-
-                {/* Cash Payment Option */}
-                <label 
-                  className={`relative flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                    formData.paymentMethod === "cash" 
-                      ? "border-emerald-500 bg-emerald-50/50 shadow-sm" 
-                      : "border-stone-100 hover:border-emerald-200 bg-stone-50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash"
-                    checked={formData.paymentMethod === "cash"}
-                    onChange={handleChange}
-                    className="hidden"
-                  />
-                  {formData.paymentMethod === "cash" && (
-                     <div className="absolute top-3 right-3 text-emerald-600">
-                      <CheckCircle2 className="w-5 h-5 fill-emerald-100" />
-                    </div>
-                  )}
-                  <Banknote className={`w-8 h-8 mb-3 ${formData.paymentMethod === "cash" ? "text-emerald-600" : "text-stone-400"}`} />
-                  <span className="font-bold text-sm text-stone-900">{t('checkout.cashOnDelivery')}</span>
-                  <span className="text-[11px] text-stone-500 mt-1 text-center leading-tight">
-                    {t('checkout.cashFromCourier')}
-                  </span>
+                <label className="checkout-payment-choice">
+                  <input type="radio" name="paymentMethod" value="cash" checked={formData.paymentMethod === "cash"} onChange={handleChange} />
+                  <span className="text-sm font-semibold">{t("checkout.cashOnDelivery")}</span>
+                  <small>{t("checkout.cashFromCourier")}</small>
                 </label>
               </div>
-            </div>
+            </fieldset>
 
             {/* 2. COMBINED INFO (Contact + Delivery) */}
             <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-stone-100">
@@ -402,10 +358,10 @@ const CheckoutPage: React.FC = () => {
                 {/* Name Row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={labelStyle}>{t('checkout.firstName')}</label>
+                    <label htmlFor="checkout-firstName" className={labelStyle}>{t('checkout.firstName')}</label>
                     <input
                       type="text"
-                      name="firstName"
+                      id="checkout-firstName" autoComplete="given-name" name="firstName"
                       required
                       value={formData.firstName}
                       onChange={handleChange}
@@ -414,10 +370,10 @@ const CheckoutPage: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className={labelStyle}>{t('checkout.lastName')}</label>
+                    <label htmlFor="checkout-lastName" className={labelStyle}>{t('checkout.lastName')}</label>
                     <input
                       type="text"
-                      name="lastName"
+                      id="checkout-lastName" autoComplete="family-name" name="lastName"
                       required
                       value={formData.lastName}
                       onChange={handleChange}
@@ -430,21 +386,21 @@ const CheckoutPage: React.FC = () => {
                 {/* Phone & Email Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelStyle}>{t('checkout.phone')}</label>
-                    <PhoneInput
+                    <label htmlFor="checkout-phone" className={labelStyle}>{t('checkout.phone')}</label>
+                    <PhoneInput id="checkout-phone"
                       value={formData.phone}
                       onChange={(val) => setFormData((prev) => ({ ...prev, phone: val }))}
                       required
                     />
                   </div>
                   <div>
-                    <label className={labelStyle}>
+                    <label htmlFor="checkout-email" className={labelStyle}>
                       {t('checkout.email')}{" "}
-                      <span className="text-stone-300 normal-case font-normal">{t('checkout.optionalNote')}</span>
+                      <span className="text-stone-500 font-normal">{t('checkout.optionalNote')}</span>
                     </label>
                     <input
                       type="email"
-                      name="email"
+                      id="checkout-email" autoComplete="email" name="email"
                       value={formData.email}
                       onChange={handleChange}
                       className={inputBaseStyle}
@@ -455,10 +411,10 @@ const CheckoutPage: React.FC = () => {
 
                  {/* Secondary Phone (Optional, full width for clean look) */}
                  <div>
-                    <label className={labelStyle}>
-                      {t('checkout.secondaryPhone')} <span className="text-stone-300 normal-case font-normal">{t('checkout.optionalNote')}</span>
+                    <label htmlFor="checkout-secondaryPhone" className={labelStyle}>
+                      {t('checkout.secondaryPhone')} <span className="text-stone-500 font-normal">{t('checkout.optionalNote')}</span>
                     </label>
-                    <PhoneInput
+                    <PhoneInput id="checkout-secondaryPhone"
                       value={formData.secondaryPhone}
                       onChange={(val) => setFormData((prev) => ({ ...prev, secondaryPhone: val }))}
                       placeholder={t('checkout.secondaryPhonePlaceholder')}
@@ -478,9 +434,9 @@ const CheckoutPage: React.FC = () => {
                  {/* City & Address */}
                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                    <div className="sm:col-span-1">
-                      <label className={labelStyle}>{t('checkout.city')}</label>
+                      <label htmlFor="checkout-city" className={labelStyle}>{t('checkout.city')}</label>
                       <select
-                        name="city"
+                        id="checkout-city" name="city"
                         value={formData.city}
                         onChange={handleChange}
                         className={`${inputBaseStyle} appearance-none cursor-pointer`}
@@ -493,10 +449,10 @@ const CheckoutPage: React.FC = () => {
                       </select>
                    </div>
                    <div className="sm:col-span-2">
-                      <label className={labelStyle}>{t('checkout.address')}</label>
+                      <label htmlFor="checkout-address" className={labelStyle}>{t('checkout.address')}</label>
                       <input
                         type="text"
-                        name="address"
+                        id="checkout-address" autoComplete="street-address" name="address"
                         required
                         value={formData.address}
                         onChange={handleChange}
@@ -508,9 +464,9 @@ const CheckoutPage: React.FC = () => {
 
                  {/* Comment */}
                  <div>
-                    <label className={labelStyle}>{t('checkout.comment')}</label>
+                    <label htmlFor="checkout-comment" className={labelStyle}>{t('checkout.comment')}</label>
                     <textarea
-                      name="comment"
+                      id="checkout-comment" name="comment"
                       rows={2}
                       value={formData.comment}
                       onChange={handleChange}
@@ -525,7 +481,7 @@ const CheckoutPage: React.FC = () => {
 
           {/* --- RIGHT SIDE: SUMMARY (Sticky) --- */}
           <div className="lg:col-span-5">
-            <div className="bg-white rounded-2xl shadow-lg border border-stone-100 sticky top-4 lg:top-8 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-lg border border-stone-100 lg:sticky lg:top-24 overflow-hidden">
               <div className="p-5 bg-stone-50 border-b border-stone-100">
                 <h2 className="text-lg font-bold text-stone-800 flex items-center gap-2">
                   <Package className="w-5 h-5 text-stone-400" />
@@ -539,7 +495,7 @@ const CheckoutPage: React.FC = () => {
               {/* Items List (Compact) */}
               <div className="max-h-[240px] overflow-y-auto custom-scrollbar p-5 space-y-4">
                 {items.map((item, index) => (
-                  <div key={item.productId} className="flex gap-3">
+                  <div key={`${item.productId}:${item.variantId ?? ""}`} className="flex gap-3">
                     <div className="relative w-12 h-12 bg-stone-100 rounded-lg overflow-hidden border border-stone-200 flex-shrink-0">
                       {item.product.images?.[0] ? (
                         <img src={item.product.images[0]} alt={getLocalizedCartItemDisplayName(item, i18n.language)} className="w-full h-full object-cover" />
@@ -548,7 +504,7 @@ const CheckoutPage: React.FC = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-stone-900 truncate">
+                      <p className="text-sm font-medium text-stone-900 [overflow-wrap:anywhere]">
                         {getLocalizedCartItemDisplayName(item, i18n.language)}
                       </p>
                       {/* რომელ პროდუქტს შეეხო პრომო კოდი */}
@@ -571,7 +527,8 @@ const CheckoutPage: React.FC = () => {
               </div>
 
               {/* Promo code */}
-              <div className="px-5 pt-4 pb-1 border-t border-stone-100">
+              <details className="border-t border-stone-100 px-5 py-2" open={appliedPromo ? true : undefined}>
+                <summary className="cursor-pointer text-sm font-semibold text-emerald-700 py-2">{t("checkout.promoLabel")}</summary>
                 {appliedPromo ? (
                   <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
                     <span className="text-sm text-emerald-800">
@@ -614,7 +571,7 @@ const CheckoutPage: React.FC = () => {
                 {promoError && (
                   <p role="alert" className="mt-2 text-xs text-red-600">{promoError}</p>
                 )}
-              </div>
+              </details>
 
               {/* Totals */}
               <div className="p-5 bg-stone-50/50 border-t border-stone-100 space-y-2">
@@ -707,12 +664,12 @@ const CheckoutPage: React.FC = () => {
       {/* CONFIRMATION MODAL */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+          <div role="dialog" aria-modal="true" aria-labelledby="confirm-checkout-title" onKeyDown={event => { if (event.key === "Escape") setShowConfirmModal(false); }} className="bg-white rounded-xl w-full max-w-sm p-5 shadow-2xl max-h-[90dvh] overflow-auto">
             <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Smartphone className="w-8 h-8 text-emerald-600" />
             </div>
 
-            <h3 className="text-lg font-bold text-center text-stone-900">
+            <h3 id="confirm-checkout-title" className="text-lg font-bold text-center text-stone-900">
               {t('checkout.confirmPhoneTitle')}
             </h3>
 
@@ -735,6 +692,10 @@ const CheckoutPage: React.FC = () => {
               <div className="flex justify-between gap-3">
                 <span>{t('checkout.delivery')}</span><span>₾{shippingCost.toFixed(2)}</span>
               </div>
+              <div className="flex justify-between gap-3">
+                <span>{t("purchase.paymentMethodLabel")}</span>
+                <strong className="text-right">{t(formData.paymentMethod === "cash" ? "purchase.paymentCash" : "purchase.paymentOnline")}</strong>
+              </div>
               <div className="flex justify-between gap-3 font-bold">
                 <span>{t('checkout.totalToPay')}</span><span>₾{grandTotal.toFixed(2)}</span>
               </div>
@@ -742,6 +703,7 @@ const CheckoutPage: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <button
+                autoFocus
                 onClick={() => setShowConfirmModal(false)}
                 className="py-3 text-sm font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors"
               >

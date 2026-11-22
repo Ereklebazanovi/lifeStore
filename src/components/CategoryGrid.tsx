@@ -1,85 +1,49 @@
-import React, { useEffect } from "react";
+﻿import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import { useCategoryStore } from "../store/categoryStore";
 import { useTranslation } from "react-i18next";
+import StorefrontPhoto from "./StorefrontPhoto";
+import type { Category, Product } from "../types";
 import { getLocalizedCategoryName } from "../utils/i18nHelpers";
+import { storefrontPath } from "../utils/storefrontPaths";
+import { getCategoryPhoto } from "../utils/storefrontPhotos";
 
-const CategoryGrid: React.FC = () => {
+export default function CategoryGrid({ categories, products, loading }: {
+  categories: Category[];
+  products: Product[];
+  loading: boolean;
+}) {
   const { t, i18n } = useTranslation();
-  const { categories, fetchCategories, isLoading } = useCategoryStore();
-
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
-
-  const activeCategories = categories
-    .filter((cat) => cat.isActive !== false) // მხოლოდ აქტიური კატეგორიები
-    .sort((a, b) => (b.priority || 0) - (a.priority || 0)); // მაღალი priority პირველი
 
   return (
-    <section className="lg:py-10 bg-white border-b border-stone-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 lg:mb-12">
-          <span className="text-emerald-600 font-bold text-xs tracking-wider uppercase mb-2 block">
-            {t('home.categoriesSubtitle')}
-          </span>
-          <h2 className="text-2xl lg:text-3xl font-bold text-stone-900">
-            {t('home.categoriesTitle')}
-          </h2>
+    <section className="store-categories" aria-labelledby="home-categories">
+      <header className="store-category-heading">
+        <h2 id="home-categories" className="store-display">{t("storefront.categories")}</h2>
+      </header>
+      {loading && !categories.length ? (
+        <div className="store-category-grid" aria-busy="true">
+          {Array.from({ length: 8 }, (_, index) => (
+            <div className="store-category-card" key={index}>
+              <div className="store-category-media store-category-placeholder" />
+              <div className="store-category-name" />
+            </div>
+          ))}
         </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className="bg-stone-100 rounded-2xl h-48 animate-pulse"
-              />
-            ))}
-          </div>
-        ) : activeCategories.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-stone-500">{t('home.noCategories')}</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
-            {activeCategories.map((category) => (
-              <Link
-                key={category.id}
-                to={`/category/${category.slug}`}
-                className="group relative overflow-hidden rounded-2xl aspect-square bg-gradient-to-br from-stone-100 to-stone-200 hover:shadow-xl transition-all duration-300"
-              >
-                {category.image ? (
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-emerald-200 to-emerald-400" />
-                )}
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-
-                <div className="absolute inset-0 flex flex-col justify-end p-4">
-                  <div>
-                    <h3 className="text-lg md:text-xl font-bold text-white mb-2 group-hover:text-emerald-300 transition-colors">
-                      {getLocalizedCategoryName(category, i18n.language)}
-                    </h3>
-                    <div className="flex items-center gap-2 text-emerald-300 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                      <span className="text-sm font-bold">{t('common.navigate')}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+      ) : categories.length ? (
+        <div className="store-category-grid">
+          {categories.map((category, index) => (
+            <Link to={storefrontPath(`/category/${category.slug}`, i18n.language)}
+              key={category.id} className="store-category-card">
+              <div className="store-category-media">
+                <StorefrontPhoto photo={getCategoryPhoto(category, products)} eager={index < 4} />
+              </div>
+              <span className="store-category-name">
+                {getLocalizedCategoryName(category, i18n.language)}
+                <ArrowRight size={17} aria-hidden="true" />
+              </span>
+            </Link>
+          ))}
+        </div>
+      ) : <p className="text-stone-600">{t("home.noCategories")}</p>}
     </section>
   );
-};
-
-export default CategoryGrid;
+}

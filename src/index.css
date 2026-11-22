@@ -4,10 +4,10 @@ this file is index.css
 */
 @import "tailwindcss";
 @import "./styles/scrollbar.css";
+@import "./styles/storefront.css";
 
-/* Set global Georgian font */
 body {
-  font-family: 'Noto Sans Georgian', Arial, sans-serif;
+  font-family: "Noto Sans Georgian", Arial, sans-serif;
 }
 
 /* Global responsive improvements */
@@ -17,7 +17,7 @@ body {
 
 /* Prevent horizontal scroll on small screens */
 html, body {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Better touch interactions on mobile */

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Phone } from "lucide-react";
 
 interface PhoneInputProps {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
@@ -11,6 +12,7 @@ interface PhoneInputProps {
 }
 
 const PhoneInput: React.FC<PhoneInputProps> = ({
+  id,
   value,
   onChange,
   required = false,
@@ -138,7 +140,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
       <div className="relative">
         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
         <input
-          type="tel"
+          type="tel" id={id} autoComplete="tel-national"
           value={displayValue}
           onChange={handleInputChange}
           required={required}

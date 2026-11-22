@@ -1,3 +1,4 @@
+import { storefrontPath } from "../utils/storefrontPaths";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, Clock, Tag, ArrowRight } from "lucide-react";
@@ -14,10 +15,12 @@ const BlogPage: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [showAllTags, setShowAllTags] = useState(false);
 
   useEffect(() => {
     BlogService.getPublishedPosts()
       .then(setPosts)
+      .catch(error => console.error("Could not load published posts:", error))
       .finally(() => setLoading(false));
   }, []);
 
@@ -37,9 +40,9 @@ const BlogPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-20 sm:py-20">
-      <div className="mb-10">
-        <h1 className="text-3xl sm:text-4xl font-bold text-stone-800 mb-3">
+    <div className="store-shell store-page">
+      <div className="store-page-heading">
+        <h1 className="store-display mb-3">
           {t("blog.title")}
         </h1>
         <p className="text-stone-500 text-lg">{t("blog.subtitle")}</p>
@@ -57,7 +60,7 @@ const BlogPage: React.FC = () => {
           >
             {t("home.filterAll")}
           </button>
-          {allTags.map((tag) => (
+          {(showAllTags ? allTags : allTags.slice(0, 4)).map((tag) => (
             <button
               key={tag}
               onClick={() => setActiveTag(tag === activeTag ? null : tag)}
@@ -70,6 +73,12 @@ const BlogPage: React.FC = () => {
               {getLocalizedBlogTag(tag, t)}
             </button>
           ))}
+          {allTags.length > 4 && (
+            <button type="button" aria-expanded={showAllTags} onClick={() => setShowAllTags(value => !value)}
+              className="store-text-link px-2 text-sm">
+              {t(showAllTags ? "storefront.fewerTopics" : "storefront.moreTopics")}
+            </button>
+          )}
         </div>
       )}
 
@@ -95,7 +104,7 @@ const BlogCard: React.FC<{ post: BlogPost; lang: string }> = ({ post, lang }) =>
 
   return (
     <Link
-      to={`/blog/${post.slug}`}
+      to={storefrontPath(`/blog/${post.slug}`, lang)}
       className="group flex flex-col bg-white border border-stone-200 rounded-2xl overflow-hidden hover:shadow-md hover:border-emerald-200 transition-all duration-200"
     >
       {post.image ? (

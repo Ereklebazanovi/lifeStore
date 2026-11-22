@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
-import LoadingSpinner from "../../pages/admin/components/LoadingSpinner";
+import LoadingScreen from "../LoadingScreen";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,7 +17,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, isLoading } = useAuthStore();
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <LoadingScreen />;
   }
 
   if (!user) {

@@ -1,3 +1,4 @@
+import { storefrontPath } from "../utils/storefrontPaths";
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Calendar, Clock, Tag, ArrowLeft, ArrowRight, ShoppingBag } from "lucide-react";
@@ -8,7 +9,11 @@ import {
   getLocalizedBlogExcerpt,
   getLocalizedBlogContent,
   getLocalizedBlogTag,
+  getLocalizedCategoryName,
+  getLocalizedProductName,
 } from "../utils/i18nHelpers";
+import { useCategoryStore } from "../store/categoryStore";
+import { useProductStore } from "../store/productStore";
 
 const BlogPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -17,6 +22,8 @@ const BlogPostPage: React.FC = () => {
   const [post, setPost] = useState<BlogPost | null>(null);
   const [related, setRelated] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const { products, fetchProducts } = useProductStore();
+  const { categories } = useCategoryStore();
 
   useEffect(() => {
     if (!slug) return;
@@ -26,7 +33,7 @@ const BlogPostPage: React.FC = () => {
       BlogService.getPublishedPosts(10),
     ]).then(([found, allPosts]) => {
       if (!found || !found.isPublished) {
-        navigate("/blog", { replace: true });
+        navigate(storefrontPath("/blog", i18n.language), { replace: true });
         return;
       }
       setPost(found);
@@ -39,8 +46,16 @@ const BlogPostPage: React.FC = () => {
         (p) => !p.tags.some((t) => found.tags.includes(t))
       );
       setRelated([...withTag, ...withoutTag].slice(0, 3));
+    }).catch(error => {
+      console.error("Could not load the article:", error);
+      navigate(storefrontPath("/blog", i18n.language), { replace: true });
     }).finally(() => setLoading(false));
-  }, [slug, navigate]);
+  }, [slug, navigate, i18n.language]);
+
+  const hasRelatedProducts = !!post?.relatedProductIds?.length;
+  useEffect(() => {
+    if (hasRelatedProducts) void fetchProducts();
+  }, [fetchProducts, hasRelatedProducts]);
 
   if (loading) {
     return (
@@ -59,12 +74,18 @@ const BlogPostPage: React.FC = () => {
   const lang = i18n.language;
   const title = getLocalizedBlogTitle(post, lang);
   const content = getLocalizedBlogContent(post, lang);
+  const shoppingLinks = [
+    ...categories.filter(category => category.isActive !== false && post.relatedCategorySlugs?.includes(category.slug))
+      .map(category => ({ path: `/category/${category.slug}`, label: getLocalizedCategoryName(category, lang) })),
+    ...products.filter(product => product.isActive !== false && post.relatedProductIds?.includes(product.id))
+      .map(product => ({ path: `/product/${product.slug || product.id}`, label: getLocalizedProductName(product, lang) })),
+  ];
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-20 sm:py-20">
+    <div className="store-shell store-page max-w-3xl">
       {/* Back link */}
       <Link
-        to="/blog"
+        to={storefrontPath("/blog", i18n.language)}
         className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-emerald-600 mb-8 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -87,7 +108,7 @@ const BlogPostPage: React.FC = () => {
       )}
 
       {/* Title */}
-      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-stone-800 mb-4 leading-tight">
+      <h1 className="store-display text-2xl sm:text-3xl md:text-4xl mb-4">
         {title}
       </h1>
 
@@ -121,18 +142,23 @@ const BlogPostPage: React.FC = () => {
       />
 
       {/* CTA */}
-      <div className="bg-linear-to-br from-emerald-50 to-stone-50 border border-emerald-100 rounded-2xl p-6 sm:p-8 mb-12 text-center">
-        <p className="text-stone-600 mb-4 text-sm sm:text-base">
-          {t("blog.ctaText")}
-        </p>
-        <Link
-          to="/products"
-          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors"
-        >
-          <ShoppingBag className="w-4 h-4" />
-          {t("home.hero.shopNow")}
-        </Link>
-      </div>
+      {shoppingLinks.length > 0 ? (
+        <section className="store-related-categories mb-10">
+          <h2>{t("blog.ctaText")}</h2>
+          <div>
+            {shoppingLinks.map(item => (
+              <Link key={item.path} to={storefrontPath(item.path, lang)}>{item.label}</Link>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <div className="border-y border-stone-200 py-5 mb-10">
+          <Link to={storefrontPath("/products", lang)} className="store-button gap-2">
+            <ShoppingBag className="w-4 h-4" />
+            {t("home.hero.shopNow")}
+          </Link>
+        </div>
+      )}
 
       {/* Related posts */}
       {related.length > 0 && (
@@ -146,7 +172,7 @@ const BlogPostPage: React.FC = () => {
               return (
                 <Link
                   key={r.id}
-                  to={`/blog/${r.slug}`}
+                  to={storefrontPath(`/blog/${r.slug}`, lang)}
                   className="group flex flex-col bg-white border border-stone-200 rounded-xl overflow-hidden hover:shadow-sm hover:border-emerald-200 transition-all"
                 >
                   {r.image ? (

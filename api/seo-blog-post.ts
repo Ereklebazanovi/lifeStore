@@ -1,3 +1,4 @@
+import { redirectToSpa } from "./lib/spaRedirect";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminDb } from "./lib/firebase-admin";
 import { Timestamp } from "firebase-admin/firestore";
@@ -38,7 +39,7 @@ export default async function handler(
   const ua = (req.headers["user-agent"] as string) || "";
   if (!BOT_PATTERN.test(ua)) {
     res.setHeader("Cache-Control", "no-store, no-cache");
-    res.redirect(302, `/blog/${slug}?_spa=1`);
+    redirectToSpa(req, res, `/blog/${encodeURIComponent(slug)}`, lang);
     return;
   }
 
@@ -267,6 +268,6 @@ export default async function handler(
     res.status(200).send(html);
   } catch (err) {
     console.error("[SEO] /api/seo-blog-post error:", err);
-    res.redirect(302, `${SITE_URL}/blog/${slug}`);
+    redirectToSpa(req, res, `/blog/${encodeURIComponent(slug)}`, lang);
   }
 }

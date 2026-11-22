@@ -1,15 +1,17 @@
 // src/App.tsx
 
-import React, { useEffect, lazy, Suspense } from "react";
+import React, { useEffect, useLayoutEffect, lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Outlet,
+  Link,
   useLocation,
   useNavigate,
 } from "react-router-dom";
 import i18n from "./i18n";
+import { useTranslation } from "react-i18next";
 import { AnimatePresence } from "framer-motion";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -41,12 +43,13 @@ import { useCartStore } from "./store/cartStore";
 import { ToastContainer } from "./components/ui/Toast";
 import { initGoogleAnalytics, trackPageView } from "./utils/analytics";
 import { initFacebookPixel, trackPixelEvent } from "./utils/pixel";
+import { getStorefrontLanguage, storefrontPath } from "./utils/storefrontPaths";
 const LANG_PREFIXES = ["en", "ru"] as const;
 type LangPrefix = (typeof LANG_PREFIXES)[number];
 
 const LanguageRoute: React.FC<{ lang: LangPrefix }> = ({ lang }) => {
-  useEffect(() => {
-    i18n.changeLanguage(lang);
+  useLayoutEffect(() => {
+    void i18n.changeLanguage(lang);
   }, [lang]);
   return <Outlet />;
 };
@@ -57,12 +60,13 @@ const AnalyticsTracker: React.FC = () => {
   const isAdminRoute = location.pathname.startsWith("/admin");
 
   useEffect(() => {
+    if (import.meta.env.MODE === "design-preview") return;
     initGoogleAnalytics();
     initFacebookPixel();
   }, []);
 
   useEffect(() => {
-    if (isAdminRoute) return;
+    if (isAdminRoute || import.meta.env.MODE === "design-preview") return;
     if (new URLSearchParams(location.search).has('_spa')) return;
     trackPageView(`${location.pathname}${location.search}`);
     trackPixelEvent("PageView");
@@ -75,21 +79,37 @@ const CheckAndRenderLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const { i18n: translation } = useTranslation();
+
+  useEffect(() => {
+    document.documentElement.lang = getStorefrontLanguage(translation.language);
+  }, [translation.language]);
+
+  useEffect(() => {
+    if (!isAdminRoute || import.meta.env.MODE === "design-preview") return;
+    if (document.getElementById("admin-fonts")) return;
+    const stylesheet = document.createElement("link");
+    stylesheet.id = "admin-fonts";
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = "https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap";
+    document.head.appendChild(stylesheet);
+  }, [isAdminRoute]);
 
   // Strip _spa marker (added by api/product/[id].ts redirect for non-bots) from the URL
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     if (urlParams.has('_spa')) {
-      navigate(location.pathname, { replace: true });
+      urlParams.delete('_spa');
+      navigate({ pathname: location.pathname, search: urlParams.toString(), hash: location.hash }, { replace: true });
     }
-  }, [location.search, navigate, location.pathname]);
+  }, [location.search, navigate, location.pathname, location.hash]);
 
   if (isAdminRoute) {
     return <AnimatedRoutes />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50">
+    <div className="storefront min-h-screen flex flex-col">
       <Navbar />
       <main className="grow">
         <AnimatedRoutes />
@@ -99,11 +119,24 @@ const CheckAndRenderLayout: React.FC = () => {
   );
 };
 
+const NotFoundPage: React.FC = () => {
+  const { t, i18n: translation } = useTranslation();
+  return (
+    <div className="store-shell store-page">
+      <div className="store-empty">
+        <h1>{t("storefront.notFound")}</h1>
+        <p>{t("storefront.notFoundHint")}</p>
+        <Link className="store-button" to={storefrontPath("/products", translation.language)}>{t("home.allProducts")}</Link>
+      </div>
+    </div>
+  );
+};
+
 const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence initial={false} mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route
           path="/"
@@ -287,8 +320,10 @@ const AnimatedRoutes: React.FC = () => {
             <Route path="about" element={<PageTransition><AboutPage /></PageTransition>} />
             <Route path="product/:id" element={<PageTransition><ProductDetailsPage /></PageTransition>} />
             <Route path="product/:id/review" element={<PageTransition><ProductDetailsPage /></PageTransition>} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         ))}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AnimatePresence>
   );
@@ -299,10 +334,12 @@ function App() {
   const { initializeAuth, user, isLoading: isAuthLoading } = useAuthStore();
   const { loadUserCart } = useCartStore();
 
-  // 1. აპლიკაციის ინიციალიზაცია (Auth)
-  // ვიზუალურ "splash"-ს აღარ ვაჩერებთ JS-ით: index.html-ის სტატიკური skeleton
-  // უკვე ფარავს საწყის ჩატვირთვას და React mount-ზე ავტომატურად ინაცვლება.
-  // ამით LCP-დან ~1.5 წამი იჭრება. Auth ფონურად ინიციალდება.
+  useEffect(() => {
+    const splash = document.getElementById("app-splash");
+    splash?.setAttribute("aria-hidden", "true");
+    splash?.classList.add("is-ready");
+  }, []);
+
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
@@ -321,7 +358,7 @@ function App() {
   }, [user?.id, isAuthLoading, loadUserCart]);
 
   return (
-    <Router>
+    <Router unstable_useTransitions={false}>
       <ScrollToTop />
       <AnalyticsTracker />
       <CheckAndRenderLayout />

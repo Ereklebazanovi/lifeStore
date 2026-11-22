@@ -1,270 +1,88 @@
-// CartPage.tsx
-import React, { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  ShoppingCart,
-  ArrowRight,
-  Minus,
-  Plus,
-  Trash2,
-  ArrowLeft,
-} from "lucide-react";
-import { useCartStore } from "../store/cartStore";
-import { useCategoryStore } from "../store/categoryStore";
+import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useCartStore } from "../store/cartStore";
+import { getShippingRates } from "../services/settingsService";
 import { getVariantDisplayName } from "../utils/displayHelpers";
-import { getLocalizedProductName, getLocalizedCategoryName } from "../utils/i18nHelpers";
+import { getLocalizedProductName } from "../utils/i18nHelpers";
+import { DEFAULT_SHIPPING_RATES, formatShippingSummary } from "../utils/shipping";
+import { storefrontPath } from "../utils/storefrontPaths";
 
-const CartPage: React.FC = () => {
-  const {
-    items,
-    totalPrice,
-    totalItems,
-    updateQuantity,
-    removeItem,
-    clearCart,
-    validateAndCleanCart,
-    getItemPrice,
-  } = useCartStore();
-
+export default function CartPage() {
   const { t, i18n } = useTranslation();
-  const { categories } = useCategoryStore();
-  const [isValidating, setIsValidating] = useState(false);
-
-  // Validate cart when page loads
+  const { items, totalPrice, totalItems, updateQuantity, removeItem, clearCart, validateAndCleanCart, getItemPrice } = useCartStore();
+  const [shippingRates, setShippingRates] = useState(DEFAULT_SHIPPING_RATES);
   useEffect(() => {
-    const validateCart = async () => {
-      if (items.length === 0) return;
-
-      setIsValidating(true);
-      try {
-        await validateAndCleanCart();
-      } catch (error) {
-        console.error("Cart validation failed:", error);
-      } finally {
-        setIsValidating(false);
-      }
-    };
-
-    validateCart();
-  }, [validateAndCleanCart]); // Run once when component mounts
-
-  if (items.length === 0) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center space-y-6">
-          <div className="w-24 h-24 mx-auto bg-stone-100 rounded-full flex items-center justify-center mb-4">
-            <ShoppingCart className="w-10 h-10 text-stone-400" />
-          </div>
-          <h1 className="text-2xl font-bold text-stone-900">{t('cart.empty')}</h1>
-          <p className="text-stone-500">
-            {t('cart.emptySubtitle')}
-          </p>
-          <Link
-            to="/products"
-            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl transition-all shadow-lg hover:shadow-emerald-200 hover:-translate-y-1"
-          >
-            {t('home.hero.shopNow')}
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-        </div>
-      </div>
-    );
-  }
+    let active = true;
+    void getShippingRates().then(rates => { if (active) setShippingRates(rates); });
+    return () => { active = false; };
+  }, []);
+  useEffect(() => {
+    void validateAndCleanCart().catch(error => console.error("Cart validation failed:", error));
+  }, [validateAndCleanCart]);
+  const catalog = storefrontPath("/products", i18n.language);
 
   return (
-    <div className="min-h-screen bg-stone-50 py-20 lg:py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-stone-900">
-              {t('cart.title')}
-            </h1>
-            <p className="text-stone-500 text-sm mt-1">
-              {totalItems} {t('cart.itemsSelected')}
-            </p>
-          </div>
-          <button
-            onClick={clearCart}
-            className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors flex items-center gap-1 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100"
-          >
-            <Trash2 className="w-4 h-4" />
-            {t('cart.clearCart')}
-          </button>
+    <div className="store-shell store-page">
+      {items.length === 0 ? (
+        <div className="store-empty">
+          <ShoppingBag className="size-9 text-emerald-600" aria-hidden="true" />
+          <h1>{t("cart.empty")}</h1>
+          <p>{t("cart.emptySubtitle")}</p>
+          <Link className="store-button" to={catalog}>{t("home.hero.shopNow")}</Link>
         </div>
-
-        <div className="grid lg:grid-cols-12 gap-8">
-          {/* --- Cart Items List (Left Side) --- */}
-          <div className="lg:col-span-8 space-y-4">
-            {items.map((item) => (
-              <div
-                key={item.productId}
-                className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow"
-              >
-                {/* Flex Container: Mobile = Column, Tablet+ = Row */}
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                  {/* Image */}
-                  <div className="w-full sm:w-32 h-40 sm:h-32 bg-stone-100 rounded-xl overflow-hidden flex-shrink-0">
-                    {item.product.images && item.product.images.length > 0 ? (
-                      <img
-                        src={item.product.images[0]}
-                        alt={item.product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-stone-300">
-                        <ShoppingCart className="w-8 h-8" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 flex flex-col justify-between">
-                    {/* Title & Delete Row */}
-                    <div className="flex justify-between items-start gap-2 mb-2">
-                      <div>
-                        <h3 className="text-lg font-bold text-stone-900 line-clamp-1">
-                          {(() => {
-                            const base = getLocalizedProductName(item.product, i18n.language);
-                            const variant = getVariantDisplayName(item);
-                            return variant ? `${base} (${variant})` : base;
-                          })()}
-                        </h3>
-                        <p className="text-xs text-stone-500 line-clamp-1">
-                          {(() => {
-                            const cat = categories.find(c => c.name === item.product.category);
-                            return cat ? getLocalizedCategoryName(cat, i18n.language) : item.product.category;
-                          })()}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() =>
-                          removeItem(item.productId, item.variantId)
-                        }
-                        className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        aria-label="Remove"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    {/* Price & Quantity Controls Row */}
-                    <div className="flex flex-wrap items-end justify-between gap-4 mt-auto">
-                      {/* Quantity Selector */}
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs text-stone-500 font-medium ml-1">
-                          {t('cart.quantity')}
-                        </span>
-                        <div className="flex items-center bg-stone-50 border border-stone-200 rounded-lg h-10">
-                          <button
-                            onClick={() =>
-                              updateQuantity(
-                                item.productId,
-                                Math.max(1, item.quantity - 1),
-                                item.variantId
-                              )
-                            }
-                            disabled={item.quantity <= 1}
-                            className="w-10 h-full flex items-center justify-center text-stone-500 hover:text-stone-900 disabled:opacity-30 transition-colors"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          <span className="w-8 text-center font-bold text-stone-900 text-sm">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() =>
-                              updateQuantity(
-                                item.productId,
-                                item.quantity + 1,
-                                item.variantId
-                              )
-                            }
-                            disabled={item.quantity >= item.product.stock}
-                            className="w-10 h-full flex items-center justify-center text-stone-500 hover:text-stone-900 disabled:opacity-30 transition-colors"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
+      ) : (
+        <>
+          <header className="store-page-heading">
+            <h1 className="store-display">{t("cart.title")}</h1>
+            <p className="mt-2 text-stone-600">{t("checkout.itemCount", { count: totalItems })}</p>
+          </header>
+          <div className="store-cart-layout">
+            <div className="store-cart-list">
+              {items.map(item => {
+                const base = getLocalizedProductName(item.product, i18n.language);
+                const variant = getVariantDisplayName(item);
+                const name = variant ? `${base} (${variant})` : base;
+                const available = item.variantId ? item.product.variants?.find(value => value.id === item.variantId)?.stock ?? 0 : item.product.stock;
+                const unit = getItemPrice(item);
+                return (
+                  <article className="store-cart-line" key={`${item.productId}:${item.variantId ?? ""}`}>
+                    <Link className="store-cart-thumbnail" to={storefrontPath(`/product/${item.product.slug || item.productId}`, i18n.language)} aria-label={name}>
+                      {item.product.images?.[0] ? <img src={item.product.images[0]} alt="" loading="lazy" />
+                        : <ShoppingBag className="size-6 text-stone-400" aria-hidden="true" />}
+                    </Link>
+                    <div className="store-cart-line-body">
+                      <h2>{name}</h2>
+                      <div className="store-cart-line-meta">
+                        <div className="store-quantity" role="group" aria-label={t("cart.quantity")}>
+                          <button type="button" aria-label={t("purchase.decrease")} disabled={item.quantity <= 1}
+                            onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variantId)}><Minus size={16} /></button>
+                          <span aria-live="polite">{item.quantity}</span>
+                          <button type="button" aria-label={t("purchase.increase")} disabled={item.quantity >= available}
+                            onClick={() => updateQuantity(item.productId, item.quantity + 1, item.variantId)}><Plus size={16} /></button>
                         </div>
-                      </div>
-
-                      {/* Price */}
-                      <div className="text-right">
-                        <div className="text-lg sm:text-xl font-bold text-emerald-700">
-                          ₾{(getItemPrice(item) * item.quantity).toFixed(2)}
-                        </div>
-                        {item.quantity > 1 && (
-                          <div className="text-xs text-stone-400 font-medium">
-                            ₾{getItemPrice(item).toFixed(2)} / {t('cart.pricePerUnit')}
-                          </div>
-                        )}
+                        <span className="store-cart-line-price">₾{(unit * item.quantity).toFixed(2)}</span>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* --- Order Summary (Right Side) --- */}
-          <div className="lg:col-span-4 mt-6 lg:mt-0">
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm sticky top-24">
-              <h2 className="text-lg font-bold text-stone-900 mb-6 border-b border-stone-100 pb-4">
-                {t('cart.orderDetails')}
-              </h2>
-
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-stone-600 text-sm">
-                  <span>{t('cart.items')} ({totalItems})</span>
-                  <span className="font-medium text-stone-900">
-                    ₾{totalPrice.toFixed(2)}
-                  </span>
-                </div>
-                <div className="text-stone-600 text-sm">
-                  <span>{t('cart.shipping')}</span>
-                  <div className="flex justify-between mt-1">
-                    <span className="text-xs text-stone-400">{t('cart.tbilisiRustavi')}</span>
-                    <span className="text-xs font-medium text-stone-700">5₾</span>
-                  </div>
-                  <div className="flex justify-between mt-0.5">
-                    <span className="text-xs text-stone-400">{t('cart.other')}</span>
-                    <span className="text-xs font-medium text-stone-700">10₾</span>
-                  </div>
-                </div>
-                <div className="border-t border-dashed border-stone-200 pt-4 mt-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-base font-bold text-stone-900">
-                      {t('cart.totalToPay')}
-                    </span>
-                    <span className="text-2xl font-bold text-emerald-700">
-                      ₾{totalPrice.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <Link
-                to="/checkout" // შეცვლილია /checkout-ზე
-                className="w-full bg-stone-900 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl active:scale-95"
-              >
-                {t('cart.checkout')}
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-
-              <Link
-                to="/products"
-                className="flex items-center justify-center gap-2 w-full text-center text-stone-500 hover:text-stone-900 py-4 text-sm font-medium transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                {t('cart.continueShopping')}
-              </Link>
+                    <button type="button" className="store-cart-remove" aria-label={t("purchase.removeItem", { name })}
+                      onClick={() => removeItem(item.productId, item.variantId)}><Trash2 size={17} /></button>
+                  </article>
+                );
+              })}
+              {items.length > 1 && <button type="button" className="store-cart-clear" onClick={clearCart}>{t("cart.clearCart")}</button>}
             </div>
+            <aside className="store-cart-summary">
+              <h2>{t("cart.orderDetails")}</h2>
+              <p className="store-cart-subtotal"><span>{t("purchase.productsSubtotal")}</span><strong>₾{totalPrice.toFixed(2)}</strong></p>
+              <p className="store-cart-delivery">{formatShippingSummary(shippingRates, i18n.language)}</p>
+              <p className="store-cart-delivery">{t("purchase.deliveryAtCheckout")}</p>
+              <Link className="store-button" to="/checkout">{t("cart.checkout")}</Link>
+              <Link className="store-text-link" to={catalog}>{t("cart.continueShopping")}</Link>
+            </aside>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
-};
-
-export default CartPage;
+}

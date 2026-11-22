@@ -26,6 +26,7 @@ export class PaymentService {
    * ფრონტიც და ბექიც ერთ დომენზე იქნება.
    */
   private static getApiUrl(): string {
+    if (import.meta.env.MODE === "design-preview") return "/api/payment/create";
     // Vite-ს გარემოს შემოწმება (import.meta.env.DEV ავტომატურად true-ა ლოკალურად)
     if (import.meta.env.DEV) {
       console.log("🔧 Dev Mode Detected: Targeting localhost:3003");
@@ -46,7 +47,6 @@ export class PaymentService {
     try {
       console.log("🚀 Initializing Payment...");
       console.log("🔗 Target API:", apiUrl);
-      console.log("📦 Payload:", paymentData);
 
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -116,15 +116,20 @@ export class PaymentService {
       }
 
       // 2. ინფორმაციის შენახვა (ოპციონალური, დებაგისთვის კარგია, რომ შეკვეთა არ დაიკარგოს)
-      localStorage.setItem(
-        "pendingPayment",
-        JSON.stringify({
-          orderId: paymentData.orderId,
-          paymentId: paymentResponse.paymentId,
-          amount: paymentData.amount,
-          timestamp: Date.now(),
-        })
-      );
+      try {
+        sessionStorage.setItem(`payment-checkout:${paymentData.orderId}`, paymentResponse.checkoutUrl);
+        localStorage.setItem(
+          "pendingPayment",
+          JSON.stringify({
+            orderId: paymentData.orderId,
+            paymentId: paymentResponse.paymentId,
+            amount: paymentData.amount,
+            timestamp: Date.now(),
+          })
+        );
+      } catch {
+        // The current payment can proceed even if browser storage is unavailable.
+      }
 
       // 3. გადამისამართება
       this.redirectToCheckout(paymentResponse.checkoutUrl);
@@ -132,5 +137,20 @@ export class PaymentService {
       // ერორს ვატარებთ ზევით, რომ კომპონენტმა (CheckoutPage) Toast გამოაჩინოს
       throw error;
     }
+  }
+
+  static getPendingCheckoutUrl(orderId: string): string | null {
+    try {
+      const checkoutUrl = sessionStorage.getItem(`payment-checkout:${orderId}`);
+      if (!checkoutUrl) return null;
+      const url = new URL(checkoutUrl, window.location.origin);
+      if (import.meta.env.MODE === "design-preview") {
+        return url.origin === window.location.origin && url.pathname === `/__preview/pay/${orderId}` ? url.href : null;
+      }
+      if (url.protocol === "https:" && (url.hostname === "flitt.com" || url.hostname.endsWith(".flitt.com"))) return url.href;
+    } catch {
+      // The payment can still be recovered with support if storage is unavailable.
+    }
+    return null;
   }
 }

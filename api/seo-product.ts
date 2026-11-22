@@ -1,3 +1,4 @@
+import { redirectToSpa } from "./lib/spaRedirect";
 // api/seo-product.ts
 // Serves pre-rendered HTML + JSON-LD structured data to search engine crawlers.
 // Real users are routed to the SPA via vercel.json rewrites.
@@ -71,7 +72,7 @@ export default async function handler(
   const ua = (req.headers["user-agent"] as string) || "";
   if (!BOT_PATTERN.test(ua)) {
     res.setHeader("Cache-Control", "no-store, no-cache");
-    res.redirect(302, `/product/${id}?_spa=1`);
+    redirectToSpa(req, res, `/product/${encodeURIComponent(id)}`, lang);
     return;
   }
 
@@ -379,6 +380,6 @@ export default async function handler(
     res.status(200).send(html);
   } catch (error) {
     console.error("[SEO] /api/seo-product error:", error);
-    res.redirect(302, `${SITE_URL}/product/${id}`);
+    redirectToSpa(req, res, `/product/${encodeURIComponent(id)}`, lang);
   }
 }

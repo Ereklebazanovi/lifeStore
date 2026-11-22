@@ -1,76 +1,34 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { storefrontPath } from "../utils/storefrontPaths";
 import { Link } from "react-router-dom";
-import { Leaf, ShieldCheck, Sparkles, ArrowRight, Quote } from "lucide-react";
+import { Leaf, ShieldCheck, Sparkles } from "lucide-react";
 import { useTranslation, Trans } from "react-i18next";
 
-const CAROUSEL_IMAGES = [
-  "/about-1.jpg",
-  "/about-2.jpg",
-  "/about-3.jpg",
-];
-
 const AboutPage: React.FC = () => {
-  const [imgIdx, setImgIdx] = useState(0);
-  const { t } = useTranslation();
-
-  useEffect(() => {
-    const timer = setInterval(() => setImgIdx((i) => (i + 1) % CAROUSEL_IMAGES.length), 5000);
-    return () => clearInterval(timer);
-  }, []);
+  const { t, i18n } = useTranslation();
 
   return (
-    <article className="min-h-screen bg-white pb-20">
+    <article className="bg-stone-50 pb-12">
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <section className="py-20 lg:py-24">
+      <section className="store-page min-h-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
 
-            {/* Carousel */}
-            <div className="relative lg:pl-4 lg:pt-4 order-2 lg:order-1">
-              <div className="absolute top-0 left-0 w-full h-full bg-emerald-50 rounded-3xl -z-10 transform lg:-translate-x-4 lg:-translate-y-4" />
-              <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-lg border border-stone-100 relative">
-                {CAROUSEL_IMAGES.map((src, i) => (
-                  <img
-                    key={i}
-                    src={src}
-                    alt={t("about.imageAlt", { index: i + 1 })}
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-                      i === imgIdx ? "opacity-100 scale-105" : "opacity-0 scale-100"
-                    }`}
-                  />
-                ))}
-              </div>
-              <div className="absolute -bottom-6 -right-4 md:-right-8 bg-white p-6 rounded-xl shadow-xl border border-stone-100 max-w-xs hidden md:block z-20">
-                <Quote className="w-8 h-8 text-emerald-200 mb-2" />
-                <p className="text-stone-600 text-sm font-medium italic">
-                  "{t("about.heroQuote")}"
-                </p>
-              </div>
+            <div className="order-2 lg:order-1 overflow-hidden rounded-xl bg-stone-100 aspect-[4/3]">
+              <img src="/about-1.jpg" alt={t("about.imageAlt", { index: 1 })} className="w-full h-full object-cover" />
             </div>
 
             {/* Text */}
             <div className="space-y-7 order-1 lg:order-2">
-              <h1 className="text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
-                <Trans
-                  i18nKey="about.heroTitle"
-                  components={{ brand: <strong className="text-emerald-700" /> }}
-                />
-              </h1>
-
-              <p className="text-stone-600 text-lg leading-relaxed">
-                <Trans
-                  i18nKey="about.heroText"
-                  components={{ bold: <strong /> }}
-                />
-              </p>
+              <h1 className="store-display text-4xl lg:text-5xl">{t("nav.about")}</h1>
+              <p className="text-stone-600 text-lg leading-relaxed">{t("storefront.heroCopy")}</p>
 
               <Link
-                to="/products"
-                className="group inline-flex items-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-xl hover:bg-emerald-600 transition-all shadow-md hover:shadow-lg"
+                to={storefrontPath("/products", i18n.language)}
+                className="store-button"
               >
                 {t("about.viewCollection")}
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
           </div>
@@ -80,7 +38,7 @@ const AboutPage: React.FC = () => {
       {/* ── Mission ──────────────────────────────────────────── */}
       <section className="py-14 bg-emerald-50 border-y border-emerald-100">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-5">
+          <h2 className="store-display text-2xl sm:text-3xl mb-5">
             {t("about.missionTitle")}
           </h2>
           <p className="text-stone-600 text-lg leading-relaxed">
@@ -124,7 +82,7 @@ const AboutPage: React.FC = () => {
       {/* ── Closing CTA ──────────────────────────────────────── */}
       <section className="py-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <h3 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-5">
+          <h3 className="store-display text-2xl sm:text-3xl mb-5">
             {t("about.ctaTitle")}
           </h3>
           <p className="text-stone-600 text-lg leading-relaxed mb-8">
@@ -134,11 +92,10 @@ const AboutPage: React.FC = () => {
             />
           </p>
           <Link
-            to="/products"
-            className="group inline-flex items-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-full transition-all shadow-lg hover:shadow-emerald-200"
+            to={storefrontPath("/products", i18n.language)}
+            className="store-button"
           >
             {t("about.viewProducts")}
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
       </section>
