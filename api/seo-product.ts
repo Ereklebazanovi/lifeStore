@@ -133,6 +133,13 @@ export default async function handler(
       p = slugDoc.data();
     }
 
+    // დამალული პროდუქტი (მაგ. მიღებიდან ახლად შექმნილი, ფასის გარეშე) საძიებოებს არ უჩანს — sitemap-იც გამორიცხავს
+    if (p.isActive === false) {
+      res.setHeader("Cache-Control", "no-store, no-cache");
+      res.status(404).send("Not found");
+      return;
+    }
+
     // Fetch reviews and related products in parallel
     const [reviewsSnap, relatedSnap] = await Promise.all([
       adminDb

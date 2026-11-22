@@ -26,6 +26,9 @@ export interface StoreTransfer {
   createdBy: OrderActor;
   updatedAt?: Date;
   updatedBy?: OrderActor;
+  /** მიღებიდან („აქედან მაღაზიაში“) შექმნილი გადატანა — იცვლება მხოლოდ თავისი მიღებიდან */
+  receiptId?: string;
+  receiptNumber?: string;
 }
 export interface StoreTransferRequest {
   type: StoreTransferType;

@@ -1,7 +1,9 @@
 //EditProductModalVariants.tsx
 import React, { useState, useEffect } from "react";
-import { X, Package, Save, Edit3, Info } from "lucide-react";
+import { X, Save, Edit3, Info, Trash2 } from "lucide-react";
 import { useProductStore } from "../../../store/productStore";
+import { useCategoryStore } from "../../../store/categoryStore";
+import { activationErrorMessage, getActivationProblems } from "../../../utils/productActivation";
 import ImageUpload from "../../../components/ui/ImageUpload";
 import { PRIORITY_PRESETS, getPriorityEmoji } from "../../../utils/priority";
 import { generateProductSlug } from "../../../utils/slug";
@@ -21,7 +23,9 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
   product,
   onProductUpdated,
 }) => {
-  const { updateProduct, isLoading } = useProductStore();
+  const { updateProduct, deleteProduct, products, isLoading } = useProductStore();
+  const { categories, fetchCategories } = useCategoryStore();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // ძირითადი ინფორმაცია
   const [productName, setProductName] = useState("");
@@ -42,7 +46,6 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
   const [simpleSalePrice, setSimpleSalePrice] = useState<number | undefined>(
     undefined
   );
-  const [simpleStock, setSimpleStock] = useState<number>(0);
   const [simpleWeight, setSimpleWeight] = useState<number | undefined>(
     undefined
   );
@@ -68,12 +71,15 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
       // Always treat as simple product
       setSimplePrice(product.price || 0);
       setSimpleSalePrice(product.salePrice);
-      setSimpleStock(product.stock || 0);
       setSimpleWeight(product.weight);
 
       setErrors({});
     }
   }, [product, isOpen]);
+
+  useEffect(() => {
+    if (isOpen && categories.length === 0) void fetchCategories();
+  }, [isOpen, categories.length, fetchCategories]);
 
   if (!isOpen) return null;
 
@@ -86,22 +92,47 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
       newErrors.productName = "პროდუქტის სახელი აუცილებელია";
     }
 
-    if (!productCode.trim()) {
+    const code = productCode.trim().toUpperCase();
+    if (!code) {
       newErrors.productCode = "პროდუქტის კოდი აუცილებელია";
-    } else if (!/^[A-Z0-9-]+$/.test(productCode.trim())) {
+    } else if (!/^[A-Z0-9-]+$/.test(code)) {
       newErrors.productCode = "კოდი უნდა შედგებოდეს მხოლოდ დიდი ასოებისა, რიცხვებისა და ნიშნის (-) გამოყენებით";
+    } else if (products.some((other) => other.id !== product.id && (other.productCode || "").toUpperCase() === code)) {
+      newErrors.productCode = "ეს კოდი სხვა პროდუქტს უკვე აქვს";
     }
 
-    // მარტივი პროდუქტის ვალიდაცია
-    if (simplePrice <= 0) {
+    // ფასი: საიტზე ჩართულს — სავალდებულო; დამალულს (მაგ. მიღებიდან ახლად შექმნილს) შეიძლება ჯერ არ ჰქონდეს
+    if (!Number.isFinite(simplePrice) || simplePrice < 0 || (isActive && simplePrice <= 0)) {
       newErrors.simplePrice = "ფასი დადებითი უნდა იყოს";
     }
-    if (simpleStock < 0) {
-      newErrors.simpleStock = "მარაგი 0-ზე ნაკლები ვერ იქნება";
+
+    // საიტზე ჩართვა (გამორთულიდან) — მხოლოდ სრულ პროდუქტს
+    if (isActive && product.isActive === false) {
+      const problems = getActivationProblems(
+        { images, price: simplePrice, category, description },
+        categories.map((item) => item.name)
+      );
+      if (problems.length) newErrors.isActive = activationErrorMessage(problems);
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`წაიშალოს „${product.name}“? ეს მოქმედება ვერ დაბრუნდება.`)) return;
+    try {
+      setIsDeleting(true);
+      await deleteProduct(product.id);
+      showToast("პროდუქტი წაიშალა", "success");
+      onProductUpdated?.();
+      onClose();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      showToast("პროდუქტის წაშლა ვერ მოხერხდა", "error");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // ფორმის გაგზავნა
@@ -109,7 +140,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
     e.preventDefault();
 
     if (!validateForm()) {
-      showToast("შეავსეთ ყველა აუცილებელი ველი", "error");
+      showToast("შეასწორეთ მონიშნული ველები", "error");
       return;
     }
 
@@ -131,14 +162,12 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
         isActive,
         hasVariants: false, // Always false now
 
-        // Main product data
+        // Main product data — მარაგი აქედან აღარ იცვლება (მხოლოდ მიღებით/კორექციით, ისტორიით)
         price: simplePrice,
-        stock: simpleStock,
 
         // Computed fields for consistency
         minPrice: simplePrice,
         maxPrice: simplePrice,
-        totalStock: simpleStock,
 
         updatedAt: now,
       };
@@ -343,13 +372,19 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   კატეგორია
                 </label>
-                <input
-                  type="text"
+                <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="მაგ: სამზარეულოს ნივთები"
-                />
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                >
+                  <option value="">— აირჩიეთ კატეგორია —</option>
+                  {categories.map((item) => (
+                    <option key={item.id} value={item.name}>{item.name}</option>
+                  ))}
+                  {category && !categories.some((item) => item.name === category) && (
+                    <option value={category}>{category} (უცნობი კატეგორია)</option>
+                  )}
+                </select>
               </div>
 
               {/* Images */}
@@ -403,9 +438,12 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                     className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <span className="text-sm font-medium text-gray-700">
-                    პროდუქტი აქტიურია
+                    საიტზე ჩანს (აქტიური)
                   </span>
                 </label>
+                {errors.isActive && (
+                  <p role="alert" className="text-red-600 text-sm mt-1">{errors.isActive}</p>
+                )}
               </div>
             </div>
 
@@ -417,7 +455,7 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                     ფასი და მარაგი
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    შეცვალეთ პროდუქტის ფასი და მარაგის რაოდენობა
+                    მარაგი აქედან არ იცვლება: ახალი ტვირთი — „მიღებით“, შესწორება — საწყობში „კორექციით“
                   </p>
                 </div>
               </div>
@@ -496,36 +534,10 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-blue-800 mb-2">
-                          მარაგი <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={simpleStock === 0 ? "" : simpleStock}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === "") {
-                              setSimpleStock(0);
-                            } else {
-                              const numValue = parseInt(value);
-                              if (!isNaN(numValue)) {
-                                setSimpleStock(numValue);
-                              }
-                            }
-                          }}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            errors.simpleStock
-                              ? "border-red-300"
-                              : "border-blue-300"
-                          }`}
-                          placeholder="0"
-                        />
-                        {errors.simpleStock && (
-                          <p className="text-red-500 text-sm mt-1">
-                            {errors.simpleStock}
-                          </p>
-                        )}
+                        <span className="block text-sm font-medium text-blue-800 mb-2">მარაგი</span>
+                        <p className="px-3 py-2 rounded-lg border border-blue-200 bg-white text-gray-900 font-semibold" aria-label="მიმდინარე მარაგი">
+                          {product.stock ?? 0} ცალი
+                        </p>
                       </div>
 
                       <div>
@@ -561,7 +573,16 @@ const EditProductModalVariants: React.FC<EditProductModalVariantsProps> = ({
         </div>
 
         {/* Footer Buttons */}
-        <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 flex gap-3">
+        <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isLoading || isDeleting}
+            className="px-4 py-3 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4" />
+            {isDeleting ? "იშლება..." : "პროდუქტის წაშლა"}
+          </button>
           <button
             type="button"
             onClick={onClose}

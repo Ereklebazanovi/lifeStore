@@ -1,708 +1,391 @@
 import React, { useState, useEffect } from "react";
 import { useProductStore } from "../../../store/productStore";
+import { useCategoryStore } from "../../../store/categoryStore";
 import { showToast } from "../../../components/ui/Toast";
 import { stockNotificationService } from "../../../services/stockNotificationService";
-import type { Product, ProductVariant } from "../../../types";
+import type { Product } from "../../../types";
 import { exportInventoryToExcel, exportTurnoverToExcel } from "../../../utils/excelExporter";
+import EditProductModalVariants from "./EditProductModalVariants";
 
 import {
-  Plus,
-  Minus,
   Package,
-  AlertTriangle,
   Search,
   RefreshCw,
-  Box,
   Download,
   Calendar,
   CheckSquare,
   Square,
+  Pencil,
+  ArrowUpDown,
+  PackagePlus,
 } from "lucide-react";
 
-interface VariantStockModalProps {
-  isOpen: boolean;
+// კორექცია: დათვლის სხვაობა, დაზიანება და სხვა შესწორება. ახალი ტვირთი — „მიღებით“.
+const CORRECTION_REASONS = ["დათვლის სხვაობა", "დაზიანება/დანაკარგი", "სხვა"] as const;
+
+interface CorrectionModalProps {
+  product: Product;
   onClose: () => void;
-  productId: string;
-  productName: string;
-  variant: ProductVariant;
-  adjustmentType: "add" | "remove";
-  onStockUpdated: () => void;
 }
 
-const VariantStockModal: React.FC<VariantStockModalProps> = ({
-  isOpen,
-  onClose,
-  productId,
-  productName,
-  variant,
-  adjustmentType,
-  onStockUpdated,
-}) => {
+const CorrectionModal: React.FC<CorrectionModalProps> = ({ product, onClose }) => {
+  const { adjustStock } = useProductStore();
+  const [direction, setDirection] = useState<"add" | "remove">("remove");
   const [quantity, setQuantity] = useState(1);
-  const [reason, setReason] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { updateVariantStock } = useProductStore();
+  const [reason, setReason] = useState<(typeof CORRECTION_REASONS)[number]>("დათვლის სხვაობა");
+  const [otherReason, setOtherReason] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const currentStock = product.stock || 0;
+  const delta = direction === "add" ? quantity : -quantity;
+  const nextStock = currentStock + delta;
+  const reasonText = reason === "სხვა" ? otherReason.trim() : reason;
+  const invalid =
+    !Number.isSafeInteger(quantity) || quantity < 1 || nextStock < 0 || !reasonText || reasonText.length > 200;
 
-  useEffect(() => {
-    if (isOpen) {
-      setQuantity(1);
-      setReason(adjustmentType === "add" ? "შევსება" : "დაზიანება/დანაკარგი");
-    }
-  }, [isOpen, adjustmentType]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (quantity <= 0) {
-      showToast("რაოდენობა უნდა იყოს დადებითი რიცხვი", "error");
-      return;
-    }
-
-    if (adjustmentType === "remove" && quantity > (variant.stock || 0)) {
-      showToast("არ შეიძლება მეტის წაშლა ვიდრე არსებობს", "error");
-      return;
-    }
-
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (invalid || isSaving) return;
     try {
-      setIsLoading(true);
-
-      const currentStock = variant.stock || 0;
-      const newStock =
-        adjustmentType === "add" ? currentStock + quantity : currentStock - quantity;
-
-      await updateVariantStock(productId, variant.id, newStock, reason);
-
-      if (currentStock === 0 && newStock > 0) {
-        stockNotificationService.sendNotifications(productId, productName, productId).catch(console.error);
+      setIsSaving(true);
+      const saved = await adjustStock(product.id, delta, `Correction: ${reasonText}`);
+      if (saved - delta === 0 && saved > 0) {
+        stockNotificationService.sendNotifications(product.id, product.name, product.id).catch(console.error);
       }
-
-      showToast(
-        `${variant.name} - მარაგი განახლდა: ${newStock} ცალი`,
-        "success"
-      );
-
-      onStockUpdated();
+      showToast(`${product.name}: მარაგი ${saved} ცალი`, "success");
       onClose();
     } catch (error) {
-      console.error("Variant stock update error:", error);
-      showToast("მარაგის განახლება ვერ მოხერხდა", "error");
+      console.error("Stock correction error:", error);
+      showToast(error instanceof Error ? error.message : "კორექცია ვერ შეინახა", "error");
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
-  if (!isOpen) return null;
-
-  const isAdd = adjustmentType === "add";
-  const currentStock = variant.stock || 0;
-  const newStock = isAdd ? currentStock + quantity : currentStock - quantity;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
-      <div className="bg-white rounded-lg w-full max-w-sm sm:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="p-3 sm:p-4 md:p-6">
-          <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 mb-2 sm:mb-3">
-            {isAdd ? "მარაგის დამატება" : "მარაგის შემცირება"}
-          </h3>
-
-          <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-50 rounded-lg">
-            <p className="font-medium text-gray-900 text-xs sm:text-sm md:text-base truncate">{productName}</p>
-            <p className="text-xs sm:text-sm text-gray-600 truncate">ვარიანტი: {variant.name}</p>
-            <p className="text-xs sm:text-sm text-gray-600">
-              მიმდინარე მარაგი: <span className="font-bold">{currentStock} ცალი</span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="correction-title"
+        className="bg-white rounded-lg w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4" aria-label="მარაგის კორექცია">
+          <div>
+            <h3 id="correction-title" className="text-base sm:text-lg font-bold text-gray-900">მარაგის კორექცია</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              {product.name} · <span className="font-mono">{product.productCode || "—"}</span>
+            </p>
+            <p className="text-sm text-gray-600">
+              ახლა: <span className="font-bold">{currentStock} ცალი</span>
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                რაოდენობა
-              </label>
-              <input
-                type="number"
-                min="1"
-                max={adjustmentType === "remove" ? currentStock : undefined}
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                required
-              />
-            </div>
+          <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2">
+            ახალი ტვირთი შეიყვანეთ „მიღებით“. კორექცია მხოლოდ დათვლის სხვაობისა და დაზიანებისთვისაა.
+          </p>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                მიზეზი
-              </label>
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="მიმართულება">
+            {(["remove", "add"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={direction === value}
+                onClick={() => setDirection(value)}
+                className={`px-3 py-2 rounded-lg border text-sm font-semibold ${
+                  direction === value
+                    ? value === "add"
+                      ? "bg-emerald-600 border-emerald-600 text-white"
+                      : "bg-red-600 border-red-600 text-white"
+                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {value === "add" ? "+ მატება" : "− კლება"}
+              </button>
+            ))}
+          </div>
+
+          <label className="block">
+            <span className="block text-sm font-medium text-gray-700 mb-1">რაოდენობა</span>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              max={direction === "remove" ? currentStock : undefined}
+              value={Number.isFinite(quantity) ? quantity : ""}
+              onChange={(event) => setQuantity(Number.parseInt(event.target.value, 10))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+              required
+            />
+          </label>
+
+          <label className="block">
+            <span className="block text-sm font-medium text-gray-700 mb-1">მიზეზი</span>
+            <select
+              value={reason}
+              onChange={(event) => setReason(event.target.value as (typeof CORRECTION_REASONS)[number])}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+            >
+              {CORRECTION_REASONS.map((value) => (
+                <option key={value} value={value}>{value}</option>
+              ))}
+            </select>
+          </label>
+          {reason === "სხვა" && (
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-1">მიზეზის აღწერა</span>
               <input
                 type="text"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
+                value={otherReason}
+                maxLength={200}
+                onChange={(event) => setOtherReason(event.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                placeholder="მიზეზის აღწერა..."
                 required
               />
-            </div>
+            </label>
+          )}
 
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-gray-600">
-                ახალი მარაგი: <span className="font-bold text-blue-600">{newStock} ცალი</span>
-              </p>
-            </div>
+          <p className={`text-sm p-3 rounded-lg ${nextStock < 0 ? "bg-red-50 text-red-700" : "bg-blue-50 text-gray-700"}`}>
+            {nextStock < 0 ? `მარაგში მხოლოდ ${currentStock} ცალია` : <>შენახვის შემდეგ: <span className="font-bold">{nextStock} ცალი</span></>}
+          </p>
 
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                გაუქმება
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
-                  isAdd
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-red-600 hover:bg-red-700"
-                } disabled:opacity-50`}
-              >
-                {isLoading ? "მუშავდება..." : isAdd ? "დამატება" : "შემცირება"}
-              </button>
-            </div>
-          </form>
-        </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+              გაუქმება
+            </button>
+            <button
+              type="submit"
+              disabled={invalid || isSaving}
+              className="flex-1 px-4 py-2 text-white rounded-lg bg-gray-900 hover:bg-gray-800 disabled:opacity-50"
+            >
+              {isSaving ? "ინახება..." : "კორექციის შენახვა"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
 };
 
-// Simple Stock Modal (for non-variant products)
-interface SimpleStockModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  productId: string;
-  productName: string;
-  currentStock: number;
-  adjustmentType: "add" | "remove";
-  onStockUpdated: () => void;
-}
+const getStockStatusColor = (stock: number) => {
+  if (stock === 0) return "bg-red-100 text-red-800";
+  if (stock <= 5) return "bg-yellow-100 text-yellow-800";
+  if (stock <= 10) return "bg-blue-100 text-blue-800";
+  return "text-emerald-600 bg-emerald-50";
+};
 
-const SimpleStockModal: React.FC<SimpleStockModalProps> = ({
-  isOpen,
-  onClose,
-  productId,
-  productName,
-  currentStock,
-  adjustmentType,
-  onStockUpdated,
-}) => {
-  const [quantity, setQuantity] = useState(1);
-  const [reason, setReason] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { updateStock } = useProductStore();
-
-  useEffect(() => {
-    if (isOpen) {
-      setQuantity(1);
-      setReason(adjustmentType === "add" ? "შევსება" : "დაზიანება/დანაკარგი");
-    }
-  }, [isOpen, adjustmentType]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (quantity <= 0) {
-      showToast("რაოდენობა უნდა იყოს დადებითი რიცხვი", "error");
-      return;
-    }
-
-    if (adjustmentType === "remove" && quantity > currentStock) {
-      showToast("არ შეიძლება მეტის წაშლა ვიდრე არსებობს", "error");
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-
-      const newStock =
-        adjustmentType === "add"
-          ? currentStock + quantity
-          : currentStock - quantity;
-
-      await updateStock(productId, newStock, reason);
-
-      if (currentStock === 0 && newStock > 0) {
-        stockNotificationService.sendNotifications(productId, productName, productId).catch(console.error);
-      }
-
-      showToast(
-        `${productName} - მარაგი განახლდა: ${newStock} ცალი`,
-        "success"
-      );
-
-      onStockUpdated();
-      onClose();
-    } catch (error) {
-      console.error("Stock update error:", error);
-      showToast("მარაგის განახლება ვერ მოხერხდა", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  const isAdd = adjustmentType === "add";
-  const newStock = isAdd ? currentStock + quantity : currentStock - quantity;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
-      <div className="bg-white rounded-lg w-full max-w-sm sm:max-w-md shadow-xl">
-        <div className="p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">
-            {isAdd ? "მარაგის დამატება" : "მარაგის შემცირება"}
-          </h3>
-
-          <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-50 rounded-lg">
-            <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{productName}</p>
-            <p className="text-xs sm:text-sm text-gray-600">
-              მიმდინარე მარაგი: <span className="font-bold">{currentStock} ცალი</span>
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                რაოდენობა
-              </label>
-              <input
-                type="number"
-                min="1"
-                max={adjustmentType === "remove" ? currentStock : undefined}
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                მიზეზი
-              </label>
-              <input
-                type="text"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                placeholder="მიზეზის აღწერა..."
-                required
-              />
-            </div>
-
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-gray-600">
-                ახალი მარაგი: <span className="font-bold text-blue-600">{newStock} ცალი</span>
-              </p>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                გაუქმება
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
-                  isAdd
-                    ? "bg-emerald-600 hover:bg-emerald-700"
-                    : "bg-red-600 hover:bg-red-700"
-                } disabled:opacity-50`}
-              >
-                {isLoading ? "მუშავდება..." : isAdd ? "დამატება" : "შემცირება"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+const PriceCell: React.FC<{ product: Product }> = ({ product }) => {
+  const price = product.price || 0;
+  if (product.salePrice && product.salePrice < price) {
+    return (
+      <>
+        <span className="block text-xs text-orange-600 font-semibold line-through decoration-orange-400">₾{price.toFixed(2)}</span>
+        <span className="block text-sm font-medium text-emerald-600">₾{product.salePrice.toFixed(2)}</span>
+      </>
+    );
+  }
+  return price > 0 ? (
+    <span className="text-sm font-medium text-gray-900">₾{price.toFixed(2)}</span>
+  ) : (
+    <span className="text-xs font-medium text-amber-700">ფასი არ აქვს</span>
   );
 };
 
-// ProductRow Component
+interface SiteToggleProps {
+  product: Product;
+  canEdit: boolean;
+  busy: boolean;
+  onToggle: (product: Product) => void;
+}
+
+// „საიტზე“ — ადმინს ჩამრთველი, მენეჯერს მხოლოდ სტატუსი
+const SiteToggle: React.FC<SiteToggleProps> = ({ product, canEdit, busy, onToggle }) => {
+  const active = product.isActive !== false;
+  if (!canEdit) {
+    return (
+      <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>
+        {active ? "საიტზე ჩანს" : "დამალულია"}
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={active}
+      aria-label={`საიტზე: ${product.name}`}
+      disabled={busy}
+      onClick={() => onToggle(product)}
+      className="inline-flex items-center gap-2 disabled:opacity-50"
+      title={active ? "საიტზე ჩანს — დააჭირე დასამალად" : "დამალულია — დააჭირე საიტზე გამოსაჩენად"}
+    >
+      <span className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${active ? "bg-emerald-500" : "bg-gray-300"}`}>
+        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${active ? "translate-x-4" : "translate-x-0.5"}`} />
+      </span>
+      <span className={`text-xs font-medium ${active ? "text-emerald-700" : "text-gray-500"}`}>{active ? "ჩანს" : "დამალულია"}</span>
+    </button>
+  );
+};
+
 interface ProductRowProps {
   product: Product;
   canEdit: boolean;
-  isExpanded: boolean;
   isSelected: boolean;
-  onToggleExpand: () => void;
+  isToggling: boolean;
   onSelectProduct: (productId: string) => void;
-  onStockAdjustment: (
-    productId: string,
-    productName: string,
-    currentStock: number,
-    adjustmentType: "add" | "remove"
-  ) => void;
-  onVariantStockAdjustment: (
-    productId: string,
-    productName: string,
-    variant: ProductVariant,
-    adjustmentType: "add" | "remove"
-  ) => void;
+  onToggleActive: (product: Product) => void;
+  onEdit: (product: Product) => void;
+  onCorrect: (product: Product) => void;
+  onShowReceipts?: (product: Product) => void;
 }
+
+const ProductThumb: React.FC<{ product: Product; size: string }> = ({ product, size }) =>
+  product.images && product.images.length > 0 ? (
+    <img src={product.images[0]} alt={product.name} className={`${size} object-cover rounded-lg border border-gray-200 flex-shrink-0`} />
+  ) : (
+    <div className={`${size} bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0`}>
+      <Package className="w-6 h-6 text-gray-400" />
+    </div>
+  );
+
+const ActionButtons: React.FC<{
+  product: Product;
+  onEdit: (p: Product) => void;
+  onCorrect: (p: Product) => void;
+  onShowReceipts?: (p: Product) => void;
+}> = ({ product, onEdit, onCorrect, onShowReceipts }) => (
+  <div className="flex items-center justify-center gap-1">
+    <button
+      type="button"
+      onClick={() => onEdit(product)}
+      className="w-8 h-8 flex items-center justify-center rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+      title="რედაქტირება"
+      aria-label={`რედაქტირება: ${product.name}`}
+    >
+      <Pencil className="w-4 h-4" />
+    </button>
+    <button
+      type="button"
+      onClick={() => onCorrect(product)}
+      className="h-8 px-2 flex items-center justify-center gap-1 rounded-md bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 text-xs font-medium"
+      title="მარაგის კორექცია"
+      aria-label={`კორექცია: ${product.name}`}
+    >
+      <ArrowUpDown className="w-3.5 h-3.5" />
+      კორექცია
+    </button>
+    {onShowReceipts && (
+      <button
+        type="button"
+        onClick={() => onShowReceipts(product)}
+        className="w-8 h-8 flex items-center justify-center rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+        title="მიღებები — რამდენჯერ, როდის და ვისგან"
+        aria-label={`მიღებები: ${product.name}`}
+      >
+        <PackagePlus className="w-4 h-4" />
+      </button>
+    )}
+  </div>
+);
 
 const ProductRow: React.FC<ProductRowProps> = ({
   product,
   canEdit,
-  isExpanded,
   isSelected,
-  onToggleExpand,
+  isToggling,
   onSelectProduct,
-  onStockAdjustment,
-  onVariantStockAdjustment,
+  onToggleActive,
+  onEdit,
+  onCorrect,
+  onShowReceipts,
 }) => {
-  const getStockStatusColor = (stock: number) => {
-    if (stock === 0) return "bg-red-100 text-red-800";
-    if (stock <= 5) return "bg-yellow-100 text-yellow-800";
-    if (stock <= 10) return "bg-blue-100 text-blue-800";
-    return "text-emerald-600 bg-emerald-50";
-  };
-
-  const getDisplayStock = () => {
-    return product.stock || 0;
-  };
-
-  const getDisplayPrice = () => {
-    return `₾${product.price?.toFixed(2) || "0.00"}`;
-  };
-
+  const stock = product.stock || 0;
   return (
-    <>
-      <tr className={`border-b border-gray-200 hover:bg-gray-50/30 transition-colors ${!product.isActive ? 'opacity-60 bg-gray-50/50' : ''}`}>
-        <td className="px-4 py-3 text-center">
-          <button
-            onClick={() => onSelectProduct(product.id)}
-            className="flex items-center justify-center w-full"
-          >
-            {isSelected ? (
-              <CheckSquare className="w-4 h-4 text-emerald-600" />
-            ) : (
-              <Square className="w-4 h-4 text-gray-400" />
-            )}
-          </button>
-        </td>
-        <td className="px-4 py-3">
-          <div className="flex items-center gap-3">
-            {product.images && product.images.length > 0 ? (
-              <img
-                src={product.images[0]}
-                alt={product.name}
-                className="w-12 h-12 object-cover rounded-lg border border-gray-200 flex-shrink-0"
-              />
-            ) : (
-              <div className="w-12 h-12 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0">
-                <Package className="w-6 h-6 text-gray-400" />
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
-              <p className="text-xs text-gray-500 truncate">ID: {product.id}</p>
-            </div>
+    <tr className={`border-b border-gray-200 hover:bg-gray-50/30 transition-colors ${product.isActive === false ? "bg-gray-50/60" : ""}`}>
+      <td className="px-4 py-3 text-center">
+        <button onClick={() => onSelectProduct(product.id)} className="flex items-center justify-center w-full" aria-label={`მონიშვნა: ${product.name}`}>
+          {isSelected ? <CheckSquare className="w-4 h-4 text-emerald-600" /> : <Square className="w-4 h-4 text-gray-400" />}
+        </button>
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          <ProductThumb product={product} size="w-12 h-12" />
+          <div className="min-w-0 flex-1">
+            <h3 className={`font-medium truncate ${product.isActive === false ? "text-gray-600" : "text-gray-900"}`}>{product.name}</h3>
+            <p className="text-xs text-gray-500 truncate font-mono">{product.productCode || "კოდი არ აქვს"}</p>
           </div>
-        </td>
-
-        <td className="px-4 py-3 text-center">
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            მარტივი
-          </span>
-        </td>
-
-        <td className="px-4 py-3 text-center">
-          <span
-            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-              product.isActive
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-gray-100 text-gray-600"
-            }`}
-          >
-            {product.isActive ? "აქტიური" : "არააქტიური"}
-          </span>
-        </td>
-
-        <td className="px-4 py-3 text-center">
-          <div className="flex flex-col items-center space-y-0.5">
-            {product.salePrice && product.salePrice < (product.price || 0) ? (
-              <>
-                <span className="text-xs text-orange-600 font-semibold line-through decoration-orange-400">
-                  ₾{(product.price || 0).toFixed(2)}
-                </span>
-                <span className="text-sm font-medium text-emerald-600">₾{product.salePrice.toFixed(2)}</span>
-              </>
-            ) : (
-              <span className="text-sm font-medium text-gray-900">{getDisplayPrice()}</span>
-            )}
-          </div>
-        </td>
-
-        <td className="px-4 py-3 text-center">
-          <span
-            className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold ${getStockStatusColor(
-              getDisplayStock()
-            )}`}
-          >
-            {getDisplayStock()} ცალი
-          </span>
-        </td>
-
-        <td className="px-4 py-3 text-center">
-          {canEdit ? (
-          <div className="flex items-center justify-center gap-1">
-            <button
-              onClick={() =>
-                onStockAdjustment(
-                  product.id,
-                  product.name,
-                  product.stock || 0,
-                  "remove"
-                )
-              }
-              disabled={!product.stock || product.stock <= 0}
-              className="w-8 h-8 flex items-center justify-center rounded-md bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100"
-              title="მარაგის შემცირება"
-            >
-              <Minus className="w-4 h-4" />
-            </button>
-            <span className="mx-1 text-sm font-medium text-gray-700 min-w-[45px] text-center">
-              {product.stock || 0}
-            </span>
-            <button
-              onClick={() =>
-                onStockAdjustment(
-                  product.id,
-                  product.name,
-                  product.stock || 0,
-                  "add"
-                )
-              }
-              className="w-8 h-8 flex items-center justify-center rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-all duration-200 hover:scale-105"
-              title="მარაგის დამატება"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-          ) : (
-            <span className="text-gray-300 text-sm">—</span>
-          )}
-        </td>
-      </tr>
-
-    </>
+        </div>
+      </td>
+      <td className="px-4 py-3 text-center text-xs text-gray-700">{product.category || <span className="text-amber-700">—</span>}</td>
+      <td className="px-4 py-3 text-center"><PriceCell product={product} /></td>
+      <td className="px-4 py-3 text-center">
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold ${getStockStatusColor(stock)}`}>{stock} ცალი</span>
+      </td>
+      <td className="px-4 py-3 text-center">
+        <SiteToggle product={product} canEdit={canEdit} busy={isToggling} onToggle={onToggleActive} />
+      </td>
+      <td className="px-4 py-3 text-center">
+        {canEdit ? <ActionButtons product={product} onEdit={onEdit} onCorrect={onCorrect} onShowReceipts={onShowReceipts} /> : <span className="text-gray-300 text-sm">—</span>}
+      </td>
+    </tr>
   );
 };
 
-// ProductCard Component (Mobile-friendly)
-interface ProductCardProps {
-  product: Product;
-  canEdit: boolean;
-  isExpanded: boolean;
-  isSelected: boolean;
-  onToggleExpand: () => void;
-  onSelectProduct: (productId: string) => void;
-  onStockAdjustment: (
-    productId: string,
-    productName: string,
-    currentStock: number,
-    adjustmentType: "add" | "remove"
-  ) => void;
-  onVariantStockAdjustment: (
-    productId: string,
-    productName: string,
-    variant: ProductVariant,
-    adjustmentType: "add" | "remove"
-  ) => void;
-}
-
-const ProductCard: React.FC<ProductCardProps> = ({
+// Mobile card
+const ProductCard: React.FC<ProductRowProps> = ({
   product,
   canEdit,
-  isExpanded,
   isSelected,
-  onToggleExpand,
+  isToggling,
   onSelectProduct,
-  onStockAdjustment,
-  onVariantStockAdjustment,
+  onToggleActive,
+  onEdit,
+  onCorrect,
+  onShowReceipts,
 }) => {
-  const getStockStatusColor = (stock: number) => {
-    if (stock === 0) return "bg-red-100 text-red-800";
-    if (stock <= 5) return "bg-yellow-100 text-yellow-800";
-    if (stock <= 10) return "bg-blue-100 text-blue-800";
-    return "text-emerald-600 bg-emerald-50";
-  };
-
-  const getDisplayStock = () => {
-    return product.stock || 0;
-  };
-
-  const getDisplayPrice = () => {
-    return `₾${product.price?.toFixed(2) || "0.00"}`;
-  };
-
+  const stock = product.stock || 0;
   return (
-    <div className={`bg-white border border-gray-200 rounded-md sm:rounded-lg overflow-hidden ${!product.isActive ? 'opacity-60 bg-gray-50/50' : ''}`}>
-      {/* Card Header */}
-      <div className="p-2 sm:p-3 md:p-4">
-        <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
-          {/* Selection Checkbox */}
-          <button
-            onClick={() => onSelectProduct(product.id)}
-            className="flex items-center justify-center mt-1"
-          >
-            {isSelected ? (
-              <CheckSquare className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
-            ) : (
-              <Square className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
-            )}
+    <div className={`bg-white border border-gray-200 rounded-md sm:rounded-lg overflow-hidden ${product.isActive === false ? "bg-gray-50/60" : ""}`}>
+      <div className="p-2 sm:p-3">
+        <div className="flex items-start gap-2 sm:gap-3">
+          <button onClick={() => onSelectProduct(product.id)} className="flex items-center justify-center mt-1" aria-label={`მონიშვნა: ${product.name}`}>
+            {isSelected ? <CheckSquare className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" /> : <Square className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />}
           </button>
-          {/* Product Image */}
-          {product.images && product.images.length > 0 ? (
-            <img
-              src={product.images[0]}
-              alt={product.name}
-              className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 object-cover rounded-md sm:rounded-lg border border-gray-200 flex-shrink-0"
-            />
-          ) : (
-            <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gray-100 rounded-md sm:rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0">
-              <Package className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-gray-400" />
-            </div>
-          )}
-
-          {/* Product Info */}
+          <ProductThumb product={product} size="w-12 h-12 sm:w-14 sm:h-14" />
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-xs sm:text-sm leading-tight mb-1">
-              {product.name}
-            </h3>
-            <p className="text-xs text-gray-500 mb-1 sm:mb-2 truncate">ID: {product.id}</p>
-
-            {/* Type & Category */}
-            <div className="flex flex-wrap gap-1 sm:gap-2 mb-1 sm:mb-2">
-              <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                მარტივი
-              </span>
-              <span
-                className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${
-                  product.isActive
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-red-100 text-red-600"
-                }`}
-              >
-                {product.isActive ? "აქტიური" : "არააქტიური"}
-              </span>
-              {product.hasVariants && (
-                <span className="text-xs text-blue-600 font-medium">
-                  {product.variants?.length || 0} ვარიანტი
-                </span>
-              )}
-            </div>
-
-            {/* Price & Stock Row */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                {product.salePrice && product.salePrice < (product.price || 0) ? (
-                  <>
-                    <p className="text-xs text-orange-600 font-semibold line-through decoration-orange-400">
-                      ₾{(product.price || 0).toFixed(2)}
-                    </p>
-                    <p className="text-sm font-semibold text-emerald-600">₾{product.salePrice.toFixed(2)}</p>
-                  </>
-                ) : (
-                  <p className="text-sm font-semibold text-gray-900">{getDisplayPrice()}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ${getStockStatusColor(
-                    getDisplayStock()
-                  )}`}
-                >
-                  {getDisplayStock()} ცალი
-                </span>
-              </div>
+            <h3 className="font-semibold text-gray-900 text-xs sm:text-sm leading-tight">{product.name}</h3>
+            <p className="text-xs text-gray-500 truncate font-mono">{product.productCode || "კოდი არ აქვს"}</p>
+            <p className="text-xs text-gray-500 truncate">{product.category || "კატეგორია არ აქვს"}</p>
+            <div className="flex items-center justify-between mt-1">
+              <div><PriceCell product={product} /></div>
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ${getStockStatusColor(stock)}`}>{stock} ცალი</span>
             </div>
           </div>
         </div>
-
-        {/* Stock Control - Compact — read-only როლს არ უჩანს */}
-        {canEdit && (
-        <div className="pt-2 border-t border-gray-100">
-          <div className="flex items-center justify-center gap-2">
-            <button
-              onClick={() =>
-                onStockAdjustment(
-                  product.id,
-                  product.name,
-                  product.stock || 0,
-                  "remove"
-                )
-              }
-              disabled={!product.stock || product.stock <= 0}
-              className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-              title="მარაგის შემცირება"
-            >
-              <Minus className="w-4 h-4" />
-            </button>
-
-            <div className="px-3 py-2 bg-gray-50 rounded-lg border min-w-[60px] text-center">
-              <span className="text-sm font-bold text-gray-900">
-                {product.stock || 0}
-              </span>
-            </div>
-
-            <button
-              onClick={() =>
-                onStockAdjustment(
-                  product.id,
-                  product.name,
-                  product.stock || 0,
-                  "add"
-                )
-              }
-              className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 transition-all"
-              title="მარაგის დამატება"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="pt-2 mt-2 border-t border-gray-100 flex items-center justify-between gap-2">
+          <SiteToggle product={product} canEdit={canEdit} busy={isToggling} onToggle={onToggleActive} />
+          {canEdit && <ActionButtons product={product} onEdit={onEdit} onCorrect={onCorrect} onShowReceipts={onShowReceipts} />}
         </div>
-        )}
       </div>
-
     </div>
   );
 };
 
 // Main Component
-const InventoryManagerVariants: React.FC<{ canEdit?: boolean }> = ({ canEdit = true }) => {
-  const { products, isLoading, fetchProducts } = useProductStore();
+const InventoryManagerVariants: React.FC<{ canEdit?: boolean; onShowReceipts?: (productId: string) => void }> = ({ canEdit = true, onShowReceipts }) => {
+  const { products, isLoading, fetchProducts, toggleProductStatus } = useProductStore();
+  const { categories, fetchCategories } = useCategoryStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [visibilityFilter, setVisibilityFilter] = useState<"all" | "active" | "hidden">("all");
   const [sortBy, setSortBy] = useState("name");
-  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
-  const [selectedProduct, setSelectedProduct] = useState<{
-    id: string;
-    name: string;
-    currentStock: number;
-    adjustmentType: "add" | "remove";
-  } | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<{
-    productId: string;
-    productName: string;
-    variant: ProductVariant;
-    adjustmentType: "add" | "remove";
-  } | null>(null);
+  // ✏️ და კორექცია — id-ით, რომ ფანჯარამ ყოველთვის ბოლო (real-time) მონაცემი აჩვენოს
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [correctingId, setCorrectingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const editingProduct = editingId ? products.find((product) => product.id === editingId) : undefined;
+  const correctingProduct = correctingId ? products.find((product) => product.id === correctingId) : undefined;
 
   // Export functionality states
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
@@ -718,37 +401,22 @@ const InventoryManagerVariants: React.FC<{ canEdit?: boolean }> = ({ canEdit = t
     fetchProducts();
   }, [fetchProducts]);
 
-  const toggleProductExpand = (productId: string) => {
-    const newExpanded = new Set(expandedProducts);
-    if (newExpanded.has(productId)) {
-      newExpanded.delete(productId);
-    } else {
-      newExpanded.add(productId);
+  useEffect(() => {
+    if (categories.length === 0) void fetchCategories();
+  }, [categories.length, fetchCategories]);
+
+  const handleToggleActive = async (product: Product) => {
+    const activating = product.isActive === false;
+    try {
+      setTogglingId(product.id);
+      await toggleProductStatus(product.id);
+      showToast(activating ? `${product.name} — საიტზე გამოჩნდა` : `${product.name} — საიტზე დაიმალა`, "success");
+    } catch (error) {
+      console.error("Toggle product error:", error);
+      showToast(error instanceof Error ? error.message : "სტატუსი ვერ შეიცვალა", "error");
+    } finally {
+      setTogglingId(null);
     }
-    setExpandedProducts(newExpanded);
-  };
-
-  const handleStockAdjustment = (
-    productId: string,
-    productName: string,
-    currentStock: number,
-    adjustmentType: "add" | "remove"
-  ) => {
-    setSelectedProduct({ id: productId, name: productName, currentStock, adjustmentType });
-  };
-
-  const handleVariantStockAdjustment = (
-    productId: string,
-    productName: string,
-    variant: ProductVariant,
-    adjustmentType: "add" | "remove"
-  ) => {
-    setSelectedVariant({ productId, productName, variant, adjustmentType });
-  };
-
-  const closeModals = () => {
-    setSelectedProduct(null);
-    setSelectedVariant(null);
   };
 
   // Export functionality
@@ -838,11 +506,16 @@ const InventoryManagerVariants: React.FC<{ canEdit?: boolean }> = ({ canEdit = t
   // Filter and sort products
   const filteredProducts = products
     .filter((product) => {
+      const needle = searchQuery.trim().toLowerCase();
       const matchesSearch =
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.id.toLowerCase().includes(searchQuery.toLowerCase());
+        !needle ||
+        product.name.toLowerCase().includes(needle) ||
+        (product.productCode || "").toLowerCase().includes(needle) ||
+        product.id.toLowerCase().includes(needle);
       const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
-      return matchesSearch && matchesCategory;
+      const matchesVisibility =
+        visibilityFilter === "all" || (visibilityFilter === "hidden" ? product.isActive === false : product.isActive !== false);
+      return matchesSearch && matchesCategory && matchesVisibility;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -904,7 +577,7 @@ const InventoryManagerVariants: React.FC<{ canEdit?: boolean }> = ({ canEdit = t
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-3">
           <h1 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-gray-900 flex items-center gap-1 sm:gap-2">
             <Package className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-emerald-600 flex-shrink-0" />
-            <span className="truncate">საწყობი (მარაგის მართვა)</span>
+            <span className="truncate">საწყობი</span>
           </h1>
           <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
             <button
@@ -955,13 +628,37 @@ const InventoryManagerVariants: React.FC<{ canEdit?: boolean }> = ({ canEdit = t
           <div className="flex-1 relative">
             <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 sm:w-4 h-3 sm:h-4 text-gray-400" />
             <input
-              type="text"
-              placeholder="პროდუქტის ძებნა..."
+              type="search"
+              placeholder="სახელი ან კოდი..."
+              aria-label="პროდუქტის ძებნა"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-7 sm:pl-8 md:pl-9 pr-3 sm:pr-4 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
             />
           </div>
+
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            aria-label="კატეგორია"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+          >
+            <option value="all">ყველა კატეგორია</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.name}>{category.name}</option>
+            ))}
+          </select>
+
+          <select
+            value={visibilityFilter}
+            onChange={(e) => setVisibilityFilter(e.target.value as "all" | "active" | "hidden")}
+            aria-label="საიტზე"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-md sm:rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+          >
+            <option value="all">ყველა</option>
+            <option value="active">საიტზე ჩანს</option>
+            <option value="hidden">დამალული</option>
+          </select>
 
           <select
             value={sortBy}
@@ -1014,13 +711,13 @@ const InventoryManagerVariants: React.FC<{ canEdit?: boolean }> = ({ canEdit = t
                       კატეგორია
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                      სტატუსი
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                       ფასი
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                       მარაგი
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      საიტზე
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                       მოქმედებები
@@ -1033,12 +730,13 @@ const InventoryManagerVariants: React.FC<{ canEdit?: boolean }> = ({ canEdit = t
                       key={product.id}
                       canEdit={canEdit}
                       product={product}
-                      isExpanded={expandedProducts.has(product.id)}
                       isSelected={selectedProducts.has(product.id)}
-                      onToggleExpand={() => toggleProductExpand(product.id)}
+                      isToggling={togglingId === product.id}
                       onSelectProduct={handleSelectProduct}
-                      onStockAdjustment={handleStockAdjustment}
-                      onVariantStockAdjustment={handleVariantStockAdjustment}
+                      onToggleActive={handleToggleActive}
+                      onEdit={(item) => setEditingId(item.id)}
+                      onCorrect={(item) => setCorrectingId(item.id)}
+                      onShowReceipts={onShowReceipts ? (item) => onShowReceipts(item.id) : undefined}
                     />
                   ))}
                 </tbody>
@@ -1052,12 +750,13 @@ const InventoryManagerVariants: React.FC<{ canEdit?: boolean }> = ({ canEdit = t
                   key={product.id}
                   canEdit={canEdit}
                   product={product}
-                  isExpanded={expandedProducts.has(product.id)}
                   isSelected={selectedProducts.has(product.id)}
-                  onToggleExpand={() => toggleProductExpand(product.id)}
+                  isToggling={togglingId === product.id}
                   onSelectProduct={handleSelectProduct}
-                  onStockAdjustment={handleStockAdjustment}
-                  onVariantStockAdjustment={handleVariantStockAdjustment}
+                  onToggleActive={handleToggleActive}
+                  onEdit={(item) => setEditingId(item.id)}
+                  onCorrect={(item) => setCorrectingId(item.id)}
+                      onShowReceipts={onShowReceipts ? (item) => onShowReceipts(item.id) : undefined}
                 />
               ))}
             </div>
@@ -1066,33 +765,15 @@ const InventoryManagerVariants: React.FC<{ canEdit?: boolean }> = ({ canEdit = t
       </div>
 
       {/* Modals */}
-      {selectedProduct && (
-        <SimpleStockModal
-          isOpen={true}
-          onClose={closeModals}
-          productId={selectedProduct.id}
-          productName={selectedProduct.name}
-          currentStock={selectedProduct.currentStock}
-          adjustmentType={selectedProduct.adjustmentType}
-          onStockUpdated={() => {
-            fetchProducts();
-            closeModals();
-          }}
-        />
+      {canEdit && correctingProduct && (
+        <CorrectionModal product={correctingProduct} onClose={() => setCorrectingId(null)} />
       )}
 
-      {selectedVariant && (
-        <VariantStockModal
+      {canEdit && editingProduct && (
+        <EditProductModalVariants
           isOpen={true}
-          onClose={closeModals}
-          productId={selectedVariant.productId}
-          productName={selectedVariant.productName}
-          variant={selectedVariant.variant}
-          adjustmentType={selectedVariant.adjustmentType}
-          onStockUpdated={() => {
-            fetchProducts();
-            closeModals();
-          }}
+          product={editingProduct}
+          onClose={() => setEditingId(null)}
         />
       )}
 

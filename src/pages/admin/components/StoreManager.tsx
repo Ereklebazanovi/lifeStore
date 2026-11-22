@@ -276,6 +276,9 @@ const StoreManager: React.FC = () => {
                   </p>
                   <p className="text-xs text-gray-500">
                     {formatStoreTransferDate(item.date, false)} · {item.items.length} პროდუქტი
+                    {item.receiptNumber && (
+                      <span className="ml-2 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-800">მიღებიდან</span>
+                    )}
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
@@ -369,6 +372,11 @@ const StoreManager: React.FC = () => {
                 შეცვალა: {selected.updatedBy.email} · {selected.updatedAt ? formatStoreTransferDate(selected.updatedAt) : "დრო უცნობია"}
               </p>
             )}
+            {selected.receiptNumber ? (
+              <p className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">
+                ეს გადატანა მიღებიდან შეიქმნა ({selected.receiptNumber}). შესაცვლელად ან წასაშლელად გახსენი „მიღება“ და შეცვალე იქ „აქედან მაღაზიაში“.
+              </p>
+            ) : (
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={() =>
@@ -387,6 +395,7 @@ const StoreManager: React.FC = () => {
                 წაშლა
               </button>
             </div>
+            )}
           </div>
         </div>
       )}

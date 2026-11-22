@@ -350,6 +350,8 @@ export class StoreTransferService {
       const previous = snapshot.data() as StoreTransfer,
         sign = previous.type === "out" ? -1 : 1,
         now = new Date();
+      if (previous.receiptId)
+        throw Error(`ეს გადატანა მიღებიდანაა (#${previous.receiptNumber}) — შეცვალე მიღებაში`);
       const kept = new Set(items.map(transferItemKey));
       const deltas = [
         // ჩანაწერიდან ამოღებული (მაგ. კატალოგიდან წაშლილი) პროდუქტის უკუქცევა არ არის სავალდებულო
@@ -387,6 +389,8 @@ export class StoreTransferService {
       if (!snapshot.exists()) return;
       const previous = snapshot.data() as StoreTransfer,
         sign = previous.type === "out" ? 1 : -1;
+      if (previous.receiptId)
+        throw Error(`ეს გადატანა მიღებიდანაა (#${previous.receiptNumber}) — წაშალე მიღებიდან`);
       await applyStockDeltasInTransaction(
         tx,
         previous.items.map((item) => ({

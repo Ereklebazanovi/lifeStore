@@ -402,7 +402,10 @@ ${product.description}
     return <LoadingScreen inline />;
   }
 
-  if (!product) {
+  // დამალული პროდუქტი მყიდველს არ უჩანს (ადმინი/მენეჯერი ხედავს გადასამოწმებლად)
+  const hiddenFromCustomer = product?.isActive === false && user?.role !== "admin" && user?.role !== "manager";
+
+  if (!product || hiddenFromCustomer) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4 text-center">
         <AlertCircle className="w-16 h-16 text-stone-300 mb-4" />

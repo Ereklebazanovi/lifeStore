@@ -14,9 +14,12 @@ import {
   where,
   orderBy,
   onSnapshot,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { sortProductsByPriority } from "../utils/priority";
+import { activationErrorMessage, getActivationProblems } from "../utils/productActivation";
+import { useCategoryStore } from "./categoryStore";
 import type { ProductState, Product, ProductVariant, StockHistory } from "../types";
 
 interface ProductActions {
@@ -30,6 +33,8 @@ interface ProductActions {
   getProductById: (id: string) => Promise<Product | null>;
   getProductBySlug: (slug: string) => Promise<Product | null>;
   updateStock: (id: string, newStock: number, reason?: string) => Promise<void>;
+  /** კორექცია: მიმდინარე ნაშთს delta ემატება ტრანზაქციაში; აბრუნებს ახალ ნაშთს. */
+  adjustStock: (id: string, delta: number, reason: string) => Promise<number>;
   updateVariantStock: (productId: string, variantId: string, newStock: number, reason?: string) => Promise<void>;
   addVariant: (productId: string, variant: Omit<ProductVariant, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateVariant: (productId: string, variantId: string, updates: Partial<ProductVariant>) => Promise<void>;
@@ -269,18 +274,49 @@ export const useProductStore = create<ProductState & ProductActions>(
       } catch (error) {
         console.error("Error deleting product:", error);
         set({ isLoading: false });
+        throw error;
       }
     },
 
     toggleProductStatus: async (id: string) => {
-      try {
-        const product = get().products.find((p) => p.id === id);
-        if (!product) return;
-
-        await get().updateProduct(id, { isActive: !product.isActive });
-      } catch (error) {
-        console.error("Error toggling product status:", error);
+      const product = get().products.find((p) => p.id === id);
+      if (!product) throw new Error("პროდუქტი ვერ მოიძებნა");
+      const activating = product.isActive === false;
+      if (activating) {
+        const categoryNames = useCategoryStore.getState().categories.map((category) => category.name);
+        const problems = getActivationProblems(product, categoryNames);
+        if (problems.length) throw new Error(activationErrorMessage(problems));
       }
+      await get().updateProduct(id, { isActive: activating });
+    },
+
+    adjustStock: async (id: string, delta: number, reason: string) => {
+      if (!Number.isSafeInteger(delta) || delta === 0) throw new Error("რაოდენობა უნდა იყოს მთელი რიცხვი");
+      if (!reason.trim()) throw new Error("მიუთითე მიზეზი");
+      const productRef = doc(db, "products", id);
+      // ტრანზაქცია: ნაშთი ბაზიდან იკითხება, არა ეკრანიდან — პარალელური შეკვეთა არ დაიკარგება
+      const result = await runTransaction(db, async (transaction) => {
+        // დრო თითო ცდაზე ახლიდან — ბრუნვითი ისტორიას დროით ალაგებს, განმეორებული ცდა წინა ჩანაწერზე ადრე არ უნდა დადგეს
+        const now = new Date();
+        const snapshot = await transaction.get(productRef);
+        if (!snapshot.exists()) throw new Error("პროდუქტი ვერ მოიძებნა");
+        const data = snapshot.data() as Product;
+        const current = data.stock ?? 0;
+        const next = current + delta;
+        if (!Number.isSafeInteger(next) || next < 0) throw new Error(`არასაკმარისი მარაგი: ${data.name} (${current} ცალი)`);
+        const entry: StockHistory = { timestamp: now, quantity: next, reason, delta };
+        const stockHistory = [...(data.stockHistory || []), entry];
+        transaction.update(productRef, { stock: next, totalStock: next, updatedAt: now, lastStockReason: reason, stockHistory });
+        return { previous: current, next, stockHistory, now };
+      });
+      set({
+        products: get().products.map((product) =>
+          product.id === id
+            ? { ...product, stock: result.next, totalStock: result.next, updatedAt: result.now, stockHistory: result.stockHistory }
+            : product
+        ),
+      });
+      return result.next;
     },
 
     updateStock: async (id: string, newStock: number, reason?: string) => {

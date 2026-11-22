@@ -166,6 +166,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // 12ა. მიღება (ტვირთების ჟურნალი, docs/stock-receipts.md) — მხოლოდ ადმინი
+    match /stockReceipts/{receiptId} {
+      allow read, write: if isAdmin();
+    }
+
     // 13. პრომო კოდები — checkout კონკრეტულ კოდს ამოწმებს (get), სიას კი მხოლოდ ადმინი ხედავს,
     // რომ კოდები საიტიდან ჩამოსათვლელი არ იყოს. ცვლის მხოლოდ ადმინი.
     match /promoCodes/{code} {

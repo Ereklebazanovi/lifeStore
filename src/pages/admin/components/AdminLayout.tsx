@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuthStore } from "../../../store/authStore";
 import {
+  PackagePlus,
   LayoutDashboard,
-  Package,
   ShoppingBag,
   AlertTriangle,
   BarChart3,
@@ -73,9 +73,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   const allNavItems: NavItem[] = [
     { id: "dashboard", icon: LayoutDashboard, label: "მთავარი" },
     { id: "analytics", icon: BarChart3, label: "ანალიტიკა" },
-    { id: "products", icon: Package, label: "პროდუქტები" },
     { id: "orders", icon: ShoppingBag, label: "შეკვეთები" },
     { id: "inventory", icon: Warehouse, label: "საწყობი" },
+    { id: "receipts", icon: PackagePlus, label: "მიღება" },
     { id: "store", icon: Store, label: "მაღაზია" },
     { id: "promo", icon: Tag, label: "პრომო კოდები" },
     { id: "categories", icon: Layers, label: "კატეგორიები" },
@@ -98,8 +98,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         return ["orders", "inventory"].includes(item.id);
 
       case "warehouse":
-        // Warehouse staff can access: dashboard, inventory (full control), products (view only)
-        return ["dashboard", "inventory", "products"].includes(item.id);
+        // Warehouse staff: dashboard + საწყობი („პროდუქტები“ საწყობს შეუერთდა)
+        return ["dashboard", "inventory"].includes(item.id);
 
       default:
         return ["dashboard"].includes(item.id); // Safe default

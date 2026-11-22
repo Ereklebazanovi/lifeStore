@@ -5,10 +5,8 @@ import { useAuthStore } from "../../store/authStore";
 import { useProductStore } from "../../store/productStore";
 import { OrderService } from "../../services/orderService";
 import AdminLayout from "./components/AdminLayout";
-import ProductManager from "./components/ProductManager";
 import OrdersManager from "./components/OrdersManager";
 import LoadingSpinner from "./components/LoadingSpinner";
-import AddProductDrawer from "./components/AddProductDrawer";
 import CreateManualOrderModal from "./components/CreateManualOrderModal";
 import InventoryManagerVariants from "./components/InventoryManagerVariants";
 import CategoryManager from "./components/CategoryManager";
@@ -17,6 +15,7 @@ import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import ReviewsManager from "./components/ReviewsManager";
 import BlogManager from "./components/BlogManager";
 import StoreManager from "./components/StoreManager";
+import ReceiptsManager from "./components/ReceiptsManager";
 import PromoCodesSettings from "./components/PromoCodesSettings";
 import { showToast } from "../../components/ui/Toast";
 
@@ -34,15 +33,18 @@ const AdminPage: React.FC<{ storePage?: boolean }> = ({ storePage = false }) => 
   const location = useLocation();
   const { user, isLoading } = useAuthStore();
   const { products, subscribeToProducts } = useProductStore();
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>(() => {
     const requested = location.state?.adminSection;
-    if (typeof requested === "string" && ["analytics", "products", "orders", "inventory", "categories", "parameters", "promo", "reviews", "blog"].includes(requested)) return requested;
+    // „პროდუქტები“ საწყობს შეუერთდა (docs/stock-receipts.md §2)
+    if (requested === "products") return "inventory";
+    if (typeof requested === "string" && ["analytics", "orders", "inventory", "receipts", "categories", "parameters", "promo", "reviews", "blog"].includes(requested)) return requested;
     if (user?.role === "manager") return "orders";
     if (user?.role === "admin") return "analytics"; // admin პირდაპირ ანალიტიკაზე ეშვება
     return "dashboard";
   });
+  // საწყობიდან „მიღებები“ → მიღების ჟურნალი ამ პროდუქტის ფილტრით
+  const [receiptProductId, setReceiptProductId] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
@@ -176,9 +178,6 @@ const AdminPage: React.FC<{ storePage?: boolean }> = ({ storePage = false }) => 
           </div>
         );
 
-      case "products":
-        return <ProductManager />;
-
       case "orders":
         return ordersLoading ? (
           <LoadingSpinner />
@@ -188,7 +187,24 @@ const AdminPage: React.FC<{ storePage?: boolean }> = ({ storePage = false }) => 
 
       case "inventory":
         // საწყობი — admin სრულად, manager მხოლოდ ნახვა (read-only)
-        return <InventoryManagerVariants canEdit={user?.role === "admin"} />;
+        return (
+          <InventoryManagerVariants
+            canEdit={user?.role === "admin"}
+            onShowReceipts={
+              user?.role === "admin"
+                ? (productId) => {
+                    setReceiptProductId(productId);
+                    setActiveSection("receipts");
+                  }
+                : undefined
+            }
+          />
+        );
+
+      case "receipts":
+        // მიღება — მხოლოდ ადმინი (UI, სერვისი და Firestore rules)
+        if (user?.role !== "admin") return null;
+        return <ReceiptsManager key={receiptProductId || "all"} initialProductId={receiptProductId} />;
 
       case "categories":
         // Category management - admin only
@@ -291,22 +307,13 @@ case "analytics": {
       onSectionChange={(section) => {
         if (section === "store") navigate("/admin/store");
         else if (storePage) navigate("/admin", { state: { adminSection: section } });
-        else setActiveSection(section);
+        else {
+          if (section === "receipts") setReceiptProductId(null);
+          setActiveSection(section);
+        }
       }}
     >
       {renderContent()}
-
-      {/* Add Product Modal - Admin Only */}
-      {isAddModalOpen && user?.role === "admin" && (
-        <AddProductDrawer
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onProductAdded={() => {
-            // Real-time listener will automatically update products
-            showToast("პროდუქტი წარმატებით დაემატა!", "success");
-          }}
-        />
-      )}
 
       {/* Manual Order Modal */}
       {isManualOrderModalOpen && (

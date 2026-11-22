@@ -399,7 +399,9 @@ export class OrderService {
   private static async deductInventoryInTransaction(
     transaction: Transaction,
     items: { productId: string; quantity: number; variantId?: string }[],
-    orderNumber?: string
+    orderNumber?: string,
+    // საიტის შეკვეთა: დამალული პროდუქტი არ იყიდება (ადმინის ხელით შეკვეთას არ ეხება — მაღაზიის საქონელი)
+    requireActive = false
   ): Promise<void> {
     const realProducts = items.filter(
       (item) =>
@@ -440,6 +442,10 @@ export class OrderService {
       }
 
       const productData = productDoc.data();
+
+      if (requireActive && productData.isActive === false) {
+        throw new Error(`პროდუქტი აღარ იყიდება: "${productData.name}". წაშალეთ კალათიდან და სცადეთ თავიდან.`);
+      }
 
       // ავამუშაოთ ვარიანტები და სიმპლური პროდუქტები ცალ-ცალკე
       const variantItems = itemsForThisProduct.filter(
@@ -1171,7 +1177,7 @@ export class OrderService {
         if (attempt > 1 && (await this.checkOrderSaved(orderRef)) !== "missing") {
           throw new Error("Order may already be saved by a previous attempt");
         }
-        await this.deductInventoryInTransaction(transaction, inventoryItems, orderNumber);
+        await this.deductInventoryInTransaction(transaction, inventoryItems, orderNumber, true);
         transaction.set(orderRef, firestorePayload);
       });
 
@@ -1185,7 +1191,7 @@ export class OrderService {
       if ((await this.checkOrderSaved(orderRef)) !== "exists") {
         const isInventoryError =
           error instanceof Error &&
-          error.message.includes("არასაკმარისი რაოდენობა");
+          (error.message.includes("არასაკმარისი რაოდენობა") || error.message.includes("აღარ იყიდება"));
 
         if (isInventoryError) {
           throw error; // ვაბრუნებთ სტოკის ერორს კლიენტთან

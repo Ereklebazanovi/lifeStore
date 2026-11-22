@@ -291,7 +291,7 @@ const CheckoutPage: React.FC = () => {
       console.error("Order failed:", error);
       const message = error instanceof Error ? error.message : "";
       showToast(
-        message.includes("არასაკმარისი რაოდენობა") || message.includes("პრომო კოდ")
+        message.includes("არასაკმარისი რაოდენობა") || message.includes("პრომო კოდ") || message.includes("აღარ იყიდება")
           ? message
           : "შეკვეთის გაფორმება ვერ მოხერხდა. შეამოწმეთ ინტერნეტ კავშირი და სცადეთ თავიდან.",
         "error"
