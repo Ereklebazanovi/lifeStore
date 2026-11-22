@@ -34,14 +34,35 @@ const getStockAtDate = (stockHistory: StockHistory[] | undefined, targetDate: Da
   return relevantHistory[0].quantity;
 };
 
+// ბრუნვითის სვეტები — მარაგის თითო ჩანაწერი ზუსტად ერთ სვეტში ხვდება (docs/stock-receipts.md §3)
+export type TurnoverColumn = "incoming" | "outgoing" | "orderReturn" | "storeTransfer" | "correction";
+
+const RECEIPT_REASON = /^Receipt(?: edit| deleted)? #/;
+const ORDER_REASON = /^(?:Order(?: Edit| deleted| cancelled)? #|Order expired|Rollback \(Error\)|Stock reduction)/;
+const CORRECTION_REASON = /^Correction:/;
+
+export const classifyStockMovement = (reason: unknown, change: number): TurnoverColumn => {
+  const text = typeof reason === "string" ? reason : "";
+  if (isStoreMovementReason(text)) return "storeTransfer";
+  if (RECEIPT_REASON.test(text) || text === "Initial stock") return "incoming";
+  // შეკვეთა: კლება = გაყიდვა; მატება = გაუქმებული/წაშლილი/შესწორებული/ვადაგასული შეკვეთიდან დაბრუნება
+  if (ORDER_REASON.test(text)) return change < 0 ? "outgoing" : "orderReturn";
+  if (CORRECTION_REASON.test(text)) return "correction";
+  // ძველი ხელით ჩანაწერები („შევსება“, „დაზიანება/დანაკარგი“…): მატება = მიღება, კლება = კორექცია
+  return change > 0 ? "incoming" : "correction";
+};
+
+type StockMovements = Record<TurnoverColumn, number>;
+
 // Helper function to calculate stock movements for a given date range
 const getStockMovements = (
   stockHistory: StockHistory[] | undefined,
   startDate: Date,
   endDate: Date
-): { incoming: number; outgoing: number; storeTransfer: number } => {
+): StockMovements => {
+  const movements: StockMovements = { incoming: 0, outgoing: 0, orderReturn: 0, storeTransfer: 0, correction: 0 };
   if (!stockHistory || stockHistory.length === 0) {
-    return { incoming: 0, outgoing: 0, storeTransfer: 0 };
+    return movements;
   }
 
   // Filter history within the date range
@@ -56,7 +77,7 @@ const getStockMovements = (
   });
 
   if (relevantHistory.length === 0) {
-    return { incoming: 0, outgoing: 0, storeTransfer: 0 };
+    return movements;
   }
 
   // Sort by timestamp to get movement sequence
@@ -66,10 +87,6 @@ const getStockMovements = (
     return dateA.getTime() - dateB.getTime();
   });
 
-  let incoming = 0;
-  let outgoing = 0;
-  let storeTransfer = 0;
-
   // Get all stock history sorted by date for proper previous quantity calculation
   const allHistorySorted = [...stockHistory].sort((a, b) => {
     const dateA = a.timestamp instanceof Date ? a.timestamp : typeof a.timestamp === 'object' && a.timestamp !== null && 'toDate' in a.timestamp ? (a.timestamp as any).toDate() : new Date(a.timestamp as any);
@@ -78,31 +95,22 @@ const getStockMovements = (
   });
 
   relevantHistory.forEach((entry) => {
-    // Special handling for Initial stock - treat as incoming
-    if (entry.reason === "Initial stock") {
-      incoming += entry.quantity;
-      return;
-    }
-
-    // For other entries, calculate the change from previous quantity
+    // ცვლილება = წინა ჩანაწერის ნაშთიდან სხვაობა; პირველ ჩანაწერზე („Initial stock“, ახალი მიღება) — 0-დან.
+    // მაღაზიის ჩანაწერებს საკუთარი delta აქვთ და ის უპირატესია (როგორც აქამდე).
     const entryIndex = allHistorySorted.findIndex(h => h === entry);
-    if (isStoreMovementReason(entry.reason) && Number.isFinite(entry.delta)) {
-      storeTransfer -= entry.delta!;
-    } else if (entryIndex > 0) {
-      const previousEntry = allHistorySorted[entryIndex - 1];
-      const change = entry.quantity - previousEntry.quantity;
+    const previousQuantity = entryIndex > 0 ? allHistorySorted[entryIndex - 1].quantity : undefined;
+    const change = Number.isFinite(entry.delta) && (isStoreMovementReason(entry.reason) || previousQuantity === undefined)
+      ? entry.delta!
+      : entry.quantity - (previousQuantity ?? 0);
+    if (!Number.isFinite(change) || change === 0) return;
 
-      if (isStoreMovementReason(entry.reason)) {
-        storeTransfer -= change;
-      } else if (change > 0) {
-        incoming += change;
-      } else if (change < 0) {
-        outgoing += Math.abs(change);
-      }
-    }
+    const column = classifyStockMovement(entry.reason, change);
+    // გაყიდვა და მაღაზიაში გადატანა გამავალია (დადებითი რიცხვით), დანარჩენი — ნიშნით
+    if (column === "outgoing" || column === "storeTransfer") movements[column] -= change;
+    else movements[column] += change;
   });
 
-  return { incoming, outgoing, storeTransfer };
+  return movements;
 };
 
 // Calculate turnover data for products in a given date range
@@ -137,8 +145,11 @@ export const calculateTurnover = (
 
     const quantityIn = movements.incoming;
     const quantityOut = movements.outgoing;
+    const quantityOrderReturn = movements.orderReturn;
     const quantityStoreTransfer = movements.storeTransfer;
-    const difference = quantityIn - quantityOut - quantityStoreTransfer;
+    const quantityCorrection = movements.correction;
+    // საწყისი + მიღება − გაყიდვა + დაბრუნება − გადატანა + კორექცია = საბოლოო
+    const difference = quantityIn - quantityOut + quantityOrderReturn - quantityStoreTransfer + quantityCorrection;
 
     turnoverData.push({
       productCode: product.productCode || "-",
@@ -147,7 +158,9 @@ export const calculateTurnover = (
       openingQuantity,
       quantityIn,
       quantityOut,
+      quantityOrderReturn,
       quantityStoreTransfer,
+      quantityCorrection,
       difference,
       closingQuantity
     });
@@ -155,9 +168,11 @@ export const calculateTurnover = (
 
   return turnoverData.filter(item =>
     item.openingQuantity > 0 ||
-    item.quantityIn > 0 ||
+    item.quantityIn !== 0 ||
     item.quantityOut > 0 ||
+    item.quantityOrderReturn !== 0 ||
     item.quantityStoreTransfer !== 0 ||
+    item.quantityCorrection !== 0 ||
     item.closingQuantity > 0
   );
 };
@@ -444,7 +459,9 @@ export interface TurnoverData {
   openingQuantity: number;
   quantityIn: number;
   quantityOut: number;
+  quantityOrderReturn: number;
   quantityStoreTransfer: number;
+  quantityCorrection: number;
   difference: number;
   closingQuantity: number;
 }
@@ -675,7 +692,9 @@ export const exportTurnoverToExcel = (
     let totalOpeningQuantity = 0;
     let totalQuantityIn = 0;
     let totalQuantityOut = 0;
+    let totalQuantityOrderReturn = 0;
     let totalQuantityStoreTransfer = 0;
+    let totalQuantityCorrection = 0;
     let totalDifference = 0;
     let totalClosingQuantity = 0;
 
@@ -683,7 +702,9 @@ export const exportTurnoverToExcel = (
       totalOpeningQuantity += item.openingQuantity;
       totalQuantityIn += item.quantityIn;
       totalQuantityOut += item.quantityOut;
+      totalQuantityOrderReturn += item.quantityOrderReturn;
       totalQuantityStoreTransfer += item.quantityStoreTransfer;
+      totalQuantityCorrection += item.quantityCorrection;
       totalDifference += item.difference;
       totalClosingQuantity += item.closingQuantity;
 
@@ -694,7 +715,9 @@ export const exportTurnoverToExcel = (
         "საწყისი\nნაშთი": item.openingQuantity,
         "მიღება": item.quantityIn,
         "გაყიდვა": item.quantityOut,
+        "შეკვეთებიდან\nდაბრუნება": item.quantityOrderReturn,
         "გადატანა მაღაზიაში": item.quantityStoreTransfer,
+        "კორექცია": item.quantityCorrection,
         "ბრუნვის სხვაობა": item.difference,
         "მარაგის ნაშთი": item.closingQuantity,
       });
@@ -708,7 +731,9 @@ export const exportTurnoverToExcel = (
       "საწყისი\nნაშთი": totalOpeningQuantity,
       "მიღება": totalQuantityIn,
       "გაყიდვა": totalQuantityOut,
+      "შეკვეთებიდან\nდაბრუნება": totalQuantityOrderReturn,
       "გადატანა მაღაზიაში": totalQuantityStoreTransfer,
+      "კორექცია": totalQuantityCorrection,
       "ბრუნვის სხვაობა": totalDifference,
       "მარაგის ნაშთი": totalClosingQuantity,
     });
@@ -718,10 +743,11 @@ export const exportTurnoverToExcel = (
     XLSX.utils.sheet_add_json(worksheet, flattenedData, { origin: "A2" });
 
     const workbook = XLSX.utils.book_new();
+    const lastColumn = 10; // K
 
-    // Merge title cell (A1 to I1)
+    // Merge title cell (A1 to K1)
     if (!worksheet["!merges"]) worksheet["!merges"] = [];
-    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } });
+    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: lastColumn } });
 
     // Set column widths
     const colWidths = [
@@ -731,9 +757,11 @@ export const exportTurnoverToExcel = (
       { wch: 18 }, // D: საწყისი რაოდენობრივი ნაშთი
       { wch: 12 }, // E: მიღება
       { wch: 12 }, // F: გაყიდვა
-      { wch: 22 }, // G: გადატანა მაღაზიაში
-      { wch: 15 }, // H: ბრუნვის სხვაობა
-      { wch: 15 }, // I: მარაგის ნაშთი
+      { wch: 16 }, // G: შეკვეთებიდან დაბრუნება
+      { wch: 22 }, // H: გადატანა მაღაზიაში
+      { wch: 12 }, // I: კორექცია
+      { wch: 15 }, // J: ბრუნვის სხვაობა
+      { wch: 15 }, // K: მარაგის ნაშთი
     ];
     worksheet["!cols"] = colWidths;
 
@@ -799,7 +827,7 @@ export const exportTurnoverToExcel = (
 
     // Apply styles to all cells
     for (let R = 1; R <= lastRowIndex; ++R) {
-      for (let C = 0; C <= 8; ++C) {
+      for (let C = 0; C <= lastColumn; ++C) {
         const address = XLSX.utils.encode_cell({ r: R, c: C });
         if (!worksheet[address]) continue;
 
@@ -809,12 +837,12 @@ export const exportTurnoverToExcel = (
         } else if (R === lastRowIndex) {
           // Summary row
           worksheet[address].s = summaryStyle;
-          if (C >= 3 && C <= 8) worksheet[address].s.numFmt = "#,##0";
+          if (C >= 3 && C <= lastColumn) worksheet[address].s.numFmt = "#,##0";
         } else {
           // Data rows
           const colLetter = XLSX.utils.encode_col(C);
 
-          if (["D", "E", "F", "G", "H", "I"].includes(colLetter)) { // Quantity columns
+          if (C >= 3) { // Quantity columns (D–K)
             worksheet[address].s = quantityStyle;
           } else if (colLetter === "A") { // Code column
             worksheet[address].s = centerStyle;
@@ -836,7 +864,9 @@ export const exportTurnoverToExcel = (
       totalOpeningQuantity,
       totalQuantityIn,
       totalQuantityOut,
+      totalQuantityOrderReturn,
       totalQuantityStoreTransfer,
+      totalQuantityCorrection,
       totalDifference,
       totalClosingQuantity,
       exportedProducts: flattenedData.length - 1 // -1 for summary row
