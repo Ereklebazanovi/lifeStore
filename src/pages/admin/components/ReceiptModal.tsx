@@ -68,7 +68,15 @@ const ReceiptModal: React.FC<Props> = ({ receipt, suppliers, onClose }) => {
   const optionButtons = useRef(new Map<string, HTMLButtonElement>());
   const pendingFocus = useRef<string | null>(null);
   const [requestId] = useState(() => StockReceiptService.newId());
-  const fieldRef = (key: string) => (node: HTMLInputElement | null) => {
+  // შემთხვევით დახურვაზე დიდი მიღება რომ არ დაიკარგოს
+  const formState = JSON.stringify([lines, movementDate, supplier, documentNumber, note]);
+  const initialFormState = useRef(formState);
+  const requestClose = () => {
+    if (busy.current) return;
+    if (formState !== initialFormState.current && !window.confirm("შეყვანილი მონაცემები არ შეინახება. დავხურო ფორმა?")) return;
+    onClose();
+  };
+  const fieldRef =(key: string) => (node: HTMLInputElement | null) => {
     if (node) fields.current.set(key, node);
     else fields.current.delete(key);
   };
@@ -259,7 +267,7 @@ const ReceiptModal: React.FC<Props> = ({ receipt, suppliers, onClose }) => {
                 : "ერთი ტვირთი — ერთი ჩანაწერი. ყველაფერი საწყობს ემატება; „აქედან მაღაზიაში“ ნაწილი იქვე გადავა მაღაზიაში."}
             </p>
           </div>
-          <button type="button" aria-label="დახურვა" disabled={saving} onClick={onClose} className="min-w-11 min-h-11 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100">
+          <button type="button" aria-label="დახურვა" disabled={saving} onClick={requestClose} className="min-w-11 min-h-11 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100">
             <X size={20} />
           </button>
         </header>
@@ -548,7 +556,7 @@ const ReceiptModal: React.FC<Props> = ({ receipt, suppliers, onClose }) => {
             </p>
           </div>
           <div className="flex gap-2">
-            <button type="button" disabled={saving} onClick={onClose} className="min-h-11 px-4 rounded-lg border border-gray-300 bg-white">
+            <button type="button" disabled={saving} onClick={requestClose} className="min-h-11 px-4 rounded-lg border border-gray-300 bg-white">
               გაუქმება
             </button>
             <button type="submit" disabled={saving || !lines.length || invalid || !supplier.trim()}
