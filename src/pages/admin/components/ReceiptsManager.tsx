@@ -225,10 +225,10 @@ const ReceiptsManager: React.FC<Props> = ({ initialProductId }) => {
           <p className="p-5 text-gray-500">იტვირთება…</p>
         ) : !filtered.length ? (
           <div className="p-6 sm:p-10 text-center space-y-2">
-            <p className="font-medium text-gray-800">{receipts.length === 0 && !hasFilters ? "პირველი მიღება" : "მიღება ვერ მოიძებნა"}</p>
+            <p className="font-medium text-gray-800">{receipts.length === 0 && !hasFilters ? "მიღებები ჯერ არ არის" : "მიღება ვერ მოიძებნა"}</p>
             <p className="text-sm text-gray-500 max-w-lg mx-auto">
               {receipts.length === 0 && !hasFilters
-                ? "ჩამოსული ტვირთი ერთ ჩანაწერად შეიყვანე. ძველი, უკვე საწყობში არსებული ტვირთები აქ არ შეიყვანო — მარაგს მეორედ დაემატება. ჟურნალი დღეიდან იწყება."
+                ? "აქ შეიყვანე დღეიდან ჩამოსული ყოველი ტვირთი — საწყობში უკვე არსებული პროდუქტიც (სიიდან აირჩიე და ახალი რაოდენობა ჩაწერე) და ახალიც. ის, რაც ადრე ჩამოვიდა და საწყობის მარაგში უკვე წერია, აქ ხელახლა არ შეიყვანო — ორჯერ დაემატება."
                 : "შეცვალე ძებნა ან ფილტრები."}
             </p>
           </div>
