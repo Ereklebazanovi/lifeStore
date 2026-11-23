@@ -28,6 +28,20 @@ interface CatalogItem {
 const CODE_PATTERN = /^[A-Z0-9-]+$/;
 const focusRing = "focus:ring-emerald-500";
 
+// დანომრილი ნაბიჯი: ფორმა ზემოდან ქვემოთ იკითხება — 1 ტვირთი, 2 რა ჩამოვიდა, 3 რამდენი
+const Step: React.FC<{ n: number; title: string; hint?: string; right?: React.ReactNode }> = ({ n, title, hint, right }) => (
+  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
+    <div className="flex items-start gap-2.5 min-w-0">
+      <span aria-hidden="true" className="mt-0.5 w-6 h-6 shrink-0 rounded-full bg-emerald-700 text-white text-xs font-bold flex items-center justify-center">{n}</span>
+      <div className="min-w-0">
+        <h3 className="font-semibold text-sm text-gray-900">{title}</h3>
+        {hint && <p className="text-xs text-gray-500 mt-0.5">{hint}</p>}
+      </div>
+    </div>
+    {right}
+  </div>
+);
+
 const ReceiptModal: React.FC<Props> = ({ receipt, suppliers, onClose }) => {
   const { products } = useProductStore();
   const { categories, fetchCategories } = useCategoryStore();
@@ -209,7 +223,7 @@ const ReceiptModal: React.FC<Props> = ({ receipt, suppliers, onClose }) => {
           <div>
             <p className="text-xs text-gray-500 mb-1">საწყობი · ტვირთის მიღება</p>
             <h2 className="font-bold text-xl text-emerald-800">{receipt ? "მიღების რედაქტირება" : "ახალი მიღება"}</h2>
-            <p className="text-xs text-gray-500 mt-2 leading-relaxed max-w-xl">
+            <p className="hidden sm:block text-xs text-gray-500 mt-2 leading-relaxed max-w-xl">
               {receipt
                 ? "მიუთითე სრული რაოდენობები. ნაშთი მხოლოდ ძველ და ახალ რაოდენობებს შორის სხვაობით გასწორდება."
                 : "ერთი ტვირთი — ერთი ჩანაწერი. ყველაფერი საწყობს ემატება; „აქედან მაღაზიაში“ ნაწილი იქვე გადავა მაღაზიაში."}
@@ -220,7 +234,9 @@ const ReceiptModal: React.FC<Props> = ({ receipt, suppliers, onClose }) => {
           </button>
         </header>
 
-        <div className="min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
+        <div className="min-h-0 overflow-y-auto p-4 sm:p-6 space-y-6">
+          <section aria-label="ტვირთის მონაცემები" className="space-y-3">
+          <Step n={1} title="ტვირთი" hint="როდის და ვისგან ჩამოვიდა" />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <label className="block text-sm font-semibold text-gray-800">
               მიღების თარიღი
@@ -229,30 +245,44 @@ const ReceiptModal: React.FC<Props> = ({ receipt, suppliers, onClose }) => {
             </label>
             <label className="block text-sm font-semibold text-gray-800">
               მომწოდებელი
-              <input list="receipt-suppliers" required maxLength={200} value={supplier} disabled={saving}
+              <input list="receipt-suppliers" required maxLength={200} value={supplier} disabled={saving} autoFocus={!receipt}
                 onChange={(event) => setSupplier(event.target.value)} placeholder="ვისგან მიიღე" className={`block mt-2 font-normal ${inputClass}`} />
               <datalist id="receipt-suppliers">
                 {supplierOptions.map((value) => <option key={value} value={value} />)}
               </datalist>
             </label>
             <label className="block text-sm font-semibold text-gray-800">
-              დოკუმენტის № <span className="font-normal text-xs text-gray-500">· სურვილისამებრ</span>
+              ზედნადების № <span className="font-normal text-xs text-gray-500">· სურვილისამებრ</span>
               <input maxLength={100} value={documentNumber} disabled={saving} onChange={(event) => setDocumentNumber(event.target.value)}
-                placeholder="ზედნადები / ინვოისი" className={`block mt-2 font-normal ${inputClass}`} />
+                placeholder="მომწოდებლის ზედნადები / ინვოისი" className={`block mt-2 font-normal ${inputClass}`} />
             </label>
           </div>
+          </section>
 
           <section aria-label="პროდუქტის დამატება" className="space-y-2">
-            <label className="text-sm font-semibold text-gray-800 block">
-              პროდუქტის დამატება
-              <div className="relative mt-2">
+            <Step
+              n={2}
+              title="რა ჩამოვიდა"
+              hint={receipt ? "მოძებნე საწყობში არსებული პროდუქტი." : "საწყობში არსებული — მოძებნე. სულ ახალი, რაც საწყობში ჯერ არ არის — „+ ახალი პროდუქტი“."}
+              right={!receipt && !newForm ? (
+                <button type="button" onClick={openNewProduct} disabled={saving}
+                  className="min-h-11 shrink-0 px-3 justify-center rounded-lg border border-emerald-300 text-emerald-800 bg-emerald-50 text-sm font-medium flex items-center gap-2 hover:bg-emerald-100">
+                  <PackagePlus size={16} aria-hidden="true" />
+                  + ახალი პროდუქტი
+                </button>
+              ) : undefined}
+            />
+            <label className="block">
+              <span className="sr-only">მოძებნე საწყობში არსებული პროდუქტი</span>
+              <div className="relative">
                 <Search size={18} className="absolute left-3 top-3.5 text-gray-400" />
                 <input
                   ref={searchInput}
-                  autoFocus={!receipt}
                   value={search}
                   disabled={saving}
-                  onFocus={() => { setPickerOpen(true); setHighlightIndex(0); }}
+                  // ცარიელ ველზე მთელი კატალოგი თავისით არ იშლება — მხოლოდ დაწკაპებით ან აკრეფით
+                  onClick={() => setPickerOpen(true)}
+                  onFocus={() => { if (search.trim()) setPickerOpen(true); setHighlightIndex(0); }}
                   onChange={(event) => { setSearch(event.target.value); setPickerOpen(true); setHighlightIndex(0); }}
                   onKeyDown={(event) => {
                     if (event.nativeEvent.isComposing) return;
@@ -275,16 +305,6 @@ const ReceiptModal: React.FC<Props> = ({ receipt, suppliers, onClose }) => {
                 />
               </div>
             </label>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-gray-500">↑↓ არჩევა · Enter დამატება · რაოდენობიდან Enter ძებნაზე დაბრუნება</p>
-              {!receipt && !newForm && (
-                <button type="button" onClick={openNewProduct} disabled={saving}
-                  className="min-h-11 px-3 rounded-lg border border-emerald-200 text-emerald-800 bg-emerald-50 text-sm flex items-center gap-2 hover:bg-emerald-100">
-                  <PackagePlus size={16} aria-hidden="true" />
-                  + ახალი პროდუქტი
-                </button>
-              )}
-            </div>
             {pickerOpen && (
               <div role="region" aria-label="ძებნის შედეგები" className="border border-gray-200 rounded-xl overflow-y-auto max-h-72 divide-y divide-gray-100">
                 {matching.map((product) => {
@@ -324,7 +344,7 @@ const ReceiptModal: React.FC<Props> = ({ receipt, suppliers, onClose }) => {
                 )}
               </div>
             )}
-            {receipt && <p className="text-xs text-gray-500">ახალი პროდუქტი ახალ მიღებაში ემატება.</p>}
+            {receipt && <p className="text-xs text-gray-500">სულ ახალი პროდუქტი რედაქტირებისას ვერ დაემატება — მისთვის ახალი მიღება შექმენი.</p>}
           </section>
 
           {newForm && (
@@ -340,12 +360,12 @@ const ReceiptModal: React.FC<Props> = ({ receipt, suppliers, onClose }) => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <label className="text-xs font-medium text-gray-700">
-                  სახელი
+                  პროდუქტის სახელი
                   <input aria-label="ახალი პროდუქტის სახელი" autoFocus maxLength={200} value={newForm.name}
                     onChange={(event) => setNewForm({ ...newForm, name: event.target.value })} className={`block mt-1 bg-white ${inputClass}`} />
                 </label>
                 <label className="text-xs font-medium text-gray-700">
-                  კოდი
+                  პროდუქტის კოდი (არტიკული)
                   <input aria-label="ახალი პროდუქტის კოდი" maxLength={50} value={newForm.code} placeholder="მაგ: LBS-0010"
                     onChange={(event) => setNewForm({ ...newForm, code: event.target.value.toUpperCase() })} className={`block mt-1 bg-white font-mono ${inputClass}`} />
                 </label>
@@ -366,15 +386,15 @@ const ReceiptModal: React.FC<Props> = ({ receipt, suppliers, onClose }) => {
           )}
 
           <section aria-label="მიღების პროდუქტები" className="space-y-3">
-            <div className="flex justify-between items-center gap-3">
-              <h3 className="font-semibold text-sm text-gray-900">მიღებული პროდუქტები</h3>
-              <span className="text-xs text-gray-500">{lines.length} პროდუქტი</span>
-            </div>
+            <Step
+              n={3}
+              title="რამდენი ჩამოვიდა"
+              hint="თითო პროდუქტზე ჩაწერე ჩამოსული რაოდენობა. თუ ნაწილი პირდაპირ მაღაზიაში მიდის — „აქედან მაღაზიაში“."
+              right={<span className="text-xs text-gray-500 shrink-0 mt-1">{lines.length} პროდუქტი</span>}
+            />
             {!lines.length ? (
-              <div className="rounded-xl border border-dashed border-gray-300 py-8 px-4 text-center">
-                <PackagePlus size={28} className="mx-auto text-gray-300 mb-3" />
-                <p className="text-sm font-medium text-gray-700">ჯერ დაამატე პროდუქტი</p>
-                <p className="text-xs text-gray-500 mt-2">მოძებნე სახელით ან კოდით; თუ საწყობში ჯერ არ არის — „+ ახალი პროდუქტი“.</p>
+              <div className="rounded-xl border border-dashed border-gray-300 py-6 px-4 text-center">
+                <p className="text-sm text-gray-600">აქ გამოჩნდება მე-2 ნაბიჯში დამატებული პროდუქტები.</p>
               </div>
             ) : (
               <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
