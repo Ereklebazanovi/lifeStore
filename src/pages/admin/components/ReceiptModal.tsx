@@ -141,6 +141,12 @@ const ReceiptModal: React.FC<Props> = ({ receipt, suppliers, onClose }) => {
     if (!code || !CODE_PATTERN.test(code)) return setNewError("კოდი: მხოლოდ დიდი ასოები, ციფრები და „-“");
     const taken = products.find((product) => (product.productCode || "").toUpperCase() === code);
     if (taken) return setNewError(`კოდი ${code} უკვე აქვს „${taken.name}“-ს — აირჩიე ის ძებნით`);
+    // ერთნაირი სახელები საიტზე ერთმანეთში ირევა (მაგ. სამი „ფაიფურის ნაკრები“)
+    const sameName = products.find((product) => (product.name || "").trim().toLocaleLowerCase() === name.toLocaleLowerCase());
+    if (sameName)
+      return setNewError(`„${sameName.name}“ საწყობში უკვე არის (კოდი ${sameName.productCode || "—"}). თუ იგივე პროდუქტია — აირჩიე ძებნით; თუ სხვაა — სახელში გაარჩიე (ფერი, ზომა…)`);
+    if (lines.some((line) => line.newProduct?.name.toLocaleLowerCase() === name.toLocaleLowerCase()))
+      return setNewError(`„${name}“ ამ მიღებაში უკვე დაემატა`);
     if (lines.some((line) => line.newProduct?.productCode === code)) return setNewError(`კოდი ${code} ამ მიღებაში უკვე დაემატა`);
     const productId = StockReceiptService.newProductId();
     pendingQuantityFocus.current = productId;

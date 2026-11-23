@@ -400,8 +400,9 @@ export class StockReceiptService {
           .map((line) => {
             const product = products.get(line.productId)!;
             const kept = oldTransferItems.find((item) => item.productId === line.productId);
-            // არსებული ხაზი ინარჩუნებს შენახვის მომენტის ფასს (როგორც მაღაზიაში), ახალი — მიმდინარეს
-            return { productId: line.productId, name: product.name, price: kept ? kept.price : salePrice(product), quantity: line.toStore };
+            // არსებული ხაზი ინარჩუნებს შენახვის მომენტის ფასს (როგორც მაღაზიაში), ახალი — მიმდინარეს.
+            // 0 ფასი (ახალი პროდუქტი ფასამდე) ფასი არ არის — რედაქტირებისას მიმდინარე ფასს იღებს.
+            return { productId: line.productId, name: product.name, price: kept && kept.price > 0 ? kept.price : salePrice(product), quantity: line.toStore };
           });
         if (hadTransfer && transferSnapshot?.exists()) {
           tx.update(transferRef, { items: transferItems, ...transferTotals(transferItems), date: fields.date, updatedAt: now, updatedBy: actor });
