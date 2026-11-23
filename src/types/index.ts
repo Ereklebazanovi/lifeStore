@@ -16,6 +16,9 @@ export interface StockHistory {
   orderId?: string;
   notes?: string;
   delta?: number;
+  /** მიღების ჩანაწერი: ბრუნვითში მიღების არჩეული თარიღით ჩანს, არა შეყვანის დროით */
+  effectiveAt?: Date;
+  receiptId?: string;
 }
 
 export interface ProductVariant {

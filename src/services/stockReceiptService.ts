@@ -126,10 +126,13 @@ const receiptTotals = (items: StockReceiptItem[]) => ({
  * პროდუქტის მარაგზე რამდენიმე ჩანაწერი ერთ ტრანზაქციაში — თითო თავისი მიზეზით (ბრუნვითში
  * „მიღება“ და „გადატანა მაღაზიაში“ ცალ-ცალკე ჩანს). დადებითი ჯერ, უარყოფითი მერე: შუალედური ნაშთი მინუსში არ ჩადის.
  */
+type ReceiptTag = { receiptId: string; effectiveAt: Date };
+
 function stockUpdate(
   product: Product,
   movements: { delta: number; reason: string }[],
   now: Date,
+  tag: ReceiptTag,
 ): { stock: number; history: StockHistory[] } | null {
   const ordered = movements.filter((movement) => movement.delta !== 0).sort((a, b) => b.delta - a.delta);
   if (!ordered.length) return null;
@@ -140,7 +143,8 @@ function stockUpdate(
   for (const movement of ordered) {
     stock += movement.delta;
     if (!Number.isSafeInteger(stock) || stock < 0) throw Error(`არასაკმარისი მარაგი: ${product.name} — ეს საქონელი უკვე გაიყიდა ან გადავიდა`);
-    history.push({ timestamp: now, quantity: stock, reason: movement.reason, delta: movement.delta });
+    // effectiveAt: ბრუნვითში მიღების არჩეული თარიღით ჩანს (docs/stock-receipts.md §3)
+    history.push({ timestamp: now, quantity: stock, reason: movement.reason, delta: movement.delta, ...tag });
   }
   return { stock, history };
 }
@@ -155,6 +159,17 @@ const productUpdate = (product: Product, update: { stock: number; history: Stock
 
 const asDate = (value: unknown): Date =>
   value instanceof Date ? value : (value as { toDate: () => Date }).toDate();
+
+/** მიღების თარიღი შეიცვალა → ამ მიღების ძველი ჩანაწერებიც ახალ თარიღზე გადადის, რომ ბრუნვითში ერთად ჩანდეს */
+function retag(history: StockHistory[], tag: ReceiptTag): StockHistory[] | null {
+  let changed = false;
+  const next = history.map((entry) => {
+    if (entry.receiptId !== tag.receiptId || (entry.effectiveAt && asDate(entry.effectiveAt).getTime() === tag.effectiveAt.getTime())) return entry;
+    changed = true;
+    return { ...entry, effectiveAt: tag.effectiveAt };
+  });
+  return changed ? next : null;
+}
 
 const readProduct = (snapshot: DocumentSnapshot): Product | null =>
   snapshot.exists() ? ({ ...(snapshot.data() as Product), id: snapshot.id }) : null;
@@ -236,6 +251,7 @@ export class StockReceiptService {
       const transferNumber = `ST-${now.getFullYear()}-${transferId.slice(0, 10).toUpperCase()}`;
       const receiptReason = `Receipt #${receiptNumber}`;
       const transferReason = `Store transfer #${transferNumber}`;
+      const tag: ReceiptTag = { receiptId: id, effectiveAt: fields.date };
       const receiptItems: StockReceiptItem[] = [];
       const transferItems: StoreTransferItem[] = [];
       const writes: (() => void)[] = [];
@@ -248,7 +264,7 @@ export class StockReceiptService {
         if (line.newProduct) {
           if (existingProduct) throw Error("ახალი პროდუქტის შექმნა ვერ მოხერხდა — სცადე თავიდან");
           const { name, productCode, category } = line.newProduct;
-          const update = stockUpdate({ id: line.productId, name, stock: 0, stockHistory: [] } as unknown as Product, movements, now)!;
+          const update = stockUpdate({ id: line.productId, name, stock: 0, stockHistory: [] } as unknown as Product, movements, now, tag)!;
           writes.push(() =>
             tx.set(refs[index], {
               name,
@@ -278,7 +294,7 @@ export class StockReceiptService {
           return;
         }
         if (!existingProduct) throw Error(`პროდუქტი ვერ მოიძებნა: ${line.productId}`);
-        const update = stockUpdate(existingProduct, movements, now)!;
+        const update = stockUpdate(existingProduct, movements, now, tag)!;
         writes.push(() => tx.update(refs[index], productUpdate(existingProduct, update, now)));
         receiptItems.push({
           productId: line.productId,
@@ -360,15 +376,18 @@ export class StockReceiptService {
       const receiptItems: StockReceiptItem[] = [];
       const writes: (() => void)[] = [];
       const products = new Map<string, Product>();
+      const tag: ReceiptTag = { receiptId: id, effectiveAt: fields.date };
       ids.forEach((productId, index) => {
-        const product = readProduct(snapshots[index]);
+        const found = readProduct(snapshots[index]);
         const old = previous.items.find((item) => item.productId === productId);
         const line = fields.items.find((item) => item.productId === productId);
-        if (!product) {
+        if (!found) {
           // კატალოგიდან წაშლილი: ამოღებული ხაზი ნაშთს არ ეხება; დარჩენილი/ახალი ხაზი — შეცდომა
           if (line) throw Error(`პროდუქტი კატალოგიდან წაშლილია — ამოშალე ხაზი: ${old?.name || productId}`);
           return;
         }
+        const retagged = retag(found.stockHistory || [], tag);
+        const product = retagged ? { ...found, stockHistory: retagged } : found;
         products.set(productId, product);
         const update = stockUpdate(
           product,
@@ -377,8 +396,10 @@ export class StockReceiptService {
             { delta: (old?.toStore || 0) - (line?.toStore || 0), reason: storeReason },
           ],
           now,
+          tag,
         );
         if (update) writes.push(() => tx.update(refs[index], productUpdate(product, update, now)));
+        else if (retagged) writes.push(() => tx.update(refs[index], { stockHistory: retagged, updatedAt: now }));
       });
       for (const line of fields.items) {
         const product = products.get(line.productId)!;
@@ -457,6 +478,7 @@ export class StockReceiptService {
       const refs = previous.items.map((item) => doc(db, "products", item.productId));
       const snapshots = await Promise.all(refs.map((ref) => tx.get(ref)));
       const now = new Date();
+      const tag: ReceiptTag = { receiptId: id, effectiveAt: asDate(previous.date) };
       const writes: (() => void)[] = [];
       previous.items.forEach((item, index) => {
         const product = readProduct(snapshots[index]);
@@ -468,6 +490,7 @@ export class StockReceiptService {
             { delta: item.toStore, reason: `Store transfer deleted #${previous.storeTransferNumber || "—"}` },
           ],
           now,
+          tag,
         );
         if (update) writes.push(() => tx.update(refs[index], productUpdate(product, update, now)));
       });

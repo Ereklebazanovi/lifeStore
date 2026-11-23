@@ -4,34 +4,50 @@ import type { Order, Product, ProductVariant, StockHistory } from "../types";
 import { getOrderItemDisplayName, getOrderCreatorLabel } from "./displayHelpers";
 import { isStoreMovementReason } from "./storeReporting";
 
+const toTime = (value: unknown): number =>
+  (value instanceof Date
+    ? value
+    : typeof value === 'object' && value !== null && 'toDate' in value
+      ? (value as { toDate: () => Date }).toDate()
+      : new Date(value as string | number)
+  ).getTime();
+
+interface HistoryMovement {
+  entry: StockHistory;
+  /** შეყვანის დრო — ნაშთის ჩანაწერები ამ რიგითაა */
+  at: number;
+  /** ბრუნვითის დრო: მიღებისთვის მიღების არჩეული თარიღი (effectiveAt), სხვისთვის = at */
+  effective: number;
+  change: number;
+}
+
+// ჩანაწერები შეყვანის რიგით (თანაბარ დროზე — დამატების რიგით) + თითოს ცვლილება.
+// ცვლილება = წინა ჩანაწერის ნაშთიდან სხვაობა; პირველ ჩანაწერზე („Initial stock“, ახალი მიღება) — 0-დან.
+// მაღაზიის ჩანაწერებს საკუთარი delta აქვთ და ის უპირატესია (როგორც აქამდე).
+const historyMovements = (stockHistory: StockHistory[] | undefined): HistoryMovement[] => {
+  const sorted = (stockHistory || [])
+    .map((entry, index) => ({ entry, index, at: toTime(entry.timestamp) }))
+    .sort((a, b) => a.at - b.at || a.index - b.index);
+  return sorted.map(({ entry, at }, position) => {
+    const previousQuantity = position > 0 ? sorted[position - 1].entry.quantity : undefined;
+    const change = Number.isFinite(entry.delta) && (isStoreMovementReason(entry.reason) || previousQuantity === undefined)
+      ? entry.delta!
+      : entry.quantity - (previousQuantity ?? 0);
+    const effectiveAt = entry.effectiveAt ? toTime(entry.effectiveAt) : NaN;
+    return { entry, at, effective: Number.isFinite(effectiveAt) ? Math.min(effectiveAt, at) : at, change };
+  });
+};
+
+// ნაშთი თარიღზე: ბოლო ჩანაწერის ნაშთი + მიღებები, რომლებიც ამ თარიღით ჩაიწერა, მაგრამ მოგვიანებით შეიყვანეს
 const getStockAtDate = (stockHistory: StockHistory[] | undefined, targetDate: Date): number => {
-  if (!stockHistory || stockHistory.length === 0) {
-    return 0;
+  const target = targetDate.getTime();
+  let balance = 0;
+  let shifted = 0;
+  for (const movement of historyMovements(stockHistory)) {
+    if (movement.at <= target) balance = movement.entry.quantity;
+    else if (movement.effective <= target && Number.isFinite(movement.change)) shifted += movement.change;
   }
-
-  const relevantHistory = stockHistory.filter(h => {
-    // Handle Firebase Timestamp objects
-    const historyDate = h.timestamp instanceof Date
-      ? h.timestamp
-      : typeof h.timestamp === 'object' && h.timestamp !== null && 'toDate' in h.timestamp
-        ? (h.timestamp as any).toDate()
-        : new Date(h.timestamp as any);
-
-    return historyDate <= targetDate;
-  });
-
-  if (relevantHistory.length === 0) {
-    return 0;
-  }
-
-  // If timestamps tie, the last appended balance is the latest one.
-  relevantHistory.reverse().sort((a, b) => {
-    const dateA = a.timestamp instanceof Date ? a.timestamp : typeof a.timestamp === 'object' && a.timestamp !== null && 'toDate' in a.timestamp ? (a.timestamp as any).toDate() : new Date(a.timestamp as any);
-    const dateB = b.timestamp instanceof Date ? b.timestamp : typeof b.timestamp === 'object' && b.timestamp !== null && 'toDate' in b.timestamp ? (b.timestamp as any).toDate() : new Date(b.timestamp as any);
-    return dateB.getTime() - dateA.getTime();
-  });
-
-  return relevantHistory[0].quantity;
+  return balance + shifted;
 };
 
 // ბრუნვითის სვეტები — მარაგის თითო ჩანაწერი ზუსტად ერთ სვეტში ხვდება (docs/stock-receipts.md §3)
@@ -61,55 +77,15 @@ const getStockMovements = (
   endDate: Date
 ): StockMovements => {
   const movements: StockMovements = { incoming: 0, outgoing: 0, orderReturn: 0, storeTransfer: 0, correction: 0 };
-  if (!stockHistory || stockHistory.length === 0) {
-    return movements;
-  }
-
-  // Filter history within the date range
-  const relevantHistory = stockHistory.filter(h => {
-    const historyDate = h.timestamp instanceof Date
-      ? h.timestamp
-      : typeof h.timestamp === 'object' && h.timestamp !== null && 'toDate' in h.timestamp
-        ? (h.timestamp as any).toDate()
-        : new Date(h.timestamp as any);
-
-    return historyDate >= startDate && historyDate <= endDate;
-  });
-
-  if (relevantHistory.length === 0) {
-    return movements;
-  }
-
-  // Sort by timestamp to get movement sequence
-  relevantHistory.sort((a, b) => {
-    const dateA = a.timestamp instanceof Date ? a.timestamp : typeof a.timestamp === 'object' && a.timestamp !== null && 'toDate' in a.timestamp ? (a.timestamp as any).toDate() : new Date(a.timestamp as any);
-    const dateB = b.timestamp instanceof Date ? b.timestamp : typeof b.timestamp === 'object' && b.timestamp !== null && 'toDate' in b.timestamp ? (b.timestamp as any).toDate() : new Date(b.timestamp as any);
-    return dateA.getTime() - dateB.getTime();
-  });
-
-  // Get all stock history sorted by date for proper previous quantity calculation
-  const allHistorySorted = [...stockHistory].sort((a, b) => {
-    const dateA = a.timestamp instanceof Date ? a.timestamp : typeof a.timestamp === 'object' && a.timestamp !== null && 'toDate' in a.timestamp ? (a.timestamp as any).toDate() : new Date(a.timestamp as any);
-    const dateB = b.timestamp instanceof Date ? b.timestamp : typeof b.timestamp === 'object' && b.timestamp !== null && 'toDate' in b.timestamp ? (b.timestamp as any).toDate() : new Date(b.timestamp as any);
-    return dateA.getTime() - dateB.getTime();
-  });
-
-  relevantHistory.forEach((entry) => {
-    // ცვლილება = წინა ჩანაწერის ნაშთიდან სხვაობა; პირველ ჩანაწერზე („Initial stock“, ახალი მიღება) — 0-დან.
-    // მაღაზიის ჩანაწერებს საკუთარი delta აქვთ და ის უპირატესია (როგორც აქამდე).
-    const entryIndex = allHistorySorted.findIndex(h => h === entry);
-    const previousQuantity = entryIndex > 0 ? allHistorySorted[entryIndex - 1].quantity : undefined;
-    const change = Number.isFinite(entry.delta) && (isStoreMovementReason(entry.reason) || previousQuantity === undefined)
-      ? entry.delta!
-      : entry.quantity - (previousQuantity ?? 0);
-    if (!Number.isFinite(change) || change === 0) return;
-
+  const start = startDate.getTime();
+  const end = endDate.getTime();
+  for (const { entry, effective, change } of historyMovements(stockHistory)) {
+    if (!(effective >= start && effective <= end) || !Number.isFinite(change) || change === 0) continue;
     const column = classifyStockMovement(entry.reason, change);
     // გაყიდვა და მაღაზიაში გადატანა გამავალია (დადებითი რიცხვით), დანარჩენი — ნიშნით
     if (column === "outgoing" || column === "storeTransfer") movements[column] -= change;
     else movements[column] += change;
-  });
-
+  }
   return movements;
 };
 
