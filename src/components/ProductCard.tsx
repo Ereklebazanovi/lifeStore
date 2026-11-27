@@ -21,14 +21,14 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="product-card-media">
         <StorefrontPhoto photo={getProductPhoto(product)} />
         {(outOfStock || discount) && (
-          <span className={`product-card-status ${outOfStock ? "unavailable" : ""}`}>
+          <span className={`product-card-status ${outOfStock ? "unavailable" : "store-sale-tag"}`}>
             {outOfStock ? t("product.outOfStock") : discount}
           </span>
         )}
       </div>
       <div className="product-card-info">
         <h3>{name}</h3>
-        <p className={oldPrice ? "product-card-price on-sale" : "product-card-price"}>
+        <p className={oldPrice ? "product-card-price store-sale-price" : "product-card-price"}>
           <span>{getProductDisplayPrice(product)}</span>
           {oldPrice && <del>{oldPrice}</del>}
         </p>

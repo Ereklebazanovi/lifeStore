@@ -652,7 +652,7 @@ ${product.description}
                       {t("product.outOfStock")}
                     </span>
                   ) : hasCurrentDiscount() ? (
-                    <span className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">
+                    <span className="store-sale-tag px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">
                       -{discountPercent}%
                     </span>
                   ) : null}
@@ -733,7 +733,7 @@ ${product.description}
               <div className="flex items-baseline gap-3 mb-6">
                 <span
                   className={`text-3xl lg:text-4xl font-bold tracking-tight ${
-                    hasCurrentDiscount() ? "text-red-600" : "text-stone-900"
+                    hasCurrentDiscount() ? "store-sale-price" : "text-stone-900"
                   }`}
                 >
                   ₾{getCurrentPrice().toFixed(2)}
@@ -817,7 +817,7 @@ ${product.description}
 
               {/* Description */}
               <div className="prose prose-stone prose-sm max-w-none text-stone-600 mb-6 leading-relaxed">
-                <p className="whitespace-pre-line">{displayDescription}</p>
+                <p className="whitespace-pre-line [overflow-wrap:anywhere]">{displayDescription}</p>
               </div>
 
               {/* Features List (Very Compact) */}
@@ -909,7 +909,7 @@ ${product.description}
                       )}
                     </div>
                     <div className="p-3 flex flex-col grow">
-                      <h3 className="font-semibold text-stone-900 text-sm line-clamp-2 leading-snug mb-2 group-hover:text-emerald-700 transition-colors grow">
+                      <h3 className="font-semibold text-stone-900 text-sm leading-snug mb-2 group-hover:text-emerald-700 transition-colors grow [overflow-wrap:anywhere]">
                         {getLocalizedProductName(p, i18n.language)}
                       </h3>
                       <div className="flex items-center justify-between mt-auto">
@@ -1250,7 +1250,7 @@ ${product.description}
                 )}
                 <div className="min-w-0">
                   <p className="text-xs text-stone-400">{t("product.reviewLabel")}</p>
-                  <p className="font-semibold text-stone-900 text-sm leading-tight truncate">
+                  <p className="font-semibold text-stone-900 text-sm leading-tight [overflow-wrap:anywhere]">
                     {getLocalizedProductName(product, i18n.language)}
                   </p>
                 </div>

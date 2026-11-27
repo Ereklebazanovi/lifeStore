@@ -275,7 +275,7 @@ const OrderHistoryPage: React.FC = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h5 className="font-medium text-stone-900 text-sm truncate">
+                          <h5 className="font-medium text-stone-900 text-sm [overflow-wrap:anywhere]">
                             {getOrderItemDisplayName(item)}
                           </h5>
                           <p className="text-xs text-stone-500">

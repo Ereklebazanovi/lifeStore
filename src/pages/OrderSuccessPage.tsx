@@ -363,8 +363,8 @@ const OrderSuccessPage: React.FC = () => {
                         <Package className="w-full h-full p-4 text-stone-300" />
                       )}
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-stone-900 text-lg line-clamp-2 print:text-sm">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-stone-900 text-lg print:text-sm [overflow-wrap:anywhere]">
                         {getOrderItemDisplayName(item)}
                       </h4>
                       <div className="flex justify-between items-end mt-2 print:mt-1">

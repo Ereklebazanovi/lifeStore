@@ -452,6 +452,13 @@
     "menuClose": "Close menu",
     "orderSignIn": "Sign in to see your orders."
   },
+  "blackFriday": {
+    "title": "Black Friday",
+    "priceFrom": "Offers from ₾{{price}}",
+    "cta": "Shop the offers",
+    "featured": "Featured offers",
+    "unavailable": "Black Friday offers are currently unavailable."
+  },
   "catalog": {
     "search": "Search products",
     "filters": "Filters",

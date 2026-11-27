@@ -19,7 +19,7 @@ export function catalogProductView(product: Product, inStock: boolean, onSale: b
   return { ...product, variants };
 }
 
-function priceForCatalog(product: Product, inStock: boolean, onSale: boolean): number {
+export function getCatalogPrice(product: Product, inStock = false, onSale = false): number {
   const variants = catalogProductView(product, inStock, onSale).variants?.filter(variant => variant.isActive);
   if (product.hasVariants && variants?.length) {
     return Math.min(...variants.map(variant => Math.min(variant.price, variant.salePrice || variant.price)));
@@ -56,7 +56,7 @@ export function selectCatalogProducts(products: Product[], options: {
   }
   if (options.sort === "price-asc" || options.sort === "price-desc") {
     const direction = options.sort === "price-asc" ? 1 : -1;
-    const price = (product: Product) => priceForCatalog(product, options.inStock, options.onSale);
+    const price = (product: Product) => getCatalogPrice(product, options.inStock, options.onSale);
     return filtered.sort((a, b) => direction * (price(a) - price(b)));
   }
   return filtered;

@@ -42,6 +42,7 @@ import { useAuthStore } from "./store/authStore";
 import { useCartStore } from "./store/cartStore";
 import { ToastContainer } from "./components/ui/Toast";
 import { initGoogleAnalytics, trackPageView } from "./utils/analytics";
+import { blackFridayPath } from "./utils/blackFriday";
 import { initFacebookPixel, trackPixelEvent } from "./utils/pixel";
 import { getStorefrontLanguage, storefrontPath } from "./utils/storefrontPaths";
 const LANG_PREFIXES = ["en", "ru"] as const;
@@ -153,6 +154,10 @@ const AnimatedRoutes: React.FC = () => {
               <ProductsPage />
             </PageTransition>
           }
+        />
+        <Route
+          path={blackFridayPath}
+          element={<PageTransition><ProductsPage campaign /></PageTransition>}
         />
         <Route
           path="/category/:slug"
@@ -314,6 +319,7 @@ const AnimatedRoutes: React.FC = () => {
           <Route key={lang} path={`/${lang}`} element={<LanguageRoute lang={lang} />}>
             <Route index element={<PageTransition><HomePage /></PageTransition>} />
             <Route path="products" element={<PageTransition><ProductsPage /></PageTransition>} />
+            <Route path={blackFridayPath.slice(1)} element={<PageTransition><ProductsPage campaign /></PageTransition>} />
             <Route path="category/:slug" element={<PageTransition><CategoryPage /></PageTransition>} />
             <Route path="blog" element={<PageTransition><BlogPage /></PageTransition>} />
             <Route path="blog/:slug" element={<PageTransition><BlogPostPage /></PageTransition>} />
