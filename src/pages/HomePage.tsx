@@ -9,7 +9,8 @@ import SEOHead from "../components/SEOHead";
 import { useInventoryRefresh } from "../hooks/useInventoryRefresh";
 import { useCategoryStore } from "../store/categoryStore";
 import { useProductStore } from "../store/productStore";
-import { blackFridayEnabled, blackFridayPath, getBlackFridayFeatured, getBlackFridayProducts, getBlackFridayStartingPrice } from "../utils/blackFriday";
+import { blackFridayEnabled, blackFridayPath } from "../config/blackFriday";
+import { getBlackFridayFeatured, getBlackFridayProducts, getBlackFridayStartingPrice } from "../utils/blackFriday";
 import { storefrontPath } from "../utils/storefrontPaths";
 
 export default function HomePage() {

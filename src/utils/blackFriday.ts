@@ -3,9 +3,6 @@ import { catalogProductView, getCatalogPrice } from "./catalog";
 import { hasDiscount } from "./discount";
 import { getProductStock } from "./productHelpers";
 
-export const blackFridayEnabled = true;
-export const blackFridayPath = "/black-friday";
-
 // The partner's November 25 campaign list, excluding its three full-price items.
 const campaignCodes = new Set([
   "SJS-0001", "SJS-0002", "SJS-0003", "RGC-002", "BBWO-001", "FCS-0002",

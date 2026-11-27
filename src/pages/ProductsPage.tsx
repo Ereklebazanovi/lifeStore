@@ -7,7 +7,8 @@ import SEOHead from "../components/SEOHead";
 import { useInventoryRefresh } from "../hooks/useInventoryRefresh";
 import { useCategoryStore } from "../store/categoryStore";
 import { useProductStore } from "../store/productStore";
-import { blackFridayEnabled, blackFridayPath, getBlackFridayProducts, getBlackFridayStartingPrice } from "../utils/blackFriday";
+import { blackFridayEnabled, blackFridayPath, blackFridayShareImage } from "../config/blackFriday";
+import { getBlackFridayProducts, getBlackFridayStartingPrice } from "../utils/blackFriday";
 import { getLocalizedProductName } from "../utils/i18nHelpers";
 import { storefrontPath } from "../utils/storefrontPaths";
 
@@ -30,7 +31,8 @@ export default function ProductsPage({ campaign = false }: { campaign?: boolean 
 
   return (
     <>
-      <SEOHead title={`${title} | Life Store`} description={t("storefront.heroCopy")}
+      <SEOHead title={`${title} | Life Store`} description={t(isCampaign ? "blackFriday.shareDescription" : "storefront.heroCopy")}
+        ogImage={isCampaign ? blackFridayShareImage : undefined}
         canonicalUrl={"https://lifestore.ge" + (isCampaign ? storefrontPath(blackFridayPath, i18n.language) : catalogPath)}
         structuredData={{
           "@context": "https://schema.org",

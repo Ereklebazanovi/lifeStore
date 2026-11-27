@@ -42,7 +42,7 @@ import { useAuthStore } from "./store/authStore";
 import { useCartStore } from "./store/cartStore";
 import { ToastContainer } from "./components/ui/Toast";
 import { initGoogleAnalytics, trackPageView } from "./utils/analytics";
-import { blackFridayPath } from "./utils/blackFriday";
+import { blackFridayPath } from "./config/blackFriday";
 import { initFacebookPixel, trackPixelEvent } from "./utils/pixel";
 import { getStorefrontLanguage, storefrontPath } from "./utils/storefrontPaths";
 const LANG_PREFIXES = ["en", "ru"] as const;

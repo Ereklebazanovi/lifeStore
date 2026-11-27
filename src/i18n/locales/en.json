@@ -454,6 +454,7 @@
   },
   "blackFriday": {
     "title": "Black Friday",
+    "shareDescription": "Shop Black Friday offers on home and kitchen essentials at Life Store.",
     "priceFrom": "Offers from ₾{{price}}",
     "cta": "Shop the offers",
     "featured": "Featured offers",

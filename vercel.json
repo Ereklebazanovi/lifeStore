@@ -1,5 +1,8 @@
 {
   "rewrites": [
+    { "source": "/black-friday", "destination": "/black-friday.html" },
+    { "source": "/en/black-friday", "destination": "/en/black-friday.html" },
+    { "source": "/ru/black-friday", "destination": "/ru/black-friday.html" },
     {
       "source": "/product/:id",
       "destination": "/api/seo-product?id=:id",
